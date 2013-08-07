@@ -10,7 +10,10 @@ class Window():
         super().__init__()
         self.winValueL = []  # [(startPos,lastPos,value),(),,,,,,]
     def slidWindowOverlap(self, L, windowWidth, slideSize, Caculator):
-        self.winValueL=[]# notice here
+        """
+        L = [(pos, REF, ALT, INFO),(),(),...........]
+        """
+        self.winValueL = []  # notice here
         nextIdx = -1
         currentIdx = 0
         winStart = 0
@@ -28,11 +31,11 @@ class Window():
                     nextIdx = currentIdx
                     FoundNextIdx = True
             else:
-                value=Caculator.getResult()
+                value = Caculator.getResult()
                 try:
                     self.winValueL.append((startPos, lastPos, value))
                 except UnboundLocalError:
-                    self.winValueL.append((0,0,value))
+                    self.winValueL.append((0, 0, value))
                 winStart += slideSize
                 firstComeInWin = True
                 
@@ -46,10 +49,10 @@ class Window():
                 
             currentIdx += 1
         else:
-            value=Caculator.getResult()
+            value = Caculator.getResult()
             try:
                 self.winValueL.append((startPos, lastPos, value))
             except UnboundLocalError:
-                self.winValueL.append((0,0,value))
+                self.winValueL.append((0, 0, value))
             
                 
