@@ -5,7 +5,7 @@ Created on 2013-6-30
 
 @author: rui
 '''
-class VCF_Data:
+class VCF_Data():
     def __init__(self):
         super().__init__()
         self.VcfMap_AllChrom={}

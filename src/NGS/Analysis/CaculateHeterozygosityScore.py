@@ -7,7 +7,7 @@ Created on 2013-7-2
 
 @author: rui
 '''
-if len(sys.argv) < 3:
+if len(sys.argv) < 4:
     print("python CaculateHeterozygosityScore.py [vcf1] [vcf2] [vcf3]....[winwidth] [slidesize]")
     exit(-1)
 
