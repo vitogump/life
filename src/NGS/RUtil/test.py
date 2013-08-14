@@ -10,7 +10,9 @@ if len(sys.argv) < 5:
     exit(-1)
 dataType=sys.argv[-1]
 if sys.argv[-2]!= "a":
+    
     postive_negtive=sys.argv[-2]
+    print(postive_negtive)
 else:
     postive_negtive=None
 chromPrefix=sys.argv[-3]
@@ -18,6 +20,6 @@ if __name__ == '__main__':
     for inputfileName in sys.argv[1:-3]:
         makeMhtGraph = Make_Picture.MakeMhtGraph()
         if sys.argv[-2]!= "a":
-            makeMhtGraph.makeMhtPictureFile(inputfileName,dataType,chromPrefix,postive_negtive)
+            makeMhtGraph.makeMhtPicture_HistonPicture(inputfileName,dataType,chromPrefix,postive_negtive)
         else:
-            makeMhtGraph.makeMhtPictureFile(inputfileName,dataType,chromPrefix)
+            makeMhtGraph.makeMhtPicture_HistonPicture(inputfileName,dataType,chromPrefix)
