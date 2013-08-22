@@ -15,7 +15,7 @@ sql="select * from "+tablename
 allchr=""
 if __name__ == '__main__':
 #    ChromIndexMap = pickle.load(open(fastQFileName + ".myindex", 'rb'))
-    dbtools = dbm.DBTools()
+    dbtools = dbm.DBTools("localhost","root","1234567","life_pilot")
     seqMapByChrom = Util.FastQ_Util.getConsenusSeqMap(fastQFileName, dbtools)
     totalChroms = dbtools.operateDB("select","select count(*) from "+tablename)[0][0]
     currentchrID=dbtools.operateDB("select",sql+" limit 0,1")[0][0]
