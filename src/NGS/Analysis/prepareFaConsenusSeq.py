@@ -13,9 +13,6 @@ if len(sys.argv) < 2:
     exit(-1)
 tablename='chromosome'
 primaryID="chrID"
-
-
-
 sql="select * from "+tablename
 allchr=""
 allseq=""
@@ -32,8 +29,9 @@ if __name__ == '__main__':
     #    currentchrID=dbtools.operateDB("select",sql+" limit 0,1")[0][0]
     #    seqMapByChrom[currentchrID]=""
         for i in range(0,totalChroms-1,20):
-            currentsql=sql+" order by "+primaryID+" limit "+str(0)+",20"
+            currentsql=sql+" order by "+primaryID+" limit "+str(i)+",20"
             result=dbtools.operateDB("select",currentsql)
+#            print(result)
             for row in result:
                 currentchrID=row[0]
                 if currentchrID in seqMapByChrom:
