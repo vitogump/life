@@ -6,12 +6,18 @@ Created on 2013-6-30
 @author: rui
 '''
 class VCF_Data():
-    def __init__(self):
+    def __init__(self, vcffileName):
         super().__init__()
-        self.VcfMap_AllChrom={}
-        self.VcfList_A_Chrom=[]
-    
-    def indexVCF(self,VCFName, indexFileName):
+        self.VcfMap_AllChrom = {}
+        self.VcfList_A_Chrom = []
+        self.VcfIndexMap = {}
+        try:
+            self.VcfIndexMap = pickle.load(open(vcffileName + ".myindex", 'rb'))
+        except:
+            VCF_Data.indexVCF(vcffileName, vcffileName + ".myindex")
+            self.VcfIndexMap = pickle.load(open(vcffileName + ".myindex", 'rb'))
+    @staticmethod
+    def indexVCF(VCFName, indexFileName):
         """
         {chrom:position_in_file_of_first_SNP_of_this_chrom,chrom:position,,,,,,}
         """
@@ -42,28 +48,28 @@ class VCF_Data():
             line = vcffile.readline()
         pickle.dump(vcfChromIndex, open(indexFileName, 'wb'))
         vcffile.close()
-    def getVcfMapByChrom(self,vcfFileName,chrom,vcfidx):
-        self.VcfList_A_Chrom=[]
-        vcfFile=open(vcfFileName,'r')
+    def getVcfMapByChrom(self, vcfFileName, chrom):
+        self.VcfList_A_Chrom = []
+        vcfFile = open(vcfFileName, 'r')
         try:
-            print("fff",vcfidx,vcfidx[chrom],chrom)            
-            vcfFile.seek(vcfidx[chrom])
-            line=vcfFile.readline()
+            print("getVcfMapByChrom", self.VcfIndexMap[chrom], chrom)            
+            vcfFile.seek(self.VcfIndexMap[chrom])
+            line = vcfFile.readline()
         except KeyError:
-            print(chrom+"didn't find in "+vcfFileName)
+            print(chrom + "didn't find in " + vcfFileName)
             return -1
-        while line and (re.split(r'\s+',line))[0]==chrom:
-            linelist=re.split(r'\s+',line)
+        while line and (re.split(r'\s+', line))[0] == chrom:
+            linelist = re.split(r'\s+', line)
             chrom = linelist[0].strip()
             pos = int(linelist[1].strip())
             REF = linelist[3].strip()
             ALT = linelist[4].strip()
             INFO = linelist[7]
             self.VcfList_A_Chrom.append((pos, REF, ALT, INFO))
-            line=vcfFile.readline()
+            line = vcfFile.readline()
         vcfFile.close()
 
-    def getVcfMap(self,vcfFileName):
+    def getVcfMap(self, vcfFileName):
         """
         this func is from bio\test\posAroundGene\func.py ,and did some improvement,that is add  INFO = collist[7],and add INFO into
         read the vcffile into a map which keys are chrom,values are a list of tuple
@@ -100,6 +106,6 @@ class VCF_Data():
                 vcfMap[chrom] = [(pos, REF, ALT, INFO)]
             currentLine += 1
         vcfFile.close()
-        self.VcfMap_AllChrom=vcfMap
+        self.VcfMap_AllChrom = vcfMap
 #         for line in self.VcfMap["scaffold8"]:
 #             print(line,file =open("vcfMapdata.txt",'a'))

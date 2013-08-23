@@ -12,9 +12,11 @@ class Caculator():
 class Caculate_Hp(Caculator):
     def __init__(self):
         super().__init__()
+        self.COUNTED=0
         self.CNMI = 0
         self.CNMA = 0
     def process(self, T):
+        self.COUNTED+=1
         dp4 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", T[3])
         refdep = int(dp4.group(1)) + int(dp4.group(2))
 #         if refdep ==0:##########################################如果ref是0是否考虑该位点
@@ -33,8 +35,11 @@ class Caculate_Hp(Caculator):
         except ZeroDivisionError:
             #print("the Heterozigosity value of currentwindow is dividsion by zero,so set it to be NA")
             HETEROZY = 'NA'
+        if self.COUNTED<3:
+            HETEROZY= 'NA'
         self.CNMA = 0
         self.CNMI = 0
+        self.COUNTED=0
         return HETEROZY
 class Caculate_Fst(Caculator):
     def __init__(self):

@@ -16,6 +16,8 @@ sql = "select * from " + tablename
 if len(sys.argv) < 4:
     print("python CaculateHeterozygosityScore.py [vcf1] [vcf2] [vcf3]....[winwidth] [slidesize]")
     exit(-1)
+windowWidth=int(sys.argv[-2])
+slideSize=int(sys.argv[-1])
 
 class HeterozygosityScore():
     def __init__(self):
@@ -26,7 +28,7 @@ if __name__ == '__main__':
         outfile = open(vcf + ".het", 'w')
         win = Util.Window()
         hp_caculator = Caculators.Caculate_Hp()
-        pop = VCFutil.VCF_Data()  # new a class
+        pop = VCFutil.VCF_Data(vcf)  # new a class
         hscore = HeterozygosityScore()
         pop.getVcfMap(vcf)
         dbtools = dbm.DBTools("localhost", "root", "1234567", "life_pilot")
@@ -37,11 +39,11 @@ if __name__ == '__main__':
             for row in result:
                 currentchrID=row[0]
                 currentchrLen=int(row[2])
-                if currentchrID in pop.VcfMap_AllChrom.keys()
+                if currentchrID in pop.VcfIndexMap:
+                    pop.getVcfMapByChrom(vcf, currentchrID)
+                    win.slidWindowOverlap(pop.getVcfMapByChrom, currentchrLen, windowWidth, slideSize, hp_caculator)
+                    hscore.HeterozyMap[currentchrID]=win.winValueL
         
-        for chrom in pop.VcfMap_AllChrom.keys():
-            win.slidWindowOverlap(pop.VcfMap_AllChrom[chrom], int(sys.argv[-2]), int(sys.argv[-1]), hp_caculator)
-            hscore.HeterozyMap[chrom] = win.winValueL
         winCrossGenome = []
         for chrom in hscore.HeterozyMap.keys():
             for i in range(len(hscore.HeterozyMap[chrom])):

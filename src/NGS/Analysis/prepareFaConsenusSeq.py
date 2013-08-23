@@ -42,4 +42,5 @@ if __name__ == '__main__':
         print(allseq,file=outfile)
         print(allchr,file=open(fastQFileName+"allchr.txt",'w'))
         outfile.close()
+    dbtools.disconnect()
                 
