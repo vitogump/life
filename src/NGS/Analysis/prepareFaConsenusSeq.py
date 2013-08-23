@@ -8,28 +8,37 @@ Created on 2013-8-23
 
 @author: liurui
 '''
+if len(sys.argv) < 2:
+    print("python prepareFaConsenusSeq.py [cns1.fq] [cns2.fq] [cns3.fq] ...")
+    exit(-1)
 tablename='chromosome'
 primaryID="chrID"
-fastQFileName=sys.argv[1]
-outfile=open("testoutfile.cns.fa",'w')
+
+
+
 sql="select * from "+tablename
 allchr=""
 if __name__ == '__main__':
 #    ChromIndexMap = pickle.load(open(fastQFileName + ".myindex", 'rb'))
     dbtools = dbm.DBTools("localhost","root","1234567","life_pilot")
     print(dbtools,"ssssssssssssss")
-    seqMapByChrom = Util.FastQ_Util.getConsenusSeqMap(fastQFileName, dbtools)
-    for key in seqMapByChrom.keys():
-        print(key)
-    totalChroms = dbtools.operateDB("select","select count(*) from "+tablename)[0][0]
-    currentchrID=dbtools.operateDB("select",sql+" limit 0,1")[0][0]
-    seqMapByChrom[currentchrID]=""
-    for i in range(0,totalChroms-1,20):
-        currentsql=sql+" order by "+primaryID+" limit "+str(0)+",20"
-        result=dbtools.operateDB("select",currentsql)
-        for row in result:
-            currentchrID=row[0]
-            allchr+=currentchrID
-            print(seqMapByChrom[currentchrID],file=outfile)
-    outfile.close()
+    for fastQFileName in sys.argv[1:]:
+        print(fastQFileName)
+        outfile=open(fastQFileName+".fa",'w')
+        seqMapByChrom = Util.FastQ_Util.getConsenusSeqMap(fastQFileName, dbtools)
+        for key in seqMapByChrom.keys():
+            print(key)
+        totalChroms = dbtools.operateDB("select","select count(*) from "+tablename)[0][0]
+    #    currentchrID=dbtools.operateDB("select",sql+" limit 0,1")[0][0]
+    #    seqMapByChrom[currentchrID]=""
+        for i in range(0,totalChroms-1,20):
+            currentsql=sql+" order by "+primaryID+" limit "+str(0)+",20"
+            result=dbtools.operateDB("select",currentsql)
+            for row in result:
+                currentchrID=row[0]
+                if currentchrID in seqMapByChrom:
+                    allchr+=currentchrID
+                    print(seqMapByChrom[currentchrID],file=outfile)
+                    print(allchr,file=open(fastQFileName+"allchr.txt",'w'))
+        outfile.close()
                 
