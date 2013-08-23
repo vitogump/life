@@ -1,7 +1,8 @@
 import sys,NGS.BasicUtil.Util,pickle
-from NGS.BasicUtil import *
+
 import src.NGS.BasicUtil.DBManager as dbm
 
+from NGS.BasicUtil import *
 '''
 Created on 2013-8-23
 
@@ -16,7 +17,10 @@ allchr=""
 if __name__ == '__main__':
 #    ChromIndexMap = pickle.load(open(fastQFileName + ".myindex", 'rb'))
     dbtools = dbm.DBTools("localhost","root","1234567","life_pilot")
+    print(dbtools,"ssssssssssssss")
     seqMapByChrom = Util.FastQ_Util.getConsenusSeqMap(fastQFileName, dbtools)
+    for key in seqMapByChrom.keys():
+        print(key)
     totalChroms = dbtools.operateDB("select","select count(*) from "+tablename)[0][0]
     currentchrID=dbtools.operateDB("select",sql+" limit 0,1")[0][0]
     seqMapByChrom[currentchrID]=""

@@ -50,7 +50,7 @@ class DBTools():
             result=[]
             if sqltype=='select':
                 cursor.execute(sqls[0])
-                result=cursor.fetchall
+                result=cursor.fetchall()
                 cursor.close()
                 return result
             else:

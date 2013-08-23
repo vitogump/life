@@ -1,4 +1,5 @@
 import re, pickle
+#from src.NGS.BasicUtil import *
 
 '''
 Created on 2013-6-30
@@ -14,20 +15,22 @@ class FastQ_Util():
             to the consenus that produce by vcfutils.pl vcf2fq
             every line that start with one '@' and length of the line less than 20 is indexed
         """
-        refFastaFile = open(FastQFileName, 'r')
+        fasqfile = open(FastQFileName, 'r')
         refChromIndex = {}
-        refline = refFastaFile.readline()
-        while refline:
-            if re.search(r'^[@][^@]+', refline) != None:
-                collist = re.split(r'\s+', refline)
-                if collist[0] > 20:# may be refline is located in the quality value block
-                    refline = refFastaFile.readline()
+        fqline = fasqfile.readline()
+        while fqline:
+            collist = re.split(r'\s+', fqline)
+            if re.search(r'^[@][^@]+$', collist[0]) != None:                
+                if len(collist[0]) > 20:# may be fqline is located in the quality value block
+                    fqline = fasqfile.readline()
                     continue
-                currentChromNo = re.search(r'[^@]+', (re.split(r'\s+', refline))[0]).group(0)
-                refChromIndex[currentChromNo] = int(refFastaFile.tell())# from here is the sequence
-            refline = refFastaFile.readline()
+#                print(collist[0],fqline)
+                currentChromNo = re.search(r'^[@]([^@]+)$', collist[0]).group(1).strip()
+#                print(currentChromNo)
+                refChromIndex[currentChromNo] = int(fasqfile.tell())# from here is the sequence
+            fqline = fasqfile.readline()
         pickle.dump(refChromIndex, open(indexFileName, 'wb'))
-        refFastaFile.close()
+        fasqfile.close()
         
         
     @staticmethod
@@ -35,6 +38,7 @@ class FastQ_Util():
         '''
         the refSeqMap has only one chromosome's sequence
         '''
+#        print(dbtools,fastQFileName,"inside FastQ_Util")
         fqfile=open(fastQFileName,'r')
         sql="select * from "+tablename
         seqMapByChrom = {}
@@ -42,8 +46,12 @@ class FastQ_Util():
             ChromIndexMap = pickle.load(open(fastQFileName + ".myindex", 'rb'))
         except IOError:
             FastQ_Util.generateIndexByChrom(fastQFileName, fastQFileName + ".myindex")
-            ChromIndexMap = pickle.load(open(fastQFileName, 'rb'))
-        totalChroms = dbtools.operateDB("select","select count(*) from "+tablename)[0][0]
+            ChromIndexMap = pickle.load(open(fastQFileName + ".myindex", 'rb'))
+        
+        temresult = dbtools.operateDB("select","select count(*) from "+tablename)
+        
+        print(temresult)
+        totalChroms = temresult[0][0]
         currentchrID=dbtools.operateDB("select",sql+" limit 0,1")[0][0]
         seqMapByChrom[currentchrID]=""
         for i in range(0,totalChroms-1,20):
