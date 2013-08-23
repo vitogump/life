@@ -64,7 +64,8 @@ class FastQ_Util():
                     fqfile.seek(ChromIndexMap[currentchrID])
                     line=fqfile.readline()
                     while line.strip() !="+":
-                        seqMapByChrom[currentchrID]+=line
+                        seqMapByChrom[currentchrID]+=line.strip()
+#                        print(line.strip())
                         line=fqfile.readline()
         return seqMapByChrom
 #        

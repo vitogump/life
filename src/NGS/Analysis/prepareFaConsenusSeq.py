@@ -18,6 +18,7 @@ primaryID="chrID"
 
 sql="select * from "+tablename
 allchr=""
+allseq=""
 if __name__ == '__main__':
 #    ChromIndexMap = pickle.load(open(fastQFileName + ".myindex", 'rb'))
     dbtools = dbm.DBTools("localhost","root","1234567","life_pilot")
@@ -26,8 +27,7 @@ if __name__ == '__main__':
         print(fastQFileName)
         outfile=open(fastQFileName+".fa",'w')
         seqMapByChrom = Util.FastQ_Util.getConsenusSeqMap(fastQFileName, dbtools)
-        for key in seqMapByChrom.keys():
-            print(key)
+
         totalChroms = dbtools.operateDB("select","select count(*) from "+tablename)[0][0]
     #    currentchrID=dbtools.operateDB("select",sql+" limit 0,1")[0][0]
     #    seqMapByChrom[currentchrID]=""
@@ -38,7 +38,10 @@ if __name__ == '__main__':
                 currentchrID=row[0]
                 if currentchrID in seqMapByChrom:
                     allchr+=currentchrID
-                    print(seqMapByChrom[currentchrID],file=outfile)
-                    print(allchr,file=open(fastQFileName+"allchr.txt",'w'))
+                    allseq+=seqMapByChrom[currentchrID]
+                    seqMapByChrom.pop(currentchrID)
+                    
+        print(allseq,file=outfile)
+        print(allchr,file=open(fastQFileName+"allchr.txt",'w'))
         outfile.close()
                 
