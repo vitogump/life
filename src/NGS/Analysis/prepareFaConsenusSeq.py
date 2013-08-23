@@ -28,7 +28,7 @@ if __name__ == '__main__':
         totalChroms = dbtools.operateDB("select","select count(*) from "+tablename)[0][0]
     #    currentchrID=dbtools.operateDB("select",sql+" limit 0,1")[0][0]
     #    seqMapByChrom[currentchrID]=""
-        for i in range(0,totalChroms-1,20):
+        for i in range(0,totalChroms,20):
             currentsql=sql+" order by "+primaryID+" limit "+str(i)+",20"
             result=dbtools.operateDB("select",currentsql)
 #            print(result)

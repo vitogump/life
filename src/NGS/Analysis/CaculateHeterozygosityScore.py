@@ -30,6 +30,15 @@ if __name__ == '__main__':
         hscore = HeterozygosityScore()
         pop.getVcfMap(vcf)
         dbtools = dbm.DBTools("localhost", "root", "1234567", "life_pilot")
+        totalChroms = dbtools.operateDB("select","select count(*) from "+tablename)[0][0]
+        for i in range(0,totalChroms,20):
+            currentsql=sql+" order by "+primaryID+" limit "+str(i)+",20"
+            result=dbtools.operateDB("select",currentsql)
+            for row in result:
+                currentchrID=row[0]
+                currentchrLen=int(row[2])
+                if currentchrID in pop.VcfMap_AllChrom.keys()
+        
         for chrom in pop.VcfMap_AllChrom.keys():
             win.slidWindowOverlap(pop.VcfMap_AllChrom[chrom], int(sys.argv[-2]), int(sys.argv[-1]), hp_caculator)
             hscore.HeterozyMap[chrom] = win.winValueL
