@@ -24,6 +24,7 @@ class HeterozygosityScore():
         self.HeterozyMap = {}
 
 if __name__ == '__main__':
+    dbtools = dbm.DBTools("localhost", "root", "1234567", "life_pilot")
     for vcf in sys.argv[1:-2]:
         outfile = open(vcf + ".het", 'w')
         win = Util.Window()
@@ -31,7 +32,7 @@ if __name__ == '__main__':
         pop = VCFutil.VCF_Data(vcf)  # new a class
         hscore = HeterozygosityScore()
         pop.getVcfMap(vcf)
-        dbtools = dbm.DBTools("localhost", "root", "1234567", "life_pilot")
+        
         totalChroms = dbtools.operateDB("select","select count(*) from "+tablename)[0][0]
         for i in range(0,totalChroms,20):
             currentsql=sql+" order by "+primaryID+" limit "+str(i)+",20"
@@ -43,6 +44,11 @@ if __name__ == '__main__':
                     pop.getVcfMapByChrom(vcf, currentchrID)
                     win.slidWindowOverlap(pop.getVcfMapByChrom, currentchrLen, windowWidth, slideSize, hp_caculator)
                     hscore.HeterozyMap[currentchrID]=win.winValueL
+                else:
+                    fillNA=[]
+                    for i in range(int((currentchrLen-windowWidth)/slideSize)+1):
+                        fillNA.append((0,0,'NA'))
+                    hscore.HeterozyMap[currentchrID]=fillNA
         
         winCrossGenome = []
         for chrom in hscore.HeterozyMap.keys():
@@ -62,6 +68,7 @@ if __name__ == '__main__':
                 print(chrom + "\t" + str(i) + "\t" + str(hscore.HeterozyMap[chrom][i][0]) + "\t" + str(hscore.HeterozyMap[chrom][i][1]) + "\t" + str(hscore.HeterozyMap[chrom][i][2]) + "\t" + str(zHp), file=outfile)
         print(vcf, str(expectation), str(std0), str(std1), file=open("staticvalue.txt", 'a'))
         outfile.close()
+    dbtools.disconnect()
 
 
 

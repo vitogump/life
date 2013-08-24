@@ -67,6 +67,7 @@ class VCF_Data():
             INFO = linelist[7]
             self.VcfList_A_Chrom.append((pos, REF, ALT, INFO))
             line = vcfFile.readline()
+        return self.VcfList_A_Chrom
         vcfFile.close()
 
     def getVcfMap(self, vcfFileName):

@@ -31,15 +31,18 @@ if __name__ == '__main__':
         for i in range(0,totalChroms,20):
             currentsql=sql+" order by "+primaryID+" limit "+str(i)+",20"
             result=dbtools.operateDB("select",currentsql)
-#            print(result)
             for row in result:
                 currentchrID=row[0]
                 if currentchrID in seqMapByChrom:
-                    allchr+=currentchrID
+                    allchr+=currentchrID+"\n"
                     allseq+=seqMapByChrom[currentchrID]
                     seqMapByChrom.pop(currentchrID)
-                    
-        print(allseq,file=outfile)
+        for i in range(int(len(allseq)/100)):
+            print(allseq[i*100:(i+1)*100],file=outfile)
+        print(len(allseq)," ",i)
+        if len(allseq)/100>int(len(allseq)/100):
+            print(allseq[(i+1)*100:],file=outfile)             
+        
         print(allchr,file=open(fastQFileName+"allchr.txt",'w'))
         outfile.close()
     dbtools.disconnect()

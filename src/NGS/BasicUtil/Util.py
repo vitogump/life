@@ -48,13 +48,12 @@ class FastQ_Util():
             FastQ_Util.generateIndexByChrom(fastQFileName, fastQFileName + ".myindex")
             ChromIndexMap = pickle.load(open(fastQFileName + ".myindex", 'rb'))
         
-        temresult = dbtools.operateDB("select","select count(*) from "+tablename)
+        totalChroms = dbtools.operateDB("select","select count(*) from "+tablename)[0][0]
         
-        print(temresult)
-        totalChroms = temresult[0][0]
+        print(totalChroms)
         currentchrID=dbtools.operateDB("select",sql+" limit 0,1")[0][0]
         seqMapByChrom[currentchrID]=""
-        for i in range(0,totalChroms-1,20):
+        for i in range(0,totalChroms,20):
             currentsql=sql+" order by "+primaryID+" limit "+str(i)+",20"
             result=dbtools.operateDB("select",currentsql)
             for row in result:
@@ -68,27 +67,7 @@ class FastQ_Util():
 #                        print(line.strip())
                         line=fqfile.readline()
         return seqMapByChrom
-#        
-#        if currentChromNO == None:
-#            refline = fastQFileName.readline() 
-#            print(refline)
-#            currentChromNO = re.search(r'[^>]+', (re.split(r'\s+', refline))[0]).group(0)
-#            refSeqMap[currentChromNO] = [preBaseTotal]#preBaseTotal=0
-#            print(currentChromNO)
-#        else:
-#            refSeqMap[currentChromNO] = [preBaseTotal]
-#        for refline in fastQFileName:
-#            if re.search(r'^[>]', refline) != None:
-#                collist = re.split(r'\s+', refline)
-#                print(re.search(r'[^>]+', collist[0]).group(0))
-#    #            refSeqMap[currentChromNO] = [0]
-#                return refSeqMap,currentChromNO#clean the refSeqMap and report the current chromNO
-#            else:
-#                refSeqMap[currentChromNO].extend(list(refline.strip().lower()))
-#            linesOnce -= 1    
-#            if linesOnce == 0:
-#                break                
-#        return refSeqMap, currentChromNO
+
     
     
 class Window():
