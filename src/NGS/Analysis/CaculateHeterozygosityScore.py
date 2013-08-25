@@ -31,7 +31,7 @@ if __name__ == '__main__':
         hp_caculator = Caculators.Caculate_Hp()
         pop = VCFutil.VCF_Data(vcf)  # new a class
         hscore = HeterozygosityScore()
-        pop.getVcfMap(vcf)
+#        pop.getVcfMap(vcf)
         
         totalChroms = dbtools.operateDB("select","select count(*) from "+tablename)[0][0]
         for i in range(0,totalChroms,20):
@@ -42,7 +42,7 @@ if __name__ == '__main__':
                 currentchrLen=int(row[2])
                 if currentchrID in pop.VcfIndexMap:
                     pop.getVcfMapByChrom(vcf, currentchrID)
-                    win.slidWindowOverlap(pop.getVcfMapByChrom, currentchrLen, windowWidth, slideSize, hp_caculator)
+                    win.slidWindowOverlap(pop.VcfList_A_Chrom, currentchrLen, windowWidth, slideSize, hp_caculator)
                     hscore.HeterozyMap[currentchrID]=win.winValueL
                 else:
                     fillNA=[]
