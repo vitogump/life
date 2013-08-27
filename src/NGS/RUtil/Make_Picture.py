@@ -32,7 +32,7 @@ class MakeMhtGraph(object):
             currentChrom = linelist[0].strip()
             ChromNo = re.search(r"(\d+)$", currentChrom).group(1)
             if re.search(r"^" + chromPrefix, currentChrom):
-                if linelist[4].strip() != "NA" or linelist[5].strip() != "NA":
+                if linelist[4].strip() != "NA" or linelist[5].strip() != "NA" or True:
                     if postive_negtive == None:
                         if ChromNo in self.dataForGraphe.keys():
                             self.dataForGraphe[ChromNo].append(tuple(linelist[1:]))

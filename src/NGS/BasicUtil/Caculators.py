@@ -35,7 +35,7 @@ class Caculate_Hp(Caculator):
         except ZeroDivisionError:
             #print("the Heterozigosity value of currentwindow is dividsion by zero,so set it to be NA")
             HETEROZY = 'NA'
-        if self.COUNTED<3:
+        if self.COUNTED<=3:
             HETEROZY= 'NA'
         self.CNMA = 0
         self.CNMI = 0
@@ -46,6 +46,7 @@ class Caculate_Fst(Caculator):
         super().__init__()
         self.CNk = 0
         self.CDk = 0
+        self.COUNTED=0
     def process(self, T):
         T1 = (T[0], T[1], T[2], T[3])
         T2 = (T[4], T[5], T[6], T[7])
@@ -70,6 +71,8 @@ class Caculate_Fst(Caculator):
         except ZeroDivisionError:
             #print("the Fst value of currentwindow is dividsion by zero,so set it to be NA")
             Fst = 'NA'
+        if self.COUNTED<=3:
+            Fst='NA'
         self.CDk = 0
         self.CNk = 0
         return Fst
