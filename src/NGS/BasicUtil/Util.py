@@ -119,6 +119,7 @@ class Window():
                 self.winValueL.append((startPos, lastPos, value))
             except UnboundLocalError:
                 self.winValueL.append((0, 0, value))
+        print("slidWindowOverlap",'len(self.winValueL):',len(self.winValueL),"len(L):",len(L),L_End_Pos)
         n=int((L_End_Pos-(len(self.winValueL)*slideSize +windowWidth))/slideSize)+1
         for i in range(n):
             self.winValueL.append((0,0,'NA'))

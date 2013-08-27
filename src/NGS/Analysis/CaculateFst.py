@@ -41,6 +41,7 @@ class Fst():
             for SNPrec in vcfMap1[currentChrom]:
                 low = 0
                 if currentChrom not in vcfMap2:
+                    print("alin2PopSnpPos",currentChrom,"didn't find in vcfMap2")
                     break
                 high = len(vcfMap2[currentChrom]) - 1
                 
@@ -74,8 +75,9 @@ class Fst():
         totalChroms = dbtools.operateDB("select","select count(*) from "+chromstable)[0][0]
         ########################### caculate Fst across all vcf file and fill in self.FstMapByChrom 
         for i in range(0,totalChroms,20):
-            currentsql=sql+"order by"+primaryID+" limit "+str(i)+",20"
+            currentsql=sql+" order by "+primaryID+" limit "+str(i)+",20"
             result=dbtools.operateDB("select",currentsql)
+
             for row in result:
                 currentchrID=row[0]
                 currentchrLen=int(row[2])
@@ -83,19 +85,28 @@ class Fst():
                     pop1SeqOfAChr={}
                     pop2SeqOfAChr={}
                     pop1SeqOfAChr[currentchrID]=pop1.getVcfMapByChrom(vcfNAME_POP1, currentchrID)
-                    pop2SeqOfAChr[currentchrID]=pop2.getVcfMapByChrom(vcfNAME_POP1, currentchrID)
-                    self.caculateFst(pop1SeqOfAChr,pop2SeqOfAChr, fst_caculator,int(sys.argv[-3]),int(sys.argv[-2]))       
-    def caculateFst(self, vcfMap1_ref, vcfMap2, caculator, winwidth, slideSize):
+                    pop2SeqOfAChr[currentchrID]=pop2.getVcfMapByChrom(vcfNAME_POP2, currentchrID)
+                    self.caculateFst(pop1SeqOfAChr,pop2SeqOfAChr, fst_caculator,currentchrID,currentchrLen,int(sys.argv[-3]),int(sys.argv[-2]))
+                                 
+    def caculateFst(self, vcfMap1_ref, vcfMap2, caculator,currentchrID,currentchrLen, winwidth, slideSize):
         win = Util.Window()
-        self.alin2PopSnpPos(vcfMap1_ref, vcfMap2)#produce self.doubleVcfMap{}
-        
-        for currentChrom in self.doubleVcfMap.keys():
-#             self.FstMapByChrom[currentChrom]=[]
+        tempmap={}
+        try:
+            self.doubleVcfMap={}
+            self.alin2PopSnpPos(vcfMap1_ref, vcfMap2)#produce self.doubleVcfMap{}
+#            for currentChrom in self.doubleVcfMap.keys():
+    #             self.FstMapByChrom[currentChrom]=[]
             win.winValueL = []
-            print("caculateFst value in "+currentChrom)
-            win.slidWindowOverlap(self.doubleVcfMap[currentChrom], winwidth, slideSize, caculator)
-            self.FstMapByChrom[currentChrom] = win.winValueL
-
+            print("caculateFst value in "+currentchrID)
+            
+            win.slidWindowOverlap(self.doubleVcfMap[currentchrID], currentchrLen,winwidth, slideSize, caculator)
+            self.FstMapByChrom[currentchrID] = win.winValueL
+        except TypeError:
+            print("caculateFst TypeError")
+            fillNA=[]
+            for i in range(int((currentchrLen-windowWidth)/slideSize)+1):
+                fillNA.append((0,0,'NA'))
+            self.FstMapByChrom[currentchrID]=fillNA           
 
 if __name__ == '__main__':
     dbtools = dbm.DBTools("localhost", "root", "1234567", "life_pilot")
@@ -126,7 +137,7 @@ if __name__ == '__main__':
             
             totalChroms = dbtools.operateDB("select","select count(*) from "+tablename)[0][0]
             for i in range(0,totalChroms,20):
-                currentsql=sql+"order by"+primaryID+" limit "+str(i)+",20"
+                currentsql=sql+" order by "+primaryID+" limit "+str(i)+",20"
                 result=dbtools.operateDB("select",currentsql)
                 for row in result:
                     currentchrID=row[0]
@@ -210,7 +221,7 @@ if __name__ == '__main__':
 
                 totalChroms = dbtools.operateDB("select","select count(*) from "+tablename)[0][0]
                 for i in range(0,totalChroms,20):
-                    currentsql=sql+"order by"+primaryID+" limit "+str(i)+",20"
+                    currentsql=sql+" order by "+primaryID+" limit "+str(i)+",20"
                     result=dbtools.operateDB("select",currentsql)
                     for row in result:
                         currentchrID=row[0]
