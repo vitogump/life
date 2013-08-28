@@ -59,15 +59,24 @@ if __name__ == '__main__':
         std0 = numpy.std(winCrossGenome)
         std1 = numpy.std(winCrossGenome, ddof=1)
         del winCrossGenome
-        for chrom in sorted(hscore.HeterozyMap.keys()):
-            for i in range(len(hscore.HeterozyMap[chrom])):
-                if hscore.HeterozyMap[chrom][i][2] != "NA":
-                    zHp = (hscore.HeterozyMap[chrom][i][2] - expectation) / std1
-                else:
-                    zHp = "NA"
-                print(chrom + "\t" + str(i) + "\t" + str(hscore.HeterozyMap[chrom][i][0]) + "\t" + str(hscore.HeterozyMap[chrom][i][1]) + "\t" + str(hscore.HeterozyMap[chrom][i][2]) + "\t" + str(zHp), file=outfile)
-        print(vcf, str(expectation), str(std0), str(std1), file=open("staticvalue.txt", 'a'))
-        outfile.close()
+
+        totalChroms = dbtools.operateDB("select","select count(*) from "+tablename)[0][0]
+        for i in range(0,totalChroms,20):
+            currentsql=sql+" order by "+primaryID+" limit "+str(i)+",20"
+            result=dbtools.operateDB("select",currentsql)
+            for row in result:
+                currentchrID=row[0]
+                currentchrLen=int(row[2])
+                if currentchrID in hscore.HeterozyMap:       
+        #        for chrom in sorted(hscore.HeterozyMap.keys()):
+                    for i in range(len(hscore.HeterozyMap[currentchrID])):
+                        if hscore.HeterozyMap[currentchrID][i][2] != "NA":
+                            zHp = (hscore.HeterozyMap[currentchrID][i][2] - expectation) / std1
+                        else:
+                            zHp = "NA"
+                        print(currentchrID + "\t" + str(i) + "\t" + str(hscore.HeterozyMap[currentchrID][i][0]) + "\t" + str(hscore.HeterozyMap[currentchrID][i][1]) + "\t" + str(hscore.HeterozyMap[currentchrID][i][2]) + "\t" + str(zHp), file=outfile)
+                print(vcf, str(expectation), str(std0), str(std1), file=open("staticvalue.txt", 'a'))
+                outfile.close()
     dbtools.disconnect()
 
 
