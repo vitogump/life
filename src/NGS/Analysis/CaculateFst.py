@@ -181,9 +181,7 @@ if __name__ == '__main__':
 #                pop2.getVcfMap(othrpop)
                 print("startcaculatefst", majorpop, othrpop)
                 fstlist.append(Fst())
-                fstlist[-1].caculateFstAccordingdb(dbtools, tablename, majorpop, othrpop, fst_caculator, int(sys.argv[-3]),int(sys.argv[-2]))
-#                fstlist[-1].caculateFst(pop1.VcfMap_AllChrom, pop2.VcfMap_AllChrom, fst_caculator,int(sys.argv[-3]),int(sys.argv[-2]))
-            
+                fstlist[-1].caculateFstAccordingdb(dbtools, tablename, majorpop, othrpop, fst_caculator, int(sys.argv[-3]),int(sys.argv[-2]))          
             outfile=open(majorpop+'.gfst','w')
             if len(fstlist) != 0:
                 for chrom in fstlist[0].FstMapByChrom.keys():

@@ -48,6 +48,7 @@ class Caculate_Fst(Caculator):
         self.CDk = 0
         self.COUNTED=0
     def process(self, T):
+        self.COUNTED+=1
         T1 = (T[0], T[1], T[2], T[3])
         T2 = (T[4], T[5], T[6], T[7])
         dp4_1 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", T1[3])
@@ -75,4 +76,5 @@ class Caculate_Fst(Caculator):
             Fst='NA'
         self.CDk = 0
         self.CNk = 0
+        self.COUNTED=0
         return Fst
