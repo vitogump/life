@@ -77,7 +77,7 @@ if __name__ == '__main__':
                         else:
                             zHp = "NA"
                         print(currentchrID + "\t" + str(i) + "\t" + str(hscore.HeterozyMap[currentchrID][i][0]) + "\t" + str(hscore.HeterozyMap[currentchrID][i][1]) + "\t" + str(hscore.HeterozyMap[currentchrID][i][2]) + "\t" + str(zHp), file=outfile)
-                print(vcf, str(expectation), str(std0), str(std1), file=open("staticvalue.txt", 'a'))
+        print(vcf, str(expectation), str(std0), str(std1), file=open("staticvalue.txt", 'a'))
         outfile.close()
     dbtools.disconnect()
 
