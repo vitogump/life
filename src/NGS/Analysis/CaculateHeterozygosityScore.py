@@ -8,16 +8,18 @@ Created on 2013-7-2
 
 @author: rui
 '''
-tablename = 'chromosome'
+
 primaryID = "chrID"
 
-sql = "select * from " + tablename
+
 
 if len(sys.argv) < 4:
-    print("python CaculateHeterozygosityScore.py [vcf1] [vcf2] [vcf3]....[winwidth] [slidesize]")
+    print("python CaculateHeterozygosityScore.py [vcf1] [vcf2] [vcf3]....[tablename] [winwidth] [slidesize]")
     exit(-1)
 windowWidth=int(sys.argv[-2])
 slideSize=int(sys.argv[-1])
+tablename=sys.argv[-3]
+sql = "select * from " + tablename
 
 class HeterozygosityScore():
     def __init__(self):
@@ -25,7 +27,7 @@ class HeterozygosityScore():
 
 if __name__ == '__main__':
     dbtools = dbm.DBTools("localhost", "root", "1234567", "life_pilot")
-    for vcf in sys.argv[1:-2]:
+    for vcf in sys.argv[1:-3]:
         outfile = open(vcf + ".het", 'w')
         win = Util.Window()
         hp_caculator = Caculators.Caculate_Hp()

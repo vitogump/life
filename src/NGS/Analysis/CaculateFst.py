@@ -15,11 +15,11 @@ Created on 2013-6-30
 @author: rui
 '''
 if len(sys.argv) < 7:
-    print("python CaculateFst.py [vcf1] [vcf2] [vcf3]....[globe_Fst(G)/reletivepaire_Fsts(R)] [winwidth] [slidesize] [fastway]")
+    print("python CaculateFst.py [vcf1] [vcf2] [vcf3]....[globe_Fst(G)/reletivepaire_Fsts(R)] [winwidth] [slidesize] [tablename]")
     exit(-1)
 windowWidth=int(sys.argv[-3])
 slideSize=int(sys.argv[-2])
-tablename = 'chromosome'
+tablename = sys.argv[-1]
 primaryID = "chrID"
 
 sql = "select * from " + tablename
