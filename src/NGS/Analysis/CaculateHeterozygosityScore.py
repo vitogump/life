@@ -47,8 +47,8 @@ if __name__ == '__main__':
                     win.slidWindowOverlap(pop.VcfList_A_Chrom, currentchrLen, windowWidth, slideSize, hp_caculator)
                     hscore.HeterozyMap[currentchrID]=win.winValueL
                 else:
-                    fillNA=[]
-                    for i in range(int((currentchrLen-windowWidth)/slideSize)+1):
+                    fillNA=[(0,0,'NA')]
+                    for i in range(int((currentchrLen-windowWidth)/slideSize)):
                         fillNA.append((0,0,'NA'))
                     hscore.HeterozyMap[currentchrID]=fillNA
         
