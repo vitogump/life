@@ -87,6 +87,11 @@ class Fst():
                     pop1SeqOfAChr[currentchrID]=pop1.getVcfMapByChrom(vcfNAME_POP1, currentchrID)
                     pop2SeqOfAChr[currentchrID]=pop2.getVcfMapByChrom(vcfNAME_POP2, currentchrID)
                     self.caculateFst(pop1SeqOfAChr,pop2SeqOfAChr, fst_caculator,currentchrID,currentchrLen,int(sys.argv[-3]),int(sys.argv[-2]))
+                else:#pop1 don't contation the current chromosome
+                    fillNA=[]
+                    for i in range(int((currentchrLen-windowWidth)/slideSize)+1):
+                        fillNA.append((0,0,'NA'))
+                    self.FstMapByChrom[currentchrID]=fillNA
                                  
     def caculateFst(self, vcfMap1_ref, vcfMap2, caculator,currentchrID,currentchrLen, winwidth, slideSize):
         win = Util.Window()
@@ -101,7 +106,7 @@ class Fst():
             
             win.slidWindowOverlap(self.doubleVcfMap[currentchrID], currentchrLen,winwidth, slideSize, caculator)
             self.FstMapByChrom[currentchrID] = win.winValueL
-        except TypeError:
+        except TypeError:#vcfMap2(pop2) don't contation the current chromosome
             print("caculateFst TypeError")
             fillNA=[]
             for i in range(int((currentchrLen-windowWidth)/slideSize)+1):
