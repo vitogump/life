@@ -39,17 +39,28 @@ class MakeMhtGraph(object):
                         else:
                             self.dataForGraphe[ChromNo] = [tuple(linelist[1:])]
                     elif postive_negtive == "postive":
-                        if float(linelist[5].strip()) > 0:
+                        if linelist[5].strip()=='NA' or float(linelist[5].strip()) <= 0:
+                            if ChromNo in self.dataForGraphe.keys():
+                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:4]+['NA','NA']))
+                            else:
+                                self.dataForGraphe[ChromNo] = [tuple(linelist[1:4]+['NA','NA'])]
+                        else :#float(linelist[5].strip()) > 0:
                             if ChromNo in self.dataForGraphe.keys():
                                 self.dataForGraphe[ChromNo].append(tuple(linelist[1:]))
                             else:
                                 self.dataForGraphe[ChromNo] = [tuple(linelist[1:])]
                     elif postive_negtive == "negtive":
-                        if float(linelist[5].strip()) < 0:
+                        if linelist[5].strip()=='NA' or float(linelist[5].strip()) >= 0:
+                            if ChromNo in self.dataForGraphe.keys():
+                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:4]+['NA','NA']))
+                            else:
+                                self.dataForGraphe[ChromNo] = [tuple(linelist[1:4]+['NA','NA'])]   
+                        else:#float(linelist[5].strip()) < 0:
                             if ChromNo in self.dataForGraphe.keys():
                                 self.dataForGraphe[ChromNo].append(tuple(linelist[1:]))
                             else:
-                                self.dataForGraphe[ChromNo] = [tuple(linelist[1:])]
+                                self.dataForGraphe[ChromNo] = [tuple(linelist[1:])]                            
+                         
                     else:
                         return "error"
         print(chromPrefix, "winNo", "bp_start", "bp_end", dataType, "z" + dataType, sep="\t", file=open(self.pathtoOutFileName, "w"))
