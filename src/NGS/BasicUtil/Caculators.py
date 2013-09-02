@@ -22,6 +22,8 @@ class Caculate_Hp(Caculator):
 #         if refdep ==0:##########################################如果ref是0是否考虑该位点
 #             return
         altalleledep = int(dp4.group(3)) + int(dp4.group(4))
+        if refdep+altalleledep<10:
+            return
         if refdep < altalleledep:
             self.CNMI += refdep
             self.CNMA += altalleledep
