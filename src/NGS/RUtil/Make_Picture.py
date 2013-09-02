@@ -35,8 +35,10 @@ class MakeMhtGraph(object):
                 if linelist[4].strip() != "NA" or linelist[5].strip() != "NA" or True:
                     if postive_negtive == None:
                         if ChromNo in self.dataForGraphe.keys():
-#                             self.dataForGraphe[ChromNo].append(tuple(linelist[1:]))
-                            self.dataForGraphe[ChromNo].append(tuple(linelist[1:4]+[0,0]))
+                            if linelist[5].strip() != "NA":
+                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:]))
+                            else:
+                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:4]+[0,0]))
                         else:
                             self.dataForGraphe[ChromNo] = [tuple(linelist[1:4]+[0,0])]
 #                             self.dataForGraphe[ChromNo] = [tuple(linelist[1:])]
