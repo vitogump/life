@@ -1,4 +1,5 @@
 import mysql.connector
+from mysql.connector import errorcode
 import time
 '''
 Created on 2013-8-22
@@ -58,4 +59,54 @@ class DBTools():
                     cursor.execute(sql)
         except mysql.connector.Error as e:
             print('query error!{}'.format(e))
+        finally:
+            cursor.close()
+    def create_table(self,table):
+        """  创建表
+             TABLES = {}
+                TABLES['employees'] = (
+                    "CREATE TABLE `employees` ("
+                    " `emp_no` int(11) NOT NULL AUTO_INCREMENT,"
+                    " `birth_date` date NOT NULL,"
+                    " `first_name` varchar(14) NOT NULL,"
+                    " `last_name` varchar(16) NOT NULL,"
+                    " `gender` enum('M','F') NOT NULL,"
+                    " `hire_date` date NOT NULL,"
+                    " PRIMARY KEY (`emp_no`)"
+                    ")"
+                    )"""
+        if not self.conn:
+            self.connect()
+        cursor =self.conn.cursor()
+
+        for key in table:
+            try:
+                print ("Creating table {}:".format(key))
+                cursor.execute(table[key])
+            except mysql.connector.Error as err:
+                if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
+                    print('already exist.')
+                    return 0
+                else:
+                    print(err.errmsg)
+            else:
+                print('OK')
+        cursor.close()
+    def load_file(self,sql):
+        if not self.conn:
+            self.connect()
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(sql)
+            self.conn.commit()
+        except mysql.connector.Error as e:
+            print("loadFile sql fails {}".format(e))
+        finally:
+            cursor.close()
+        
+        
+        
+        
+        
+        
         #self.disconnect()

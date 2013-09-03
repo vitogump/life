@@ -1,4 +1,6 @@
 import re, pickle
+import random, string
+import src.NGS.BasicUtil.DBManager as dbm
 #from src.NGS.BasicUtil import *
 
 '''
@@ -6,6 +8,38 @@ Created on 2013-6-30
 
 @author: rui
 '''
+
+def random_str(randomlength=8):
+    a = list(string.ascii_letters)
+    random.shuffle(a)
+    return ''.join(a[:randomlength])
+def getRefSeqMap(refFastafile, currentChromNO=None, preBaseTotal=0, linesOnce=500000):
+    '''
+    the refSeqMap has only one chromosome's sequence
+    '''
+    refSeqMap = {}
+    if currentChromNO == None:
+        refline = refFastafile.readline() 
+        print(refline)
+        currentChromNO = re.search(r'[^>]+', (re.split(r'\s+', refline))[0]).group(0)
+        refSeqMap[currentChromNO] = [preBaseTotal]#preBaseTotal=0
+        print(currentChromNO)
+    else:
+        refSeqMap[currentChromNO] = [preBaseTotal]
+    for refline in refFastafile:
+        if re.search(r'^[>]', refline) != None:
+            collist = re.split(r'\s+', refline)
+            print(re.search(r'[^>]+', collist[0]).group(0))
+#            refSeqMap[currentChromNO] = [0]
+            return refSeqMap,currentChromNO#clean the refSeqMap and report the current chromNO
+        else:
+            refSeqMap[currentChromNO].extend(list(refline.strip().lower()))
+        linesOnce -= 1    
+        if linesOnce == 0:
+            break                
+    return refSeqMap, currentChromNO
+
+
 class FastQ_Util():
     def __init__(self):
         super().__init__()
@@ -124,5 +158,40 @@ class Window():
         for i in range(n):
             self.winValueL.append((0,0,'NA'))
         
-            
-                
+class WinInGenome():           
+    def __init__(self):
+        super().__init__()
+        self.winContainTrscptMap={}
+    def loadWinDataIntoDB(self,dbname,winFileName6Field,tableName=None):
+        if tableName==None:
+            tableName = random_str()
+        tempdbtools = dbm.DBTools("localhost", "root", "1234567", dbname)
+        TABLES = {}
+        TABLES[tableName] = (
+            "CREATE TABLE "+tableName+" ("
+            " `chrID` varchar(128) NOT NULL ,"
+            " `winNo` int(11) NOT NULL,"
+            " `bp_start` bigint(20) NOT NULL,"
+            " `bp_end` bigint(20) NOT NULL,"
+            " `value` DECIMAL(22,20) NOT NULL,"
+            " `zvalue` DECIMAL(22,20) NOT NULL,"
+            " PRIMARY KEY (`chrID`,`winNo`)"
+            ")"
+            )
+        loaddatasql="load data local infile '"+winFileName6Field+"' into table "+tableName+" fields terminated by '\t';"
+        tempdbtools.create_table(TABLES)
+        tempdbtools.load_file(loaddatasql)
+        return tempdbtools,tableName       
+    def collectTrscptInWin(self,winFileName6Field,dbtools,trscptable,vcftable,winRegion):
+        """
+        winRegion=(chrID,winID,winWidth,slideSize)
+        """
+        tempdbtools,tableName=self.loadWinDataIntoDB("temp", winFileName6Field)
+        
+
+        
+        
+        
+        
+        
+        
