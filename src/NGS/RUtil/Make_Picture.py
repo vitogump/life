@@ -21,7 +21,7 @@ class MakeMhtGraph(object):
         '''
         Constructor
         '''
-    def prepareMhtFile(self, inputfileName, dataType, chromPrefix="", postive_negtive=None):
+    def prepareMhtFile(self, inputfileName, dataType, chromPrefix="", postive_negtive=None,fillvalue=0):
         originalfile = open(inputfileName, 'r')
         if postive_negtive == None:
             self.pathtoOutFileName = inputfileName + ".z" + dataType
@@ -38,16 +38,16 @@ class MakeMhtGraph(object):
                             if linelist[5].strip() != "NA":
                                 self.dataForGraphe[ChromNo].append(tuple(linelist[1:]))
                             else:
-                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:4]+[0,0]))
+                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:4]+[fillvalue,fillvalue]))
                         else:
-                            self.dataForGraphe[ChromNo] = [tuple(linelist[1:4]+[0,0])]
+                            self.dataForGraphe[ChromNo] = [tuple(linelist[1:4]+[fillvalue,fillvalue])]
 #                             self.dataForGraphe[ChromNo] = [tuple(linelist[1:])]
                     elif postive_negtive == "postive":
                         if linelist[5].strip()=='NA' or float(linelist[5].strip()) <= 0:
                             if ChromNo in self.dataForGraphe.keys():
-                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:4]+[0,0]))
+                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:4]+[fillvalue,fillvalue]))
                             else:
-                                self.dataForGraphe[ChromNo] = [tuple(linelist[1:4]+[0,0])]
+                                self.dataForGraphe[ChromNo] = [tuple(linelist[1:4]+[fillvalue,fillvalue])]
                         else :#float(linelist[5].strip()) > 0:
                             if ChromNo in self.dataForGraphe.keys():
                                 self.dataForGraphe[ChromNo].append(tuple(linelist[1:]))
@@ -56,9 +56,9 @@ class MakeMhtGraph(object):
                     elif postive_negtive == "negtive":
                         if linelist[5].strip()=='NA' or float(linelist[5].strip()) >= 0:
                             if ChromNo in self.dataForGraphe.keys():
-                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:4]+[0,0]))
+                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:4]+[fillvalue,fillvalue]))
                             else:
-                                self.dataForGraphe[ChromNo] = [tuple(linelist[1:4]+[0,0])]   
+                                self.dataForGraphe[ChromNo] = [tuple(linelist[1:4]+[fillvalue,fillvalue])]   
                         else:#float(linelist[5].strip()) < 0:
                             if ChromNo in self.dataForGraphe.keys():
                                 self.dataForGraphe[ChromNo].append(tuple(linelist[1:]))
@@ -75,8 +75,8 @@ class MakeMhtGraph(object):
                 print(chromNo, *self.dataForGraphe[chromNo][i], sep="\t", file=outfile)
         outfile.close()
         return re.search(r"[^/]*$", self.pathtoOutFileName).group(0)  # for linux
-    def makeMhtPicture_HistonPicture(self, inputfileName, dataType, chromPrefix="", postive_negtive=None):
-        name = self.prepareMhtFile(inputfileName, dataType, chromPrefix, postive_negtive)
+    def makeMhtPicture_HistonPicture(self, inputfileName, dataType, chromPrefix="", postive_negtive=None,fillvalue=0):
+        name = self.prepareMhtFile(inputfileName, dataType, chromPrefix, postive_negtive,fillvalue)
         dir = re.search(r"^.*/", self.pathtoOutFileName).group(0)
         r = robjects.r
         print(name, self.pathtoOutFileName, dir)
