@@ -140,6 +140,11 @@ class Window():
                 
                 FoundNextIdx = False
                 if nextIdx == -1:
+                    if slideSize >= windowWidth:
+                        while currentIdx!=len(L):
+                            if L[currentIdx][0]>winStart and L[currentIdx][0]<=(winStart+windowWidth):
+                                break
+                            currentIdx+=1
                     continue  # go to |if L[currentIdx][0] > winStart and L[currentIdx][0] < (winStart + windowWidth):| in upside block
                 else:
                     currentIdx = nextIdx
