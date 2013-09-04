@@ -1,5 +1,6 @@
-import mysql.connector
 from mysql.connector import errorcode
+import mysql.connector
+import re
 import time
 '''
 Created on 2013-8-22
@@ -52,7 +53,6 @@ class DBTools():
             if sqltype=='select':
                 cursor.execute(sqls[0])
                 result=cursor.fetchall()
-                cursor.close()
                 return result
             else:
                 for sql in sqls:
@@ -92,17 +92,45 @@ class DBTools():
             else:
                 print('OK')
         cursor.close()
-    def load_file(self,sql):
+#    def load_file(self,sql):
+#        print(sql)
+#        if not self.conn:
+#            self.connect()
+#        try:
+#            cursor = self.conn.cursor()
+#            cursor.execute(sql)目前 mysql connector python 不支持这个load data local infile功能
+#            self.conn.commit()
+#        except mysql.connector.Error as e:
+#            print("loadFile sql fails {}".format(e))
+#        finally:
+#            cursor.close()
+#    def load_file(self,tableName,*tabletitles,fileName):
+##        print(tabletitles)
+##        exit()
+#        if not self.conn:
+#            self.connect()
+#        cursor=self.conn.cursor()
+#        filetoload=open(fileName,'r')
+#        filedata=[]
+#        for line in filetoload:
+#            linelist=re.split(r'\s+',line.strip())
+#            filedata.append((linelist[0],linelist[1],linelist[2],linelist[3],linelist[4],linelist[5]))
+#        print(filedata)
+#        try:
+#            sql="insert into "+tableName+" "+str(tabletitles)+" values (%s,%s,%s,%s,%s,%s)"
+#            print(sql)
+#            cursor.executemany("insert into "+tableName+" "+str(tabletitles)+" values (%s,%s,%s,%s,%s,%s)",filedata)
+#        except mysql.connector.Error as e:
+#            print("loadFile sql fails {}".format(e))
+#        filetoload.close()
+#        cursor.close()
+    
+    def drop_table(self,tableName):
         if not self.conn:
             self.connect()
-        try:
-            cursor = self.conn.cursor()
-            cursor.execute(sql)
-            self.conn.commit()
-        except mysql.connector.Error as e:
-            print("loadFile sql fails {}".format(e))
-        finally:
-            cursor.close()
+        cursor=self.conn.cursor()
+        cursor.execute("drop table if exists "+tableName)
+        cursor.close()
         
         
         

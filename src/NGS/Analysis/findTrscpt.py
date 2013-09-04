@@ -1,10 +1,36 @@
-import re,sys
+import re, sys,time
 from NGS.BasicUtil import *
+import src.NGS.BasicUtil.DBManager as dbm
+SLEEP_FOR_NEXT_TRY=3
 '''
 Created on 2013-9-3
 
 @author: liurui
 '''
-
+if len(sys.argv) != 6:
+    print("python findTrscpt.py [winFile1] [tempwinDBName] [threshold] [outfilename] [m/l]")
+    exit(-1)
+winFileName6Field = sys.argv[1]
+tempwinDBName = sys.argv[2]
+threshold = sys.argv[3]
+outfilename=sys.argv[4]
+morethan_lessthan=sys.argv[5].strip()
+trscptable="transcript"
+vcftable=None
+outfile=open(outfilename,'w')
 if __name__ == '__main__':
-    winGenom=Util.WinInGenome()
+    dbtools = dbm.DBTools("localhost", "root", "1234567", "life_pilot")
+    winGenome = Util.WinInGenome(tempwinDBName, winFileName6Field)
+    time.sleep(SLEEP_FOR_NEXT_TRY)
+    if morethan_lessthan=="m" or morethan_lessthan=="M":
+        selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintable + " where zvalue>=" + threshold)
+    elif morethan_lessthan=="l" or morethan_lessthan=="L":
+        selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintable + " where zvalue<=" + threshold)
+    print(selectedWins)
+    for win in selectedWins:
+        winRegion=(win[0],win[1],40000,20000,win[5])
+        winGenome.collectTrscptInWin(dbtools, trscptable, vcftable, winRegion)
+    for win in sorted(winGenome.winContainTrscptMap.keys()):
+        print("\t".join(map(str,win)),winGenome.winContainTrscptMap[win],sep="\t",file=outfile)
+#    winGenome.windbtools.drop_table(winGenome.wintable)
+#    winGenome.windbtools.disconnect()

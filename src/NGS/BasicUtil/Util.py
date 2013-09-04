@@ -1,4 +1,4 @@
-import re, pickle
+import re, pickle,os
 import random, string
 import src.NGS.BasicUtil.DBManager as dbm
 #from src.NGS.BasicUtil import *
@@ -159,8 +159,11 @@ class Window():
             self.winValueL.append((0,0,'NA'))
         
 class WinInGenome():           
-    def __init__(self):
+    def __init__(self,dbname, winFileName6Field, tableName=None):
         super().__init__()
+#        self.wintable="PoMuJVOr"
+#        self.windbtools = dbm.DBTools("localhost", "root", "1234567", dbname)
+        self.windbtools,self.wintable=self.loadWinDataIntoDB(dbname, winFileName6Field, tableName)
         self.winContainTrscptMap={}
     def loadWinDataIntoDB(self,dbname,winFileName6Field,tableName=None):
         if tableName==None:
@@ -170,24 +173,41 @@ class WinInGenome():
         TABLES[tableName] = (
             "CREATE TABLE "+tableName+" ("
             " `chrID` varchar(128) NOT NULL ,"
-            " `winNo` int(11) NOT NULL,"
-            " `bp_start` bigint(20) NOT NULL,"
-            " `bp_end` bigint(20) NOT NULL,"
-            " `value` DECIMAL(22,20) NOT NULL,"
-            " `zvalue` DECIMAL(22,20) NOT NULL,"
+            " `winNo` varchar(128) NOT NULL,"
+            " `bp_start` varchar(128) NOT NULL,"
+            " `bp_end` varchar(128) NOT NULL,"
+            " `value` text NOT NULL,"
+            " `zvalue` text NOT NULL,"
             " PRIMARY KEY (`chrID`,`winNo`)"
             ")"
             )
-        loaddatasql="load data local infile '"+winFileName6Field+"' into table "+tableName+" fields terminated by '\t';"
-        tempdbtools.create_table(TABLES)
-        tempdbtools.load_file(loaddatasql)
-        return tempdbtools,tableName       
-    def collectTrscptInWin(self,winFileName6Field,dbtools,trscptable,vcftable,winRegion):
-        """
-        winRegion=(chrID,winID,winWidth,slideSize)
-        """
-        tempdbtools,tableName=self.loadWinDataIntoDB("temp", winFileName6Field)
         
+        tempdbtools.create_table(TABLES)
+        loaddatasql="load data local infile '"+winFileName6Field+"' into table "+tableName+" fields terminated by '\\t'"
+        shellstatment="mysql -uroot -p1234567 -D"+dbname.strip()+' -e "'+loaddatasql+'"'
+        print(shellstatment)
+        a=os.system(shellstatment)
+        if a!=0:
+            print("loadWinDataIntaDB func os.system return not 0")
+            exit(-1)
+        print(a)
+#        tempdbtools.load_file(tableName,"chrID","winNo","bp_start","bp_end","value","zvalue",fileName=winFileName6Field)
+        return tempdbtools,tableName       
+    def collectTrscptInWin(self,dbtools,trscptableName,vcftable,winRegion):
+        transcripttable=trscptableName
+        chrID=winRegion[0]
+        winNo=int(winRegion[1])
+        winWidth=int(winRegion[2])
+        slideSize=int(winRegion[3])
+        """
+        winRegion=(chrID,winNo,winWidth,slideSize,zvalue)
+        """
+
+        selectsql="select * from "+transcripttable+" where chrID='"+chrID+"' and end_pos >= "+str(winNo*slideSize)+" and start_pos <= "+str(winNo*slideSize+winWidth)
+        result = dbtools.operateDB("select",selectsql)
+        self.winContainTrscptMap[winRegion]=[]
+        for row in result:
+            self.winContainTrscptMap[winRegion].append(row)
 
         
         

@@ -1,5 +1,6 @@
 import sys
-import Make_Picture
+#import Make_Picture
+from NGS.RUtil import *
 '''
 Created on 2013-8-11
 
