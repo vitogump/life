@@ -128,7 +128,7 @@ if __name__ == '__main__':
             fst = Fst() 
         
             print("startcaculatefst", fstpaire[0], fstpaire[1])
-            fst.caculateFstAccordingdb(dbtools, tablename, fstpaire[1], fstpaire[2], fst_caculator, int(sys.argv[-3]),int(sys.argv[-2]))
+            fst.caculateFstAccordingdb(dbtools, tablename, fstpaire[0], fstpaire[1], fst_caculator, int(sys.argv[-3]),int(sys.argv[-2]))
 
             winCrossGenome = []
             for chrom in fst.FstMapByChrom.keys():
