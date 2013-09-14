@@ -1,1 +1,1 @@
-__all__=["Make_Picture","test"]
+__all__=["Make_Picture"]
