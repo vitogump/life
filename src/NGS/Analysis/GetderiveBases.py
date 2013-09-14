@@ -53,16 +53,16 @@ if __name__ == '__main__':
         totalWin = winGenome.windbtools.operateDB("select","select count(*) from "+winGenome.wintable)[0][0]
         selectWinNos=int(percentage*totalWin)
         if morethan_lessthan=="m" or morethan_lessthan=="M":
-            selectedWins[winFileName6Field] = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintable + " order by zvalue desc limit 0," + str(selectWinNos))
+            selectedWins[winFileName6Field] = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintable + " where zvalue != 'NA' order by zvalue desc limit 0," + str(selectWinNos))
         elif morethan_lessthan=="l" or morethan_lessthan=="L":
-            selectedWins[winFileName6Field] = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintable + " order by zvalue asc limit 0," + str(selectWinNos))
-        print(str(totalWin),selectedWins[winFileName6Field][-1],winFileName6Field)
+            selectedWins[winFileName6Field] = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintable + " where zvalue != 'NA' order by zvalue asc limit 0," + str(selectWinNos))
+        print(str(selectWinNos),selectedWins[winFileName6Field][-1],winFileName6Field)
         print("selecting "+winFileName6Field+" wins is finished")
         for win in selectedWins[winFileName6Field]:
             for processedWinFile in selectedWins.keys():
                 for processedWin in selectedWins[processedWinFile]:
                     if win[0]==processedWin[0] and win[1]==processedWin[1]:
-                        snps=dbtools.operateDB("update","update " +finaltable+" set comefrom=concat(comefrom,'"+pureName+"') where  snp_start_pos>="+str(int(win[1])*slidesize)+" and snp_start_pos<="+str(int(win[1])*slidesize+winwidth))
+                        snps=dbtools.operateDB("update","update " +finaltable+" set comefrom=concat(comefrom,' "+pureName+"') where  snp_start_pos>="+str(int(win[1])*slidesize)+" and snp_start_pos<="+str(int(win[1])*slidesize+winwidth))
                         continue
 #            winRegion=(win[0],win[1],winwidth,slidesize,win[5])
             for snptable in snptables:
@@ -73,7 +73,7 @@ if __name__ == '__main__':
                     alt_dp4=snp[3]+":"+dp4.group(1)+","+dp4.group(2)+","+dp4.group(3)+","+dp4.group(4)
 #                    print("insert into "+finaltable+"(snpID,chrID,snp_start_pos,comefrom,ref_bases,"+snptable+") values(%s,%s,%s,%s,%s,%s) on duplicate key update comefrom=concat(comefrom,"+"' "+snptable+"'),"+snptable+"= '"+alt_dp4+"'",(snp[0],snp[1],snp[2],snptable,snp[3],alt_dp4))
                     # comefrom should not be null in mysql database
-                    dbtools.operateDB("insert","insert into "+finaltable+"(snpID,chrID,snp_start_pos,comefrom,ref_bases,"+snptable+") values(%s,%s,%s,%s,%s,%s) on duplicate key update "+snptable+"= '"+alt_dp4+"'",data=(snp[0],snp[1],snp[2],snptable,snp[3],alt_dp4))
+                    dbtools.operateDB("insert","insert into "+finaltable+"(snpID,chrID,snp_start_pos,comefrom,ref_bases,"+snptable+") values(%s,%s,%s,%s,%s,%s) on duplicate key update "+snptable+"= '"+alt_dp4+"'",data=(snp[0],snp[1],snp[2],pureName,snp[3],alt_dp4))
         print("filled all snp in the wins of "+winFileName6Field+" into the mysql table "+finaltable)
     print("all snps were insert into "+finaltable+" already . \n going to extract snp flanks seqs")
     
@@ -89,8 +89,8 @@ if __name__ == '__main__':
             duckreffile.seek(duckrefindex[currentchrID])
             RefSeqMap, lastchromNo = Util.getRefSeqMap(refFastafile=duckreffile, currentChromNO=currentchrID)
             for j in range(0,totalsnpsInchr,1000):
-                print("select * from "+finaltable+" where chrID='"+currentchrID+"' order by snpID limit "+str(i)+",1000")
-                snps=dbtools.operateDB("select","select * from "+finaltable+" where chrID='"+currentchrID+"' order by snpID limit "+str(i)+",1000")
+                print("select * from "+finaltable+" where chrID='"+currentchrID+"' order by snpID limit "+str(j)+",1000")
+                snps=dbtools.operateDB("select","select * from "+finaltable+" where chrID='"+currentchrID+"' order by snpID limit "+str(j)+",1000")
 #                int(snps[-1][2])
                 if snps==None:
                     print("no snp in "+currentchrID+" in table "+finaltable)
@@ -112,7 +112,8 @@ if __name__ == '__main__':
                         RefSeqMap, lastchromNo = Util.getRefSeqMap(duckreffile, currentChromNO=currentchrID, preBaseTotal=RefSeqMap[lastchromNo][0] + len(RefSeqMap[lastchromNo]) - 1)
                         snpflankseq = ''.join(RefSeqMap[currentsnpChrId][(currentsnpPos - RefSeqMap[currentsnpChrId][0]):(currentsnpPos - RefSeqMap[currentsnpChrId][0] + 1)])
                     print(">"+currentsnpID+"\n"+snpflankseq,end='\n',file=outfile)
-                    dbtools.operateDB("update","update "+finaltable+" set fafilepos="+str(filepos)+" where currentsnpID='"+snp[0])
+                    print("update "+finaltable+" set fafilepos="+str(filepos)+" where snpID='"+currentsnpID+"'")
+                    dbtools.operateDB("update","update "+finaltable+" set fafilepos="+str(filepos)+" where snpID='"+currentsnpID+"'")
                     filepos=int(outfile.tell())
                     
     originspeciesfile.close()                

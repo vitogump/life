@@ -54,7 +54,7 @@ class DBTools():
                 cursor.execute(sqls[0])
                 result=cursor.fetchall()
                 return result
-            elif sqltype=='updata' or sqltype=='insert':
+            elif sqltype=='update' or sqltype=='insert':#updata
                 for sql in sqls:
                     if data==None:
                         cursor.execute(sql)
