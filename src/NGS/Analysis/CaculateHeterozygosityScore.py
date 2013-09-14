@@ -14,12 +14,12 @@ primaryID = "chrID"
 
 
 if len(sys.argv) < 4:
-    print("python CaculateHeterozygosityScore.py [vcf1] [vcf2] [vcf3]....[tablename] [winwidth] [slidesize]")
+    print("python CaculateHeterozygosityScore.py [vcf1] [vcf2] [vcf3]....[chromtable] [winwidth] [slidesize]")
     exit(-1)
 windowWidth=int(sys.argv[-2])
 slideSize=int(sys.argv[-1])
-tablename=sys.argv[-3]
-sql = "select * from " + tablename
+chromtable=sys.argv[-3]
+sql = "select * from " + chromtable
 
 class HeterozygosityScore():
     def __init__(self):
@@ -35,7 +35,7 @@ if __name__ == '__main__':
         hscore = HeterozygosityScore()
 #        pop.getVcfMap(vcf)
         
-        totalChroms = dbtools.operateDB("select","select count(*) from "+tablename)[0][0]
+        totalChroms = dbtools.operateDB("select","select count(*) from "+chromtable)[0][0]
         for i in range(0,totalChroms,20):
             currentsql=sql+" order by "+primaryID+" limit "+str(i)+",20"
             result=dbtools.operateDB("select",currentsql)
@@ -62,7 +62,7 @@ if __name__ == '__main__':
         std1 = numpy.std(winCrossGenome, ddof=1)
         del winCrossGenome
 
-        totalChroms = dbtools.operateDB("select","select count(*) from "+tablename)[0][0]
+        totalChroms = dbtools.operateDB("select","select count(*) from "+chromtable)[0][0]
         for i in range(0,totalChroms,20):
             currentsql=sql+" order by "+primaryID+" limit "+str(i)+",20"
             result=dbtools.operateDB("select",currentsql)

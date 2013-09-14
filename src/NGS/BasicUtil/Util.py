@@ -13,6 +13,20 @@ def random_str(randomlength=8):
     a = list(string.ascii_letters)
     random.shuffle(a)
     return ''.join(a[:randomlength])
+
+def generateIndexByChrom(refFastaFileName,indexFileName):
+    refFastaFile = open(refFastaFileName,'r')
+    refChromIndex = {}
+    refline = refFastaFile.readline()
+    while refline:
+        if re.search(r'^[>]',refline)!=None:
+            collist = re.split(r'\s+',refline)
+            currentChromNo=re.search(r'[^>]+',(re.split(r'\s+',refline))[0]).group(0)
+            refChromIndex[currentChromNo]= int(refFastaFile.tell())# from here is the sequence
+        refline= refFastaFile.readline()
+    pickle.dump(refChromIndex,open(indexFileName,'wb'))
+    refFastaFile.close()
+    
 def getRefSeqMap(refFastafile, currentChromNO=None, preBaseTotal=0, linesOnce=500000):
     '''
     the refSeqMap has only one chromosome's sequence
@@ -20,16 +34,16 @@ def getRefSeqMap(refFastafile, currentChromNO=None, preBaseTotal=0, linesOnce=50
     refSeqMap = {}
     if currentChromNO == None:
         refline = refFastafile.readline() 
-        print(refline)
+        print("getRefSeqMap",refline)
         currentChromNO = re.search(r'[^>]+', (re.split(r'\s+', refline))[0]).group(0)
         refSeqMap[currentChromNO] = [preBaseTotal]#preBaseTotal=0
-        print(currentChromNO)
+        print("getRefSeqMap",currentChromNO)
     else:
         refSeqMap[currentChromNO] = [preBaseTotal]
     for refline in refFastafile:
         if re.search(r'^[>]', refline) != None:
             collist = re.split(r'\s+', refline)
-            print(re.search(r'[^>]+', collist[0]).group(0))
+            print("getRefSeqMap",re.search(r'[^>]+', collist[0]).group(0))
 #            refSeqMap[currentChromNO] = [0]
             return refSeqMap,currentChromNO#clean the refSeqMap and report the current chromNO
         else:

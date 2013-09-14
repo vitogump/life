@@ -15,14 +15,14 @@ Created on 2013-6-30
 @author: rui
 '''
 if len(sys.argv) < 7:
-    print("python CaculateFst.py [vcf1] [vcf2] [vcf3]....[globe_Fst(G)/reletivepaire_Fsts(R)] [winwidth] [slidesize] [tablename]")
+    print("python CaculateFst.py [vcf1] [vcf2] [vcf3]....[globe_Fst(G)/reletivepaire_Fsts(R)] [winwidth] [slidesize] [chromtable]")
     exit(-1)
 windowWidth=int(sys.argv[-3])
 slideSize=int(sys.argv[-2])
-tablename = sys.argv[-1]
+chromtable = sys.argv[-1]
 primaryID = "chrID"
 
-sql = "select * from " + tablename
+sql = "select * from " + chromtable
 
 class Fst():
     def __init__(self):
@@ -128,7 +128,7 @@ if __name__ == '__main__':
             fst = Fst() 
         
             print("startcaculatefst", fstpaire[0], fstpaire[1])
-            fst.caculateFstAccordingdb(dbtools, tablename, fstpaire[0], fstpaire[1], fst_caculator, int(sys.argv[-3]),int(sys.argv[-2]))
+            fst.caculateFstAccordingdb(dbtools, chromtable, fstpaire[0], fstpaire[1], fst_caculator, int(sys.argv[-3]),int(sys.argv[-2]))
 
             winCrossGenome = []
             for chrom in fst.FstMapByChrom.keys():
@@ -140,7 +140,7 @@ if __name__ == '__main__':
             std1 = numpy.std(winCrossGenome, ddof=1)
             del winCrossGenome
             
-            totalChroms = dbtools.operateDB("select","select count(*) from "+tablename)[0][0]
+            totalChroms = dbtools.operateDB("select","select count(*) from "+chromtable)[0][0]
             for i in range(0,totalChroms,20):
                 currentsql=sql+" order by "+primaryID+" limit "+str(i)+",20"
                 result=dbtools.operateDB("select",currentsql)
@@ -186,7 +186,7 @@ if __name__ == '__main__':
 #                pop2.getVcfMap(othrpop)
                 print("startcaculatefst", majorpop, othrpop)
                 fstlist.append(Fst())
-                fstlist[-1].caculateFstAccordingdb(dbtools, tablename, majorpop, othrpop, fst_caculator, int(sys.argv[-3]),int(sys.argv[-2]))          
+                fstlist[-1].caculateFstAccordingdb(dbtools, chromtable, majorpop, othrpop, fst_caculator, int(sys.argv[-3]),int(sys.argv[-2]))          
             outfile=open(majorpop+'.gfst','w')
             if len(fstlist) != 0:
                 for chrom in fstlist[0].FstMapByChrom.keys():
@@ -222,7 +222,7 @@ if __name__ == '__main__':
                 std1 = numpy.std(winCrossGenome, ddof=1)
                 del winCrossGenome
 
-                totalChroms = dbtools.operateDB("select","select count(*) from "+tablename)[0][0]
+                totalChroms = dbtools.operateDB("select","select count(*) from "+chromtable)[0][0]
                 for i in range(0,totalChroms,20):
                     currentsql=sql+" order by "+primaryID+" limit "+str(i)+",20"
                     result=dbtools.operateDB("select",currentsql)

@@ -44,7 +44,7 @@ class DBTools():
             self.conn=None
         except:
             print("conn can't close ")
-    def operateDB(self,sqltype,*sqls):
+    def operateDB(self,sqltype,*sqls,data=None):
         if not self.conn:
             self.connect()
         try:
@@ -54,9 +54,15 @@ class DBTools():
                 cursor.execute(sqls[0])
                 result=cursor.fetchall()
                 return result
-            else:
+            elif sqltype=='updata' or sqltype=='insert':
                 for sql in sqls:
-                    cursor.execute(sql)
+                    if data==None:
+                        cursor.execute(sql)
+                    else:
+                        cursor.execute(sql,data)
+                    self.conn.commit()
+            elif sqltype=="callproc":
+                cursor.callproc(sqls[0],data)
         except mysql.connector.Error as e:
             print('query error!{}'.format(e))
         finally:
