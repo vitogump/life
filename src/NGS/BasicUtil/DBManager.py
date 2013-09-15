@@ -54,7 +54,7 @@ class DBTools():
                 cursor.execute(sqls[0])
                 result=cursor.fetchall()
                 return result
-            elif sqltype=='update' or sqltype=='insert':#updata
+            elif sqltype=='update' or sqltype=='insert':
                 for sql in sqls:
                     if data==None:
                         cursor.execute(sql)
@@ -67,6 +67,7 @@ class DBTools():
             print('query error!{}'.format(e))
         finally:
             cursor.close()
+    
     def create_table(self,table):
         """  创建表
              TABLES = {}

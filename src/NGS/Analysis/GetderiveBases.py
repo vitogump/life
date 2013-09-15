@@ -23,7 +23,9 @@ outfilename=sys.argv[-2]
 morethan_lessthan=sys.argv[-1].strip()
 trscptable="transcript"
 snptables=["yingtaogusnp","fanyasnp","gaoyousnp","jindingsnp","kangbeiersnp","lianchengbaisnp","shanmasnp"]
-finaltable="allselectedSNP"
+fintableNamelist = re.split(r"\.", outfilename)
+
+finaltable="_".join(fintableNamelist)+"_allselectedSNP"
 #gene_sample_venn="gene_sample_venn"
 vcftable=None
 duckreffile=open(duckref,'r')
@@ -42,6 +44,19 @@ if __name__ == '__main__':
         originalspeciesindex = pickle.load(open(originalspeciesref+".myindex", 'rb'))
         
     dbtools = dbm.DBTools("localhost", "root", "1234567", "life_pilot")
+    TABLES = {}
+    TABLES[finaltable] = (
+        "CREATE TABLE "+finaltable+" ("
+        " `snpID` varchar(128) NOT NULL,"
+        " `chrID` varchar(128) NOT NULL DEFAULT '',"
+        " `snp_start_pos` bigint(20) NOT NULL DEFAULT '0',"
+        " `comefrom` text DEFAULT NULL,"
+        " `ref_bases` tinytext,"
+        " PRIMARY KEY (`snpID`) "
+        ")ENGINE=InnoDB DEFAULT CHARSET=utf8"
+        )
+    dbtools.drop_table(finaltable)
+    dbtools.create_table(TABLES)
     #add column for every tables
     for snptable in snptables:
         dbtools.operateDB("callproc","mysql_sp_add_column",data=("life_pilot",finaltable,snptable,"varchar(128)","default null"))
@@ -100,7 +115,7 @@ if __name__ == '__main__':
                     currentsnpChrId=snp[1]
                     currentsnpPos=int(snp[2])
                     if len(snp[4])!=1:
-                        print(snp[4])
+#                        print(snp[4])
                         continue# skip indel
                     if currentsnpPos+25<=RefSeqMap[lastchromNo][0] + len(RefSeqMap[lastchromNo]) - 1:
                         snpflankseq = ''.join(RefSeqMap[currentsnpChrId][(currentsnpPos-25 - RefSeqMap[currentsnpChrId][0]):(currentsnpPos+25 - RefSeqMap[currentsnpChrId][0] + 1)])
@@ -112,7 +127,7 @@ if __name__ == '__main__':
                         RefSeqMap, lastchromNo = Util.getRefSeqMap(duckreffile, currentChromNO=currentchrID, preBaseTotal=RefSeqMap[lastchromNo][0] + len(RefSeqMap[lastchromNo]) - 1)
                         snpflankseq = ''.join(RefSeqMap[currentsnpChrId][(currentsnpPos - RefSeqMap[currentsnpChrId][0]):(currentsnpPos - RefSeqMap[currentsnpChrId][0] + 1)])
                     print(">"+currentsnpID+"\n"+snpflankseq,end='\n',file=outfile)
-                    print("update "+finaltable+" set fafilepos="+str(filepos)+" where snpID='"+currentsnpID+"'")
+#                    print("update "+finaltable+" set fafilepos="+str(filepos)+" where snpID='"+currentsnpID+"'")
                     dbtools.operateDB("update","update "+finaltable+" set fafilepos="+str(filepos)+" where snpID='"+currentsnpID+"'")
                     filepos=int(outfile.tell())
                     
