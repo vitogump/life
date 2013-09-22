@@ -16,12 +16,12 @@ threshold = sys.argv[3]
 outfilename=sys.argv[4]
 morethan_lessthan=sys.argv[5].strip()
 trscptable="transcript"
-gene_sample_venn="gene_sample_venn"
+#gene_sample_venn="gene_sample_venn"
 vcftable=None
 outfile=open(outfilename,'w')
 if __name__ == '__main__':
     dbtools = dbm.DBTools("localhost", "root", "1234567", "life_pilot")
-    dbtools.operateDB("alter","alter table "+gene_sample_venn+" add "+outfilename+" smallint(3) default 0") 
+#    dbtools.operateDB("alter","alter table "+gene_sample_venn+" add "+outfilename+" smallint(3) default 0") 
     winGenome = Util.WinInGenome(tempwinDBName, winFileName6Field)
     time.sleep(SLEEP_FOR_NEXT_TRY)
     if morethan_lessthan=="m" or morethan_lessthan=="M":
@@ -34,10 +34,10 @@ if __name__ == '__main__':
         winGenome.collectTrscptInWin(dbtools, trscptable, vcftable, winRegion)
     for win in sorted(winGenome.winContainTrscptMap.keys()):
         print("\t".join(map(str,win)),winGenome.winContainTrscptMap[win],sep="\t",file=outfile)
-        for gene in winGenome.winContainTrscptMap[win]:
-            print(gene)
-            print("update "+gene_sample_venn+" set "+outfilename+"=1 where geneID='"+gene[0]+"'")
-            dbtools.operateDB("update","update "+gene_sample_venn+" set "+outfilename+"=1 where geneID='"+gene[0]+"'")
+#        for gene in winGenome.winContainTrscptMap[win]:
+#            print(gene)
+#            print("update "+gene_sample_venn+" set "+outfilename+"=1 where geneID='"+gene[0]+"'")
+#            dbtools.operateDB("update","update "+gene_sample_venn+" set "+outfilename+"=1 where geneID='"+gene[0]+"'")
     outfile.close()
 #    winGenome.windbtools.drop_table(winGenome.wintable)
 #    winGenome.windbtools.disconnect()
