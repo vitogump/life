@@ -130,6 +130,7 @@ if __name__ == '__main__':
         tempdbtools.drop_table("treearray")
         tempdbtools.create_table(TABLES)        
         for fstpaire in allkindofpaire:
+            
             fstpaire1name = re.search(r"[^/]*$",fstpaire[0]).group(0)
             fstpaire2name = re.search(r"[^/]*$", fstpaire[1]).group(0)  # for linux
             outfile = open(fstpaire[0] + fstpaire2name + ".fst", 'w')
@@ -138,7 +139,7 @@ if __name__ == '__main__':
             fst_caculator = Caculators.Caculate_Fst()
 
             fst = Fst() 
-
+            tempdbtools.operateDB("callproc", "mysql_sp_add_column", data=("temp", "treearray", fstpaire1name+fstpaire2name, "text", "default null"))
                 
             print("startcaculatefst:\n", fstpaire1name,fstpaire[0],'\n', fstpaire2name,fstpaire[1])
             fst.caculateFstAccordingdb(dbtools, chromtable, fstpaire[0], fstpaire[1], fst_caculator, windowWidth,slideSize)
@@ -175,12 +176,14 @@ if __name__ == '__main__':
             for chrom in sorted(fst.FstMapByChrom.keys()):
                 for i in range(len(fst.FstMapByChrom[chrom])):
                     if fst.FstMapByChrom[chrom][i][2] != 'NA':
+                        tempdbtools.operateDB("update","insert into treearray(chrID,winNo,"+fstpaire1name+fstpaire2name+") values(%s,%s,%s,%s,%s,%s) on duplicate key update "+fstpaire1name+fstpaire2name+" = '"+str(fst.FstMapByChrom[chrom][i][2])+"'")
                         Number += 1
                         sum += fst.FstMapByChrom[chrom][i][2]
             alldistMap[re.search(r"[^/]*$", fstpaire[0]).group(0) + fstpaire2name] = sum / Number
             outfile.close()
         for n in alldistMap.keys():
             print(n + "\t" + str(alldistMap[n]), file=open("testdist.txt", 'a'))
+        tempdbtools.disconnect()
     elif sys.argv[-4] == 'G' or sys.argv[-4] == 'g':
         globalFstMapByChrom={}
         fst_caculator = Caculators.Caculate_Fst()
@@ -251,4 +254,4 @@ if __name__ == '__main__':
                                     zgFst = "NA"
                                 print(currentchrID + "\t" + str(i) + "\t" + str(globalFstMapByChrom[currentchrID][i][0]) + "\t" + str(globalFstMapByChrom[currentchrID][i][1]) + "\t" + str(globalFstMapByChrom[currentchrID][i][2]) + "\t" + str(zgFst), file=outfile)
                                 
-
+    dbtools.disconnect()
