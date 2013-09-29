@@ -1,4 +1,4 @@
-import re, pickle,os
+import re, pickle, os
 import random, string
 import src.NGS.BasicUtil.DBManager as dbm
 #from src.NGS.BasicUtil import *
@@ -14,38 +14,103 @@ def random_str(randomlength=8):
     random.shuffle(a)
     return ''.join(a[:randomlength])
 
-def generateIndexByChrom(refFastaFileName,indexFileName):
-    refFastaFile = open(refFastaFileName,'r')
+def generateIndexByChrom(refFastaFileName, indexFileName):
+    refFastaFile = open(refFastaFileName, 'r')
     refChromIndex = {}
     refline = refFastaFile.readline()
     while refline:
-        if re.search(r'^[>]',refline)!=None:
-            collist = re.split(r'\s+',refline)
-            currentChromNo=re.search(r'[^>]+',(re.split(r'\s+',refline))[0]).group(0)
-            refChromIndex[currentChromNo]= int(refFastaFile.tell())# from here is the sequence
-        refline= refFastaFile.readline()
-    pickle.dump(refChromIndex,open(indexFileName,'wb'))
+        if re.search(r'^[>]', refline) != None:
+            collist = re.split(r'\s+', refline)
+            currentChromNo = re.search(r'[^>]+', (re.split(r'\s+', refline))[0]).group(0)
+            refChromIndex[currentChromNo] = int(refFastaFile.tell())# from here is the sequence
+        refline = refFastaFile.readline()
+    pickle.dump(refChromIndex, open(indexFileName, 'wb'))
     refFastaFile.close()
+def getRefSeqBypos(refFastahander,refindex, currentChromNO, startpos, endpos, seektuple=()):
+    '''
+    pos start at 1
+    seektuple=(filepos,basesbeforefilepos)
+    the refSeqMap has only one chromosome's sequence
+    '''    
+    refSeqMap = {}
+    print(currentChromNO, startpos, endpos)
+#    try:
+#        refindex = pickle.load(open(refFastaFileName + ".myindex", 'rb'))
+#    except IOError:
+#        generateIndexByChrom(refFastaFileName, refFastaFileName + ".myindex")
+#        refindex = pickle.load(open(refFastaFileName + ".myindex", 'rb'))
+#    filehander = open(refFastaFileName, 'r')
+    filehander = refFastahander
+    if not seektuple or seektuple[1] > startpos:
+        refSeqMap[currentChromNO] = [startpos - 1]
+        filehander.seek(refindex[currentChromNO])#seekmap is empty so go to the first bases of the currentChromNO
+        preseq = filehander.read(startpos - 1)
+        dn = preseq.count('\n')
+        while dn != 0:
+            preseq = filehander.read(dn)
+            dn = preseq.count('\n')
+            
+        #now filehander is right stay at the startpos
+        myseqline = filehander.read(endpos - startpos + 1)
+        myseqn = myseqline.count('\n')
+        if len(myseqline)>200:
+            print(myseqn)
+            exit(-1)
+        print("myseqline=",myseqline,"myseqn", myseqn)
+        while myseqn != 0:# fill the same number of \n with bases
+            myseqline = myseqline.replace('\n', '')
+            myseqline += filehander.read(myseqn)
+            myseqn = myseqline.count('\n')
+            
+            print(myseqline, myseqn)
+            if myseqline.count('>') >= 1:
+                exit(-1)
+        refSeqMap[currentChromNO].extend(list(myseqline))
+    else:
+        filehander.seek(seektuple[0])#seekmap is not empty
+        refSeqMap[currentChromNO] = [startpos - 1]
+        preseq = filehander.read(startpos - seektuple[1] - 1)
+        dn = preseq.count('\n')
+        while dn != 0:
+            preseq = filehander.read(dn)
+            dn = preseq.count('\n')
+        #now filehander is right stay at the startpos
+        myseqline = filehander.read(endpos - startpos + 1)
+        myseqn = myseqline.count('\n')
+        while myseqn != 0:# fill the same number of \n with bases
+            myseqline = myseqline.replace('\n', '')
+            myseqline += filehander.read(myseqn)
+            myseqn = myseqline.count('\n')
+        refSeqMap[currentChromNO].extend(list(myseqline))
+#    filehander.close()
+    plus = myseqline.count('>')
+    if plus != 0:
+        return -1
     
-def getRefSeqMap(refFastafile, currentChromNO=None, preBaseTotal=0, linesOnce=500000):
+    return refSeqMap, currentChromNO
+
+        
+    filehander.close()
+def getRefSeqMap(refFastafilehander, currentChromNO=None, preBaseTotal=0, linesOnce=500000):
     '''
     the refSeqMap has only one chromosome's sequence
     '''
     refSeqMap = {}
     if currentChromNO == None:
-        refline = refFastafile.readline() 
-        print("getRefSeqMap",refline)
+        refline = refFastafilehander.readline() 
+        print("getRefSeqMap", refline)
         currentChromNO = re.search(r'[^>]+', (re.split(r'\s+', refline))[0]).group(0)
         refSeqMap[currentChromNO] = [preBaseTotal]#preBaseTotal=0
-        print("getRefSeqMap",currentChromNO)
+        print("getRefSeqMap", currentChromNO)
     else:
         refSeqMap[currentChromNO] = [preBaseTotal]
-    for refline in refFastafile:
+    for refline in refFastafilehander:
         if re.search(r'^[>]', refline) != None:
             collist = re.split(r'\s+', refline)
-            print("getRefSeqMap",re.search(r'[^>]+', collist[0]).group(0))
+            print("getRefSeqMap", re.search(r'[^>]+', collist[0]).group(0))
 #            refSeqMap[currentChromNO] = [0]
-            return refSeqMap,currentChromNO#clean the refSeqMap and report the current chromNO
+#            currentChromNO=re.search(r'[^>]+', collist[0]).group(0)
+            return refSeqMap, currentChromNO#clean the refSeqMap and report the current chromNO
         else:
             refSeqMap[currentChromNO].extend(list(refline.strip().lower()))
         linesOnce -= 1    
@@ -82,13 +147,13 @@ class FastQ_Util():
         
         
     @staticmethod
-    def getConsenusSeqMap(fastQFileName,dbtools ,tablename="chromosome",primaryID = "chrID",bp_start=None, bp_end=None):
+    def getConsenusSeqMap(fastQFileName, dbtools , tablename="chromosome", primaryID="chrID", bp_start=None, bp_end=None):
         '''
         the refSeqMap has only one chromosome's sequence
         '''
 #        print(dbtools,fastQFileName,"inside FastQ_Util")
-        fqfile=open(fastQFileName,'r')
-        sql="select * from "+tablename
+        fqfile = open(fastQFileName, 'r')
+        sql = "select * from " + tablename
         seqMapByChrom = {}
         try:
             ChromIndexMap = pickle.load(open(fastQFileName + ".myindex", 'rb'))
@@ -96,24 +161,24 @@ class FastQ_Util():
             FastQ_Util.generateIndexByChrom(fastQFileName, fastQFileName + ".myindex")
             ChromIndexMap = pickle.load(open(fastQFileName + ".myindex", 'rb'))
         
-        totalChroms = dbtools.operateDB("select","select count(*) from "+tablename)[0][0]
+        totalChroms = dbtools.operateDB("select", "select count(*) from " + tablename)[0][0]
         
         print(totalChroms)
-        currentchrID=dbtools.operateDB("select",sql+" limit 0,1")[0][0]
-        seqMapByChrom[currentchrID]=""
-        for i in range(0,totalChroms,20):
-            currentsql=sql+" order by "+primaryID+" limit "+str(i)+",20"
-            result=dbtools.operateDB("select",currentsql)
+        currentchrID = dbtools.operateDB("select", sql + " limit 0,1")[0][0]
+        seqMapByChrom[currentchrID] = ""
+        for i in range(0, totalChroms, 20):
+            currentsql = sql + " order by " + primaryID + " limit " + str(i) + ",20"
+            result = dbtools.operateDB("select", currentsql)
             for row in result:
-                currentchrID=row[0]
+                currentchrID = row[0]
                 if currentchrID in ChromIndexMap:
-                    seqMapByChrom[currentchrID]=""
+                    seqMapByChrom[currentchrID] = ""
                     fqfile.seek(ChromIndexMap[currentchrID])
-                    line=fqfile.readline()
-                    while line.strip() !="+":
-                        seqMapByChrom[currentchrID]+=line.strip()
+                    line = fqfile.readline()
+                    while line.strip() != "+":
+                        seqMapByChrom[currentchrID] += line.strip()
 #                        print(line.strip())
-                        line=fqfile.readline()
+                        line = fqfile.readline()
         return seqMapByChrom
 
     
@@ -122,7 +187,7 @@ class Window():
     def __init__(self):
         super().__init__()
         self.winValueL = []  # [(startPos,lastPos,value),(),,,,,,]
-    def slidWindowOverlap(self, L,L_End_Pos, windowWidth, slideSize, Caculator):
+    def slidWindowOverlap(self, L, L_End_Pos, windowWidth, slideSize, Caculator):
         """
         L = [(pos, REF, ALT, INFO),(),(),...........]
         """
@@ -155,10 +220,10 @@ class Window():
                 FoundNextIdx = False
                 if nextIdx == -1:
                     if slideSize >= windowWidth:
-                        while currentIdx!=len(L):
-                            if L[currentIdx][0]>winStart and L[currentIdx][0]<=(winStart+windowWidth):
+                        while currentIdx != len(L):
+                            if L[currentIdx][0] > winStart and L[currentIdx][0] <= (winStart + windowWidth):
                                 break
-                            currentIdx+=1
+                            currentIdx += 1
                     continue  # go to |if L[currentIdx][0] > winStart and L[currentIdx][0] < (winStart + windowWidth):| in upside block
                 else:
                     currentIdx = nextIdx
@@ -173,24 +238,24 @@ class Window():
             except UnboundLocalError:
                 self.winValueL.append((0, 0, value))
         
-        n=int((L_End_Pos-(len(self.winValueL)*slideSize +windowWidth))/slideSize)+1
+        n = int((L_End_Pos - (len(self.winValueL) * slideSize + windowWidth)) / slideSize) + 1
         for i in range(n):
-            self.winValueL.append((0,0,'NA'))
+            self.winValueL.append((0, 0, 'NA'))
         
 class WinInGenome():           
-    def __init__(self,dbname, winFileName6Field, tableName=None):
+    def __init__(self, dbname, winFileName6Field, tableName=None):
         super().__init__()
 #        self.wintable="PoMuJVOr"
 #        self.windbtools = dbm.DBTools("localhost", "root", "1234567", dbname)
-        self.windbtools,self.wintable=self.loadWinDataIntoDB(dbname, winFileName6Field, tableName)
-        self.winContainTrscptMap={}
-    def loadWinDataIntoDB(self,dbname,winFileName6Field,tableName=None):
-        if tableName==None:
+        self.windbtools, self.wintable = self.loadWinDataIntoDB(dbname, winFileName6Field, tableName)
+        self.winContainTrscptMap = {}
+    def loadWinDataIntoDB(self, dbname, winFileName6Field, tableName=None):
+        if tableName == None:
             tableName = random_str()
         tempdbtools = dbm.DBTools("localhost", "root", "1234567", dbname)
         TABLES = {}
         TABLES[tableName] = (
-            "CREATE TABLE "+tableName+" ("
+            "CREATE TABLE " + tableName + " ("
             " `chrID` varchar(128) NOT NULL ,"
             " `winNo` varchar(128) NOT NULL,"
             " `bp_start` varchar(128) NOT NULL,"
@@ -202,29 +267,29 @@ class WinInGenome():
             )
         
         tempdbtools.create_table(TABLES)
-        loaddatasql="load data local infile '"+winFileName6Field+"' into table "+tableName+" fields terminated by '\\t'"
-        shellstatment="mysql -uroot -p1234567 -D"+dbname.strip()+' -e "'+loaddatasql+'"'
+        loaddatasql = "load data local infile '" + winFileName6Field + "' into table " + tableName + " fields terminated by '\\t'"
+        shellstatment = "mysql -uroot -p1234567 -D" + dbname.strip() + ' -e "' + loaddatasql + '"'
         print(shellstatment)
-        a=os.system(shellstatment)
-        if a!=0:
+        a = os.system(shellstatment)
+        if a != 0:
             print("loadWinDataIntaDB func os.system return not 0")
             exit(-1)
         print(a)
 #        tempdbtools.load_file(tableName,"chrID","winNo","bp_start","bp_end","value","zvalue",fileName=winFileName6Field)
-        return tempdbtools,tableName       
-    def collectTrscptInWin(self,dbtools,trscptableName,vcftable,winRegion):
-        transcripttable=trscptableName
-        chrID=winRegion[0]
-        winNo=int(winRegion[1])
-        winWidth=int(winRegion[2])
-        slideSize=int(winRegion[3])
+        return tempdbtools, tableName       
+    def collectTrscptInWin(self, dbtools, trscptableName, vcftable, winRegion):
+        transcripttable = trscptableName
+        chrID = winRegion[0]
+        winNo = int(winRegion[1])
+        winWidth = int(winRegion[2])
+        slideSize = int(winRegion[3])
         """
         winRegion=(chrID,winNo,winWidth,slideSize,zvalue)
         """
 
-        selectsql="select * from "+transcripttable+" where chrID='"+chrID+"' and end_pos >= "+str(winNo*slideSize)+" and start_pos <= "+str(winNo*slideSize+winWidth)
-        result = dbtools.operateDB("select",selectsql)
-        self.winContainTrscptMap[winRegion]=[]
+        selectsql = "select * from " + transcripttable + " where chrID='" + chrID + "' and end_pos >= " + str(winNo * slideSize) + " and start_pos <= " + str(winNo * slideSize + winWidth)
+        result = dbtools.operateDB("select", selectsql)
+        self.winContainTrscptMap[winRegion] = []
         for row in result:
             self.winContainTrscptMap[winRegion].append(row)
 

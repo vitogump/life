@@ -22,6 +22,11 @@ percentage = float(sys.argv[-3])
 outfilename = sys.argv[-2]
 morethan_lessthan = sys.argv[-1].strip()
 trscptable = "transcript"
+#snptables=[]
+#for winFileName6Field in winFileName6Fields:
+#    pureName = re.search(r"[^/]*$", winFileName6Field).group(0)  # for linux
+#    pureName = re.split(r'\.',pureName)[0]
+#    snptables.append(pureName)
 snptables = ["yingtaogusnp", "fanyasnp", "gaoyousnp", "jindingsnp", "kangbeiersnp", "lianchengbaisnp", "shanmasnp"]
 fintableNamelist = re.split(r"\.", outfilename)
 
@@ -33,7 +38,8 @@ originspeciesfile = open(originalspeciesref, 'r')
 outfile = open(outfilename, 'w')
 filepos = int(outfile.tell())
 selectedWins = {}
-testfile=open("testsnpfile.txt",'w')
+testName=Util.random_str()
+testfile=open(testName+"testsnpfile.txt",'w')
 if __name__ == '__main__':
     try:
         duckrefindex = pickle.load(open(duckref + ".myindex", 'rb'))
@@ -88,7 +94,7 @@ if __name__ == '__main__':
                 snps = dbtools.operateDB("select", "select * from " + snptable + " where chrID='" + win[0] + "' and snp_start_pos>=" + str(int(win[1]) * slidesize) + " and snp_start_pos<=" + str(int(win[1]) * slidesize + winwidth))
                 for snp in snps:
                     dp4 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", snp[5])
-                    alt_dp4 = snp[3] + ":" + dp4.group(1) + "," + dp4.group(2) + "," + dp4.group(3) + "," + dp4.group(4)
+                    alt_dp4 = snp[4] + ":" + dp4.group(1) + "," + dp4.group(2) + "," + dp4.group(3) + "," + dp4.group(4)
 #                    print("insert into "+finaltable+"(snpID,chrID,snp_start_pos,comefrom,ref_bases,"+snptable+") values(%s,%s,%s,%s,%s,%s) on duplicate key update comefrom=concat(comefrom,"+"' "+snptable+"'),"+snptable+"= '"+alt_dp4+"'",(snp[0],snp[1],snp[2],snptable,snp[3],alt_dp4))
                     # comefrom should not be null in mysql database
                     dbtools.operateDB("insert", "insert into " + finaltable + "(snpID,chrID,snp_start_pos,comefrom,ref_bases," + snptable + ") values(%s,%s,%s,%s,%s,%s) on duplicate key update " + snptable + "= '" + alt_dp4 + "'", data=(snp[0], snp[1], snp[2], pureName, snp[3], alt_dp4))
@@ -105,7 +111,7 @@ if __name__ == '__main__':
             currentchrLen = int(row[2])
             totalsnpsInchr = dbtools.operateDB("select", "select count(*) from " + finaltable + " where chrID ='" + currentchrID + "'")[0][0]
             duckreffile.seek(duckrefindex[currentchrID])
-            RefSeqMap, lastchromNo = Util.getRefSeqMap(refFastafile=duckreffile, currentChromNO=currentchrID)
+            RefSeqMap, lastchromNo = Util.getRefSeqMap(refFastafilehander=duckreffile, currentChromNO=currentchrID)
             for j in range(0, totalsnpsInchr, 1000):
                 print("select * from " + finaltable + " where chrID='" + currentchrID + "' order by snpID limit " + str(j) + ",1000")
                 snps = dbtools.operateDB("select", "select * from " + finaltable + " where chrID='" + currentchrID + "' order by snpID limit " + str(j) + ",1000")
@@ -122,28 +128,32 @@ if __name__ == '__main__':
                         continue# skip indel
                     if currentsnpPos + 25 <= RefSeqMap[lastchromNo][0] + len(RefSeqMap[lastchromNo]) - 1 and currentsnpPos - 25 >= RefSeqMap[lastchromNo][0] :
                         snpflankseq = ''.join(RefSeqMap[currentsnpChrId][(currentsnpPos - 25 - RefSeqMap[currentsnpChrId][0]):(currentsnpPos + 25 - RefSeqMap[currentsnpChrId][0] + 1)])
-                        snpflankseq=snpflankseq[0:25]+'N'+snpflankseq[26:]
                         print(currentsnpID,snpflankseq[25],file=testfile)
+                        snpflankseq=snpflankseq[0:25]+'N'+snpflankseq[26:]
+                        
                     elif currentsnpPos <= RefSeqMap[lastchromNo][0] + len(RefSeqMap[lastchromNo]) - 1 and currentsnpPos + 25 > RefSeqMap[lastchromNo][0] + len(RefSeqMap[lastchromNo]) - 1:
                         snpflankseq = ''.join(RefSeqMap[currentsnpChrId][(currentsnpPos - 25 - RefSeqMap[currentsnpChrId][0]):(currentsnpPos - RefSeqMap[currentsnpChrId][0] + 1)])
-                        snpflankseq=snpflankseq[0:25]+'N'
                         print(currentsnpID,snpflankseq[25],file=testfile)
+                        snpflankseq=snpflankseq[0:25]+'N'
+                        
                     elif currentsnpPos - 25 < RefSeqMap[lastchromNo][0]:
                         snpflankseq = ''.join(RefSeqMap[currentsnpChrId][(currentsnpPos - RefSeqMap[currentsnpChrId][0]):(currentsnpPos + 25 - RefSeqMap[currentsnpChrId][0] + 1)])
-                        snpflankseq = 'N'+snpflankseq[1:26]
                         print(currentsnpID,snpflankseq[0],file=testfile)
+                        snpflankseq = 'N'+snpflankseq[1:26]
+                        
                     elif currentsnpPos>RefSeqMap[lastchromNo][0] + len(RefSeqMap[lastchromNo]) - 1:
                         RefSeqMap, lastchromNo = Util.getRefSeqMap(duckreffile, currentChromNO=currentchrID, preBaseTotal=RefSeqMap[lastchromNo][0] + len(RefSeqMap[lastchromNo]) - 1)
                         snpflankseq = ''.join(RefSeqMap[currentsnpChrId][(currentsnpPos - RefSeqMap[currentsnpChrId][0]):(currentsnpPos + 25 - RefSeqMap[currentsnpChrId][0] + 1)])
-                        snpflankseq = 'N'+snpflankseq[1:26]
                         print(currentsnpID,snpflankseq[0],file=testfile)
+                        snpflankseq = 'N'+snpflankseq[1:26]
+                        
                     else:
                         print("what's wrong?")
                     print(">" + currentsnpID + "\n" + snpflankseq, end='\n', file=outfile)
 #                    print("update "+finaltable+" set fafilepos="+str(filepos)+" where snpID='"+currentsnpID+"'")
                     dbtools.operateDB("update", "update " + finaltable + " set fafilepos=" + str(filepos) + " where snpID='" + currentsnpID + "'")
                     filepos = int(outfile.tell())
-                    
+    dbtools.disconnect()               
     originspeciesfile.close()                
     duckreffile.close()
     outfile.close()
