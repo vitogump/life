@@ -86,7 +86,7 @@ class Fst():
                     pop2SeqOfAChr={}
                     pop1SeqOfAChr[currentchrID]=pop1.getVcfMapByChrom(vcfNAME_POP1, currentchrID)
                     pop2SeqOfAChr[currentchrID]=pop2.getVcfMapByChrom(vcfNAME_POP2, currentchrID)
-                    self.caculateFst(pop1SeqOfAChr,pop2SeqOfAChr, fst_caculator,currentchrID,currentchrLen,int(sys.argv[-3]),int(sys.argv[-2]))
+                    self.caculateFst(pop1SeqOfAChr,pop2SeqOfAChr, fst_caculator,currentchrID,currentchrLen,winwidth,slideSize)
                 else:#pop1 don't contation the current chromosome
                     fillNA=[(0,0,'NA')]
                     for i in range(int((currentchrLen-windowWidth)/slideSize)):
@@ -119,6 +119,7 @@ if __name__ == '__main__':
         allkindofpaire = list(combinations(sys.argv[1:-4], 2))
         alldistMap={}
         for fstpaire in allkindofpaire:
+            fstpaire1name = re.search(r"[^/]*$",fstpaire[0]).group(0)
             fstpaire2name = re.search(r"[^/]*$", fstpaire[1]).group(0)  # for linux
             outfile = open(fstpaire[0] + fstpaire2name + ".fst", 'w')
             
@@ -126,9 +127,20 @@ if __name__ == '__main__':
             fst_caculator = Caculators.Caculate_Fst()
 
             fst = Fst() 
-        
-            print("startcaculatefst", fstpaire[0], fstpaire[1])
-            fst.caculateFstAccordingdb(dbtools, chromtable, fstpaire[0], fstpaire[1], fst_caculator, int(sys.argv[-3]),int(sys.argv[-2]))
+            tempdbtools = dbm.DBTools("localhost", "root", "1234567", "temp")
+            TABLES = {}
+            TABLES["treearray"] = (
+                "CREATE TABLE treearray ("
+                " `chrID` varchar(128) NOT NULL ,"
+                " `winNo` int(18) NOT NULL,"
+                " PRIMARY KEY (`chrID`,`winNo`)"
+                ")engine=innodb default charset=utf8"
+                )
+            tempdbtools.drop_table("treearray")
+            tempdbtools.create_table(TABLES)
+                
+            print("startcaculatefst:\n", fstpaire1name,fstpaire[0],'\n', fstpaire2name,fstpaire[1])
+            fst.caculateFstAccordingdb(dbtools, chromtable, fstpaire[0], fstpaire[1], fst_caculator, windowWidth,slideSize)
 
             winCrossGenome = []
             for chrom in fst.FstMapByChrom.keys():
