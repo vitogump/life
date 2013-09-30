@@ -39,6 +39,7 @@ outfile = open(outfilename, 'w')
 filepos = int(outfile.tell())
 selectedWins = {}
 testName=Util.random_str()
+print(testName+"testsnpfile.txt")
 testfile=open(testName+"testsnpfile.txt",'w')
 if __name__ == '__main__':
     try:
@@ -157,3 +158,4 @@ if __name__ == '__main__':
     originspeciesfile.close()                
     duckreffile.close()
     outfile.close()
+    testfile.close()
