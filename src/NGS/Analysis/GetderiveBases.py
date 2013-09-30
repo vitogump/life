@@ -113,8 +113,8 @@ if __name__ == '__main__':
             duckreffile.seek(duckrefindex[currentchrID])
             RefSeqMap, lastchromNo = Util.getRefSeqMap(refFastafilehander=duckreffile, currentChromNO=currentchrID)
             for j in range(0, totalsnpsInchr, 1000):
-                print("select * from " + finaltable + " where chrID='" + currentchrID + "' order by snpID limit " + str(j) + ",1000")
-                snps = dbtools.operateDB("select", "select * from " + finaltable + " where chrID='" + currentchrID + "' order by snpID limit " + str(j) + ",1000")
+                print("select * from " + finaltable + " where chrID='" + currentchrID + "' order by snp_start_pos limit " + str(j) + ",1000")
+                snps = dbtools.operateDB("select", "select * from " + finaltable + " where chrID='" + currentchrID + "' order by snp_start_pos limit " + str(j) + ",1000")
 #                int(snps[-1][2])
                 if snps == None:
                     print("no snp in " + currentchrID + " in table " + finaltable)
@@ -126,7 +126,7 @@ if __name__ == '__main__':
                     if len(snp[4]) != 1:
 #                        print(snp[4])
                         continue# skip indel
-                    if currentsnpPos + 25 <= RefSeqMap[lastchromNo][0] + len(RefSeqMap[lastchromNo]) - 1 and currentsnpPos - 25 >= RefSeqMap[lastchromNo][0] :
+                    if currentsnpPos + 25 <= RefSeqMap[lastchromNo][0] + len(RefSeqMap[lastchromNo]) - 1 and currentsnpPos - 25 > RefSeqMap[lastchromNo][0] :
                         snpflankseq = ''.join(RefSeqMap[currentsnpChrId][(currentsnpPos - 25 - RefSeqMap[currentsnpChrId][0]):(currentsnpPos + 25 - RefSeqMap[currentsnpChrId][0] + 1)])
                         print(currentsnpID,snpflankseq[25],file=testfile)
                         snpflankseq=snpflankseq[0:25]+'N'+snpflankseq[26:]
@@ -136,7 +136,7 @@ if __name__ == '__main__':
                         print(currentsnpID,snpflankseq[25],file=testfile)
                         snpflankseq=snpflankseq[0:25]+'N'
                         
-                    elif currentsnpPos - 25 < RefSeqMap[lastchromNo][0]:
+                    elif currentsnpPos - 25 <= RefSeqMap[lastchromNo][0]:
                         snpflankseq = ''.join(RefSeqMap[currentsnpChrId][(currentsnpPos - RefSeqMap[currentsnpChrId][0]):(currentsnpPos + 25 - RefSeqMap[currentsnpChrId][0] + 1)])
                         print(currentsnpID,snpflankseq[0],file=testfile)
                         snpflankseq = 'N'+snpflankseq[1:26]
