@@ -107,7 +107,7 @@ if __name__ == '__main__':
         currentsql = "select * from " + chromtable + " order by chrID limit " + str(i) + ",20"
         result = dbtools.operateDB("select", currentsql)
 
-        for row in result:
+        for row in result:#every chromosome
             currentchrID = row[0]
             currentchrLen = int(row[2])
             totalsnpsInchr = dbtools.operateDB("select", "select count(*) from " + finaltable + " where chrID ='" + currentchrID + "'")[0][0]

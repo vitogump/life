@@ -116,6 +116,20 @@ class Fst():
 if __name__ == '__main__':
     dbtools = dbm.DBTools("localhost", "root", "1234567", "life_pilot")
     if sys.argv[-4]=='R' or sys.argv[-4]=='r':
+        phyliparrayinfile=open("phylip.arrayin",'w')
+        allspeices=[]
+        tableindextoarrayindex=[]
+        for pathtoname in sys.argv[1:-4]:
+            allspeices.append(re.search(r"[^/]*$",pathtoname).group(0))
+
+
+        arraytitle=""
+        for name in allspeices:
+            arraytitle+=(name+"\t")
+        print("a\t"+arraytitle+"\n")
+        for namerow in allspeices:
+            print(namerow+"\n")        
+            
         allkindofpaire = list(combinations(sys.argv[1:-4], 2))
         alldistMap={}
         tempdbtools = dbm.DBTools("localhost", "root", "1234567", "temp")
@@ -130,9 +144,11 @@ if __name__ == '__main__':
         tempdbtools.drop_table("treearray")
         tempdbtools.create_table(TABLES)        
         for fstpaire in allkindofpaire:
-            
+
             fstpaire1name = re.search(r"[^/]*$",fstpaire[0]).group(0)
             fstpaire2name = re.search(r"[^/]*$", fstpaire[1]).group(0)  # for linux
+            tableindextoarrayindex.append((arraytitle.index(fstpaire1name),arraytitle.index(fstpaire2name)))
+            
             outfile = open(fstpaire[0] + fstpaire2name + ".fst", 'w')
             
 #             win = Util.Window()
@@ -179,10 +195,22 @@ if __name__ == '__main__':
                         tempdbtools.operateDB("update","insert into treearray(chrID,winNo,"+fstpaire1name+fstpaire2name+") values(%s,%s,%s,%s,%s,%s) on duplicate key update "+fstpaire1name+fstpaire2name+" = '"+str(fst.FstMapByChrom[chrom][i][2])+"'")
                         Number += 1
                         sum += fst.FstMapByChrom[chrom][i][2]
-            alldistMap[re.search(r"[^/]*$", fstpaire[0]).group(0) + fstpaire2name] = sum / Number
+            alldistMap[fstpaire1name+fstpaire2name] = (sum / Number,allspeices.index(fstpaire1name))
             outfile.close()
         for n in alldistMap.keys():
             print(n + "\t" + str(alldistMap[n]), file=open("testdist.txt", 'a'))
+        tatalwins = tempdbtools.operateDB("select", "select count(*) from treearray")[0][0]
+        for i in range(0, tatalwins, 100):
+            wins = tempdbtools.operateDB("select","select * from treearray order by chrID asc,winNo asc limit "+str(i) +",100")
+            for win in wins:
+                tmparray=[[0 for x in range(len(win[2:]))] for y in range(len(win[2:]))]
+                print("a\t"+arraytitle,file=phyliparrayinfile)
+                for i in range(len(win[2:])):
+                    tmparray[tableindextoarrayindex[i][0]][tableindextoarrayindex[i][1]]=str(win[i+2])
+                    tmparray[tableindextoarrayindex[i][1]][tableindextoarrayindex[i][0]]=str(win[i+2])
+                for i in range(len(allspeices)):
+                    tmparray[i][i]='0'
+                    print(allspeices[i]+"\t"+"\t".join(tmparray),file=phyliparrayinfile)
         tempdbtools.disconnect()
     elif sys.argv[-4] == 'G' or sys.argv[-4] == 'g':
         globalFstMapByChrom={}
