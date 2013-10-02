@@ -126,7 +126,7 @@ if __name__ == '__main__':
         arraytitle=""
         for name in allspeices:
             arraytitle+=(name+"\t")
-        print("a\t"+arraytitle+"\n")
+        print("\t"+arraytitle+"\n")
         for namerow in allspeices:
             print(namerow+"\n")        
             
@@ -204,7 +204,8 @@ if __name__ == '__main__':
             wins = tempdbtools.operateDB("select","select * from treearray order by chrID asc,winNo asc limit "+str(i) +",100")
             for win in wins:
                 tmparray=[[0 for x in range(len(win[2:]))] for y in range(len(win[2:]))]
-                print("a\t"+arraytitle,file=phyliparrayinfile)
+                print(">\t"+str(len(arraytitle)),file=phyliparrayinfile)
+                print("\t"+arraytitle,file=phyliparrayinfile)
                 for i in range(len(win[2:])):
                     tmparray[tableindextoarrayindex[i][0]][tableindextoarrayindex[i][1]]=str(win[i+2])
                     tmparray[tableindextoarrayindex[i][1]][tableindextoarrayindex[i][0]]=str(win[i+2])
