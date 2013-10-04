@@ -8,7 +8,20 @@ Created on 2013-6-30
 
 @author: rui
 '''
-
+def complementary(seqlist):
+    newseqlist = []
+    for i in range(0, len(seqlist)):
+        if seqlist[i].lower() == 'a':
+            newseqlist.insert(i, 't')
+        elif seqlist[i].lower() == 't':
+            newseqlist.insert(i, 'a')
+        elif seqlist[i].lower() == 'c':
+            newseqlist.insert(i, 'g')
+        elif seqlist[i].lower() == 'g':
+            newseqlist.insert(i, 'c')
+        else:
+            newseqlist.insert(i,seqlist[i])
+    return newseqlist
 def random_str(randomlength=8):
     a = list(string.ascii_letters)
     random.shuffle(a)
@@ -62,7 +75,7 @@ def getRefSeqBypos(refFastahander,refindex, currentChromNO, startpos, endpos, se
             myseqline += filehander.read(myseqn)
             myseqn = myseqline.count('\n')
             
-            print(myseqline, myseqn)
+            print(currentChromNO,myseqline, myseqn)
             if myseqline.count('>') >= 1:
                 exit(-1)
         refSeqMap[currentChromNO].extend(list(myseqline))
@@ -87,7 +100,7 @@ def getRefSeqBypos(refFastahander,refindex, currentChromNO, startpos, endpos, se
     if plus != 0:
         return -1
     
-    return refSeqMap, currentChromNO
+    return refSeqMap
 
         
     filehander.close()

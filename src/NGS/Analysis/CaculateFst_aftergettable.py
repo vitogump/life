@@ -11,7 +11,7 @@ import pickle
 
 '''
 Created on 2013-6-30
-
+after CaculateFst.py runing and the treearray was produced correct,and after that ,the programma may exit accidentally,then you don't want to run all programma again,you can run CaculateFst_aftergettable.py continuely
 @author: rui
 '''
 if len(sys.argv) < 7:
@@ -133,72 +133,24 @@ if __name__ == '__main__':
         allkindofpaire = list(combinations(sys.argv[1:-4], 2))
         alldistMap={}
         tempdbtools = dbm.DBTools("localhost", "root", "1234567", "temp")
-        TABLES = {}
-        TABLES["treearray"] = (
-            "CREATE TABLE treearray ("
-            " `chrID` varchar(128) NOT NULL ,"
-            " `winNo` int(18) NOT NULL,"
-            " PRIMARY KEY (`chrID`,`winNo`)"
-            ")engine=innodb default charset=utf8"
-            )
-        tempdbtools.drop_table("treearray")
-        tempdbtools.create_table(TABLES)        
+       
         for fstpaire in allkindofpaire:
 
             fstpaire1name = re.search(r"[^/]*$",fstpaire[0]).group(0).replace('.','_')
             fstpaire2name = re.search(r"[^/]*$", fstpaire[1]).group(0).replace('.','_')  # for linux
             tableindextoarrayindex.append((allspeices.index(fstpaire1name),allspeices.index(fstpaire2name)))
             
-            outfile = open(fstpaire[0] + fstpaire2name + ".fst", 'w')
+
             
 #             win = Util.Window()
-            fst_caculator = Caculators.Caculate_Fst()
 
-            fst = Fst() 
-            tempdbtools.operateDB("callproc", "mysql_sp_add_column", data=("temp", "treearray", fstpaire1name+fstpaire2name, "text", "default null"))
-                
-            print("startcaculatefst:\n", fstpaire1name,fstpaire[0],'\n', fstpaire2name,fstpaire[1])
-            fst.caculateFstAccordingdb(dbtools, chromtable, fstpaire[0], fstpaire[1], fst_caculator, windowWidth,slideSize)
 
-            winCrossGenome = []
-            for chrom in fst.FstMapByChrom.keys():
-                for i in range(len(fst.FstMapByChrom[chrom])):
-                    if fst.FstMapByChrom[chrom][i][2] != "NA":
-                        winCrossGenome.append(fst.FstMapByChrom[chrom][i][2])
-            exception = numpy.mean(winCrossGenome)
-            std0 = numpy.std(winCrossGenome, ddof=0)
-            std1 = numpy.std(winCrossGenome, ddof=1)
-            del winCrossGenome
-            
-            totalChroms = dbtools.operateDB("select","select count(*) from "+chromtable)[0][0]
-            for i in range(0,totalChroms,20):
-                currentsql=sql+" order by "+primaryID+" limit "+str(i)+",20"
-                result=dbtools.operateDB("select",currentsql)
-                for row in result:
-                    currentchrID=row[0]
-                    currentchrLen=int(row[2])
-                    if currentchrID in fst.FstMapByChrom:
-                        for i in range(len(fst.FstMapByChrom[currentchrID])):
-                            if fst.FstMapByChrom[currentchrID][i][2] != "NA":
-                                zFst = (fst.FstMapByChrom[currentchrID][i][2] - exception) / std1
-                            else:
-                                zFst = "NA"
-                            print(currentchrID + "\t" + str(i) + "\t" + str(fst.FstMapByChrom[currentchrID][i][0]) + "\t" + str(fst.FstMapByChrom[currentchrID][i][1]) + "\t" + str(fst.FstMapByChrom[currentchrID][i][2]) + "\t" + str(zFst), file=outfile)                        
-#            for chrom in sorted(fst.FstMapByChrom.keys()):
+
+
 
             
-            sum = 0
-            Number = 0
-            for chrom in sorted(fst.FstMapByChrom.keys()):
-                for i in range(len(fst.FstMapByChrom[chrom])):
-                    if fst.FstMapByChrom[chrom][i][2] != 'NA':
-                        Number += 1
-                        sum += fst.FstMapByChrom[chrom][i][2]
-                    tempdbtools.operateDB("insert","insert into treearray(chrID,winNo,"+fstpaire1name+fstpaire2name+") values(%s,%s,%s) on duplicate key update "+fstpaire1name+fstpaire2name+" = '"+str(fst.FstMapByChrom[chrom][i][2])+"'",data=(chrom,str(i),str(fst.FstMapByChrom[chrom][i][2])))
-            alldistMap[fstpaire1name+fstpaire2name] = (sum / Number,allspeices.index(fstpaire1name))
-            outfile.close()
-        for n in alldistMap.keys():
-            print(n + "\t" + str(alldistMap[n]), file=open("testdist.txt", 'a'))
+
+
         tatalwins = tempdbtools.operateDB("select", "select count(*) from treearray")[0][0]
         for i in range(0, tatalwins, 100):
             wins = tempdbtools.operateDB("select","select * from treearray order by chrID asc,winNo asc limit "+str(i) +",100")
@@ -213,6 +165,7 @@ if __name__ == '__main__':
                     tmparray[i][i]='0'
                     print(allspeices[i]+"\t"+"\t".join(tmparray[i]),file=phyliparrayinfile)
         tempdbtools.disconnect()
+        dbtools.disconnect()
         phyliparrayinfile.close()
     elif sys.argv[-4] == 'G' or sys.argv[-4] == 'g':
         globalFstMapByChrom={}
