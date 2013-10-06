@@ -24,4 +24,5 @@ class CDSMutation():
               'gtg': 'V', 'gcg': 'A', 'gag': 'E', 'ggg': 'G'
 }
 def findMutation(self,vcfline):
+    pass
 #原来的SNPAnalysis程序是需要vcf文件排过序才行的

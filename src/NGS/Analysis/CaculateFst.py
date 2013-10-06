@@ -119,10 +119,11 @@ if __name__ == '__main__':
         phyliparrayinfile=open("phylip.arrayin",'w')
         allspeices=[]
         tableindextoarrayindex=[]
+        treearrayprename=""
         for pathtoname in sys.argv[1:-4]:
             allspeices.append(re.search(r"[^/]*$",pathtoname).group(0).replace('.','_'))
-
-
+            treearrayprename+=re.search(r"[^/]*$",pathtoname).group(0)[0]
+        print(treearrayprename+"treearray")
         arraytitle=""
         for name in allspeices:
             arraytitle+=(name+"\t")
@@ -134,14 +135,14 @@ if __name__ == '__main__':
         alldistMap={}
         tempdbtools = dbm.DBTools("localhost", "root", "1234567", "temp")
         TABLES = {}
-        TABLES["treearray"] = (
-            "CREATE TABLE treearray ("
+        TABLES[treearrayprename+"treearray"] = (
+            "CREATE TABLE "+treearrayprename+"treearray ("
             " `chrID` varchar(128) NOT NULL ,"
             " `winNo` int(18) NOT NULL,"
             " PRIMARY KEY (`chrID`,`winNo`)"
             ")engine=innodb default charset=utf8"
             )
-        tempdbtools.drop_table("treearray")
+        tempdbtools.drop_table(treearrayprename+"treearray")
         tempdbtools.create_table(TABLES)        
         for fstpaire in allkindofpaire:
 
@@ -149,13 +150,13 @@ if __name__ == '__main__':
             fstpaire2name = re.search(r"[^/]*$", fstpaire[1]).group(0).replace('.','_')  # for linux
             tableindextoarrayindex.append((allspeices.index(fstpaire1name),allspeices.index(fstpaire2name)))
             
-            outfile = open(fstpaire[0] + fstpaire2name + ".fst", 'w')
+            outfile = open(fstpaire1name + fstpaire2name + ".fst", 'w')
             
 #             win = Util.Window()
             fst_caculator = Caculators.Caculate_Fst()
 
             fst = Fst() 
-            tempdbtools.operateDB("callproc", "mysql_sp_add_column", data=("temp", "treearray", fstpaire1name+fstpaire2name, "text", "default null"))
+            tempdbtools.operateDB("callproc", "mysql_sp_add_column", data=("temp", treearrayprename+"treearray", fstpaire1name+fstpaire2name, "text", "default null"))
                 
             print("startcaculatefst:\n", fstpaire1name,fstpaire[0],'\n', fstpaire2name,fstpaire[1])
             fst.caculateFstAccordingdb(dbtools, chromtable, fstpaire[0], fstpaire[1], fst_caculator, windowWidth,slideSize)
@@ -194,14 +195,14 @@ if __name__ == '__main__':
                     if fst.FstMapByChrom[chrom][i][2] != 'NA':
                         Number += 1
                         sum += fst.FstMapByChrom[chrom][i][2]
-                    tempdbtools.operateDB("insert","insert into treearray(chrID,winNo,"+fstpaire1name+fstpaire2name+") values(%s,%s,%s) on duplicate key update "+fstpaire1name+fstpaire2name+" = '"+str(fst.FstMapByChrom[chrom][i][2])+"'",data=(chrom,str(i),str(fst.FstMapByChrom[chrom][i][2])))
+                    tempdbtools.operateDB("insert","insert into "+treearrayprename+"treearray(chrID,winNo,"+fstpaire1name+fstpaire2name+") values(%s,%s,%s) on duplicate key update "+fstpaire1name+fstpaire2name+" = '"+str(fst.FstMapByChrom[chrom][i][2])+"'",data=(chrom,str(i),str(fst.FstMapByChrom[chrom][i][2])))
             alldistMap[fstpaire1name+fstpaire2name] = (sum / Number,allspeices.index(fstpaire1name))
             outfile.close()
         for n in alldistMap.keys():
             print(n + "\t" + str(alldistMap[n]), file=open("testdist.txt", 'a'))
-        tatalwins = tempdbtools.operateDB("select", "select count(*) from treearray")[0][0]
+        tatalwins = tempdbtools.operateDB("select", "select count(*) from "+treearrayprename+"treearray")[0][0]
         for i in range(0, tatalwins, 100):
-            wins = tempdbtools.operateDB("select","select * from treearray order by chrID asc,winNo asc limit "+str(i) +",100")
+            wins = tempdbtools.operateDB("select","select * from "+treearrayprename+"treearray order by chrID asc,winNo asc limit "+str(i) +",100")
             for win in wins:
                 tmparray=[[0 for x in range(len(allspeices))] for y in range(len(allspeices))]
                 print(">"+str(len(allspeices)),file=phyliparrayinfile)

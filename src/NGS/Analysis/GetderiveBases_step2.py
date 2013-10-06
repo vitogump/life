@@ -91,7 +91,7 @@ if __name__ == '__main__':
                 tempStr.reverse()
                 RefSeqMap[chrom][1:]=Util.complementary(tempStr)
                 revcom=False            
-            print(lastsnpID,"".join(RefSeqMap[chrom][1:]),file=open("chickensnpflank.fa",'a'))
+            print(lastsnpID,"".join(RefSeqMap[chrom][1:]),file=open(finaltable+"chickensnpflank.fa",'a'))
             if RefSeqMap[chrom][snpindex + 1] in lastbasesAccur:
                 lastbasesAccur[RefSeqMap[chrom][snpindex + 1]].append((chrom, sstartpos, sendpos))
             else:
@@ -108,7 +108,7 @@ if __name__ == '__main__':
                 tempStr.reverse()
                 RefSeqMap[chrom][1:]=Util.complementary(tempStr)
                 revcom=False            
-            print(hitlist[0],"".join(RefSeqMap[chrom][1:]),file=open("chickensnpflank.fa",'a'))
+            print(hitlist[0],"".join(RefSeqMap[chrom][1:]),file=open(finaltable+"chickensnpflank.fa",'a'))
 #            dbtools.operateDB("update", "update " + finaltable + " set chicken='" + RefSeqMap[chrom][snpindex + 1] + "' where snpID='" + hitlist[0] + "'")
             lastsnpID = hitlist[0]
             
