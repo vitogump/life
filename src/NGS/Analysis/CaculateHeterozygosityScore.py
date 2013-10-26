@@ -28,7 +28,7 @@ class HeterozygosityScore():
 if __name__ == '__main__':
     dbtools = dbm.DBTools("localhost", "root", "1234567", "life_pilot")
     for vcf in sys.argv[1:-3]:
-        outfile = open(vcf + ".het", 'w')
+        outfile = open(vcf + ".het"+str(windowWidth)+"_"+str(slideSize), 'w')
         win = Util.Window()
         hp_caculator = Caculators.Caculate_Hp()
         pop = VCFutil.VCF_Data(vcf)  # new a class

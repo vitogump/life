@@ -2,12 +2,13 @@
 from NGS.BasicUtil import *
 from itertools import combinations
 import NGS.BasicUtil.Util
-import src.NGS.BasicUtil.DBManager as dbm
-import re
 import numpy
-import sys
 import pickle
-
+import re
+import src.NGS.BasicUtil.DBManager as dbm
+import sys
+import time
+SLEEP_FOR_NEXT_TRY=3
 
 '''
 Created on 2013-6-30
@@ -123,13 +124,13 @@ if __name__ == '__main__':
         for pathtoname in sys.argv[1:-4]:
             allspeices.append(re.search(r"[^/]*$",pathtoname).group(0).replace('.','_'))
             treearrayprename+=re.search(r"[^/]*$",pathtoname).group(0)[0]
-        print(treearrayprename+"treearray")
+        print("mysqltablename: "+treearrayprename+"treearray")
         arraytitle=""
         for name in allspeices:
             arraytitle+=(name+"\t")
         print("\t"+arraytitle+"\n")
         for namerow in allspeices:
-            print(namerow+"\n")        
+            print(namerow[0:8]+"\n")        
             
         allkindofpaire = list(combinations(sys.argv[1:-4], 2))
         alldistMap={}
@@ -143,6 +144,7 @@ if __name__ == '__main__':
             ")engine=innodb default charset=utf8"
             )
         tempdbtools.drop_table(treearrayprename+"treearray")
+        time.sleep(SLEEP_FOR_NEXT_TRY)
         tempdbtools.create_table(TABLES)        
         for fstpaire in allkindofpaire:
 
@@ -204,15 +206,21 @@ if __name__ == '__main__':
         for i in range(0, tatalwins, 100):
             wins = tempdbtools.operateDB("select","select * from "+treearrayprename+"treearray order by chrID asc,winNo asc limit "+str(i) +",100")
             for win in wins:
+                abandonthisWin=False
                 tmparray=[[0 for x in range(len(allspeices))] for y in range(len(allspeices))]
-                print(">"+str(len(allspeices)),file=phyliparrayinfile)
-                print("\t"+arraytitle,file=phyliparrayinfile)
+                
+#                print("\t"+arraytitle,file=phyliparrayinfile)
                 for i in range(len(win[2:])):
                     tmparray[tableindextoarrayindex[i][0]][tableindextoarrayindex[i][1]]=str(win[i+2])
                     tmparray[tableindextoarrayindex[i][1]][tableindextoarrayindex[i][0]]=str(win[i+2])
+                    if win[i+2]==None:
+                        abandonthisWin=True
+                if abandonthisWin:
+                    continue
+                print("    "+str(len(allspeices)),file=phyliparrayinfile)
                 for i in range(len(allspeices)):
                     tmparray[i][i]='0'
-                    print(allspeices[i]+"\t"+"\t".join(tmparray[i]),file=phyliparrayinfile)
+                    print(allspeices[i][0:8]+"  "+"\t".join(tmparray[i]),file=phyliparrayinfile)
         tempdbtools.disconnect()
         phyliparrayinfile.close()
     elif sys.argv[-4] == 'G' or sys.argv[-4] == 'g':

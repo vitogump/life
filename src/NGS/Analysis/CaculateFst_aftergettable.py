@@ -155,17 +155,21 @@ if __name__ == '__main__':
         for i in range(0, tatalwins, 100):
             wins = tempdbtools.operateDB("select","select * from treearray order by chrID asc,winNo asc limit "+str(i) +",100")
             for win in wins:
+                abandonthisWin=False
                 tmparray=[[0 for x in range(len(allspeices))] for y in range(len(allspeices))]
-                print(">"+str(len(allspeices)),file=phyliparrayinfile)
-                print("\t"+arraytitle,file=phyliparrayinfile)
+                print("    "+str(len(allspeices)),file=phyliparrayinfile)
+                #print("\t"+arraytitle,file=phyliparrayinfile)
                 for i in range(len(win[2:])):
                     tmparray[tableindextoarrayindex[i][0]][tableindextoarrayindex[i][1]]=str(win[i+2])
                     tmparray[tableindextoarrayindex[i][1]][tableindextoarrayindex[i][0]]=str(win[i+2])
+                    if win[i+2]==None or win[i+2]=='NA' or win[i+2]=='NULL':
+                        abandonthisWin=True
+                if abandonthisWin:
+                    continue
                 for i in range(len(allspeices)):
                     tmparray[i][i]='0'
-                    print(allspeices[i]+"\t"+"\t".join(tmparray[i]),file=phyliparrayinfile)
+                    print(allspeices[i][0:8]+"  "+"\t".join(tmparray[i]),file=phyliparrayinfile)
         tempdbtools.disconnect()
-        dbtools.disconnect()
         phyliparrayinfile.close()
     elif sys.argv[-4] == 'G' or sys.argv[-4] == 'g':
         globalFstMapByChrom={}

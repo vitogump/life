@@ -43,7 +43,7 @@ if __name__ == '__main__':
     
     dbtools = dbm.DBTools("localhost", "root", "1234567", "life_pilot")
     dbtools.operateDB("callproc", "mysql_sp_add_column", data=("life_pilot", finaltable, "chicken", "tinytext", "default null"))
-    a = os.popen("awk '$1!~/^#/ && $5==1 && $4>30 && $6==0 {print $0}' " + blastoutName)
+    a = os.popen("awk '$1!~/^#/ && $5==1 && $4>26 && $6==0 {print $0}' " + blastoutName)
 #    hits=a.readlines()
 
     lastbasesAccur = {}
