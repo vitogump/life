@@ -7,15 +7,16 @@ Created on 2013-9-10
 
 @author: liurui
 '''
-winwidth = 40000
-slidesize = 20000
+
 
 if len(sys.argv) < 7:
-    print("python GetderiveBases.py [duckref] [originalspeciesref] [winFile1] [winFile2]... [winFileN] [chromtable] [tempwinDBName] [percentage] [outfilename] [m/l]")
+    print("python GetderiveBases.py [duckref] [originalspeciesref] [winFile1] [winFile2]... [winFileN] [winwidth] [slidesize] [chromtable] [tempwinDBName] [percentage] [outfilename] [m/l]")
     exit(-1)
 duckref = sys.argv[1]
 originalspeciesref = sys.argv[2]
-winFileName6Fields = sys.argv[3:-5]
+winFileName6Fields = sys.argv[3:-7]
+winwidth = int(sys.argv[-7])
+slidesize = int(sys.argv[-6])
 chromtable = sys.argv[-5]
 tempwinDBName = sys.argv[-4]
 percentage = float(sys.argv[-3])

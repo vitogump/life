@@ -152,7 +152,7 @@ if __name__ == '__main__':
             fstpaire2name = re.search(r"[^/]*$", fstpaire[1]).group(0).replace('.','_')  # for linux
             tableindextoarrayindex.append((allspeices.index(fstpaire1name),allspeices.index(fstpaire2name)))
             
-            outfile = open(fstpaire1name + fstpaire2name + ".fst", 'w')
+            outfile = open(fstpaire1name + fstpaire2name + ".fst"+str(windowWidth)+"_"+str(slideSize), 'w')
             
 #             win = Util.Window()
             fst_caculator = Caculators.Caculate_Fst()
@@ -229,6 +229,7 @@ if __name__ == '__main__':
 
         
 #         fst = Fst() 
+        specisnum=str(len(sys.argv[1:-4]))
         for majorpop in sys.argv[1:-4]:
 #            pop1 = VCFutil.VCF_Data(majorpop)  # new a class
 #            pop1.getVcfMap(majorpop)
@@ -241,8 +242,8 @@ if __name__ == '__main__':
 #                pop2.getVcfMap(othrpop)
                 print("startcaculatefst", majorpop, othrpop)
                 fstlist.append(Fst())
-                fstlist[-1].caculateFstAccordingdb(dbtools, chromtable, majorpop, othrpop, fst_caculator, int(sys.argv[-3]),int(sys.argv[-2]))          
-            outfile=open(majorpop+'.gfst','w')
+                fstlist[-1].caculateFstAccordingdb(dbtools, chromtable, majorpop, othrpop, fst_caculator, windowWidth,slideSize)          
+            outfile=open(majorpop+'.gfst'+str(windowWidth)+"_"+str(slideSize)+"_"+specisnum,'w')
             if len(fstlist) != 0:
                 for chrom in fstlist[0].FstMapByChrom.keys():
                     globalFstMapByChrom[chrom]=[]
@@ -292,5 +293,5 @@ if __name__ == '__main__':
                                 else:
                                     zgFst = "NA"
                                 print(currentchrID + "\t" + str(i) + "\t" + str(globalFstMapByChrom[currentchrID][i][0]) + "\t" + str(globalFstMapByChrom[currentchrID][i][1]) + "\t" + str(globalFstMapByChrom[currentchrID][i][2]) + "\t" + str(zgFst), file=outfile)
-                                
+            outfile.close()                    
     dbtools.disconnect()
