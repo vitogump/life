@@ -157,7 +157,6 @@ if __name__ == '__main__':
             for win in wins:
                 abandonthisWin=False
                 tmparray=[[0 for x in range(len(allspeices))] for y in range(len(allspeices))]
-                print("    "+str(len(allspeices)),file=phyliparrayinfile)
                 #print("\t"+arraytitle,file=phyliparrayinfile)
                 for i in range(len(win[2:])):
                     tmparray[tableindextoarrayindex[i][0]][tableindextoarrayindex[i][1]]=str(win[i+2])
@@ -166,6 +165,7 @@ if __name__ == '__main__':
                         abandonthisWin=True
                 if abandonthisWin:
                     continue
+                print("    "+str(len(allspeices)),file=phyliparrayinfile)
                 for i in range(len(allspeices)):
                     tmparray[i][i]='0'
                     print(allspeices[i][0:8]+"  "+"\t".join(tmparray[i]),file=phyliparrayinfile)

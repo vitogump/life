@@ -8,7 +8,7 @@ import re
 import src.NGS.BasicUtil.DBManager as dbm
 import sys
 import time
-SLEEP_FOR_NEXT_TRY=3
+SLEEP_FOR_NEXT_TRY=10
 
 '''
 Created on 2013-6-30
@@ -117,7 +117,7 @@ class Fst():
 if __name__ == '__main__':
     dbtools = dbm.DBTools("localhost", "root", "1234567", "life_pilot")
     if sys.argv[-4]=='R' or sys.argv[-4]=='r':
-        phyliparrayinfile=open("phylip.arrayin",'w')
+        phyliparrayinfile=open("phylip.arrayin"+str(windowWidth)+"_"+str(slideSize),'w')
         allspeices=[]
         tableindextoarrayindex=[]
         treearrayprename=""

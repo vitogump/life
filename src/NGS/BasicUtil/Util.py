@@ -66,16 +66,16 @@ def getRefSeqBypos(refFastahander,refindex, currentChromNO, startpos, endpos, se
         #now filehander is right stay at the startpos
         myseqline = filehander.read(endpos - startpos + 1)
         myseqn = myseqline.count('\n')
-        if len(myseqline)>200:
-            print(myseqn)
-            exit(-1)
-        print("myseqline=",myseqline,"myseqn", myseqn)
+#        if len(myseqline)>200:
+#            print(myseqn)
+#            exit(-1)
+#        print("myseqline=",myseqline,"myseqn", myseqn)
         while myseqn != 0:# fill the same number of \n with bases
             myseqline = myseqline.replace('\n', '')
             myseqline += filehander.read(myseqn)
             myseqn = myseqline.count('\n')
             
-            print(currentChromNO,myseqline, myseqn)
+#            print(currentChromNO,myseqline, myseqn)
             if myseqline.count('>') >= 1:
                 exit(-1)
         refSeqMap[currentChromNO].extend(list(myseqline))
@@ -103,7 +103,7 @@ def getRefSeqBypos(refFastahander,refindex, currentChromNO, startpos, endpos, se
     return refSeqMap
 
         
-    filehander.close()
+#    filehander.close()
 def getRefSeqMap(refFastafilehander, currentChromNO=None, preBaseTotal=0, linesOnce=500000):
     '''
     the refSeqMap has only one chromosome's sequence
