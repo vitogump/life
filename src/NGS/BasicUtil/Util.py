@@ -46,6 +46,8 @@ def getRefSeqBypos(refFastahander,refindex, currentChromNO, startpos, endpos, se
     the refSeqMap has only one chromosome's sequence
     '''    
     refSeqMap = {}
+    if startpos<=0:
+        startpos=1
     print(currentChromNO, startpos, endpos)
 #    try:
 #        refindex = pickle.load(open(refFastaFileName + ".myindex", 'rb'))
