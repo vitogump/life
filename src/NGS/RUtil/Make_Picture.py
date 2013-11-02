@@ -92,6 +92,7 @@ class MakeMhtGraph(object):
         r('par(las=1, xpd=TRUE, cex.axis=1.0, cex=0.5)')
         r('mhtplot(data,control=mht.control(logscale=FALSE,colors=colors,cex=0.5),pch=20,ylab="z' + dataType + '")')
         r('axis(2)')
+        r("title('"+name+"')")
         r('dev.off()')
 #         print(name,dataType,"tiff('" + name + "histon_" + dataType + ".tiff'")
         r("tiff('" + name + "histon_" + dataType + ".tiff')")
@@ -108,7 +109,8 @@ class MakeMhtGraph(object):
 #             r("zbins=seq(-6,3.5,by=0.02)")
 #         elif dataType == "Fst":
 #             r("zbins=seq(-3.5,6,by=0.02)")
-        r("hist(x$z" + dataType + ",breaks=1000)")
+        
+        r("hist(x$z" + dataType + ",breaks=1000,main='"+name+"')")
         r('dev.off()')
 
         
