@@ -2,12 +2,13 @@
 from NGS.BasicUtil import *
 from itertools import combinations
 import NGS.BasicUtil.Util
-import src.NGS.BasicUtil.DBManager as dbm
-import re
 import numpy
-import sys
 import pickle
-
+import re
+import src.NGS.BasicUtil.DBManager as dbm
+import sys
+import time
+SLEEP_FOR_NEXT_TRY=10
 
 '''
 Created on 2013-6-30
@@ -116,20 +117,20 @@ class Fst():
 if __name__ == '__main__':
     dbtools = dbm.DBTools("localhost", "root", "1234567", "life_pilot")
     if sys.argv[-4]=='R' or sys.argv[-4]=='r':
-        phyliparrayinfile=open("phylip.arrayin",'w')
+        phyliparrayinfile=open("phylip.arrayin"+str(windowWidth)+"_"+str(slideSize),'w')
         allspeices=[]
         tableindextoarrayindex=[]
         treearrayprename=""
         for pathtoname in sys.argv[1:-4]:
             allspeices.append(re.search(r"[^/]*$",pathtoname).group(0).replace('.','_'))
             treearrayprename+=re.search(r"[^/]*$",pathtoname).group(0)[0]
-        print(treearrayprename+"treearray")
+        print("mysqltablename: "+treearrayprename+"treearray")
         arraytitle=""
         for name in allspeices:
             arraytitle+=(name+"\t")
         print("\t"+arraytitle+"\n")
         for namerow in allspeices:
-            print(namerow+"\n")        
+            print(namerow[0:8]+"\n")        
             
         allkindofpaire = list(combinations(sys.argv[1:-4], 2))
         alldistMap={}
@@ -143,6 +144,7 @@ if __name__ == '__main__':
             ")engine=innodb default charset=utf8"
             )
         tempdbtools.drop_table(treearrayprename+"treearray")
+        time.sleep(SLEEP_FOR_NEXT_TRY)
         tempdbtools.create_table(TABLES)        
         for fstpaire in allkindofpaire:
 
@@ -150,7 +152,7 @@ if __name__ == '__main__':
             fstpaire2name = re.search(r"[^/]*$", fstpaire[1]).group(0).replace('.','_')  # for linux
             tableindextoarrayindex.append((allspeices.index(fstpaire1name),allspeices.index(fstpaire2name)))
             
-            outfile = open(fstpaire1name + fstpaire2name + ".fst", 'w')
+            outfile = open(fstpaire1name + fstpaire2name + ".fst"+str(windowWidth)+"_"+str(slideSize), 'w')
             
 #             win = Util.Window()
             fst_caculator = Caculators.Caculate_Fst()
@@ -204,15 +206,21 @@ if __name__ == '__main__':
         for i in range(0, tatalwins, 100):
             wins = tempdbtools.operateDB("select","select * from "+treearrayprename+"treearray order by chrID asc,winNo asc limit "+str(i) +",100")
             for win in wins:
+                abandonthisWin=False
                 tmparray=[[0 for x in range(len(allspeices))] for y in range(len(allspeices))]
-                print(">"+str(len(allspeices)),file=phyliparrayinfile)
-                print("\t"+arraytitle,file=phyliparrayinfile)
+                
+#                print("\t"+arraytitle,file=phyliparrayinfile)
                 for i in range(len(win[2:])):
                     tmparray[tableindextoarrayindex[i][0]][tableindextoarrayindex[i][1]]=str(win[i+2])
                     tmparray[tableindextoarrayindex[i][1]][tableindextoarrayindex[i][0]]=str(win[i+2])
+                    if win[i+2]==None:
+                        abandonthisWin=True
+                if abandonthisWin:
+                    continue
+                print("    "+str(len(allspeices)),file=phyliparrayinfile)
                 for i in range(len(allspeices)):
                     tmparray[i][i]='0'
-                    print(allspeices[i]+"\t"+"\t".join(tmparray[i]),file=phyliparrayinfile)
+                    print(allspeices[i][0:8]+"  "+"\t".join(tmparray[i]),file=phyliparrayinfile)
         tempdbtools.disconnect()
         phyliparrayinfile.close()
     elif sys.argv[-4] == 'G' or sys.argv[-4] == 'g':
@@ -221,6 +229,7 @@ if __name__ == '__main__':
 
         
 #         fst = Fst() 
+        specisnum=str(len(sys.argv[1:-4]))
         for majorpop in sys.argv[1:-4]:
 #            pop1 = VCFutil.VCF_Data(majorpop)  # new a class
 #            pop1.getVcfMap(majorpop)
@@ -233,8 +242,8 @@ if __name__ == '__main__':
 #                pop2.getVcfMap(othrpop)
                 print("startcaculatefst", majorpop, othrpop)
                 fstlist.append(Fst())
-                fstlist[-1].caculateFstAccordingdb(dbtools, chromtable, majorpop, othrpop, fst_caculator, int(sys.argv[-3]),int(sys.argv[-2]))          
-            outfile=open(majorpop+'.gfst','w')
+                fstlist[-1].caculateFstAccordingdb(dbtools, chromtable, majorpop, othrpop, fst_caculator, windowWidth,slideSize)          
+            outfile=open(majorpop+'.gfst'+str(windowWidth)+"_"+str(slideSize)+"_"+specisnum,'w')
             if len(fstlist) != 0:
                 for chrom in fstlist[0].FstMapByChrom.keys():
                     globalFstMapByChrom[chrom]=[]
@@ -284,5 +293,5 @@ if __name__ == '__main__':
                                 else:
                                     zgFst = "NA"
                                 print(currentchrID + "\t" + str(i) + "\t" + str(globalFstMapByChrom[currentchrID][i][0]) + "\t" + str(globalFstMapByChrom[currentchrID][i][1]) + "\t" + str(globalFstMapByChrom[currentchrID][i][2]) + "\t" + str(zgFst), file=outfile)
-                                
+            outfile.close()                    
     dbtools.disconnect()

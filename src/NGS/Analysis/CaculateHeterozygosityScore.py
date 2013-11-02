@@ -14,11 +14,12 @@ primaryID = "chrID"
 
 
 if len(sys.argv) < 4:
-    print("python CaculateHeterozygosityScore.py [vcf1] [vcf2] [vcf3]....[chromtable] [winwidth] [slidesize]")
+    print("python CaculateHeterozygosityScore.py [vcf1] [vcf2] [vcf3]....[dbname] [chromtable] [winwidth] [slidesize]")
     exit(-1)
 windowWidth=int(sys.argv[-2])
 slideSize=int(sys.argv[-1])
 chromtable=sys.argv[-3]
+dbname=sys.argv[-4]
 sql = "select * from " + chromtable
 
 class HeterozygosityScore():
@@ -26,9 +27,9 @@ class HeterozygosityScore():
         self.HeterozyMap = {}
 
 if __name__ == '__main__':
-    dbtools = dbm.DBTools("localhost", "root", "1234567", "life_pilot")
-    for vcf in sys.argv[1:-3]:
-        outfile = open(vcf + ".het", 'w')
+    dbtools = dbm.DBTools("localhost", "root", "1234567", dbname)
+    for vcf in sys.argv[1:-4]:
+        outfile = open(vcf + ".het"+str(windowWidth)+"_"+str(slideSize), 'w')
         win = Util.Window()
         hp_caculator = Caculators.Caculate_Hp()
         pop = VCFutil.VCF_Data(vcf)  # new a class
