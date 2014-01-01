@@ -1,7 +1,7 @@
 import re, pickle, os
 import random, string
 import src.NGS.BasicUtil.DBManager as dbm
-#from src.NGS.BasicUtil import *
+# from src.NGS.BasicUtil import *
 
 '''
 Created on 2013-6-30
@@ -20,7 +20,7 @@ def complementary(seqlist):
         elif seqlist[i].lower() == 'g':
             newseqlist.insert(i, 'c')
         else:
-            newseqlist.insert(i,seqlist[i])
+            newseqlist.insert(i, seqlist[i])
     return newseqlist
 def random_str(randomlength=8):
     a = list(string.ascii_letters)
@@ -35,19 +35,19 @@ def generateIndexByChrom(refFastaFileName, indexFileName):
         if re.search(r'^[>]', refline) != None:
             collist = re.split(r'\s+', refline)
             currentChromNo = re.search(r'[^>]+', (re.split(r'\s+', refline))[0]).group(0)
-            refChromIndex[currentChromNo] = int(refFastaFile.tell())# from here is the sequence
+            refChromIndex[currentChromNo] = int(refFastaFile.tell())  # from here is the sequence
         refline = refFastaFile.readline()
     pickle.dump(refChromIndex, open(indexFileName, 'wb'))
     refFastaFile.close()
-def getRefSeqBypos(refFastahander,refindex, currentChromNO, startpos, endpos, seektuple=()):
+def getRefSeqBypos(refFastahander, refindex, currentChromNO, startpos, endpos, seektuple=()):
     '''
     pos start at 1
     seektuple=(filepos,basesbeforefilepos)
     the refSeqMap has only one chromosome's sequence
     '''    
     refSeqMap = {}
-    if startpos<=0:
-        startpos=1
+    if startpos <= 0:
+        startpos = 1
     print(currentChromNO, startpos, endpos)
 #    try:
 #        refindex = pickle.load(open(refFastaFileName + ".myindex", 'rb'))
@@ -58,21 +58,21 @@ def getRefSeqBypos(refFastahander,refindex, currentChromNO, startpos, endpos, se
     filehander = refFastahander
     if not seektuple or seektuple[1] > startpos:
         refSeqMap[currentChromNO] = [startpos - 1]
-        filehander.seek(refindex[currentChromNO])#seekmap is empty so go to the first bases of the currentChromNO
+        filehander.seek(refindex[currentChromNO])  # seekmap is empty so go to the first bases of the currentChromNO
         preseq = filehander.read(startpos - 1)
         dn = preseq.count('\n')
         while dn != 0:
             preseq = filehander.read(dn)
             dn = preseq.count('\n')
             
-        #now filehander is right stay at the startpos
+        # now filehander is right stay at the startpos
         myseqline = filehander.read(endpos - startpos + 1)
         myseqn = myseqline.count('\n')
 #        if len(myseqline)>200:
 #            print(myseqn)
 #            exit(-1)
 #        print("myseqline=",myseqline,"myseqn", myseqn)
-        while myseqn != 0:# fill the same number of \n with bases
+        while myseqn != 0:  # fill the same number of \n with bases
             myseqline = myseqline.replace('\n', '')
             myseqline += filehander.read(myseqn)
             myseqn = myseqline.count('\n')
@@ -82,17 +82,17 @@ def getRefSeqBypos(refFastahander,refindex, currentChromNO, startpos, endpos, se
                 exit(-1)
         refSeqMap[currentChromNO].extend(list(myseqline))
     else:
-        filehander.seek(seektuple[0])#seekmap is not empty
+        filehander.seek(seektuple[0])  # seekmap is not empty
         refSeqMap[currentChromNO] = [startpos - 1]
         preseq = filehander.read(startpos - seektuple[1] - 1)
         dn = preseq.count('\n')
         while dn != 0:
             preseq = filehander.read(dn)
             dn = preseq.count('\n')
-        #now filehander is right stay at the startpos
+        # now filehander is right stay at the startpos
         myseqline = filehander.read(endpos - startpos + 1)
         myseqn = myseqline.count('\n')
-        while myseqn != 0:# fill the same number of \n with bases
+        while myseqn != 0:  # fill the same number of \n with bases
             myseqline = myseqline.replace('\n', '')
             myseqline += filehander.read(myseqn)
             myseqn = myseqline.count('\n')
@@ -115,7 +115,7 @@ def getRefSeqMap(refFastafilehander, currentChromNO=None, preBaseTotal=0, linesO
         refline = refFastafilehander.readline() 
         print("getRefSeqMap", refline)
         currentChromNO = re.search(r'[^>]+', (re.split(r'\s+', refline))[0]).group(0)
-        refSeqMap[currentChromNO] = [preBaseTotal]#preBaseTotal=0
+        refSeqMap[currentChromNO] = [preBaseTotal]  # preBaseTotal=0
         print("getRefSeqMap", currentChromNO)
     else:
         refSeqMap[currentChromNO] = [preBaseTotal]
@@ -125,7 +125,7 @@ def getRefSeqMap(refFastafilehander, currentChromNO=None, preBaseTotal=0, linesO
             print("getRefSeqMap", re.search(r'[^>]+', collist[0]).group(0))
 #            refSeqMap[currentChromNO] = [0]
 #            currentChromNO=re.search(r'[^>]+', collist[0]).group(0)
-            return refSeqMap, currentChromNO#clean the refSeqMap and report the current chromNO
+            return refSeqMap, currentChromNO  # clean the refSeqMap and report the current chromNO
         else:
             refSeqMap[currentChromNO].extend(list(refline.strip().lower()))
         linesOnce -= 1    
@@ -149,13 +149,13 @@ class FastQ_Util():
         while fqline:
             collist = re.split(r'\s+', fqline)
             if re.search(r'^[@][^@]+$', collist[0]) != None:                
-                if len(collist[0]) > 20:# may be fqline is located in the quality value block
+                if len(collist[0]) > 20:  # may be fqline is located in the quality value block
                     fqline = fasqfile.readline()
                     continue
 #                print(collist[0],fqline)
                 currentChromNo = re.search(r'^[@]([^@]+)$', collist[0]).group(1).strip()
 #                print(currentChromNo)
-                refChromIndex[currentChromNo] = int(fasqfile.tell())# from here is the sequence
+                refChromIndex[currentChromNo] = int(fasqfile.tell())  # from here is the sequence
             fqline = fasqfile.readline()
         pickle.dump(refChromIndex, open(indexFileName, 'wb'))
         fasqfile.close()
@@ -202,6 +202,48 @@ class Window():
     def __init__(self):
         super().__init__()
         self.winValueL = []  # [(startPos,lastPos,value),(),,,,,,]
+    def forPhastConsFormat(self, L, L_End_Pos, windowWidth, Caculator, winStart=0):
+        """
+        without overlap
+        L=[startpos,endpos,value]
+        """
+        self.winValueL = []
+        currentIdx = 0
+        while currentIdx != len(L):
+            if L[currentIdx][0] >= winStart and L[currentIdx][1] <= (winStart + windowWidth):
+#                 print(L[currentIdx][1] - L[currentIdx][0])
+                Caculator.process(L[currentIdx], L[currentIdx][1] - L[currentIdx][0])
+                if L[currentIdx][1] == (winStart + windowWidth):
+                    value=Caculator.getResult()
+                    self.winValueL.append((winStart, winStart + windowWidth, value))
+                    winStart+=windowWidth
+                
+            elif L[currentIdx][0] > winStart and L[currentIdx][0] < (winStart + windowWidth) and L[currentIdx][1] > (winStart + windowWidth):
+                print("2")
+                frontPartPosNum = winStart + windowWidth - L[currentIdx][0]
+                rearPartPosNum = L[currentIdx][1] - (winStart + windowWidth)
+                Caculator.process(L[currentIdx], frontPartPosNum)
+                value = Caculator.getResult()
+                self.winValueL.append((winStart, winStart + windowWidth, value))
+                winStart+=windowWidth
+                Caculator.process(L[currentIdx], rearPartPosNum)
+            elif L[currentIdx][0] <=  winStart and L[currentIdx][1] >  winStart and L[currentIdx][1] < (winStart + windowWidth):
+                print("3")
+                rearPartPosNum = L[currentIdx][1] - (winStart + windowWidth)
+                Caculator.process(L[currentIdx], frontPartPosNum)
+            elif (winStart + windowWidth) <= L[currentIdx][0]:
+                print("4")
+                while  (winStart + windowWidth) <= L[currentIdx][0]:
+                    print("Util",winStart + windowWidth ,L[currentIdx][0])
+                    self.winValueL.append((winStart, winStart + windowWidth, Caculator.getResult()))
+                    winStart+=windowWidth
+            elif L[currentIdx][1]==winStart:
+                self.winValueL.append((winStart,winStart+windowWidth,Caculator.getResult()))
+                winStart+=windowWidth
+            currentIdx += 1
+        else:
+            self.winValueL.append((winStart, winStart + windowWidth, Caculator.getResult()))
+                
     def slidWindowOverlap(self, L, L_End_Pos, windowWidth, slideSize, Caculator):
         """
         L = [(pos, REF, ALT, INFO),(),(),...........]

@@ -9,6 +9,28 @@ class Caculator():
         pass
     def getResult(self):
         pass
+class Caculate_phastConsValue(Caculator):
+    def __init__(self):
+        super().__init__()
+        self.conservationvalue=0
+        self.totalPostionsAwin=0
+    def process(self,T,NumOfPositions):
+        self.conservationvalue+=T[2]*NumOfPositions
+        self.totalPostionsAwin+=NumOfPositions
+    def getResult(self):
+        winvalue="NA"
+        if self.totalPostionsAwin==0:
+            self.conservationvalue=0
+            print("getResult")
+            return "NA"
+        else:
+            winvalue=self.conservationvalue
+            print(self.conservationvalue,self.totalPostionsAwin)
+            winvalue=self.conservationvalue/self.totalPostionsAwin
+            self.conservationvalue=0
+            self.totalPostionsAwin=0
+            return winvalue
+        
 class Caculate_Hp(Caculator):
     def __init__(self):
         super().__init__()
