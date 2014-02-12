@@ -213,7 +213,7 @@ if __name__ == '__main__':
                 for i in range(len(win[2:])):
                     tmparray[tableindextoarrayindex[i][0]][tableindextoarrayindex[i][1]]=str(win[i+2])
                     tmparray[tableindextoarrayindex[i][1]][tableindextoarrayindex[i][0]]=str(win[i+2])
-                    if win[i+2]==None:
+                    if win[i+2]==None or win[i+2]=="NA" or win[i+2]=='NULL':
                         abandonthisWin=True
                 if abandonthisWin:
                     continue
