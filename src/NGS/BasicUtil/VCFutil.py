@@ -16,8 +16,8 @@ class VCF_Data():
         except:
             VCF_Data.indexVCF(vcffileName, vcffileName + ".myindex")
             self.VcfIndexMap = pickle.load(open(vcffileName + ".myindex", 'rb'))
-    @staticmethod
-    def indexVCF(VCFName, indexFileName):
+#    @staticmethod
+    def indexVCF(self,VCFName, indexFileName):
         """
         {chrom:position_in_file_of_first_SNP_of_this_chrom,chrom:position,,,,,,}
         """
@@ -49,6 +49,9 @@ class VCF_Data():
         pickle.dump(vcfChromIndex, open(indexFileName, 'wb'))
         vcffile.close()
     def getVcfMapByChrom(self, vcfFileName, chrom):
+        """
+            return a list that contain all vcf record of a chrom
+        """
         self.VcfList_A_Chrom = []
         vcfFile = open(vcfFileName, 'r')
         try:

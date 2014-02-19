@@ -124,16 +124,87 @@ def getRefSeqMap(refFastafilehander, currentChromNO=None, preBaseTotal=0, linesO
             collist = re.split(r'\s+', refline)
             print("getRefSeqMap", re.search(r'[^>]+', collist[0]).group(0))
 #            refSeqMap[currentChromNO] = [0]
-#            currentChromNO=re.search(r'[^>]+', collist[0]).group(0)
-            return refSeqMap, currentChromNO  # clean the refSeqMap and report the current chromNO
+            nextChromNo = re.search(r'[^>]+', collist[0]).group(0)
+            return refSeqMap, currentChromNO, nextChromNo  # clean the refSeqMap and report the current chromNO
         else:
             refSeqMap[currentChromNO].extend(list(refline.strip().lower()))
         linesOnce -= 1    
         if linesOnce == 0:
             break                
-    return refSeqMap, currentChromNO
-
-
+    else:
+        return refSeqMap, currentChromNO, "end of the reffile"
+    return refSeqMap, currentChromNO, currentChromNO
+class GATK_depthfile():
+    def __init__(self, depthfileName, indexFileName):
+        super.__init__()
+        self.covfileidx = {}
+        self.title=[]
+        try:
+            self.covfileidx = pickle.load(open(indexFileName, 'rb'))
+        except IOError:
+            self.indexGATK_depthfile(depthfileName, indexFileName)
+            self.covfileidx = pickle.load(open(indexFileName, 'rb'))
+        self.depthfilehandler = open(depthfileName, 'r')
+    
+    def indexGATK_depthfile(self, depthfileName, indexFileName):
+        """
+        {chrom:position_in_file_of_first_genomepos_of_this_chrom,chrom:position,,,,,,}
+        """
+        depthfile = open(depthfileName, 'r')
+        covfileidx = {}
+      
+        currentChrom = None
+        lastPosition = 0
+        line = depthfile.readline()
+        linelist = re.split(r"\s+", line)
+        self.title=linelist
+        print("title",line,linelist)
+        while line:      
+            linelist = re.split(r"\s+", line)
+            if currentChrom != re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1):
+                currentChrom = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1)
+                covfileidx[currentChrom] = lastPosition
+            lastPosition = depthfile.tell()
+    
+            line = depthfile.readline()
+        pickle.dump(covfileidx, open(indexFileName, 'wb'))
+        depthfile.close()
+    def set_depthfilehandler(self, locchrom, locingenome, lastposoffilehandler=0):
+        """
+        set the self.depthfilehandler to the line in the file where chrom==locchrom locingenome==locingenome
+        """
+        self.depthfilehandler.seek(lastposoffilehandler)
+        linelist = re.split(r"\s+", self.depthfilehandler.readline())
+        currentChrom = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1)
+        pos = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2)
+        if currentChrom == locchrom and pos <= locingenome:
+            pass
+        else:
+            self.depthfilehandler.seek(self.covfileidx[locchrom])
+            line = self.depthfilehandler.readline()
+            currentChrom = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1)
+            pos = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2)            
+        #set the filehandler locate at the nearest location to the target location
+        while currentChrom == locchrom:
+            if pos == locingenome:
+                return "found"
+            line = self.depthfilehandler.readline()
+            linelist = re.split(r"\s+", line)
+            currentChrom = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1)
+            pos = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2)
+        else:
+            return "didn't find"         
+    def getnextposline(self):
+        line = self.depthfilehandler.readline()
+        linelist = re.split(r"\s+", line)
+        chrom = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1)
+        pos = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2)
+        return chrom,pos,line,linelist
+    def closedepthfile(self):
+        self.title.clear()
+        self.covfileidx.clear()
+        self.depthfilehandler.close()
+                
 class FastQ_Util():
     def __init__(self):
         super().__init__()
@@ -214,9 +285,9 @@ class Window():
 #                 print(L[currentIdx][1] - L[currentIdx][0])
                 Caculator.process(L[currentIdx], L[currentIdx][1] - L[currentIdx][0])
                 if L[currentIdx][1] == (winStart + windowWidth):
-                    value=Caculator.getResult()
+                    value = Caculator.getResult()
                     self.winValueL.append((winStart, winStart + windowWidth, value))
-                    winStart+=windowWidth
+                    winStart += windowWidth
                 
             elif L[currentIdx][0] > winStart and L[currentIdx][0] < (winStart + windowWidth) and L[currentIdx][1] > (winStart + windowWidth):
                 print("2")
@@ -225,21 +296,21 @@ class Window():
                 Caculator.process(L[currentIdx], frontPartPosNum)
                 value = Caculator.getResult()
                 self.winValueL.append((winStart, winStart + windowWidth, value))
-                winStart+=windowWidth
+                winStart += windowWidth
                 Caculator.process(L[currentIdx], rearPartPosNum)
-            elif L[currentIdx][0] <=  winStart and L[currentIdx][1] >  winStart and L[currentIdx][1] < (winStart + windowWidth):
+            elif L[currentIdx][0] <= winStart and L[currentIdx][1] > winStart and L[currentIdx][1] < (winStart + windowWidth):
                 print("3")
                 rearPartPosNum = L[currentIdx][1] - (winStart + windowWidth)
                 Caculator.process(L[currentIdx], frontPartPosNum)
             elif (winStart + windowWidth) <= L[currentIdx][0]:
                 print("4")
                 while  (winStart + windowWidth) <= L[currentIdx][0]:
-                    print("Util",winStart + windowWidth ,L[currentIdx][0])
+                    print("Util", winStart + windowWidth , L[currentIdx][0])
                     self.winValueL.append((winStart, winStart + windowWidth, Caculator.getResult()))
-                    winStart+=windowWidth
-            elif L[currentIdx][1]==winStart:
-                self.winValueL.append((winStart,winStart+windowWidth,Caculator.getResult()))
-                winStart+=windowWidth
+                    winStart += windowWidth
+            elif L[currentIdx][1] == winStart:
+                self.winValueL.append((winStart, winStart + windowWidth, Caculator.getResult()))
+                winStart += windowWidth
             currentIdx += 1
         else:
             self.winValueL.append((winStart, winStart + windowWidth, Caculator.getResult()))
