@@ -48,14 +48,14 @@ class VCF_Data():
             line = vcffile.readline()
         pickle.dump(vcfChromIndex, open(indexFileName, 'wb'))
         vcffile.close()
-    def getVcfMapByChrom(self, vcfFileName, chrom):
+    def getVcfListByChrom(self, vcfFileName, chrom):
         """
             return a list that contain all vcf record of a chrom
         """
         self.VcfList_A_Chrom = []
         vcfFile = open(vcfFileName, 'r')
         try:
-            print("getVcfMapByChrom", self.VcfIndexMap[chrom], chrom)            
+            print("getVcfListByChrom", self.VcfIndexMap[chrom], chrom)            
             vcfFile.seek(self.VcfIndexMap[chrom])
             line = vcfFile.readline()
         except KeyError:

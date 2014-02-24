@@ -33,22 +33,31 @@ reffa = open(options.reffa, 'r')
 gtffile = open(options.gtffile, 'r')
 vcffile = open(options.variants, 'r')
 covfile = open(options.genomedepth, 'r')
+
+
 cns_string=""
 aa_string=""
 cdscns_string=""
 outcns = open(options.outfileprename + "_cns.fa", 'w')
 outaa = open(options.outfileprename + "_aa.fa", 'w')
 outcdscns = open(options.outfileprename + "_cdscns.fa", 'w')
+cdsmap={}
 if __name__ == '__main__':
     depthfile = Util.GATK_depthfile(options.genomedepth, options.genomedepth + ".index")
     species_idx = depthfile.title.index("Depth_for_" + options.species)
     vcfpop = VCFutil.VCF_Data(options.variants)  # new a class
     RefSeqMap, currentChromNO, nextChromNO = Util.getRefSeqMap(refFastafilehander=reffa)
-#    Util.getRefSeqMap(refFastafilehander=reffa, currentChromNO=currentchr, preBaseTotal=RefSeqMap[lastchromNo][0] + len(RefSeqMap[lastchromNo]) - 1, linesOnce)
+    gtfMap=Util.getGtfMap(gtffile)
+    
     lastposofdepthfile = 0#because this time RefSeqMap[0] is 0
     while nextChromNO != "end of the reffile":
         currentBaselocinGenome = RefSeqMap[0]
         statue = depthfile.set_depthfilehandler(currentChromNO, currentBaselocinGenome, lastposofdepthfile)
+        geneOverlapList = Util.genes(gtfMap[currentChromNO], currentBaselocinGenome)
+#        geneOverlapList=Util.getNearestGeneOverlapList(gtfMap[currentChromNO], currentBaselocinGenome)
+        vcflist_A_chrom = vcfpop.getVcfListByChrom(options.variants, currentChromNO)
+        vcfidx=0
+        notice here
         for currentBase in RefSeqMap[currentChromNO][1:]:#base by base
             currentBaselocinGenome += 1
             depth_chrom, depth_pos, depth_line, depth_linelist = depthfile.getnextposline()
@@ -59,7 +68,16 @@ if __name__ == '__main__':
                     cns_string+="n"
             else:
                 if int(depth_linelist[species_idx]) >= mindepth:
-                    pass
+                    if vcflist_A_chrom[vcfidx][0]==currentBaselocinGenome:
+                        pass
+                    else:
+                        pass
+                    if not geneOverlapList:#empty
+                        geneOverlapList=Util.getNearestGeneOverlapList(gtfMap[currentChromNO], currentBaselocinGenome)
+                    for gene in geneOverlapList:
+                        if currentBaselocinGenome>=gene[1] and currentBaselocinGenome<=gene[2]:
+                        Util.getCDS()
+                        
                 else:
                     cns_string+="n"
         lastposofdepthfile = depthfile.depthfilehandler.tell()
@@ -69,7 +87,15 @@ if __name__ == '__main__':
         else:
             cns_string="/n>"+nextChromNO+"/n"
         RefSeqMap, currentChromNO, nextChromNO = Util.getRefSeqMap(refFastafilehander=reffa, currentChromNO=nextChromNO, preBaseTotal=RefSeqMap[currentChromNO][0] + len(RefSeqMap[currentChromNO]) - 1)
+    else:
+        pass
             
     
-    
-    
+gtffile.close()    
+reffa.close()
+vcffile.close()
+covfile.close()    
+outcns.close()
+outaa.close()
+outcdscns.close()
+

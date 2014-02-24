@@ -85,8 +85,8 @@ class Fst():
                 if currentchrID in pop1.VcfIndexMap:
                     pop1SeqOfAChr={}
                     pop2SeqOfAChr={}
-                    pop1SeqOfAChr[currentchrID]=pop1.getVcfMapByChrom(vcfNAME_POP1, currentchrID)
-                    pop2SeqOfAChr[currentchrID]=pop2.getVcfMapByChrom(vcfNAME_POP2, currentchrID)
+                    pop1SeqOfAChr[currentchrID]=pop1.getVcfListByChrom(vcfNAME_POP1, currentchrID)
+                    pop2SeqOfAChr[currentchrID]=pop2.getVcfListByChrom(vcfNAME_POP2, currentchrID)
                     self.caculateFst(pop1SeqOfAChr,pop2SeqOfAChr, fst_caculator,currentchrID,currentchrLen,winwidth,slideSize)
                 else:#pop1 don't contation the current chromosome
                     fillNA=[(0,0,'NA')]

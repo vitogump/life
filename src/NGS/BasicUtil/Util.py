@@ -39,6 +39,67 @@ def generateIndexByChrom(refFastaFileName, indexFileName):
         refline = refFastaFile.readline()
     pickle.dump(refChromIndex, open(indexFileName, 'wb'))
     refFastaFile.close()
+
+def getGtfMap(gtfFileHandler):
+    """gtfMap={chromNo:[[transcript_id,strand,start,end,(feature, elemStart, elemEnd, frame),(),(),,,,,],
+                        [transcript_id,strand,start,end,(),(),(),,,],[],,,,,,,],
+               chromNo:[],,,,,,,,,,,,,,}
+        chrtranscrpitididxMap{chromNo:{transcript_id:ttanscript_id_idx,transcript_id:ttanscript_id_idx,,,,,},
+                                chromNo:{},chromNo:{},,,,}
+    """
+    gtfMap = {}
+    chrtranscrpitididxMap={}
+    gtfline = gtfFileHandler.readline()
+    gtfColList = re.split(r'\s+', gtfline)
+    chromNo = gtfColList[0].strip()
+    gtfMap[chromNo] = []
+    transcript_id = gtfColList[11]
+    countInChrom = 0
+    gtfMap[chromNo] = [[transcript_id, gtfColList[6], int(gtfColList[3]), int(gtfColList[4]), (gtfColList[2], int(gtfColList[3]), int(gtfColList[4]), gtfColList[7])]]
+    chrtranscrpitididxMap[chromNo]={transcript_id:0}
+    for gtfline in gtfFileHandler:
+        gtfColList = re.split(r'\s+', gtfline)
+        transcript_id = gtfColList[11].strip()
+        chromNo = gtfColList[0].strip()
+        if chromNo in gtfMap:
+            if transcript_id in chrtranscrpitididxMap[chromNo].keys():
+                tanscript_id_idx=chrtranscrpitididxMap[chromNo][transcript_id]
+                gtfMap[chromNo][tanscript_id_idx].append((gtfColList[2], int(gtfColList[3]), int(gtfColList[4]), gtfColList[7]))
+                gtfMap[chromNo][tanscript_id_idx][2]=min(gtfMap[chromNo][tanscript_id_idx][2],int(gtfColList[3]))
+                gtfMap[chromNo][tanscript_id_idx][3]=max(gtfMap[chromNo][tanscript_id_idx][3],int(gtfColList[4]))
+            else:
+                gtfMap[chromNo].append([transcript_id, gtfColList[6], int(gtfColList[3]), int(gtfColList[4]), (gtfColList[2], int(gtfColList[3]), int(gtfColList[4]), gtfColList[7])])
+                chrtranscrpitididxMap[chromNo][transcript_id]=len(gtfMap[chromNo])-1
+        else:
+             gtfMap[chromNo] = [[transcript_id, gtfColList[6], int(gtfColList[3]), int(gtfColList[4]), (gtfColList[2], int(gtfColList[3]), int(gtfColList[4]), gtfColList[7])]]
+             chrtranscrpitididxMap[chromNo]={transcript_id:0}
+    else:
+        pass                 
+
+    for chromNo in gtfMap.keys():
+        gtfMap[chromNo].sort(key=lambda listRec:listRec[2])   
+    testfile = open("gtfMap.sort.txt", 'w')    
+    for chromNo in gtfMap.keys():
+        gtfMap[chromNo].sort(key=lambda listRec:listRec[2])
+        #先按照转录本起始坐标排序，下面是对转录本内元件排序，不过是什么排序方法忘记了，仔细读一下吧
+        for j in range(len(gtfMap[chromNo])):
+            for t4_indx in range(5, len(gtfMap[chromNo][j])):
+                t4_key = gtfMap[chromNo][j][t4_indx]
+                t4_indxp = t4_indx - 1
+                while t4_indxp >= 4 and gtfMap[chromNo][j][t4_indxp][1] > t4_key[1]:
+                    gtfMap[chromNo][j][t4_indxp + 1] = gtfMap[chromNo][j][t4_indxp]
+                    t4_indxp = t4_indxp - 1
+                else:
+                    gtfMap[chromNo][j][t4_indxp + 1] = t4_key
+#            print(gtfMap[chromNo][j],gtfMap[chromNo][j][t4_indxp][1] > t4_key[1],t4_indxp)
+        print(chromNo,"num of transcrpit:",len(gtfMap[chromNo]),file=testfile)
+        for i in range(len(gtfMap[chromNo])):
+#            print(gtfMap[chromNo][i][0],gtfMap[chromNo][i][1],gtfMap[chromNo][i][2],gtfMap[chromNo][i][3])
+            for k in range(len(gtfMap[chromNo][i])):
+                print(gtfMap[chromNo][i][k], file=testfile)
+    testfile.close()
+    return gtfMap
+
 def getRefSeqBypos(refFastahander, refindex, currentChromNO, startpos, endpos, seektuple=()):
     '''
     pos start at 1
@@ -102,10 +163,9 @@ def getRefSeqBypos(refFastahander, refindex, currentChromNO, startpos, endpos, s
     if plus != 0:
         return -1
     
-    return refSeqMap
-
-        
+    return refSeqMap        
 #    filehander.close()
+
 def getRefSeqMap(refFastafilehander, currentChromNO=None, preBaseTotal=0, linesOnce=500000):
     '''
     the refSeqMap has only one chromosome's sequence
@@ -134,6 +194,58 @@ def getRefSeqMap(refFastafilehander, currentChromNO=None, preBaseTotal=0, linesO
     else:
         return refSeqMap, currentChromNO, "end of the reffile"
     return refSeqMap, currentChromNO, currentChromNO
+class genes():
+    def __init__(self,gtfList,pos):
+        super.__init__()
+        self.geneOverlapList=self.getNearestGeneOverlapList(gtfList, pos)
+        self.tscptSeqAllCds = []
+        self.cds_frame = {}#{cdsidx:(frame,startpos of this cds),cdsidx:(),,,,,}
+        for gene in self.geneOverlapList:
+            if gene[1]=="+":
+                cdsidx=3
+                for feature,elemStart,elemEnd,frame in gene[4:]:
+                    cdsidx+=1
+                    if feature == 'CDS':
+                        cds_frame[cdsidx]=(int(frame), len(self.tscptSeqAllCds))
+                        self.tscptSeqAllCds += RefSeqMap[]???如果不够呢
+    def getNearestGeneOverlapList(self,gtfList,pos):
+        """
+        input:for a chrom,contain all transcript of this chrom
+        gtfList=[[transcript_id,strand,start,end,(feature, elemStart, elemEnd, frame),(),(),,,,,],
+                            [transcript_id,strand,start,end,(),(),(),,,],[],,,,,,,]
+        return: the first gene that after the pos and the genes contain in or overlap with or contact with this gene indirect
+        geneOverlapList=[[transcript_id,strand,start,end,(feature, elemStart, elemEnd, frame),(),(),,,,,],
+                            [transcript_id,strand,start,end,(),(),(),,,],[],,,,,,,]
+        order by "start"
+        """
+        high = len(gtfList) - 1
+        low = 0
+        while low < high:
+            mid = int((low + high) / 2)
+            if pos == (gtfList[mid][2]):
+                low = high#go to the else of the while block
+                high = mid
+            elif pos < (gtfList[mid][2]):
+                high = mid - 1
+            else:# snpPos > GtfMap[vcfChromNo][mid][2]:
+                low = mid + 1
+        else:
+            if gtfList[high][3]>=pos and gtfList[high][2]<=pos:
+                geneOverlapList=[gtfList[high]];idx=high
+            elif gtfList[low][2]>pos:
+                geneOverlapList=[gtfList[low]];idx=low
+            elif low ==high and low == 0:
+                geneOverlapList=[gtfList[0]];idx=0
+            else:#out of end edge,so no gene after the pos,and returen a empty
+                return []
+            furthest=gtfList[idx][3]
+            idx+=1
+            while furthest >= gtfList[idx][2]:
+                geneOverlapList.append(gtfList[idx])
+                furthest=max(furthest,gtfList[idx][3])
+                idx+=1
+        return geneOverlapList
+
 class GATK_depthfile():
     def __init__(self, depthfileName, indexFileName):
         super.__init__()
@@ -421,7 +533,173 @@ class WinInGenome():
         for row in result:
             self.winContainTrscptMap[winRegion].append(row)
 
-        
+class Node(object):
+    def __init__(self,val,p=0):
+        self.data = val
+        self.next = p
+
+class LinkList(object):
+    def __init__(self):
+        self.head = 0
+
+    def __getitem__(self, key):
+
+        if self.is_empty():
+            print('linklist is empty.')
+            return
+
+        elif key <0  or key > self.getlength():
+            print('the given key is error')
+            return
+
+        else:
+            return self.getitem(key)
+
+
+
+    def __setitem__(self, key, value):
+
+        if self.is_empty():
+            print('linklist is empty.')
+            return
+
+        elif key <0  or key > self.getlength():
+            print('the given key is error')
+            return
+
+        else:
+            self.delete(key)
+            return self.insert(key)
+
+    def initlist(self,data):
+
+        self.head = Node(data[0])
+
+        p = self.head
+
+        for i in data[1:]:
+            node = Node(i)
+            p.next = node
+            p = p.next
+
+    def getlength(self):
+
+        p =  self.head
+        length = 0
+        while p!=0:
+            length+=1
+            p = p.next
+
+        return length
+
+    def is_empty(self):
+
+        if self.getlength() ==0:
+            return True
+        else:
+            return False
+
+    def clear(self):
+
+        self.head = 0
+
+
+    def append(self,item):
+
+        q = Node(item)
+        if self.head ==0:
+            self.head = q
+        else:
+            p = self.head
+            while p.next!=0:
+                p = p.next
+            p.next = q
+
+
+    def getitem(self,index):
+
+        if self.is_empty():
+            print('Linklist is empty.')
+            return
+        j = 0
+        p = self.head
+
+        while p.next!=0 and j <index:
+            p = p.next
+            j+=1
+
+        if j ==index:
+            return p.data
+
+        else:
+
+            print('target is not exist!')
+
+    def insert(self,index,item):
+
+        if self.is_empty() or index<0 or index >self.getlength():
+            print('Linklist is empty.')
+            return
+
+        if index ==0:
+            q = Node(item,self.head)
+
+            self.head = q
+
+        p = self.head
+        post  = self.head
+        j = 0
+        while p.next!=0 and j<index:
+            post = p
+            p = p.next
+            j+=1
+
+        if index ==j:
+            q = Node(item,p)
+            post.next = q
+            q.next = p
+
+
+    def delete(self,index):
+
+        if self.is_empty() or index<0 or index >self.getlength():
+            print('Linklist is empty.')
+            return
+
+        if index ==0:
+            self.head=self.head.next
+            return
+#            q = Node(item,self.head)
+#
+#            self.head = q
+
+        p = self.head
+        post  = self.head
+        j = 0
+        while p.next!=0 and j<index:
+            post = p
+            p = p.next
+            j+=1
+
+        if index ==j:
+            post.next = p.next
+
+    def index(self,value):
+
+        if self.is_empty():
+            print('Linklist is empty.')
+            return
+
+        p = self.head
+        i = 0
+        while p.next!=0 and not p.data ==value:
+            p = p.next
+            i+=1
+
+        if p.data == value:
+            return i
+        else:
+            return -1        
         
         
         
