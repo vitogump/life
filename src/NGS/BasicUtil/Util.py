@@ -1,5 +1,9 @@
-import re, pickle, os
-import random, string
+import copy
+import random
+import string
+import re
+import pickle
+import os
 import src.NGS.BasicUtil.DBManager as dbm
 # from src.NGS.BasicUtil import *
 
@@ -177,6 +181,8 @@ def getRefSeqMap(refFastafilehander, currentChromNO=None, preBaseTotal=0, linesO
         currentChromNO = re.search(r'[^>]+', (re.split(r'\s+', refline))[0]).group(0)
         refSeqMap[currentChromNO] = [preBaseTotal]  # preBaseTotal=0
         print("getRefSeqMap", currentChromNO)
+    elif currentChromNO=="end of the reffile":
+        return refSeqMap, currentChromNO, "end of the reffile"
     else:
         refSeqMap[currentChromNO] = [preBaseTotal]
     for refline in refFastafilehander:
@@ -195,19 +201,24 @@ def getRefSeqMap(refFastafilehander, currentChromNO=None, preBaseTotal=0, linesO
         return refSeqMap, currentChromNO, "end of the reffile"
     return refSeqMap, currentChromNO, currentChromNO
 class genes():
-    def __init__(self,gtfList,pos):
+    def __init__(self,gtfList,pos,RefSeqList):
         super.__init__()
         self.geneOverlapList=self.getNearestGeneOverlapList(gtfList, pos)
-        self.tscptSeqAllCds = []
-        self.cds_frame = {}#{cdsidx:(frame,startpos of this cds),cdsidx:(),,,,,}
+        self.tscptSeqAllCds = {}
+        self.cds_frame = {}#{transcript_id:{cdsidx:(frame,startpos of this cds),cdsidx:(),,,,,}}
         for gene in self.geneOverlapList:
-            if gene[1]=="+":
-                cdsidx=3
-                for feature,elemStart,elemEnd,frame in gene[4:]:
-                    cdsidx+=1
-                    if feature == 'CDS':
-                        cds_frame[cdsidx]=(int(frame), len(self.tscptSeqAllCds))
-                        self.tscptSeqAllCds += RefSeqMap[]???如果不够呢
+            genename=gene[0]
+            self.tscptSeqAllCds[genename]=[]
+            self.cds_frame[genename]={}#{cdsidx:(frame,startpos of this cds),cdsidx:(),,,,,}
+
+            cdsidx=3
+            for feature,elemStart,elemEnd,frame in gene[4:]:
+                cdsidx+=1
+                if feature == 'CDS':
+                    self.cds_frame[genename][cdsidx]=(int(frame), len(self.tscptSeqAllCds))
+                    self.tscptSeqAllCds[genename] += RefSeqList[(elemStart - RefSeqList[0]):(elemEnd - RefSeqList[0] + 1)]#???如果不够呢
+                elif feature=='start_codon' or feature == "stop_codon":
+                    self.tscptSeqAllCds[genename]+=RefSeqList[(elemStart - RefSeqList[0]):(elemEnd - RefSeqList[0] + 1)]
     def getNearestGeneOverlapList(self,gtfList,pos):
         """
         input:for a chrom,contain all transcript of this chrom
@@ -227,7 +238,7 @@ class genes():
                 high = mid
             elif pos < (gtfList[mid][2]):
                 high = mid - 1
-            else:# snpPos > GtfMap[vcfChromNo][mid][2]:
+            else:# pos > GtfMap[vcfChromNo][mid][2]:
                 low = mid + 1
         else:
             if gtfList[high][3]>=pos and gtfList[high][2]<=pos:
@@ -245,6 +256,55 @@ class genes():
                 furthest=max(furthest,gtfList[idx][3])
                 idx+=1
         return geneOverlapList
+    def getgeneConsensus(self,RefSeqList,idx_RefSeq,VcfList,idx_vcf,depthfile):
+        CodonTable = {     'ttt': 'F', 'tct': 'S', 'tat': 'Y', 'tgt': 'C',
+              'ttc': 'F', 'tcc': 'S', 'tac': 'Y', 'tgc': 'C',
+              'tta': 'L', 'tca': 'S', 'taa': '*', 'tga': '*',
+              'ttg': 'L', 'tcg': 'S', 'tag': '*', 'tgg': 'W',
+              'ctt': 'L', 'cct': 'P', 'cat': 'H', 'cgt': 'R',
+              'ctc': 'L', 'ccc': 'P', 'cac': 'H', 'cgc': 'R',
+              'cta': 'L', 'cca': 'P', 'caa': 'Q', 'cga': 'R',
+              'ctg': 'L', 'ccg': 'P', 'cag': 'Q', 'cgg': 'R',
+              'att': 'I', 'act': 'T', 'aat': 'N', 'agt': 'S',
+              'atc': 'I', 'acc': 'T', 'aac': 'N', 'agc': 'S',
+              'ata': 'I', 'aca': 'T', 'aaa': 'K', 'aga': 'R',
+              'atg': 'M', 'acg': 'T', 'aag': 'K', 'agg': 'R',
+              'gtt': 'V', 'gct': 'A', 'gat': 'D', 'ggt': 'G',
+              'gtc': 'V', 'gcc': 'A', 'gac': 'D', 'ggc': 'G',
+              'gta': 'V', 'gca': 'A', 'gaa': 'E', 'gga': 'G',
+              'gtg': 'V', 'gcg': 'A', 'gag': 'E', 'ggg': 'G'}
+        curpos=RefSeqList[0]+idx_RefSeq
+        tscptSeqAllCds_mut={}
+        originallen={}#just for test
+        for gene in self.geneOverlapList:
+            genename=gene[0]
+            tscptSeqAllCds_mut[genename]=copy.copy(self.tscptSeqAllCds[genename])
+            originallen[genename] = len(tscptSeqAllCds_mut)#just for test
+        while VcfList[idx_vcf][0]<=self.geneOverlapList[-1][3] and idx_vcf!=len(VcfList):
+            vcfpos = VcfList[idx_vcf][0];refalle=VcfList[idx_vcf][1];altalle=VcfList[idx_vcf][2]
+            if re.search(r'[^a-zA-Z]',refalle)!=None:#contain ',' ie. multiple alle
+                continue
+            for gene in self.geneOverlapList:
+                if gene[2]<=vcfpos and gene[3]>=vcfpos:
+                    t4_indx =3
+                    for feature,elemStart,elemEnd,frame in gene[4:]:
+                        t4_indx+=1
+                        if feature == 'CDS' and vcfpos <= elemEnd and vcfpos >=elemStart:
+                            n_refbases=len(refalle);n_altbases=len(altalle)#situation TAA     TA;     TTA     TTAAACTTCTATACTA;      C       T;    T       TATA;    ACG     A
+                            if n_refbases>n_altbases:#situation TAA     TA;ACG     A
+                                tscptSeqAllCds_mut[genename][(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]):(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]+n_altbases)]=list(altalle)
+                                tscptSeqAllCds_mut[genename][(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]+n_altbases):(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]+n_refbases)]=[' ']*(n_refbases-n_altbases)
+                            elif n_refbases<n_altbases:#situation TTA     TTAAACTTCTATACTA;T       TATA;
+                                if n_refbases==1:
+                                    tscptSeqAllCds_mut[genename][vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]]=altalle
+                                else:
+                                    tscptSeqAllCds_mut[genename][(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]):(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]+n_refbases-1)]=list(altalle[0:(n_refbases-1)])
+                                    tscptSeqAllCds_mut[genename][vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]+n_refbases-1]=altalle[(n_refbases-1):]
+                            else:#n_refbases==n_altbases==1
+                                tscptSeqAllCds_mut[genename][vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]]=altalle             
+            idx_vcf+=1
+该翻译蛋白了吧 还有 看看长度一样不
+        
 
 class GATK_depthfile():
     def __init__(self, depthfileName, indexFileName):
@@ -256,7 +316,7 @@ class GATK_depthfile():
         except IOError:
             self.indexGATK_depthfile(depthfileName, indexFileName)
             self.covfileidx = pickle.load(open(indexFileName, 'rb'))
-        self.depthfilehandler = open(depthfileName, 'r')
+        self.depthfilefp = open(depthfileName, 'r')
     
     def indexGATK_depthfile(self, depthfileName, indexFileName):
         """
@@ -281,33 +341,33 @@ class GATK_depthfile():
             line = depthfile.readline()
         pickle.dump(covfileidx, open(indexFileName, 'wb'))
         depthfile.close()
-    def set_depthfilehandler(self, locchrom, locingenome, lastposoffilehandler=0):
+    def set_depthfilefp(self, locchrom, locingenome, lastposoffilehandler=0):
         """
-        set the self.depthfilehandler to the line in the file where chrom==locchrom locingenome==locingenome
+        set the self.depthfilefp to the line in the file where chrom==locchrom pos==locingenome-1
         """
-        self.depthfilehandler.seek(lastposoffilehandler)
-        linelist = re.split(r"\s+", self.depthfilehandler.readline())
+        self.depthfilefp.seek(lastposoffilehandler)
+        linelist = re.split(r"\s+", self.depthfilefp.readline())
         currentChrom = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1)
         pos = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2)
-        if currentChrom == locchrom and pos <= locingenome:
+        if currentChrom == locchrom and pos <= locingenome-1:
             pass
         else:
-            self.depthfilehandler.seek(self.covfileidx[locchrom])
-            line = self.depthfilehandler.readline()
+            self.depthfilefp.seek(self.covfileidx[locchrom])
+            line = self.depthfilefp.readline()
             currentChrom = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1)
             pos = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2)            
         #set the filehandler locate at the nearest location to the target location
         while currentChrom == locchrom:
-            if pos == locingenome:
+            if pos == locingenome-1:
                 return "found"
-            line = self.depthfilehandler.readline()
+            line = self.depthfilefp.readline()
             linelist = re.split(r"\s+", line)
             currentChrom = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1)
             pos = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2)
         else:
             return "didn't find"         
     def getnextposline(self):
-        line = self.depthfilehandler.readline()
+        line = self.depthfilefp.readline()
         linelist = re.split(r"\s+", line)
         chrom = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1)
         pos = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2)
@@ -315,7 +375,7 @@ class GATK_depthfile():
     def closedepthfile(self):
         self.title.clear()
         self.covfileidx.clear()
-        self.depthfilehandler.close()
+        self.depthfilefp.close()
                 
 class FastQ_Util():
     def __init__(self):
