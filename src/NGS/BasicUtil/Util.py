@@ -52,7 +52,7 @@ def getGtfMap(gtfFileHandler):
                                 chromNo:{},chromNo:{},,,,}
     """
     gtfMap = {}
-    chrtranscrpitididxMap={}
+    chrtranscrpitididxMap = {}
     gtfline = gtfFileHandler.readline()
     gtfColList = re.split(r'\s+', gtfline)
     chromNo = gtfColList[0].strip()
@@ -60,23 +60,23 @@ def getGtfMap(gtfFileHandler):
     transcript_id = gtfColList[11]
     countInChrom = 0
     gtfMap[chromNo] = [[transcript_id, gtfColList[6], int(gtfColList[3]), int(gtfColList[4]), (gtfColList[2], int(gtfColList[3]), int(gtfColList[4]), gtfColList[7])]]
-    chrtranscrpitididxMap[chromNo]={transcript_id:0}
+    chrtranscrpitididxMap[chromNo] = {transcript_id:0}
     for gtfline in gtfFileHandler:
         gtfColList = re.split(r'\s+', gtfline)
         transcript_id = gtfColList[11].strip()
         chromNo = gtfColList[0].strip()
         if chromNo in gtfMap:
             if transcript_id in chrtranscrpitididxMap[chromNo].keys():
-                tanscript_id_idx=chrtranscrpitididxMap[chromNo][transcript_id]
+                tanscript_id_idx = chrtranscrpitididxMap[chromNo][transcript_id]
                 gtfMap[chromNo][tanscript_id_idx].append((gtfColList[2], int(gtfColList[3]), int(gtfColList[4]), gtfColList[7]))
-                gtfMap[chromNo][tanscript_id_idx][2]=min(gtfMap[chromNo][tanscript_id_idx][2],int(gtfColList[3]))
-                gtfMap[chromNo][tanscript_id_idx][3]=max(gtfMap[chromNo][tanscript_id_idx][3],int(gtfColList[4]))
+                gtfMap[chromNo][tanscript_id_idx][2] = min(gtfMap[chromNo][tanscript_id_idx][2], int(gtfColList[3]))
+                gtfMap[chromNo][tanscript_id_idx][3] = max(gtfMap[chromNo][tanscript_id_idx][3], int(gtfColList[4]))
             else:
                 gtfMap[chromNo].append([transcript_id, gtfColList[6], int(gtfColList[3]), int(gtfColList[4]), (gtfColList[2], int(gtfColList[3]), int(gtfColList[4]), gtfColList[7])])
-                chrtranscrpitididxMap[chromNo][transcript_id]=len(gtfMap[chromNo])-1
+                chrtranscrpitididxMap[chromNo][transcript_id] = len(gtfMap[chromNo]) - 1
         else:
              gtfMap[chromNo] = [[transcript_id, gtfColList[6], int(gtfColList[3]), int(gtfColList[4]), (gtfColList[2], int(gtfColList[3]), int(gtfColList[4]), gtfColList[7])]]
-             chrtranscrpitididxMap[chromNo]={transcript_id:0}
+             chrtranscrpitididxMap[chromNo] = {transcript_id:0}
     else:
         pass                 
 
@@ -96,7 +96,7 @@ def getGtfMap(gtfFileHandler):
                 else:
                     gtfMap[chromNo][j][t4_indxp + 1] = t4_key
 #            print(gtfMap[chromNo][j],gtfMap[chromNo][j][t4_indxp][1] > t4_key[1],t4_indxp)
-        print(chromNo,"num of transcrpit:",len(gtfMap[chromNo]),file=testfile)
+        print(chromNo, "num of transcrpit:", len(gtfMap[chromNo]), file=testfile)
         for i in range(len(gtfMap[chromNo])):
 #            print(gtfMap[chromNo][i][0],gtfMap[chromNo][i][1],gtfMap[chromNo][i][2],gtfMap[chromNo][i][3])
             for k in range(len(gtfMap[chromNo][i])):
@@ -181,7 +181,7 @@ def getRefSeqMap(refFastafilehander, currentChromNO=None, preBaseTotal=0, linesO
         currentChromNO = re.search(r'[^>]+', (re.split(r'\s+', refline))[0]).group(0)
         refSeqMap[currentChromNO] = [preBaseTotal]  # preBaseTotal=0
         print("getRefSeqMap", currentChromNO)
-    elif currentChromNO=="end of the reffile":
+    elif currentChromNO == "end of the reffile":
         return refSeqMap, currentChromNO, "end of the reffile"
     else:
         refSeqMap[currentChromNO] = [preBaseTotal]
@@ -201,25 +201,25 @@ def getRefSeqMap(refFastafilehander, currentChromNO=None, preBaseTotal=0, linesO
         return refSeqMap, currentChromNO, "end of the reffile"
     return refSeqMap, currentChromNO, currentChromNO
 class genes():
-    def __init__(self,gtfList,pos,RefSeqList):
+    def __init__(self, gtfList, pos, RefSeqList):
         super.__init__()
-        self.geneOverlapList=self.getNearestGeneOverlapList(gtfList, pos)
+        self.geneOverlapList = self.getNearestGeneOverlapList(gtfList, pos)
         self.tscptSeqAllCds = {}
         self.cds_frame = {}#{transcript_id:{cdsidx:(frame,startpos of this cds),cdsidx:(),,,,,}}
         for gene in self.geneOverlapList:
-            genename=gene[0]
-            self.tscptSeqAllCds[genename]=[]
-            self.cds_frame[genename]={}#{cdsidx:(frame,startpos of this cds),cdsidx:(),,,,,}
+            genename = gene[0]
+            self.tscptSeqAllCds[genename] = []
+            self.cds_frame[genename] = {}#{cdsidx:(frame,startpos of this cds),cdsidx:(),,,,,}
 
-            cdsidx=3
-            for feature,elemStart,elemEnd,frame in gene[4:]:
-                cdsidx+=1
+            cdsidx = 3
+            for feature, elemStart, elemEnd, frame in gene[4:]:
+                cdsidx += 1
                 if feature == 'CDS':
-                    self.cds_frame[genename][cdsidx]=(int(frame), len(self.tscptSeqAllCds))
+                    self.cds_frame[genename][cdsidx] = (int(frame), len(self.tscptSeqAllCds))
                     self.tscptSeqAllCds[genename] += RefSeqList[(elemStart - RefSeqList[0]):(elemEnd - RefSeqList[0] + 1)]#???如果不够呢
-                elif feature=='start_codon' or feature == "stop_codon":
-                    self.tscptSeqAllCds[genename]+=RefSeqList[(elemStart - RefSeqList[0]):(elemEnd - RefSeqList[0] + 1)]
-    def getNearestGeneOverlapList(self,gtfList,pos):
+                elif feature == 'start_codon' or feature == "stop_codon":
+                    self.tscptSeqAllCds[genename] += RefSeqList[(elemStart - RefSeqList[0]):(elemEnd - RefSeqList[0] + 1)]
+    def getNearestGeneOverlapList(self, gtfList, pos):
         """
         input:for a chrom,contain all transcript of this chrom
         gtfList=[[transcript_id,strand,start,end,(feature, elemStart, elemEnd, frame),(),(),,,,,],
@@ -241,22 +241,25 @@ class genes():
             else:# pos > GtfMap[vcfChromNo][mid][2]:
                 low = mid + 1
         else:
-            if gtfList[high][3]>=pos and gtfList[high][2]<=pos:
-                geneOverlapList=[gtfList[high]];idx=high
-            elif gtfList[low][2]>pos:
-                geneOverlapList=[gtfList[low]];idx=low
-            elif low ==high and low == 0:
-                geneOverlapList=[gtfList[0]];idx=0
+            if gtfList[high][3] >= pos and gtfList[high][2] <= pos:
+                geneOverlapList = [gtfList[high]];idx = high
+            elif gtfList[low][2] > pos:
+                geneOverlapList = [gtfList[low]];idx = low
+            elif low == high and low == 0:
+                geneOverlapList = [gtfList[0]];idx = 0
             else:#out of end edge,so no gene after the pos,and returen a empty
                 return []
-            furthest=gtfList[idx][3]
-            idx+=1
+            furthest = gtfList[idx][3]
+            idx += 1
             while furthest >= gtfList[idx][2]:
                 geneOverlapList.append(gtfList[idx])
-                furthest=max(furthest,gtfList[idx][3])
-                idx+=1
+                furthest = max(furthest, gtfList[idx][3])
+                idx += 1
         return geneOverlapList
-    def getgeneConsensus(self,RefSeqList,idx_RefSeq,VcfList,idx_vcf,depthfile):
+    def getgeneConsensus(self, RefSeqList, idx_RefSeq, VcfList, idx_vcf, depthfile):
+        """
+        RefSeqList didn't changed
+        """
         CodonTable = {     'ttt': 'F', 'tct': 'S', 'tat': 'Y', 'tgt': 'C',
               'ttc': 'F', 'tcc': 'S', 'tac': 'Y', 'tgc': 'C',
               'tta': 'L', 'tca': 'S', 'taa': '*', 'tga': '*',
@@ -273,44 +276,86 @@ class genes():
               'gtc': 'V', 'gcc': 'A', 'gac': 'D', 'ggc': 'G',
               'gta': 'V', 'gca': 'A', 'gaa': 'E', 'gga': 'G',
               'gtg': 'V', 'gcg': 'A', 'gag': 'E', 'ggg': 'G'}
-        curpos=RefSeqList[0]+idx_RefSeq
-        tscptSeqAllCds_mut={}
-        originallen={}#just for test
+        curpos = RefSeqList[0] + idx_RefSeq
+        tscptSeqAllCds_mut = {}
+        ref_amino_seq={}
+        mutat_amino_seq={}
+        cns_append = ""
+        originallen = {}#just for test
         for gene in self.geneOverlapList:
-            genename=gene[0]
-            tscptSeqAllCds_mut[genename]=copy.copy(self.tscptSeqAllCds[genename])
-            originallen[genename] = len(tscptSeqAllCds_mut)#just for test
-        while VcfList[idx_vcf][0]<=self.geneOverlapList[-1][3] and idx_vcf!=len(VcfList):
-            vcfpos = VcfList[idx_vcf][0];refalle=VcfList[idx_vcf][1];altalle=VcfList[idx_vcf][2]
-            if re.search(r'[^a-zA-Z]',refalle)!=None:#contain ',' ie. multiple alle
+            genename = gene[0]
+            tscptSeqAllCds_mut[genename] = copy.copy(self.tscptSeqAllCds[genename])
+            originallen[genename] = len(tscptSeqAllCds_mut[genename])#just for test
+        while VcfList[idx_vcf][0] <= self.geneOverlapList[-1][3] and idx_vcf != len(VcfList):
+            vcfpos = VcfList[idx_vcf][0];refalle = VcfList[idx_vcf][1];altalle = VcfList[idx_vcf][2]
+            cns_append += ("".join(RefSeqList[idx_RefSeq:idx_RefSeq + (vcfpos - curpos)]))
+            idx_RefSeq += (vcfpos - curpos)
+            curpos = RefSeqList[0] + idx_RefSeq
+            
+            if re.search(r'[^a-zA-Z]', refalle) != None:#contain ',' ie. multiple alle
+                cns_append += ("".join(RefSeqList[idx_RefSeq:idx_RefSeq + len(refalle)]))
+                idx_RefSeq += len(refalle)
+                curpos = RefSeqList[0] + idx_RefSeq
                 continue
+            cns_append += ("".join(RefSeqList[idx_RefSeq:idx_RefSeq + len(altalle)]))
+            idx_RefSeq += len(refalle)#here should still be refalle
+            curpos = RefSeqList[0] + idx_RefSeq
+            
             for gene in self.geneOverlapList:
-                if gene[2]<=vcfpos and gene[3]>=vcfpos:
-                    t4_indx =3
-                    for feature,elemStart,elemEnd,frame in gene[4:]:
-                        t4_indx+=1
-                        if feature == 'CDS' and vcfpos <= elemEnd and vcfpos >=elemStart:
-                            n_refbases=len(refalle);n_altbases=len(altalle)#situation TAA     TA;     TTA     TTAAACTTCTATACTA;      C       T;    T       TATA;    ACG     A
-                            if n_refbases>n_altbases:#situation TAA     TA;ACG     A
-                                tscptSeqAllCds_mut[genename][(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]):(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]+n_altbases)]=list(altalle)
-                                tscptSeqAllCds_mut[genename][(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]+n_altbases):(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]+n_refbases)]=[' ']*(n_refbases-n_altbases)
-                            elif n_refbases<n_altbases:#situation TTA     TTAAACTTCTATACTA;T       TATA;
-                                if n_refbases==1:
-                                    tscptSeqAllCds_mut[genename][vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]]=altalle
+                if gene[2] <= vcfpos and gene[3] >= vcfpos:
+                    t4_indx = 3
+                    for feature, elemStart, elemEnd, frame in gene[4:]:
+                        t4_indx += 1
+                        if feature == 'CDS' and vcfpos <= elemEnd and vcfpos >= elemStart:
+                            n_refbases = len(refalle);n_altbases = len(altalle)#situation TAA     TA;     TTA     TTAAACTTCTATACTA;      C       T;    T       TATA;    ACG     A
+                            if n_refbases > n_altbases:#situation TAA     TA;ACG     A
+                                tscptSeqAllCds_mut[genename][(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]):(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1] + n_altbases)] = list(altalle)
+                                tscptSeqAllCds_mut[genename][(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1] + n_altbases):(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1] + n_refbases)] = [' '] * (n_refbases - n_altbases)
+                            elif n_refbases < n_altbases:#situation TTA     TTAAACTTCTATACTA;T       TATA;
+                                if n_refbases == 1:
+                                    tscptSeqAllCds_mut[genename][vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]] = altalle
                                 else:
-                                    tscptSeqAllCds_mut[genename][(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]):(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]+n_refbases-1)]=list(altalle[0:(n_refbases-1)])
-                                    tscptSeqAllCds_mut[genename][vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]+n_refbases-1]=altalle[(n_refbases-1):]
+                                    tscptSeqAllCds_mut[genename][(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]):(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1] + n_refbases - 1)] = list(altalle[0:(n_refbases - 1)])
+                                    tscptSeqAllCds_mut[genename][vcfpos - elemStart + self.cds_frame[genename][t4_indx][1] + n_refbases - 1] = altalle[(n_refbases - 1):]
                             else:#n_refbases==n_altbases==1
-                                tscptSeqAllCds_mut[genename][vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]]=altalle             
-            idx_vcf+=1
-该翻译蛋白了吧 还有 看看长度一样不
+                                tscptSeqAllCds_mut[genename][vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]] = altalle             
+            idx_vcf += 1
+#该翻译蛋白了吧 还有 看看长度一样不  将最后一个vcf记录之后的序列加入一致序列字符串
+        cns_append += "".join(RefSeqList[idx_RefSeq:idx_RefSeq + (self.geneOverlapList[-1][3] - curpos) + 1])
+        for gene in self.geneOverlapList:
+            genename = gene[0]
+            ref_amino_seq[genename]=[]
+            mutat_amino_seq[genename]=[]
+#            mutationTypeList=[]
+            if originallen[genename] != len(tscptSeqAllCds_mut[genename]):#just for test
+                print("Util getgeneConsensus: length of tscptSeqAllCds changed,so check the code")
+                exit(-1)
+            tscptSeqAllCds_mut_str = "".join(filter(lambda e:e.strip() != "", tscptSeqAllCds_mut[genename]))
+            for i in range(self.cds_frame[genename][sorted(self.cds_frame[genename].keys())[0]][0], len(tscptSeqAllCds_mut_str), 3):
+                codon = "".join(self.tscptSeqAllCds[i:i + 3]).lower()
+                codon_m = tscptSeqAllCds_mut_str[i:i + 3].lower()
+                ref_amino_seq[genename].append(CodonTable[codon])
+                mutat_amino_seq[genename].append(CodonTable[codon_m])
+#                if CodonTable[codon]!=CodonTable[codon_m]:
+#                    mutationTypeList.append(("nonsynonymous", i / 3, CodonTable[codon], CodonTable[codon_m]))
+#                else:
+#                    mutationTypeList.append(("synonymous", i / 3, CodonTable[codon], CodonTable[codon_m]))
+        testfile=open("animo_acid.txt",'w')
+        for gene in self.geneOverlapList:#for test only
+            genename=gene[0]
+            print(">"+genename+"\n",file=testfile)
+            print("".join(ref_amino_seq[genename]),file=testfile)
+            print("\n"+"".join(mutat_amino_seq[genename])+"\n",file=testfile)
+        testfile.close()
+        return  tscptSeqAllCds_mut,mutat_amino_seq,cns_append,idx_vcf
+
         
 
 class GATK_depthfile():
     def __init__(self, depthfileName, indexFileName):
         super.__init__()
         self.covfileidx = {}
-        self.title=[]
+        self.title = []
         try:
             self.covfileidx = pickle.load(open(indexFileName, 'rb'))
         except IOError:
@@ -329,8 +374,8 @@ class GATK_depthfile():
         lastPosition = 0
         line = depthfile.readline()
         linelist = re.split(r"\s+", line)
-        self.title=linelist
-        print("title",line,linelist)
+        self.title = linelist
+        print("title", line, linelist)
         while line:      
             linelist = re.split(r"\s+", line)
             if currentChrom != re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1):
@@ -349,7 +394,7 @@ class GATK_depthfile():
         linelist = re.split(r"\s+", self.depthfilefp.readline())
         currentChrom = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1)
         pos = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2)
-        if currentChrom == locchrom and pos <= locingenome-1:
+        if currentChrom == locchrom and pos <= locingenome - 1:
             pass
         else:
             self.depthfilefp.seek(self.covfileidx[locchrom])
@@ -358,7 +403,7 @@ class GATK_depthfile():
             pos = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2)            
         #set the filehandler locate at the nearest location to the target location
         while currentChrom == locchrom:
-            if pos == locingenome-1:
+            if pos == locingenome - 1:
                 return "found"
             line = self.depthfilefp.readline()
             linelist = re.split(r"\s+", line)
@@ -371,7 +416,7 @@ class GATK_depthfile():
         linelist = re.split(r"\s+", line)
         chrom = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1)
         pos = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2)
-        return chrom,pos,line,linelist
+        return chrom, pos, line, linelist
     def closedepthfile(self):
         self.title.clear()
         self.covfileidx.clear()
@@ -594,7 +639,7 @@ class WinInGenome():
             self.winContainTrscptMap[winRegion].append(row)
 
 class Node(object):
-    def __init__(self,val,p=0):
+    def __init__(self, val, p=0):
         self.data = val
         self.next = p
 
@@ -608,7 +653,7 @@ class LinkList(object):
             print('linklist is empty.')
             return
 
-        elif key <0  or key > self.getlength():
+        elif key < 0  or key > self.getlength():
             print('the given key is error')
             return
 
@@ -623,7 +668,7 @@ class LinkList(object):
             print('linklist is empty.')
             return
 
-        elif key <0  or key > self.getlength():
+        elif key < 0  or key > self.getlength():
             print('the given key is error')
             return
 
@@ -631,7 +676,7 @@ class LinkList(object):
             self.delete(key)
             return self.insert(key)
 
-    def initlist(self,data):
+    def initlist(self, data):
 
         self.head = Node(data[0])
 
@@ -644,17 +689,17 @@ class LinkList(object):
 
     def getlength(self):
 
-        p =  self.head
+        p = self.head
         length = 0
-        while p!=0:
-            length+=1
+        while p != 0:
+            length += 1
             p = p.next
 
         return length
 
     def is_empty(self):
 
-        if self.getlength() ==0:
+        if self.getlength() == 0:
             return True
         else:
             return False
@@ -664,19 +709,19 @@ class LinkList(object):
         self.head = 0
 
 
-    def append(self,item):
+    def append(self, item):
 
         q = Node(item)
-        if self.head ==0:
+        if self.head == 0:
             self.head = q
         else:
             p = self.head
-            while p.next!=0:
+            while p.next != 0:
                 p = p.next
             p.next = q
 
 
-    def getitem(self,index):
+    def getitem(self, index):
 
         if self.is_empty():
             print('Linklist is empty.')
@@ -684,67 +729,67 @@ class LinkList(object):
         j = 0
         p = self.head
 
-        while p.next!=0 and j <index:
+        while p.next != 0 and j < index:
             p = p.next
-            j+=1
+            j += 1
 
-        if j ==index:
+        if j == index:
             return p.data
 
         else:
 
             print('target is not exist!')
 
-    def insert(self,index,item):
+    def insert(self, index, item):
 
-        if self.is_empty() or index<0 or index >self.getlength():
+        if self.is_empty() or index < 0 or index > self.getlength():
             print('Linklist is empty.')
             return
 
-        if index ==0:
-            q = Node(item,self.head)
+        if index == 0:
+            q = Node(item, self.head)
 
             self.head = q
 
         p = self.head
-        post  = self.head
+        post = self.head
         j = 0
-        while p.next!=0 and j<index:
+        while p.next != 0 and j < index:
             post = p
             p = p.next
-            j+=1
+            j += 1
 
-        if index ==j:
-            q = Node(item,p)
+        if index == j:
+            q = Node(item, p)
             post.next = q
             q.next = p
 
 
-    def delete(self,index):
+    def delete(self, index):
 
-        if self.is_empty() or index<0 or index >self.getlength():
+        if self.is_empty() or index < 0 or index > self.getlength():
             print('Linklist is empty.')
             return
 
-        if index ==0:
-            self.head=self.head.next
+        if index == 0:
+            self.head = self.head.next
             return
 #            q = Node(item,self.head)
 #
 #            self.head = q
 
         p = self.head
-        post  = self.head
+        post = self.head
         j = 0
-        while p.next!=0 and j<index:
+        while p.next != 0 and j < index:
             post = p
             p = p.next
-            j+=1
+            j += 1
 
-        if index ==j:
+        if index == j:
             post.next = p.next
 
-    def index(self,value):
+    def index(self, value):
 
         if self.is_empty():
             print('Linklist is empty.')
@@ -752,9 +797,9 @@ class LinkList(object):
 
         p = self.head
         i = 0
-        while p.next!=0 and not p.data ==value:
+        while p.next != 0 and not p.data == value:
             p = p.next
-            i+=1
+            i += 1
 
         if p.data == value:
             return i
