@@ -14,10 +14,10 @@ class VCF_Data():
         try:
             self.VcfIndexMap = pickle.load(open(vcffileName + ".myindex", 'rb'))
         except:
-            VCF_Data.indexVCF(vcffileName, vcffileName + ".myindex")
+            VCF_Data.indexVCF(VCFName=vcffileName, indexFileName=(vcffileName + ".myindex"))
             self.VcfIndexMap = pickle.load(open(vcffileName + ".myindex", 'rb'))
-#    @staticmethod
-    def indexVCF(self,VCFName, indexFileName):
+    @staticmethod
+    def indexVCF(VCFName, indexFileName):
         """
         {chrom:position_in_file_of_first_SNP_of_this_chrom,chrom:position,,,,,,}
         """

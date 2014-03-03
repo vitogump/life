@@ -44,13 +44,14 @@ def generateIndexByChrom(refFastaFileName, indexFileName):
     pickle.dump(refChromIndex, open(indexFileName, 'wb'))
     refFastaFile.close()
 
-def getGtfMap(gtfFileHandler):
+def getGtfMap(gtfFileName):
     """gtfMap={chromNo:[[transcript_id,strand,start,end,(feature, elemStart, elemEnd, frame),(),(),,,,,],
                         [transcript_id,strand,start,end,(),(),(),,,],[],,,,,,,],
                chromNo:[],,,,,,,,,,,,,,}
         chrtranscrpitididxMap{chromNo:{transcript_id:ttanscript_id_idx,transcript_id:ttanscript_id_idx,,,,,},
                                 chromNo:{},chromNo:{},,,,}
     """
+    gtfFileHandler=open(gtfFileName,'r')
     gtfMap = {}
     chrtranscrpitididxMap = {}
     gtfline = gtfFileHandler.readline()
@@ -81,7 +82,8 @@ def getGtfMap(gtfFileHandler):
         pass                 
 
     for chromNo in gtfMap.keys():
-        gtfMap[chromNo].sort(key=lambda listRec:listRec[2])   
+        gtfMap[chromNo].sort(key=lambda listRec:listRec[2])
+#    fstpaire2name = re.search(r"^[^/]*", gtfFileName).group(0)
     testfile = open("gtfMap.sort.txt", 'w')    
     for chromNo in gtfMap.keys():
         gtfMap[chromNo].sort(key=lambda listRec:listRec[2])
@@ -102,6 +104,7 @@ def getGtfMap(gtfFileHandler):
             for k in range(len(gtfMap[chromNo][i])):
                 print(gtfMap[chromNo][i][k], file=testfile)
     testfile.close()
+    gtfFileHandler.close()
     return gtfMap
 
 def getRefSeqBypos(refFastahander, refindex, currentChromNO, startpos, endpos, seektuple=()):
@@ -353,17 +356,18 @@ class genes():
 
 class GATK_depthfile():
     def __init__(self, depthfileName, indexFileName):
-        super.__init__()
+        super().__init__()
         self.covfileidx = {}
         self.title = []
         try:
             self.covfileidx = pickle.load(open(indexFileName, 'rb'))
         except IOError:
-            self.indexGATK_depthfile(depthfileName, indexFileName)
+            GATK_depthfile.indexGATK_depthfile(depthfileName, indexFileName)
             self.covfileidx = pickle.load(open(indexFileName, 'rb'))
+        self.title = re.split(r"\s+",open(depthfileName,'r').readline())
         self.depthfilefp = open(depthfileName, 'r')
-    
-    def indexGATK_depthfile(self, depthfileName, indexFileName):
+    @staticmethod
+    def indexGATK_depthfile(depthfileName, indexFileName):
         """
         {chrom:position_in_file_of_first_genomepos_of_this_chrom,chrom:position,,,,,,}
         """
@@ -374,8 +378,10 @@ class GATK_depthfile():
         lastPosition = 0
         line = depthfile.readline()
         linelist = re.split(r"\s+", line)
-        self.title = linelist
+#        self.title = linelist
         print("title", line, linelist)
+        line = depthfile.readline()
+        linelist = re.split(r"\s+", line)        
         while line:      
             linelist = re.split(r"\s+", line)
             if currentChrom != re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1):
