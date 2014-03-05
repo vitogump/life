@@ -60,7 +60,7 @@ class VCF_Data():
             line = vcfFile.readline()
         except KeyError:
             print(chrom + "didn't find in " + vcfFileName)
-            return -1
+            return []
         while line and (re.split(r'\s+', line))[0] == chrom:
             linelist = re.split(r'\s+', line)
             chrom = linelist[0].strip()

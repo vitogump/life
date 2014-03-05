@@ -12,20 +12,21 @@ Created on 2013-6-30
 
 @author: rui
 '''
-def complementary(seqlist):
-    newseqlist = []
-    for i in range(0, len(seqlist)):
-        if seqlist[i].lower() == 'a':
-            newseqlist.insert(i, 't')
-        elif seqlist[i].lower() == 't':
-            newseqlist.insert(i, 'a')
-        elif seqlist[i].lower() == 'c':
-            newseqlist.insert(i, 'g')
-        elif seqlist[i].lower() == 'g':
-            newseqlist.insert(i, 'c')
+def complementary(seq):
+    newseq=[]
+    for i in range(0, len(seq)):
+        if seq[i].lower() == 'a':
+            newseq.insert(i, 't')
+        elif seq[i].lower() == 't':
+            newseq.insert(i, 'a')
+        elif seq[i].lower() == 'c':
+            newseq.insert(i, 'g')
         else:
-            newseqlist.insert(i, seqlist[i])
-    return newseqlist
+            newseq.insert(i, 'c')
+    if isinstance(seq,str):
+        newseq="".join(newseq)
+    return newseq
+
 def random_str(randomlength=8):
     a = list(string.ascii_letters)
     random.shuffle(a)
@@ -45,67 +46,69 @@ def generateIndexByChrom(refFastaFileName, indexFileName):
     refFastaFile.close()
 
 def getGtfMap(gtfFileName):
-    """gtfMap={chromNo:[[transcript_id,strand,start,end,(feature, elemStart, elemEnd, frame),(),(),,,,,],
+    """protein_codingMap={chromNo:[[transcript_id,strand,start,end,(feature, elemStart, elemEnd, frame),(),(),,,,,],
                         [transcript_id,strand,start,end,(),(),(),,,],[],,,,,,,],
                chromNo:[],,,,,,,,,,,,,,}
         chrtranscrpitididxMap{chromNo:{transcript_id:ttanscript_id_idx,transcript_id:ttanscript_id_idx,,,,,},
                                 chromNo:{},chromNo:{},,,,}
     """
-    gtfFileHandler=open(gtfFileName,'r')
-    gtfMap = {}
+    gtfFileHandler = open(gtfFileName, 'r')
+    protein_codingMap = {}
     chrtranscrpitididxMap = {}
     gtfline = gtfFileHandler.readline()
     gtfColList = re.split(r'\s+', gtfline)
     chromNo = gtfColList[0].strip()
-    gtfMap[chromNo] = []
+    protein_codingMap[chromNo] = []
     transcript_id = gtfColList[11]
     countInChrom = 0
-    gtfMap[chromNo] = [[transcript_id, gtfColList[6], int(gtfColList[3]), int(gtfColList[4]), (gtfColList[2], int(gtfColList[3]), int(gtfColList[4]), gtfColList[7])]]
+    protein_codingMap[chromNo] = [[transcript_id, gtfColList[6], int(gtfColList[3]), int(gtfColList[4]), (gtfColList[2], int(gtfColList[3]), int(gtfColList[4]), gtfColList[7])]]
     chrtranscrpitididxMap[chromNo] = {transcript_id:0}
     for gtfline in gtfFileHandler:
         gtfColList = re.split(r'\s+', gtfline)
         transcript_id = gtfColList[11].strip()
+        if "protein_coding"!=gtfColList[1]:
+            continue
         chromNo = gtfColList[0].strip()
-        if chromNo in gtfMap:
+        if chromNo in protein_codingMap:
             if transcript_id in chrtranscrpitididxMap[chromNo].keys():
                 tanscript_id_idx = chrtranscrpitididxMap[chromNo][transcript_id]
-                gtfMap[chromNo][tanscript_id_idx].append((gtfColList[2], int(gtfColList[3]), int(gtfColList[4]), gtfColList[7]))
-                gtfMap[chromNo][tanscript_id_idx][2] = min(gtfMap[chromNo][tanscript_id_idx][2], int(gtfColList[3]))
-                gtfMap[chromNo][tanscript_id_idx][3] = max(gtfMap[chromNo][tanscript_id_idx][3], int(gtfColList[4]))
+                protein_codingMap[chromNo][tanscript_id_idx].append((gtfColList[2], int(gtfColList[3]), int(gtfColList[4]), gtfColList[7]))
+                protein_codingMap[chromNo][tanscript_id_idx][2] = min(protein_codingMap[chromNo][tanscript_id_idx][2], int(gtfColList[3]))
+                protein_codingMap[chromNo][tanscript_id_idx][3] = max(protein_codingMap[chromNo][tanscript_id_idx][3], int(gtfColList[4]))
             else:
-                gtfMap[chromNo].append([transcript_id, gtfColList[6], int(gtfColList[3]), int(gtfColList[4]), (gtfColList[2], int(gtfColList[3]), int(gtfColList[4]), gtfColList[7])])
-                chrtranscrpitididxMap[chromNo][transcript_id] = len(gtfMap[chromNo]) - 1
+                protein_codingMap[chromNo].append([transcript_id, gtfColList[6], int(gtfColList[3]), int(gtfColList[4]), (gtfColList[2], int(gtfColList[3]), int(gtfColList[4]), gtfColList[7])])
+                chrtranscrpitididxMap[chromNo][transcript_id] = len(protein_codingMap[chromNo]) - 1
         else:
-             gtfMap[chromNo] = [[transcript_id, gtfColList[6], int(gtfColList[3]), int(gtfColList[4]), (gtfColList[2], int(gtfColList[3]), int(gtfColList[4]), gtfColList[7])]]
+             protein_codingMap[chromNo] = [[transcript_id, gtfColList[6], int(gtfColList[3]), int(gtfColList[4]), (gtfColList[2], int(gtfColList[3]), int(gtfColList[4]), gtfColList[7])]]
              chrtranscrpitididxMap[chromNo] = {transcript_id:0}
     else:
         pass                 
 
-    for chromNo in gtfMap.keys():
-        gtfMap[chromNo].sort(key=lambda listRec:listRec[2])
-#    fstpaire2name = re.search(r"^[^/]*", gtfFileName).group(0)
-    testfile = open("gtfMap.sort.txt", 'w')    
-    for chromNo in gtfMap.keys():
-        gtfMap[chromNo].sort(key=lambda listRec:listRec[2])
+    for chromNo in protein_codingMap.keys():
+        protein_codingMap[chromNo].sort(key=lambda listRec:listRec[2])
+    gtffilepath = re.search(r"^.*[/]", gtfFileName).group(0)
+    testfile = open(gtffilepath + "protein_codingMap.sort.txt", 'w')    
+    for chromNo in protein_codingMap.keys():
+        protein_codingMap[chromNo].sort(key=lambda listRec:listRec[2])
         #先按照转录本起始坐标排序，下面是对转录本内元件排序，不过是什么排序方法忘记了，仔细读一下吧
-        for j in range(len(gtfMap[chromNo])):
-            for t4_indx in range(5, len(gtfMap[chromNo][j])):
-                t4_key = gtfMap[chromNo][j][t4_indx]
+        for j in range(len(protein_codingMap[chromNo])):
+            for t4_indx in range(5, len(protein_codingMap[chromNo][j])):
+                t4_key = protein_codingMap[chromNo][j][t4_indx]
                 t4_indxp = t4_indx - 1
-                while t4_indxp >= 4 and gtfMap[chromNo][j][t4_indxp][1] > t4_key[1]:
-                    gtfMap[chromNo][j][t4_indxp + 1] = gtfMap[chromNo][j][t4_indxp]
+                while t4_indxp >= 4 and protein_codingMap[chromNo][j][t4_indxp][1] > t4_key[1]:
+                    protein_codingMap[chromNo][j][t4_indxp + 1] = protein_codingMap[chromNo][j][t4_indxp]
                     t4_indxp = t4_indxp - 1
                 else:
-                    gtfMap[chromNo][j][t4_indxp + 1] = t4_key
-#            print(gtfMap[chromNo][j],gtfMap[chromNo][j][t4_indxp][1] > t4_key[1],t4_indxp)
-        print(chromNo, "num of transcrpit:", len(gtfMap[chromNo]), file=testfile)
-        for i in range(len(gtfMap[chromNo])):
-#            print(gtfMap[chromNo][i][0],gtfMap[chromNo][i][1],gtfMap[chromNo][i][2],gtfMap[chromNo][i][3])
-            for k in range(len(gtfMap[chromNo][i])):
-                print(gtfMap[chromNo][i][k], file=testfile)
+                    protein_codingMap[chromNo][j][t4_indxp + 1] = t4_key
+#            print(protein_codingMap[chromNo][j],protein_codingMap[chromNo][j][t4_indxp][1] > t4_key[1],t4_indxp)
+        print(chromNo, "num of transcrpit:", len(protein_codingMap[chromNo]), file=testfile)
+        for i in range(len(protein_codingMap[chromNo])):
+#            print(protein_codingMap[chromNo][i][0],protein_codingMap[chromNo][i][1],protein_codingMap[chromNo][i][2],protein_codingMap[chromNo][i][3])
+            for k in range(len(protein_codingMap[chromNo][i])):
+                print(protein_codingMap[chromNo][i][k], file=testfile)
     testfile.close()
     gtfFileHandler.close()
-    return gtfMap
+    return protein_codingMap
 
 def getRefSeqBypos(refFastahander, refindex, currentChromNO, startpos, endpos, seektuple=()):
     '''
@@ -117,12 +120,7 @@ def getRefSeqBypos(refFastahander, refindex, currentChromNO, startpos, endpos, s
     if startpos <= 0:
         startpos = 1
     print(currentChromNO, startpos, endpos)
-#    try:
-#        refindex = pickle.load(open(refFastaFileName + ".myindex", 'rb'))
-#    except IOError:
-#        generateIndexByChrom(refFastaFileName, refFastaFileName + ".myindex")
-#        refindex = pickle.load(open(refFastaFileName + ".myindex", 'rb'))
-#    filehander = open(refFastaFileName, 'r')
+
     filehander = refFastahander
     if not seektuple or seektuple[1] > startpos:
         refSeqMap[currentChromNO] = [startpos - 1]
@@ -165,13 +163,12 @@ def getRefSeqBypos(refFastahander, refindex, currentChromNO, startpos, endpos, s
             myseqline += filehander.read(myseqn)
             myseqn = myseqline.count('\n')
         refSeqMap[currentChromNO].extend(list(myseqline))
-#    filehander.close()
     plus = myseqline.count('>')
     if plus != 0:
         return -1
     
     return refSeqMap        
-#    filehander.close()
+
 
 def getRefSeqMap(refFastafilehander, currentChromNO=None, preBaseTotal=0, linesOnce=500000):
     '''
@@ -205,11 +202,12 @@ def getRefSeqMap(refFastafilehander, currentChromNO=None, preBaseTotal=0, linesO
     return refSeqMap, currentChromNO, currentChromNO
 class genes():
     def __init__(self, gtfList, pos, RefSeqList):
-        super.__init__()
+        super().__init__()
         self.geneOverlapList = self.getNearestGeneOverlapList(gtfList, pos)
         self.tscptSeqAllCds = {}
         self.cds_frame = {}#{transcript_id:{cdsidx:(frame,startpos of this cds),cdsidx:(),,,,,}}
         for gene in self.geneOverlapList:
+            print(gene,file=open("testgeneOverlapList.txt",'a'))
             genename = gene[0]
             self.tscptSeqAllCds[genename] = []
             self.cds_frame[genename] = {}#{cdsidx:(frame,startpos of this cds),cdsidx:(),,,,,}
@@ -218,9 +216,10 @@ class genes():
             for feature, elemStart, elemEnd, frame in gene[4:]:
                 cdsidx += 1
                 if feature == 'CDS':
-                    self.cds_frame[genename][cdsidx] = (int(frame), len(self.tscptSeqAllCds))
+                    self.cds_frame[genename][cdsidx] = (int(frame), len(self.tscptSeqAllCds[genename]))
                     self.tscptSeqAllCds[genename] += RefSeqList[(elemStart - RefSeqList[0]):(elemEnd - RefSeqList[0] + 1)]#???如果不够呢
-                elif feature == 'start_codon' or feature == "stop_codon":
+                elif  feature == "stop_codon":#feature == 'start_codon' or
+                    self.cds_frame[genename][cdsidx] = (int(frame), len(self.tscptSeqAllCds[genename]))
                     self.tscptSeqAllCds[genename] += RefSeqList[(elemStart - RefSeqList[0]):(elemEnd - RefSeqList[0] + 1)]
     def getNearestGeneOverlapList(self, gtfList, pos):
         """
@@ -232,8 +231,11 @@ class genes():
                             [transcript_id,strand,start,end,(),(),(),,,],[],,,,,,,]
         order by "start"
         """
+        if gtfList == None:
+            return []
         high = len(gtfList) - 1
         low = 0
+        mid = int((low + high) / 2)
         while low < high:
             mid = int((low + high) / 2)
             if pos == (gtfList[mid][2]):
@@ -244,6 +246,7 @@ class genes():
             else:# pos > GtfMap[vcfChromNo][mid][2]:
                 low = mid + 1
         else:
+            print("high:",high,"low:",low,"mid:",mid,file=open("testgetNearestGene.txt",'a'))
             if gtfList[high][3] >= pos and gtfList[high][2] <= pos:
                 geneOverlapList = [gtfList[high]];idx = high
             elif gtfList[low][2] > pos:
@@ -252,9 +255,10 @@ class genes():
                 geneOverlapList = [gtfList[0]];idx = 0
             else:#out of end edge,so no gene after the pos,and returen a empty
                 return []
+            print("getNearestGeneOverlapList",idx,gtfList)
             furthest = gtfList[idx][3]
             idx += 1
-            while furthest >= gtfList[idx][2]:
+            while len(gtfList)>idx and furthest >= gtfList[idx][2]:
                 geneOverlapList.append(gtfList[idx])
                 furthest = max(furthest, gtfList[idx][3])
                 idx += 1
@@ -281,15 +285,15 @@ class genes():
               'gtg': 'V', 'gcg': 'A', 'gag': 'E', 'ggg': 'G'}
         curpos = RefSeqList[0] + idx_RefSeq
         tscptSeqAllCds_mut = {}
-        ref_amino_seq={}
-        mutat_amino_seq={}
+        ref_amino_seq = {}
+        mutat_amino_seq = {}
         cns_append = ""
         originallen = {}#just for test
         for gene in self.geneOverlapList:
             genename = gene[0]
             tscptSeqAllCds_mut[genename] = copy.copy(self.tscptSeqAllCds[genename])
             originallen[genename] = len(tscptSeqAllCds_mut[genename])#just for test
-        while VcfList[idx_vcf][0] <= self.geneOverlapList[-1][3] and idx_vcf != len(VcfList):
+        while idx_vcf != len(VcfList) and VcfList[idx_vcf][0] <= self.geneOverlapList[-1][3]:
             vcfpos = VcfList[idx_vcf][0];refalle = VcfList[idx_vcf][1];altalle = VcfList[idx_vcf][2]
             cns_append += ("".join(RefSeqList[idx_RefSeq:idx_RefSeq + (vcfpos - curpos)]))
             idx_RefSeq += (vcfpos - curpos)
@@ -321,36 +325,58 @@ class genes():
                                     tscptSeqAllCds_mut[genename][(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]):(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1] + n_refbases - 1)] = list(altalle[0:(n_refbases - 1)])
                                     tscptSeqAllCds_mut[genename][vcfpos - elemStart + self.cds_frame[genename][t4_indx][1] + n_refbases - 1] = altalle[(n_refbases - 1):]
                             else:#n_refbases==n_altbases==1
-                                tscptSeqAllCds_mut[genename][vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]] = altalle             
+                                try:
+                                    tscptSeqAllCds_mut[genename][vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]] = altalle
+                                except IndexError:
+                                    print(vcfpos,self.cds_frame,elemStart,genename)
+                                    exit()           
             idx_vcf += 1
 #该翻译蛋白了吧 还有 看看长度一样不  将最后一个vcf记录之后的序列加入一致序列字符串
         cns_append += "".join(RefSeqList[idx_RefSeq:idx_RefSeq + (self.geneOverlapList[-1][3] - curpos) + 1])
         for gene in self.geneOverlapList:
+            
             genename = gene[0]
-            ref_amino_seq[genename]=[]
-            mutat_amino_seq[genename]=[]
+#            ref_amino_seq[genename] = []
+            mutat_amino_seq[genename] = []
 #            mutationTypeList=[]
             if originallen[genename] != len(tscptSeqAllCds_mut[genename]):#just for test
                 print("Util getgeneConsensus: length of tscptSeqAllCds changed,so check the code")
                 exit(-1)
-            tscptSeqAllCds_mut_str = "".join(filter(lambda e:e.strip() != "", tscptSeqAllCds_mut[genename]))
-            for i in range(self.cds_frame[genename][sorted(self.cds_frame[genename].keys())[0]][0], len(tscptSeqAllCds_mut_str), 3):
-                codon = "".join(self.tscptSeqAllCds[i:i + 3]).lower()
-                codon_m = tscptSeqAllCds_mut_str[i:i + 3].lower()
-                ref_amino_seq[genename].append(CodonTable[codon])
-                mutat_amino_seq[genename].append(CodonTable[codon_m])
-#                if CodonTable[codon]!=CodonTable[codon_m]:
-#                    mutationTypeList.append(("nonsynonymous", i / 3, CodonTable[codon], CodonTable[codon_m]))
-#                else:
-#                    mutationTypeList.append(("synonymous", i / 3, CodonTable[codon], CodonTable[codon_m]))
-        testfile=open("animo_acid.txt",'w')
-        for gene in self.geneOverlapList:#for test only
-            genename=gene[0]
-            print(">"+genename+"\n",file=testfile)
-            print("".join(ref_amino_seq[genename]),file=testfile)
-            print("\n"+"".join(mutat_amino_seq[genename])+"\n",file=testfile)
-        testfile.close()
-        return  tscptSeqAllCds_mut,mutat_amino_seq,cns_append,idx_vcf
+            tscptSeqAllCds_mut_str = "".join(filter(lambda e:e.strip() != "", tscptSeqAllCds_mut[genename]))           
+            if gene[1]=='+':
+                tscptSeqAllCds_mut[genename]=list(tscptSeqAllCds_mut_str)
+                for i in range(self.cds_frame[genename][sorted(self.cds_frame[genename].keys())[0]][0], len(tscptSeqAllCds_mut_str), 3):
+#                    codon = "".join(self.tscptSeqAllCds[genename][i:i + 3]).lower()
+                    codon_m = tscptSeqAllCds_mut_str[i:i + 3].lower()
+#                    ref_amino_seq[genename].append(CodonTable[codon])
+                    try:
+                        mutat_amino_seq[genename].append(CodonTable[codon_m])
+                    except KeyError:
+                        mutat_amino_seq[genename].append('n')
+            else:# strand == '-'
+                tscptSeqAllCds_Revr_Cmplm=complementary(self.tscptSeqAllCds[genename])
+                tscptSeqAllCds_Revr_Cmplm.reverse()                
+                tscptSeqAllCds_mut_str=list(tscptSeqAllCds_mut_str)
+                tscptSeqAllCds_mut_str_Revr_Cmplm=complementary(tscptSeqAllCds_mut_str)
+                tscptSeqAllCds_mut_str_Revr_Cmplm.reverse()
+                tscptSeqAllCds_mut_str_Revr_Cmplm="".join(tscptSeqAllCds_mut_str_Revr_Cmplm)
+                tscptSeqAllCds_mut[genename]=list(tscptSeqAllCds_mut_str_Revr_Cmplm)
+                for i in range(self.cds_frame[genename][sorted(self.cds_frame[genename].keys())[-1]][0],len(tscptSeqAllCds_mut_str_Revr_Cmplm),3):
+#                    codon = "".join(self.tscptSeqAllCds[genename][i:i+3]).lower()
+                    codon_m=tscptSeqAllCds_mut_str_Revr_Cmplm[i:i+3].lower()
+#                    ref_amino_seq[genename].append(CodonTable[codon])
+                    try:
+                        mutat_amino_seq[genename].append(CodonTable[codon_m])
+                    except KeyError:
+                        mutat_amino_seq[genename].append('n')
+#        testfile = open("animo_acid.txt", 'w')
+#        for gene in self.geneOverlapList:#for test only
+#            genename = gene[0]
+#            print(">" + genename + "\n", file=testfile)
+#            print("".join(ref_amino_seq[genename]), file=testfile)
+#            print("\n" + "".join(mutat_amino_seq[genename]) + "\n", file=testfile)
+#        testfile.close()
+        return  tscptSeqAllCds_mut, mutat_amino_seq, cns_append, idx_vcf
 
         
 
@@ -359,13 +385,15 @@ class GATK_depthfile():
         super().__init__()
         self.covfileidx = {}
         self.title = []
+        self.depthfileName = depthfileName
         try:
             self.covfileidx = pickle.load(open(indexFileName, 'rb'))
         except IOError:
             GATK_depthfile.indexGATK_depthfile(depthfileName, indexFileName)
             self.covfileidx = pickle.load(open(indexFileName, 'rb'))
-        self.title = re.split(r"\s+",open(depthfileName,'r').readline())
+        self.title = self.covfileidx["title"]
         self.depthfilefp = open(depthfileName, 'r')
+        self.depthfilefp.readline()
     @staticmethod
     def indexGATK_depthfile(depthfileName, indexFileName):
         """
@@ -380,6 +408,8 @@ class GATK_depthfile():
         linelist = re.split(r"\s+", line)
 #        self.title = linelist
         print("title", line, linelist)
+        covfileidx["title"] = linelist
+        lastPosition = depthfile.tell()
         line = depthfile.readline()
         linelist = re.split(r"\s+", line)        
         while line:      
@@ -392,37 +422,77 @@ class GATK_depthfile():
             line = depthfile.readline()
         pickle.dump(covfileidx, open(indexFileName, 'wb'))
         depthfile.close()
-    def set_depthfilefp(self, locchrom, locingenome, lastposoffilehandler=0):
+    def set_depthfilefp(self, targetchrom, targetloc, lastposoffilehandler=0):
         """
-        set the self.depthfilefp to the line in the file where chrom==locchrom pos==locingenome-1
+        set the self.depthfilefp to the line in the file where chrom==targetchrom pos==targetloc-1
         """
-        self.depthfilefp.seek(lastposoffilehandler)
-        linelist = re.split(r"\s+", self.depthfilefp.readline())
+        
+        if targetloc == 1:
+            self.depthfilefp.seek(self.covfileidx[targetchrom])
+            return "found"
+        
+        searchfp = open(self.depthfileName, 'r')
+        searchfp.seek(lastposoffilehandler)
+        linelist = re.split(r"\s+", searchfp.readline())
+#        print("set_depthfilefp:",targetchrom,"search for targetloc:",targetloc,self.covfileidx[targetchrom],lastposoffilehandler,linelist)
         currentChrom = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1)
-        pos = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2)
-        if currentChrom == locchrom and pos <= locingenome - 1:
-            pass
+        pos = int(re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2))
+        if currentChrom == targetchrom and pos == targetloc:
+            self.depthfilefp.seek(lastposoffilehandler)
+            searchfp.close()
+            return "found"
+        if currentChrom != targetchrom or pos > targetloc:
+            searchfp.seek(self.covfileidx[targetchrom])
+            targetfpposition = self.covfileidx[targetchrom]
         else:
-            self.depthfilefp.seek(self.covfileidx[locchrom])
-            line = self.depthfilefp.readline()
-            currentChrom = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1)
-            pos = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2)            
+            targetfpposition = searchfp.tell()
+        linelist = re.split(r"\s+", searchfp.readline())
+        currentChrom = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1)
+        pos = int(re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2))
         #set the filehandler locate at the nearest location to the target location
-        while currentChrom == locchrom:
-            if pos == locingenome - 1:
+        while currentChrom == targetchrom:
+            if pos == targetloc:
+                self.depthfilefp.seek(targetfpposition)
+                searchfp.close()
                 return "found"
-            line = self.depthfilefp.readline()
-            linelist = re.split(r"\s+", line)
-            currentChrom = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1)
-            pos = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2)
+            else:
+                targetfpposition = searchfp.tell()
+                linelist = re.split(r"\s+", self.depthfilefp.readline())
+                currentChrom = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1)
+                pos = int(re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2))
         else:
+            searchfp.close()
             return "didn't find"         
     def getnextposline(self):
         line = self.depthfilefp.readline()
+        print("getnextposline", line)
         linelist = re.split(r"\s+", line)
         chrom = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1)
-        pos = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2)
-        return chrom, pos, line, linelist
+        pos = int(re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2))
+        return chrom, pos, linelist, self.depthfilefp.tell()
+    def getdepthByPos(self, targetchr, targetloc, lastposoffilehandler=0):
+        linelist = re.split(r"\s+", self.depthfilefp.readline())
+        chrom = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1)
+        pos = int(re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2))
+        if chrom == targetchr and pos == targetloc:
+            return linelist
+        if chrom!=targetchr and pos >targetloc:
+            self.depthfilefp.seek(self.covfileidx[targetchr])
+        elif chrom == targetchr and pos < targetloc-100:
+            pass#use the lastposoffilehandler to set the filehanlder quickly
+        linelist = re.split(r"\s+", self.depthfilefp.readline())
+        chrom = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1)
+        pos = int(re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2))
+        while chrom==targetchr:
+            if pos == targetloc:
+                return linelist
+            linelist = re.split(r"\s+", self.depthfilefp.readline())
+            chrom = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1)
+            pos = int(re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2))
+        else:
+            return []
+        
+                    
     def closedepthfile(self):
         self.title.clear()
         self.covfileidx.clear()
