@@ -81,13 +81,13 @@ if __name__ == '__main__':
                 if depth_linelist and int(depth_linelist[species_idx]) >= mindepth:
                     if vcflist_A_chrom and idx_vcf < len(vcflist_A_chrom) and vcflist_A_chrom[idx_vcf][0] == currentBaselocinGenome:
                         cns_string += vcflist_A_chrom[idx_vcf][2]
-                        idx_RefSeq += (len(vcflist_A_chrom[idx_vcf][1]) - 1);currentBaselocinGenome += (len(vcflist_A_chrom[idx_vcf][1]) - 1)
+                        idx_RefSeq += len(vcflist_A_chrom[idx_vcf][1]);currentBaselocinGenome += len(vcflist_A_chrom[idx_vcf][1]) 
                         idx_vcf += 1
                     else:
                         cns_string += RefSeqMap[currentChromNO][idx_RefSeq]
                         idx_RefSeq += 1;currentBaselocinGenome += 1
                 else:
-                    cns_string += "n"
+                    cns_string += "N"
                     idx_RefSeq += 1;currentBaselocinGenome += 1
                         
             else:
@@ -124,6 +124,7 @@ if __name__ == '__main__':
                     RefSeqMap[currentChromNO] += RefSeqMap_suplemtry[1:]
                     reffa_suplemtry.close()
                     nearestGenes = Util.genes(gtfMap[currentChromNO], currentBaselocinGenome, RefSeqMap[currentChromNO])
+            
         else:
             lastposofdepthfp = depthfile.depthfilefp.tell()
             print(cns_string, end="", file=outcns)
@@ -133,6 +134,7 @@ if __name__ == '__main__':
             else:
                 cns_string = "\n>" + nextChromNO + "\n"
                 RefSeqMap, currentChromNO, nextChromNO = Util.getRefSeqMap(refFastafilehander=reffa, currentChromNO=nextChromNO, preBaseTotal=0)
+        print("\t\tone loop end:", currentChromNO)
     else:
         print("finish")        
         

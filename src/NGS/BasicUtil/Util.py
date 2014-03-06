@@ -207,7 +207,7 @@ class genes():
         self.tscptSeqAllCds = {}
         self.cds_frame = {}#{transcript_id:{cdsidx:(frame,startpos of this cds),cdsidx:(),,,,,}}
         for gene in self.geneOverlapList:
-            print(gene,file=open("testgeneOverlapList.txt",'a'))
+            
             genename = gene[0]
             self.tscptSeqAllCds[genename] = []
             self.cds_frame[genename] = {}#{cdsidx:(frame,startpos of this cds),cdsidx:(),,,,,}
@@ -259,7 +259,8 @@ class genes():
             furthest = gtfList[idx][3]
             idx += 1
             while len(gtfList)>idx and furthest >= gtfList[idx][2]:
-                geneOverlapList.append(gtfList[idx])
+                if gtfList[idx][0]!=geneOverlapList[-1][0]:
+                    geneOverlapList.append(gtfList[idx])
                 furthest = max(furthest, gtfList[idx][3])
                 idx += 1
         return geneOverlapList
@@ -291,6 +292,8 @@ class genes():
         originallen = {}#just for test
         for gene in self.geneOverlapList:
             genename = gene[0]
+            print(gene,self.cds_frame[genename],sep="\n",file=open("testgeneOverlapList.txt",'a'))
+            
             tscptSeqAllCds_mut[genename] = copy.copy(self.tscptSeqAllCds[genename])
             originallen[genename] = len(tscptSeqAllCds_mut[genename])#just for test
         while idx_vcf != len(VcfList) and VcfList[idx_vcf][0] <= self.geneOverlapList[-1][3]:
@@ -309,6 +312,7 @@ class genes():
             curpos = RefSeqList[0] + idx_RefSeq
             
             for gene in self.geneOverlapList:
+                genename=gene[0]
                 if gene[2] <= vcfpos and gene[3] >= vcfpos:
                     t4_indx = 3
                     for feature, elemStart, elemEnd, frame in gene[4:]:
@@ -316,8 +320,10 @@ class genes():
                         if feature == 'CDS' and vcfpos <= elemEnd and vcfpos >= elemStart:
                             n_refbases = len(refalle);n_altbases = len(altalle)#situation TAA     TA;     TTA     TTAAACTTCTATACTA;      C       T;    T       TATA;    ACG     A
                             if n_refbases > n_altbases:#situation TAA     TA;ACG     A
+                                print(tscptSeqAllCds_mut[genename][(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]):(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1] + n_refbases)])
                                 tscptSeqAllCds_mut[genename][(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]):(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1] + n_altbases)] = list(altalle)
                                 tscptSeqAllCds_mut[genename][(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1] + n_altbases):(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1] + n_refbases)] = [' '] * (n_refbases - n_altbases)
+                                print(tscptSeqAllCds_mut[genename][(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]):(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1] + n_refbases)])
                             elif n_refbases < n_altbases:#situation TTA     TTAAACTTCTATACTA;T       TATA;
                                 if n_refbases == 1:
                                     tscptSeqAllCds_mut[genename][vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]] = altalle
@@ -328,8 +334,9 @@ class genes():
                                 try:
                                     tscptSeqAllCds_mut[genename][vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]] = altalle
                                 except IndexError:
-                                    print(vcfpos,self.cds_frame,elemStart,genename)
-                                    exit()           
+                                    print(genename,vcfpos,t4_indx,altalle,elemStart,feature,len(tscptSeqAllCds_mut[genename]))
+                                    exit()
+       
             idx_vcf += 1
 #该翻译蛋白了吧 还有 看看长度一样不  将最后一个vcf记录之后的序列加入一致序列字符串
         cns_append += "".join(RefSeqList[idx_RefSeq:idx_RefSeq + (self.geneOverlapList[-1][3] - curpos) + 1])
@@ -340,7 +347,9 @@ class genes():
             mutat_amino_seq[genename] = []
 #            mutationTypeList=[]
             if originallen[genename] != len(tscptSeqAllCds_mut[genename]):#just for test
-                print("Util getgeneConsensus: length of tscptSeqAllCds changed,so check the code")
+                print(self.tscptSeqAllCds[genename])
+                print(tscptSeqAllCds_mut[genename])
+                print("Util getgeneConsensus: length of tscptSeqAllCds changed,so check the code",genename)
                 exit(-1)
             tscptSeqAllCds_mut_str = "".join(filter(lambda e:e.strip() != "", tscptSeqAllCds_mut[genename]))           
             if gene[1]=='+':
@@ -352,7 +361,7 @@ class genes():
                     try:
                         mutat_amino_seq[genename].append(CodonTable[codon_m])
                     except KeyError:
-                        mutat_amino_seq[genename].append('n')
+                        mutat_amino_seq[genename].append('X')
             else:# strand == '-'
                 tscptSeqAllCds_Revr_Cmplm=complementary(self.tscptSeqAllCds[genename])
                 tscptSeqAllCds_Revr_Cmplm.reverse()                
@@ -368,7 +377,7 @@ class genes():
                     try:
                         mutat_amino_seq[genename].append(CodonTable[codon_m])
                     except KeyError:
-                        mutat_amino_seq[genename].append('n')
+                        mutat_amino_seq[genename].append('X')
 #        testfile = open("animo_acid.txt", 'w')
 #        for gene in self.geneOverlapList:#for test only
 #            genename = gene[0]
