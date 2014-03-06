@@ -349,8 +349,8 @@ class genes():
             if originallen[genename] != len(tscptSeqAllCds_mut[genename]):#just for test
                 print(self.tscptSeqAllCds[genename])
                 print(tscptSeqAllCds_mut[genename])
-                print("Util getgeneConsensus: length of tscptSeqAllCds changed,so check the code",genename)
-                exit(-1)
+                print("Util getgeneConsensus: length of tscptSeqAllCds changed,so there is a indel in the rearpart of the trcptSeq",genename)
+
             tscptSeqAllCds_mut_str = "".join(filter(lambda e:e.strip() != "", tscptSeqAllCds_mut[genename]))           
             if gene[1]=='+':
                 tscptSeqAllCds_mut[genename]=list(tscptSeqAllCds_mut_str)
