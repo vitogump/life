@@ -13,7 +13,7 @@ Created on 2013-6-30
 @author: rui
 '''
 def complementary(seq):
-    newseq=[]
+    newseq = []
     for i in range(0, len(seq)):
         if seq[i].lower() == 'a':
             newseq.insert(i, 't')
@@ -23,8 +23,8 @@ def complementary(seq):
             newseq.insert(i, 'g')
         else:
             newseq.insert(i, 'c')
-    if isinstance(seq,str):
-        newseq="".join(newseq)
+    if isinstance(seq, str):
+        newseq = "".join(newseq)
     return newseq
 
 def random_str(randomlength=8):
@@ -66,7 +66,7 @@ def getGtfMap(gtfFileName):
     for gtfline in gtfFileHandler:
         gtfColList = re.split(r'\s+', gtfline)
         transcript_id = gtfColList[11].strip()
-        if "protein_coding"!=gtfColList[1]:
+        if "protein_coding" != gtfColList[1]:
             continue
         chromNo = gtfColList[0].strip()
         if chromNo in protein_codingMap:
@@ -221,6 +221,8 @@ class genes():
                 elif  feature == "stop_codon":#feature == 'start_codon' or
                     self.cds_frame[genename][cdsidx] = (int(frame), len(self.tscptSeqAllCds[genename]))
                     self.tscptSeqAllCds[genename] += RefSeqList[(elemStart - RefSeqList[0]):(elemEnd - RefSeqList[0] + 1)]
+            if genename=='"ENSAPLT00000005931";':
+                print(genename,elemStart - RefSeqList[0],elemEnd - RefSeqList[0] + 1,elemStart - RefSeqList[0],elemEnd - RefSeqList[0] + 1,RefSeqList[0],len(RefSeqList))
     def getNearestGeneOverlapList(self, gtfList, pos):
         """
         input:for a chrom,contain all transcript of this chrom
@@ -233,36 +235,47 @@ class genes():
         """
         if gtfList == None:
             return []
-        high = len(gtfList) - 1
-        low = 0
-        mid = int((low + high) / 2)
-        while low < high:
-            mid = int((low + high) / 2)
-            if pos == (gtfList[mid][2]):
-                low = high#go to the else of the while block
-                high = mid
-            elif pos < (gtfList[mid][2]):
-                high = mid - 1
-            else:# pos > GtfMap[vcfChromNo][mid][2]:
-                low = mid + 1
+        for i in range(len(gtfList)):
+            if gtfList[i][2]>=pos :
+                geneOverlapList=[gtfList[i]]
+                break
         else:
-            print("high:",high,"low:",low,"mid:",mid,file=open("testgetNearestGene.txt",'a'))
-            if gtfList[high][3] >= pos and gtfList[high][2] <= pos:
-                geneOverlapList = [gtfList[high]];idx = high
-            elif gtfList[low][2] > pos:
-                geneOverlapList = [gtfList[low]];idx = low
-            elif low == high and low == 0:
-                geneOverlapList = [gtfList[0]];idx = 0
-            else:#out of end edge,so no gene after the pos,and returen a empty
+            if pos > gtfList[-1][3]:
                 return []
-            print("getNearestGeneOverlapList",idx,gtfList)
-            furthest = gtfList[idx][3]
-            idx += 1
-            while len(gtfList)>idx and furthest >= gtfList[idx][2]:
-                if gtfList[idx][0]!=geneOverlapList[-1][0]:
-                    geneOverlapList.append(gtfList[idx])
-                furthest = max(furthest, gtfList[idx][3])
-                idx += 1
+            else:
+                print(pos,gtfList)
+                exit(-1)
+
+#        high = len(gtfList) - 1
+#        low = 0
+#        mid = int((low + high) / 2)
+#        while low < high:
+#            mid = int((low + high) / 2)
+#            if pos == (gtfList[mid][2]):
+#                low = high#go to the else of the while block
+#                high = mid
+#            elif pos < (gtfList[mid][2]):
+#                high = mid - 1
+#            else:# pos > GtfMap[vcfChromNo][mid][2]:
+#                low = mid + 1
+#        else:
+#            print("high:", high, "low:", low, "mid:", mid, file=open("testgetNearestGene.txt", 'a'))
+#            if gtfList[high][3] >= pos and gtfList[high][2] <= pos:
+#                geneOverlapList = [gtfList[high]];idx = high
+#            elif gtfList[low][2] > pos:
+#                geneOverlapList = [gtfList[low]];idx = low
+#            elif low == high and low == 0:
+#                geneOverlapList = [gtfList[0]];idx = 0
+#            else:#out of end edge,so no gene after the pos,and returen a empty
+#                return []
+        print("getNearestGeneOverlapList", i, gtfList,pos)
+        furthest = gtfList[i][3]
+        i += 1
+        while len(gtfList) > i and furthest >= gtfList[i][2]:
+            if gtfList[i][0] != geneOverlapList[-1][0]:
+                geneOverlapList.append(gtfList[i])
+            furthest = max(furthest, gtfList[i][3])
+            i += 1
         return geneOverlapList
     def getgeneConsensus(self, RefSeqList, idx_RefSeq, VcfList, idx_vcf, depthfile):
         """
@@ -290,13 +303,15 @@ class genes():
         mutat_amino_seq = {}
         cns_append = ""
         originallen = {}#just for test
+        indelatEdgeofCDS=open("indelatEdgeofCDS.txt",'w')
         for gene in self.geneOverlapList:
             genename = gene[0]
-            print(gene,self.cds_frame[genename],sep="\n",file=open("testgeneOverlapList.txt",'a'))
+            print(gene, self.cds_frame[genename], sep="\n", file=open("testgeneOverlapList.txt", 'a'))
             
             tscptSeqAllCds_mut[genename] = copy.copy(self.tscptSeqAllCds[genename])
             originallen[genename] = len(tscptSeqAllCds_mut[genename])#just for test
-        while idx_vcf != len(VcfList) and VcfList[idx_vcf][0] <= self.geneOverlapList[-1][3]:
+        
+        while idx_vcf!=-1 and idx_vcf != len(VcfList) and VcfList[idx_vcf][0] <= self.geneOverlapList[-1][3]:
             vcfpos = VcfList[idx_vcf][0];refalle = VcfList[idx_vcf][1];altalle = VcfList[idx_vcf][2]
             cns_append += ("".join(RefSeqList[idx_RefSeq:idx_RefSeq + (vcfpos - curpos)]))
             idx_RefSeq += (vcfpos - curpos)
@@ -310,15 +325,18 @@ class genes():
             cns_append += ("".join(RefSeqList[idx_RefSeq:idx_RefSeq + len(altalle)]))
             idx_RefSeq += len(refalle)#here should still be refalle
             curpos = RefSeqList[0] + idx_RefSeq
-            
+            n_refbases = len(refalle);n_altbases = len(altalle)#situation TAA     TA;     TTA     TTAAACTTCTATACTA;      C       T;    T       TATA;    ACG     A
+
             for gene in self.geneOverlapList:
-                genename=gene[0]
+                genename = gene[0]
                 if gene[2] <= vcfpos and gene[3] >= vcfpos:
                     t4_indx = 3
                     for feature, elemStart, elemEnd, frame in gene[4:]:
                         t4_indx += 1
                         if feature == 'CDS' and vcfpos <= elemEnd and vcfpos >= elemStart:
-                            n_refbases = len(refalle);n_altbases = len(altalle)#situation TAA     TA;     TTA     TTAAACTTCTATACTA;      C       T;    T       TATA;    ACG     A
+                            if vcfpos + n_refbases - 1 > elemEnd or vcfpos + n_altbases - 1 > elemEnd:
+                                print(VcfList[idx_vcf],genename,file=indelatEdgeofCDS)
+                                break
                             if n_refbases > n_altbases:#situation TAA     TA;ACG     A
                                 print(tscptSeqAllCds_mut[genename][(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]):(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1] + n_refbases)])
                                 tscptSeqAllCds_mut[genename][(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]):(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1] + n_altbases)] = list(altalle)
@@ -334,7 +352,7 @@ class genes():
                                 try:
                                     tscptSeqAllCds_mut[genename][vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]] = altalle
                                 except IndexError:
-                                    print(genename,vcfpos,t4_indx,altalle,elemStart,feature,len(tscptSeqAllCds_mut[genename]))
+                                    print(genename, vcfpos, t4_indx, altalle, elemStart, feature, len(tscptSeqAllCds_mut[genename]))
                                     exit()
        
             idx_vcf += 1
@@ -349,11 +367,11 @@ class genes():
             if originallen[genename] != len(tscptSeqAllCds_mut[genename]):#just for test
                 print(self.tscptSeqAllCds[genename])
                 print(tscptSeqAllCds_mut[genename])
-                print("Util getgeneConsensus: length of tscptSeqAllCds changed,so there is a indel in the rearpart of the trcptSeq",genename)
+                print("Util getgeneConsensus: length of tscptSeqAllCds changed,so there is a indel in the rearpart of the trcptSeq", genename)
 
             tscptSeqAllCds_mut_str = "".join(filter(lambda e:e.strip() != "", tscptSeqAllCds_mut[genename]))           
-            if gene[1]=='+':
-                tscptSeqAllCds_mut[genename]=list(tscptSeqAllCds_mut_str)
+            if gene[1] == '+':
+                tscptSeqAllCds_mut[genename] = list(tscptSeqAllCds_mut_str)
                 for i in range(self.cds_frame[genename][sorted(self.cds_frame[genename].keys())[0]][0], len(tscptSeqAllCds_mut_str), 3):
 #                    codon = "".join(self.tscptSeqAllCds[genename][i:i + 3]).lower()
                     codon_m = tscptSeqAllCds_mut_str[i:i + 3].lower()
@@ -363,16 +381,16 @@ class genes():
                     except KeyError:
                         mutat_amino_seq[genename].append('X')
             else:# strand == '-'
-                tscptSeqAllCds_Revr_Cmplm=complementary(self.tscptSeqAllCds[genename])
+                tscptSeqAllCds_Revr_Cmplm = complementary(self.tscptSeqAllCds[genename])
                 tscptSeqAllCds_Revr_Cmplm.reverse()                
-                tscptSeqAllCds_mut_str=list(tscptSeqAllCds_mut_str)
-                tscptSeqAllCds_mut_str_Revr_Cmplm=complementary(tscptSeqAllCds_mut_str)
+                tscptSeqAllCds_mut_str = list(tscptSeqAllCds_mut_str)
+                tscptSeqAllCds_mut_str_Revr_Cmplm = complementary(tscptSeqAllCds_mut_str)
                 tscptSeqAllCds_mut_str_Revr_Cmplm.reverse()
-                tscptSeqAllCds_mut_str_Revr_Cmplm="".join(tscptSeqAllCds_mut_str_Revr_Cmplm)
-                tscptSeqAllCds_mut[genename]=list(tscptSeqAllCds_mut_str_Revr_Cmplm)
-                for i in range(self.cds_frame[genename][sorted(self.cds_frame[genename].keys())[-1]][0],len(tscptSeqAllCds_mut_str_Revr_Cmplm),3):
+                tscptSeqAllCds_mut_str_Revr_Cmplm = "".join(tscptSeqAllCds_mut_str_Revr_Cmplm)
+                tscptSeqAllCds_mut[genename] = list(tscptSeqAllCds_mut_str_Revr_Cmplm)
+                for i in range(self.cds_frame[genename][sorted(self.cds_frame[genename].keys())[-1]][0], len(tscptSeqAllCds_mut_str_Revr_Cmplm), 3):
 #                    codon = "".join(self.tscptSeqAllCds[genename][i:i+3]).lower()
-                    codon_m=tscptSeqAllCds_mut_str_Revr_Cmplm[i:i+3].lower()
+                    codon_m = tscptSeqAllCds_mut_str_Revr_Cmplm[i:i + 3].lower()
 #                    ref_amino_seq[genename].append(CodonTable[codon])
                     try:
                         mutat_amino_seq[genename].append(CodonTable[codon_m])
@@ -485,14 +503,14 @@ class GATK_depthfile():
         pos = int(re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2))
         if chrom == targetchr and pos == targetloc:
             return linelist
-        if chrom!=targetchr and pos >targetloc:
+        if chrom != targetchr and pos > targetloc:
             self.depthfilefp.seek(self.covfileidx[targetchr])
-        elif chrom == targetchr and pos < targetloc-100:
+        elif chrom == targetchr and pos < targetloc - 100:
             pass#use the lastposoffilehandler to set the filehanlder quickly
         linelist = re.split(r"\s+", self.depthfilefp.readline())
         chrom = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1)
         pos = int(re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2))
-        while chrom==targetchr:
+        while chrom == targetchr:
             if pos == targetloc:
                 return linelist
             linelist = re.split(r"\s+", self.depthfilefp.readline())
