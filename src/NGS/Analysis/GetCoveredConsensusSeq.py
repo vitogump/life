@@ -47,6 +47,8 @@ if __name__ == '__main__':
     species_idx = depthfile.title.index("Depth_for_" + options.species)
     vcfpop = VCFutil.VCF_Data(options.variants)  # new a class
     RefSeqMap, currentChromNO, nextChromNO = Util.getRefSeqMap(refFastafilehander=reffa)
+    print(currentChromNO,nextChromNO)
+    cns_string+=currentChromNO+"\n"
     gtfMap = Util.getGtfMap(options.gtffile)
     
     lastposofdepthfp = 0#because this time RefSeqMap[0] is 0
@@ -131,7 +133,15 @@ if __name__ == '__main__':
             
         else:
             lastposofdepthfp = depthfile.depthfilefp.tell()
-            print(cns_string, end="", file=outcns)
+            i=cns_string.find("\n")+1
+            print(cns_string[:i], end="", file=outcns)
+            cns_strline=cns_string[i:i+60]
+            while len(cns_strline)==60:
+                print(cns_strline,end="\n",file=outcns)
+                i+=60
+                cns_strline=cns_string[i:i+60]
+            else:
+                print(cns_strline,end="",file=outcns)
             if nextChromNO == currentChromNO:
                 cns_string = ""
                 RefSeqMap, currentChromNO, nextChromNO = Util.getRefSeqMap(refFastafilehander=reffa, currentChromNO=nextChromNO, preBaseTotal=RefSeqMap[currentChromNO][0] + len(RefSeqMap[currentChromNO]) - 1)

@@ -317,7 +317,7 @@ class genes():
             idx_RefSeq += (vcfpos - curpos)
             curpos = RefSeqList[0] + idx_RefSeq
             
-            if re.search(r'[^a-zA-Z]', refalle) != None:#contain ',' ie. multiple alle
+            if re.search(r'[^a-zA-Z]', altalle) != None:#contain ',' ie. multiple alle
                 cns_append += ("".join(RefSeqList[idx_RefSeq:idx_RefSeq + len(refalle)]))
                 idx_RefSeq += len(refalle)
                 curpos = RefSeqList[0] + idx_RefSeq
@@ -326,7 +326,7 @@ class genes():
             idx_RefSeq += len(refalle)#here should still be refalle
             curpos = RefSeqList[0] + idx_RefSeq
             n_refbases = len(refalle);n_altbases = len(altalle)#situation TAA     TA;     TTA     TTAAACTTCTATACTA;      C       T;    T       TATA;    ACG     A
-
+# first for every variant making cns_append,and then substitute the seq in the cds seq,and finialy translate to protein 
             for gene in self.geneOverlapList:
                 genename = gene[0]
                 if gene[2] <= vcfpos and gene[3] >= vcfpos:
