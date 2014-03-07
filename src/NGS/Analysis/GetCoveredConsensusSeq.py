@@ -97,6 +97,7 @@ if __name__ == '__main__':
                     idx_RefSeq += 1;currentBaselocinGenome += 1
                         
             else:
+                print(idx_RefSeq,currentBaselocinGenome)
                 cds_map, aa_map, cns_append, idx_vcf = nearestGenes.getgeneConsensus(RefSeqMap[currentChromNO], idx_RefSeq, vcflist_A_chrom, idx_vcf, depthfile)
                 cns_string += cns_append
                 for geneName in cds_map.keys():#write to file
@@ -130,18 +131,11 @@ if __name__ == '__main__':
                     RefSeqMap[currentChromNO] += RefSeqMap_suplemtry[1:]
                     reffa_suplemtry.close()
                     nearestGenes = Util.genes(gtfMap[currentChromNO], currentBaselocinGenome, RefSeqMap[currentChromNO])
+                print(idx_RefSeq,currentBaselocinGenome,frontmostpos,Rearmostpos)
             
         else:
             lastposofdepthfp = depthfile.depthfilefp.tell()
-            i=cns_string.find("\n")+1
-            print(cns_string[:i], end="", file=outcns)
-            cns_strline=cns_string[i:i+60]
-            while len(cns_strline)==60:
-                print(cns_strline,end="\n",file=outcns)
-                i+=60
-                cns_strline=cns_string[i:i+60]
-            else:
-                print(cns_strline,end="",file=outcns)
+            print(cns_string, end="", file=outcns)
             if nextChromNO == currentChromNO:
                 cns_string = ""
                 RefSeqMap, currentChromNO, nextChromNO = Util.getRefSeqMap(refFastafilehander=reffa, currentChromNO=nextChromNO, preBaseTotal=RefSeqMap[currentChromNO][0] + len(RefSeqMap[currentChromNO]) - 1)

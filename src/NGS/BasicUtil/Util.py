@@ -246,28 +246,7 @@ class genes():
                 print(pos,gtfList)
                 exit(-1)
 
-#        high = len(gtfList) - 1
-#        low = 0
-#        mid = int((low + high) / 2)
-#        while low < high:
-#            mid = int((low + high) / 2)
-#            if pos == (gtfList[mid][2]):
-#                low = high#go to the else of the while block
-#                high = mid
-#            elif pos < (gtfList[mid][2]):
-#                high = mid - 1
-#            else:# pos > GtfMap[vcfChromNo][mid][2]:
-#                low = mid + 1
-#        else:
-#            print("high:", high, "low:", low, "mid:", mid, file=open("testgetNearestGene.txt", 'a'))
-#            if gtfList[high][3] >= pos and gtfList[high][2] <= pos:
-#                geneOverlapList = [gtfList[high]];idx = high
-#            elif gtfList[low][2] > pos:
-#                geneOverlapList = [gtfList[low]];idx = low
-#            elif low == high and low == 0:
-#                geneOverlapList = [gtfList[0]];idx = 0
-#            else:#out of end edge,so no gene after the pos,and returen a empty
-#                return []
+
         print("getNearestGeneOverlapList", i, gtfList,pos)
         furthest = gtfList[i][3]
         i += 1
