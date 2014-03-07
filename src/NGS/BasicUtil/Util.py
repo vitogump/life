@@ -300,6 +300,7 @@ class genes():
                 cns_append += ("".join(RefSeqList[idx_RefSeq:idx_RefSeq + len(refalle)]))
                 idx_RefSeq += len(refalle)
                 curpos = RefSeqList[0] + idx_RefSeq
+                idx_vcf+=1
                 continue
             cns_append += ("".join(RefSeqList[idx_RefSeq:idx_RefSeq + len(altalle)]))
             idx_RefSeq += len(refalle)#here should still be refalle
