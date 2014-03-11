@@ -9,7 +9,6 @@ class VCF_Data():
     def __init__(self, vcffileName):
         super().__init__()
         self.VcfMap_AllChrom = {}
-        self.VcfList_A_Chrom = []
         self.VcfIndexMap = {}
         try:
             self.VcfIndexMap = pickle.load(open(vcffileName + ".myindex", 'rb'))
@@ -52,7 +51,7 @@ class VCF_Data():
         """
             return a list that contain all vcf record of a chrom
         """
-        self.VcfList_A_Chrom = []
+        VcfList_A_Chrom = []
         vcfFile = open(vcfFileName, 'r')
         try:
             print("getVcfListByChrom", self.VcfIndexMap[chrom], chrom)            
@@ -63,14 +62,16 @@ class VCF_Data():
             return []
         while line and (re.split(r'\s+', line))[0] == chrom:
             linelist = re.split(r'\s+', line)
+            samples=linelist[9:len(linelist)]
             chrom = linelist[0].strip()
             pos = int(linelist[1].strip())
             REF = linelist[3].strip()
             ALT = linelist[4].strip()
             INFO = linelist[7]
-            self.VcfList_A_Chrom.append((pos, REF, ALT, INFO))
+            FORMAT=linelist[8]
+            VcfList_A_Chrom.append((pos, REF, ALT, INFO,FORMAT,samples))
             line = vcfFile.readline()
-        return self.VcfList_A_Chrom
+        return VcfList_A_Chrom
         vcfFile.close()
 
     def getVcfMap(self, vcfFileName):
@@ -99,15 +100,17 @@ class VCF_Data():
         while currentLine != totalRecs:
     #        print(currentLine)
             collist = re.split(r'\s+', lineslist[currentLine])
+            samples=collist[9:len(collist)]
             chrom = collist[0].strip()
             pos = int(collist[1].strip())
             REF = collist[3].strip()
             ALT = collist[4].strip()
             INFO = collist[7]
+            FORMAT = collist[8]
             if chrom in vcfMap:
-                vcfMap[chrom].append((pos, REF, ALT, INFO))
+                vcfMap[chrom].append((pos, REF, ALT, INFO,FORMAT,samples))
             else:
-                vcfMap[chrom] = [(pos, REF, ALT, INFO)]
+                vcfMap[chrom] = [(pos, REF, ALT, INFO,FORMAT,samples)]
             currentLine += 1
         vcfFile.close()
         self.VcfMap_AllChrom = vcfMap

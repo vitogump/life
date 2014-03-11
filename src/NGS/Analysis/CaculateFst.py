@@ -28,16 +28,20 @@ sql = "select * from " + chromtable
 class Fst():
     def __init__(self):
         super().__init__()
-        self.doubleVcfMap = {}
+#        self.doubleVcfMap = {}
         self.FstMapByChrom = {}  # {chr:[(first_snp_pos,last_snp_pos,fst),(),()],chr:[],chr:[]}
         self.distMap = {}
     def alin2PopSnpPos(self, vcfMap1, vcfMap2):
+        """input:
+        two map fomart like this {chrNo:[(pos,REF,ALT,INFO,FORMAT,sample,...),(pos,REF,ALT,INFO,FORMAT,sample,...),,,,,],chrNo:[],,,,,,}
+        output:
+        one map like this {chrNo:[(pos,REF,ALT,(INFO,FORMAT,sample,...),(INFO,FORMAT,sample,...)),(,,,(),()),,,,,],chrNo:[],,,}
+                                                from pop1                        from pop2
         """
-        {chrNo:[(pos,REF,ALT,INFO),(pos,REF,ALT,INFO),,,,,],chrNo:[],,,,,,}
-        """
+        doubleVcfMap={}
         for currentChrom in vcfMap1.keys():
 #             self.FstMapByChrom[currentChrom] = []
-            self.doubleVcfMap[currentChrom] = []
+            doubleVcfMap[currentChrom] = []
 
             for SNPrec in vcfMap1[currentChrom]:
                 low = 0
@@ -51,15 +55,15 @@ class Fst():
                 AltInPop1 = SNPrec[2]
                 if re.search(r"[A-Za-z]+,[A-Za-z]+", AltInPop1) != None:  # multiple allels
                     continue
-                dp4 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", SNPrec[3])
+#                dp4 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", SNPrec[3])
 #                 print(dp4.group(0))
                 
                 while low < high:
                     
                     mid = int((low + high) / 2)
                     if posInPop1 == vcfMap2[currentChrom][mid][0]:
-                        if AltInPop1 == vcfMap2[currentChrom][mid][2]:
-                            self.doubleVcfMap[currentChrom].append(SNPrec + vcfMap2[currentChrom][mid])
+                        if AltInPop1 == vcfMap2[currentChrom][mid][2]:#same alt alle
+                            doubleVcfMap[currentChrom].append((posInPop1,RefInPop1,AltInPop1,SNPrec[3:] , vcfMap2[currentChrom][mid][3:]))
                         break
                     elif posInPop1 < vcfMap2[currentChrom][mid][0]:
                         high = mid - 1
@@ -68,7 +72,7 @@ class Fst():
                 else:
                     pass
 #                     self.doubleVcfMap[currentChrom].append(SNPrec+)
-        return self.doubleVcfMap
+        return doubleVcfMap
 
     def caculateFstAccordingdb(self,dbtools,chromstable,vcfNAME_POP1,vcfNAME_POP2,caculator,winwidth,slideSize):
         pop1 = VCFutil.VCF_Data(vcfNAME_POP1)  # new a class
@@ -98,14 +102,14 @@ class Fst():
         win = Util.Window()
         tempmap={}
         try:
-            self.doubleVcfMap={}
-            self.alin2PopSnpPos(vcfMap1_ref, vcfMap2)#produce self.doubleVcfMap{}
+#            self.doubleVcfMap={}
+            doubleVcfMap = self.alin2PopSnpPos(vcfMap1_ref, vcfMap2)#produce self.doubleVcfMap{}
 #            for currentChrom in self.doubleVcfMap.keys():
     #             self.FstMapByChrom[currentChrom]=[]
             win.winValueL = []
             print("caculateFst value in "+currentchrID)
             
-            win.slidWindowOverlap(self.doubleVcfMap[currentchrID], currentchrLen,winwidth, slideSize, caculator)
+            win.slidWindowOverlap(doubleVcfMap[currentchrID], currentchrLen,winwidth, slideSize, caculator)
             self.FstMapByChrom[currentchrID] = win.winValueL
         except TypeError:#vcfMap2(pop2) don't contation the current chromosome
             print("caculateFst TypeError")

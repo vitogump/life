@@ -44,8 +44,8 @@ if __name__ == '__main__':
                 currentchrID=row[0]
                 currentchrLen=int(row[2])
                 if currentchrID in pop.VcfIndexMap:
-                    pop.getVcfMapByChrom(vcf, currentchrID)
-                    win.slidWindowOverlap(pop.VcfList_A_Chrom, currentchrLen, windowWidth, slideSize, hp_caculator)
+                    vcflist_A_chrom = pop.getVcfListByChrom(vcf, currentchrID)
+                    win.slidWindowOverlap(vcflist_A_chrom, currentchrLen, windowWidth, slideSize, hp_caculator)
                     hscore.HeterozyMap[currentchrID]=win.winValueL
                 else:
                     fillNA=[(0,0,'NA')]

@@ -245,9 +245,7 @@ class genes():
             else:
                 print(pos,gtfList)
                 exit(-1)
-
-
-        print("getNearestGeneOverlapList", i, gtfList,pos)
+ 
         furthest = gtfList[i][3]
         i += 1
         while len(gtfList) > i and furthest >= gtfList[i][2]:
@@ -255,6 +253,7 @@ class genes():
                 geneOverlapList.append(gtfList[i])
             furthest = max(furthest, gtfList[i][3])
             i += 1
+        print("getNearestGeneOverlapList", i, geneOverlapList,pos)
         return geneOverlapList
     def getgeneConsensus(self, RefSeqList, idx_RefSeq, VcfList, idx_vcf, depthfile):
         """
@@ -282,10 +281,10 @@ class genes():
         mutat_amino_seq = {}
         cns_append = ""
         originallen = {}#just for test
-        indelatEdgeofCDS=open("indelatEdgeofCDS.txt",'w')
+#        indelatEdgeofCDS=open("indelatEdgeofCDS.txt",'w')
         for gene in self.geneOverlapList:
             genename = gene[0]
-            print(gene, self.cds_frame[genename], sep="\n", file=open("testgeneOverlapList.txt", 'a'))
+#            print(gene, self.cds_frame[genename], sep="\n", file=open("testgeneOverlapList.txt", 'a'))
             
             tscptSeqAllCds_mut[genename] = copy.copy(self.tscptSeqAllCds[genename])
             originallen[genename] = len(tscptSeqAllCds_mut[genename])#just for test
@@ -315,7 +314,7 @@ class genes():
                         t4_indx += 1
                         if feature == 'CDS' and vcfpos <= elemEnd and vcfpos >= elemStart:
                             if vcfpos + n_refbases - 1 > elemEnd or vcfpos + n_altbases - 1 > elemEnd:
-                                print(VcfList[idx_vcf],genename,file=indelatEdgeofCDS)
+                                print(VcfList[idx_vcf],genename,"indelatEdgeofCDS")
                                 break
                             if n_refbases > n_altbases:#situation TAA     TA;ACG     A
                                 print(tscptSeqAllCds_mut[genename][(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]):(vcfpos - elemStart + self.cds_frame[genename][t4_indx][1] + n_refbases)])
@@ -617,7 +616,9 @@ class Window():
                 
     def slidWindowOverlap(self, L, L_End_Pos, windowWidth, slideSize, Caculator):
         """
-        L = [(pos, REF, ALT, INFO),(),(),...........]
+        L = [(pos, REF, ALT, INFO,FORMAT,samples,...),(),(),...........] for het
+        or 
+        L = [(pos,REF,ALT,(INFO,FORMAT,samples),(INFO,FORMAT,samples)),(),(),...........] for fst
         """
         self.winValueL = []  # notice here
         nextIdx = -1
@@ -625,14 +626,15 @@ class Window():
         winStart = 0
         FoundNextIdx = False
         firstComeInWin = True
+        notjustforsnp=True
         while currentIdx != len(L):
-            if L[currentIdx][0] > winStart and L[currentIdx][0] <= (winStart + windowWidth):
-                if re.search(r"INDEL", L[currentIdx][3]) == None and True:
-                    if firstComeInWin:
-                        startPos = L[currentIdx][0]
-                        firstComeInWin = False
-                    lastPos = L[currentIdx][0]
-                    Caculator.process(L[currentIdx])
+            if L[currentIdx][0] > winStart and  L[currentIdx][0] <= (winStart + windowWidth):
+#                if notjustforsnp or (len(L[currentIdx][1])==1 and re.search(r'[^a-zA-Z]', L[currentIdx][2]) != None and len(L[currentIdx][2])==1):# it's not a snp? indel or cnv
+                if firstComeInWin:
+                    startPos = L[currentIdx][0]
+                    firstComeInWin = False
+                lastPos = L[currentIdx][0]
+                Caculator.process(L[currentIdx])
                 if FoundNextIdx == False and L[currentIdx][0] > (winStart + slideSize):  # always go to |currentIdx+=1|
                     nextIdx = currentIdx
                     FoundNextIdx = True
