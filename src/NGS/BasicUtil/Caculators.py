@@ -38,7 +38,7 @@ class Caculate_Hp(Caculator):
         self.CNMI = 0
         self.CNMA = 0
     def process(self, T):
-        self.COUNTED+=1
+        
         dp4 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", T[3])
         refdep=0;altalleledep=0
         if dp4==None:#vcf from samtools 
@@ -58,6 +58,7 @@ class Caculate_Hp(Caculator):
             return
         if refdep+altalleledep<10:
             return
+        self.COUNTED+=1
         if refdep < altalleledep:
             self.CNMI += refdep
             self.CNMA += altalleledep
@@ -84,7 +85,7 @@ class Caculate_Fst(Caculator):
         self.CDk = 0
         self.COUNTED=0
     def process(self, T):
-        self.COUNTED+=1
+        
         refdep_1=0;refdep_2=0
         altalleledep_1=0;altalleledep_2=0
 #        T1 = (T[0], T[1], T[2], T[3])
@@ -116,7 +117,7 @@ class Caculate_Fst(Caculator):
                 altalleledep_2+=int(AD_depth[1])             
         if refdep_1==0 or refdep_2==0:
             return  #NOTICT HERE
-
+        self.COUNTED+=1
         h_1 = refdep_1 * altalleledep_1 / ((refdep_1 + altalleledep_1 - 1) * (refdep_1 + altalleledep_1))
         h_2 = refdep_2 * altalleledep_2 / ((refdep_2 + altalleledep_2 - 1) * (refdep_2 + altalleledep_2))
         Nk = ((refdep_1 / (refdep_1 + altalleledep_1) - refdep_2 / (refdep_2 + altalleledep_2)) ** 2 - h_1 / (refdep_1 + altalleledep_1) - h_2 / (refdep_2 + altalleledep_2))
