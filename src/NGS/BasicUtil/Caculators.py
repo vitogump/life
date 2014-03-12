@@ -41,7 +41,7 @@ class Caculate_Hp(Caculator):
         
         dp4 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", T[3])
         refdep=0;altalleledep=0
-        if dp4==None:#vcf from samtools 
+        if dp4!=None:#vcf from samtools 
             refdep = int(dp4.group(1)) + int(dp4.group(2))
             altalleledep = int(dp4.group(3)) + int(dp4.group(4))    
         else:
@@ -50,8 +50,12 @@ class Caculate_Hp(Caculator):
                 if len(re.split(":",sample))==1:# ./.
                     continue
                 AD_depth=re.split(",",re.split(":",sample)[AD_idx])
-                refdep+=int(AD_depth[0])
-                altalleledep+=int(AD_depth[1])            
+                try :
+                    refdep+=int(AD_depth[0])
+                    altalleledep+=int(AD_depth[1])
+                except ValueError:
+                    print(sample,end="")
+                            
             
 
         if refdep==0:
@@ -106,15 +110,22 @@ class Caculate_Fst(Caculator):
                 if len(re.split(":",sample))==1:# ./.
                     continue
                 AD_depth=re.split(",",re.split(":",sample)[AD_idx_1])
-                refdep_1+=int(AD_depth[0])
-                altalleledep_1+=int(AD_depth[1])  
+                try:
+                    refdep_1+=int(AD_depth[0])
+                    altalleledep_1+=int(AD_depth[1])
+                except ValueError:
+                    print(sample,end="")
 
             for sample in pop2[2][:]:
                 if len(re.split(":",sample))==1:# ./.
                     continue
                 AD_depth=re.split(",",re.split(":",sample)[AD_idx_2])
-                refdep_2+=int(AD_depth[0])
-                altalleledep_2+=int(AD_depth[1])             
+                try:
+                    refdep_2+=int(AD_depth[0])
+                    altalleledep_2+=int(AD_depth[1])
+                except ValueError:
+                    print(sample,end="")
+                             
         if refdep_1==0 or refdep_2==0:
             return  #NOTICT HERE
         self.COUNTED+=1
