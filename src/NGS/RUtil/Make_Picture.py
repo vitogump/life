@@ -30,7 +30,7 @@ class MakeMhtGraph(object):
         for line in originalfile:
             linelist = re.split(r'\s+', line)
             currentChrom = linelist[0].strip()
-            ChromNo = re.search(r"(\d+)$", currentChrom).group(1)
+            ChromNo = re.search(r"([\d.]+)$", currentChrom).group(1)
             if re.search(r"^" + chromPrefix, currentChrom):
                 if linelist[4].strip() != "NA" or linelist[5].strip() != "NA" or True:
                     if postive_negtive == None:

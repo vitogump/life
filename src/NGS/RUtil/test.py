@@ -21,6 +21,6 @@ if __name__ == '__main__':
     for inputfileName in sys.argv[1:-3]:
         makeMhtGraph = Make_Picture.MakeMhtGraph()
         if sys.argv[-2]!= "a":
-            makeMhtGraph.makeMhtPicture_HistonPicture(inputfileName,dataType,chromPrefix,postive_negtive,fillvalue='NA')
+            makeMhtGraph.makeMhtPicture_HistonPicture(inputfileName,dataType,chromPrefix,postive_negtive,fillvalue="NA")
         else:
-            makeMhtGraph.makeMhtPicture_HistonPicture(inputfileName,dataType,chromPrefix,postive_negtive=None,fillvalue='NA')
+            makeMhtGraph.makeMhtPicture_HistonPicture(inputfileName,dataType,chromPrefix,postive_negtive=None,fillvalue="NA")
