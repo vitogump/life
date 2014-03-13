@@ -70,7 +70,7 @@ class MakeMhtGraph(object):
         print(chromPrefix, "winNo", "bp_start", "bp_end", dataType, "z" + dataType, sep="\t", file=open(self.pathtoOutFileName, "w"))
 #         print(chromPrefix,"bp_start",dataType)
         outfile = open(self.pathtoOutFileName, 'a')
-        for chromNo in sorted(self.dataForGraphe.keys(), key=lambda t:int(t)):
+        for chromNo in sorted(self.dataForGraphe.keys(), key=lambda t:int(re.split(r'\.',t)[0])):
             for i in range(len(self.dataForGraphe[chromNo])):
                 print(chromNo, *self.dataForGraphe[chromNo][i], sep="\t", file=outfile)
         outfile.close()
