@@ -101,7 +101,7 @@ class MakeMhtGraph(object):
 #             r("bins=seq(0,0.6,by=0.001)")
 #         elif dataType =="Fst":
 #             r("bins=seq(-6,6,by=0.001)")
-        r("hist(x$" + dataType + ",breaks=1000)")
+        r("hist(x$" + dataType + ",breaks=1000,main='"+name+"')")
         r('dev.off()')
         
         r("tiff('" + name + "histon_z" + dataType + ".tiff')")
