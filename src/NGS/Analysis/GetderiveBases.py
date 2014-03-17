@@ -77,9 +77,9 @@ if __name__ == '__main__':
         totalWin = winGenome.windbtools.operateDB("select", "select count(*) from " + winGenome.wintable)[0][0]
         selectWinNos = int(percentage * totalWin)
         if morethan_lessthan == "m" or morethan_lessthan == "M":
-            selectedWins[winFileName6Field] = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintable + " where zvalue != 'NA' order by zvalue desc limit 0," + str(selectWinNos))
+            selectedWins[winFileName6Field] = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintable + " where winvalue != 'NA' order by winvalue desc limit 0," + str(selectWinNos))
         elif morethan_lessthan == "l" or morethan_lessthan == "L":
-            selectedWins[winFileName6Field] = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintable + " where zvalue != 'NA' order by zvalue asc limit 0," + str(selectWinNos))
+            selectedWins[winFileName6Field] = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintable + " where winvalue != 'NA' order by winvalue asc limit 0," + str(selectWinNos))
         print(str(selectWinNos), selectedWins[winFileName6Field][-1], winFileName6Field)
         print("selecting " + winFileName6Field + " wins is finished")
         for win in selectedWins[winFileName6Field]:
