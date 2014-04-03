@@ -121,13 +121,14 @@ class Fst():
 if __name__ == '__main__':
     dbtools = dbm.DBTools("localhost", "root", "1234567", "life_pilot")
     if sys.argv[-4]=='R' or sys.argv[-4]=='r':
-        phyliparrayinfile=open("phylip.arrayin"+str(windowWidth)+"_"+str(slideSize),'w')
+        
         allspeices=[]
         tableindextoarrayindex=[]
         treearrayprename=""
         for pathtoname in sys.argv[1:-4]:
             allspeices.append(re.search(r"[^/]*$",pathtoname).group(0).replace('.','_'))
             treearrayprename+=re.search(r"[^/]*$",pathtoname).group(0)[0]
+        phyliparrayinfile=open(treearrayprename+"phylip.arrayin"+str(windowWidth)+"_"+str(slideSize),'w')
         print("mysqltablename: "+treearrayprename+"treearray")
         arraytitle=""
         for name in allspeices:
@@ -162,7 +163,7 @@ if __name__ == '__main__':
             fst_caculator = Caculators.Caculate_Fst()
 
             fst = Fst() 
-            tempdbtools.operateDB("callproc", "mysql_sp_add_column", data=("temp", treearrayprename+"treearray", fstpaire1name+fstpaire2name, "text", "default null"))
+            tempdbtools.operateDB("callproc", "mysql_sp_add_column", data=("temp", treearrayprename+"treearray", (fstpaire1name[0:5]+fstpaire2name[0:5]), "text", "default null"))
                 
             print("startcaculatefst:\n", fstpaire1name,fstpaire[0],'\n', fstpaire2name,fstpaire[1])
             fst.caculateFstAccordingdb(dbtools, chromtable, fstpaire[0], fstpaire[1], fst_caculator, windowWidth,slideSize)
@@ -201,7 +202,7 @@ if __name__ == '__main__':
                     if fst.FstMapByChrom[chrom][i][2] != 'NA':
                         Number += 1
                         sum += fst.FstMapByChrom[chrom][i][2]
-                    tempdbtools.operateDB("insert","insert into "+treearrayprename+"treearray(chrID,winNo,"+fstpaire1name+fstpaire2name+") values(%s,%s,%s) on duplicate key update "+fstpaire1name+fstpaire2name+" = '"+str(fst.FstMapByChrom[chrom][i][2])+"'",data=(chrom,str(i),str(fst.FstMapByChrom[chrom][i][2])))
+                    tempdbtools.operateDB("insert","insert into "+treearrayprename+"treearray(chrID,winNo,"+fstpaire1name[0:5]+fstpaire2name[0:5]+") values(%s,%s,%s) on duplicate key update "+fstpaire1name[0:5]+fstpaire2name[0:5]+" = '"+str(fst.FstMapByChrom[chrom][i][2])+"'",data=(chrom,str(i),str(fst.FstMapByChrom[chrom][i][2])))
             alldistMap[fstpaire1name+fstpaire2name] = (sum / Number,allspeices.index(fstpaire1name))
             outfile.close()
         for n in alldistMap.keys():
@@ -224,7 +225,12 @@ if __name__ == '__main__':
                 print("    "+str(len(allspeices)),file=phyliparrayinfile)
                 for i in range(len(allspeices)):
                     tmparray[i][i]='0'
-                    print(allspeices[i][0:8]+"  "+"\t".join(tmparray[i]),file=phyliparrayinfile)
+                    try:
+                        print(allspeices[i][0:8]+"  "+"\t".join(tmparray[i]),file=phyliparrayinfile)
+                    except TypeError:
+                        print(i,allspeices,tmparray)
+                        print('Error:when making phyliparrayinfile')
+                        exit(-1)
         tempdbtools.disconnect()
         phyliparrayinfile.close()
     elif sys.argv[-4] == 'G' or sys.argv[-4] == 'g':
