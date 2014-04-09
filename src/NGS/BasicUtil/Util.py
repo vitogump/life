@@ -59,13 +59,13 @@ def getGtfMap(gtfFileName):
     gtfColList = re.split(r'\s+', gtfline)
     chromNo = gtfColList[0].strip()
     protein_codingMap[chromNo] = []
-    transcript_id = gtfColList[11]
+    transcript_id = re.search(r'\"(.*)\";',gtfColList[11].strip()).group(1)
     countInChrom = 0
     protein_codingMap[chromNo] = [[transcript_id, gtfColList[6], int(gtfColList[3]), int(gtfColList[4]), (gtfColList[2], int(gtfColList[3]), int(gtfColList[4]), gtfColList[7])]]
     chrtranscrpitididxMap[chromNo] = {transcript_id:0}
     for gtfline in gtfFileHandler:
         gtfColList = re.split(r'\s+', gtfline)
-        transcript_id = gtfColList[11].strip()
+        transcript_id = re.search(r'\"(.*)\";',gtfColList[11].strip()).group(1)
         if "protein_coding" != gtfColList[1]:
             continue
         chromNo = gtfColList[0].strip()
@@ -702,7 +702,7 @@ class WinInGenome():
         print(shellstatment)
         a = os.system(shellstatment)
         if a != 0:
-            print("loadWinDataIntaDB func os.system return not 0")
+            print("Util : loadWinDataIntaDB func os.system return not 0")
             exit(-1)
         print(a)
 #        tempdbtools.load_file(tableName,"chrID","winNo","bp_start","bp_end","value","zvalue",fileName=winFileName6Field)
