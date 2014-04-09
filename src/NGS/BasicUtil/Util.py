@@ -32,14 +32,17 @@ def random_str(randomlength=8):
     random.shuffle(a)
     return ''.join(a[:randomlength])
 
-def generateIndexByChrom(refFastaFileName, indexFileName):
+def generateIndexByChrom(refFastaFileName, indexFileName,mapname=None):
     refFastaFile = open(refFastaFileName, 'r')
     refChromIndex = {}
     refline = refFastaFile.readline()
     while refline:
         if re.search(r'^[>]', refline) != None:
-            collist = re.split(r'\s+', refline)
-            currentChromNo = re.search(r'[^>]+', (re.split(r'\s+', refline))[0]).group(0)
+#            collist = re.split(r'\s+', refline)
+            if mapname=="transcript:":
+                currentChromNo = re.search(r'transcript:(.*)\s+',refline).group(1).strip()
+            else:
+                currentChromNo = re.search(r'[^>]+', (re.split(r'\s+', refline))[0]).group(0)
             refChromIndex[currentChromNo] = int(refFastaFile.tell())  # from here is the sequence
         refline = refFastaFile.readline()
     pickle.dump(refChromIndex, open(indexFileName, 'wb'))
@@ -170,7 +173,7 @@ def getRefSeqBypos(refFastahander, refindex, currentChromNO, startpos, endpos, s
     return refSeqMap        
 
 
-def getRefSeqMap(refFastafilehander, currentChromNO=None, preBaseTotal=0, linesOnce=500000):
+def getRefSeqMap(refFastafilehander, currentChromNO=None, preBaseTotal=0, linesOnce=500000,mapname=None):
     '''
     the refSeqMap has only one chromosome's sequence
     '''
@@ -178,7 +181,10 @@ def getRefSeqMap(refFastafilehander, currentChromNO=None, preBaseTotal=0, linesO
     if currentChromNO == None:
         refline = refFastafilehander.readline() 
         print("getRefSeqMap", refline)
-        currentChromNO = re.search(r'[^>]+', (re.split(r'\s+', refline))[0]).group(0)
+        if mapname=="transcript:":
+            currentChromNO = re.search(r'transcript:(.*)\s+',refline).group(1).strip()
+        else:
+            currentChromNO = re.search(r'[^>]+', (re.split(r'\s+', refline))[0]).group(0)
         refSeqMap[currentChromNO] = [preBaseTotal]  # preBaseTotal=0
         print("getRefSeqMap", currentChromNO)
     elif currentChromNO == "end of the reffile":
