@@ -40,7 +40,7 @@ def generateIndexByChrom(refFastaFileName, indexFileName,mapname=None):
         if re.search(r'^[>]', refline) != None:
 #            collist = re.split(r'\s+', refline)
             if mapname=="transcript:":
-                currentChromNo = re.search(r'transcript:(.*)\s+',refline).group(1).strip()
+                currentChromNo = re.search(r'transcript:(.*?)\s+',refline).group(1).strip()
             else:
                 currentChromNo = re.search(r'[^>]+', (re.split(r'\s+', refline))[0]).group(0)
             refChromIndex[currentChromNo] = int(refFastaFile.tell())  # from here is the sequence
@@ -182,7 +182,7 @@ def getRefSeqMap(refFastafilehander, currentChromNO=None, preBaseTotal=0, linesO
         refline = refFastafilehander.readline() 
         print("getRefSeqMap", refline)
         if mapname=="transcript:":
-            currentChromNO = re.search(r'transcript:(.*)\s+',refline).group(1).strip()
+            currentChromNO = re.search(r'transcript:(.*?)\s+',refline).group(1).strip()
         else:
             currentChromNO = re.search(r'[^>]+', (re.split(r'\s+', refline))[0]).group(0)
         refSeqMap[currentChromNO] = [preBaseTotal]  # preBaseTotal=0
