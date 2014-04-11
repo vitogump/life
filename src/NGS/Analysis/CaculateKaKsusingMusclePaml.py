@@ -30,16 +30,43 @@ cline = configure.readline()
 tempPath = re.search(r'tempdir=(.*)', cline).group(1).strip()
 cline = configure.readline()
 musclePath = re.search(r'musclepath=(.*)',cline).group(1).strip()
-
+cline=configure.readline()
+pamlPath=re.search(r'pamlpath=(.*)',cline).group(1).strip()
+cline=configure.readline()
+outfile=open(re.search(r'outfile=(.*)',cline).group(1).strip(),'w')
+pamlcodeml=pamlPath+"/codeml"
+pamlcodemlctl=pamlPath+"/codeml.ctl"
+pamlcodemlctlfile=open(pamlcodemlctl,'r')
 MuscleInputFileName = tempPath + "/muscleinseq.fa"
 MuscleOutputFileName = tempPath + "/muscleinseq.afa"
 pamlInputCDSFileName = tempPath + "/pamlinputfile.fa"
+
 if __name__ == '__main__':
+    #configure codeml.ctl file
+    pamlcodemlctlfilelines=pamlcodemlctlfile.readlines()
+    pamlcodemlctlfile.close()
+    os.system("rm "+pamlcodemlctl)
+    pamlcodemlctlfile=open(pamlcodemlctl,'w')
+    for line in pamlcodemlctlfilelines:
+        print(line)
+        if re.search(r'^\s+seqfile\s+=',line)!=None:
+            print("      seqfile = "+pamlInputCDSFileName,file=pamlcodemlctlfile)
+        elif re.search(r'^\s+outfile\s+=',line)!=None:
+            print("      outfile = "+tempPath+"/mlc",file=pamlcodemlctlfile)
+        elif re.search(r'^\s+seqtype\s+=',line)!=None:
+            print("      seqtype = 1",file=pamlcodemlctlfile)
+        elif re.search(r'^\s+model\s+=',line)!=None:
+            print("        model = 0",file=pamlcodemlctlfile)
+        elif re.search(r'^\s+runmode\s+=',line)!=None:
+            print("      runmode = -2",file=pamlcodemlctlfile)
+        else:
+            print(line,file=pamlcodemlctlfile,end="")
+    pamlcodemlctlfile.close()
+#load aa_cds_pair file and cdsfafile aafafile into memory
     aa_cds_filemap = {}
     """
         {species1:[aafafile,cdsfafile,aaindex,cdsfafile],species2:[,,,],,,,,}
     """
-#load aa_cds_pair file and cdsfafile aafafile into memory
     for aa_cds_line in aa_cds_pair_file:
         speciesname = re.split(r':', aa_cds_line)[0].strip()
         aa_cds_pair = re.split(r':', aa_cds_line)[1]
@@ -63,11 +90,21 @@ if __name__ == '__main__':
                 print("rm " + aafafileName + ".myindex " + cdsfafileName + ".myindex" + " os.system return not 0")
                 exit(-1)
             print(stat)
-#make the fa file as the input of the file
+# run muscle and paml loop
+    finalkakslist=[]
+    """
+    [(species1,species2,....,dn/ds,dn,ds),(pig,human,....,,,),,,,]
+    
+    """
     homotrscpttitle = re.split(r'~', homogenefile.readline())
+    homotrscpttitle=[e.strip() for e in homotrscpttitle]
+    finalkakslist.append(tuple(homotrscpttitle+["dn/ds","dn","ds"]))
+
+        
     for homotrscptline in homogenefile:
         homotrscptlist = re.split(r'~', homotrscptline)
         i = 0
+        #make the fa file as the input of the muscle and run muscle        
         muscleinfile = open(MuscleInputFileName, 'w')
         for trscpt in homotrscptlist:
             homotrscptlist[i] = re.search(r'transcript:(.*)', trscpt).group(1).strip()
@@ -118,6 +155,27 @@ if __name__ == '__main__':
             aa_cds_filemap[curspecies][1].seek(aa_cds_filemap[curspecies][3][aacurrenttrscpt])
             cdsSeqMap, cdscurrenttrscpt, cdsnexttrscpt = Util.getRefSeqMap(aa_cds_filemap[curspecies][1],currentChromNO=aacurrenttrscpt)
         pamlinputcdsfile.close()
-        #finishing fill back the cds seq file
+        #finishing fill back the cds seq file,next run codeml and extract ka ks value from mlc file
+        print(pamlcodeml,pamlcodemlctl)
+        stat=os.system(pamlcodeml)
+        if stat!=0:
+            print("Error")
+            exit(-1)
+        mlcfile=open(tempPath+"/mlc",'r')
+        mlclines=mlcfile.readlines()
+        valuesabj=re.search(r'dN/dS=(.*)dN =(.*)dS =(.*)',mlclines[-1])
+        dnds=valuesabj.group(1).strip()
+        dn=valuesabj.group(2).strip()
+        ds=valuesabj.group(3).strip()
+        finalkakslist.append(tuple(homotrscptlist+[dnds,dn,ds]))
+        mlcfile.close()
+    for t in finalkakslist:
+        print("\t".join(t),file=outfile)
+    outfile.close()
+        
+        
+    
+        
+
         
         
