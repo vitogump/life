@@ -102,7 +102,7 @@ if __name__ == '__main__':
                 cns_string += cns_append
                 for geneName in cds_map.keys():#write to file
                     print(">" + geneName ,end="\n", file=outcdscns)
-                    print(">" + geneName ,end="\n", file=outaa)
+                    print(">transcript:" + geneName ,end="\n", file=outaa)
                     i = 0#write cds seq to file
                     cdsstrline = "".join(cds_map[geneName][i:i + 60])
                     while len(cdsstrline) == 60:

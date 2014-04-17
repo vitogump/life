@@ -54,6 +54,7 @@ if __name__ == '__main__':
         selectWinNos = int(float(percentage) * totalWin)
         if morethan_lessthan == "m" or morethan_lessthan == "M":
             selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintable + " where winvalue != 'NA' order by winvalue desc limit 0," + str(selectWinNos))
+            print("select * from "+winGenome.wintable + " where winvalue != 'NA' order by winvalue desc limit 0," + str(selectWinNos))
         elif morethan_lessthan == "l" or morethan_lessthan == "L":
             selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintable + " where winvalue != 'NA' order by winvalue asc limit 0," + str(selectWinNos))
             print("select * from " + winGenome.wintable + " where winvalue != 'NA' order by winvalue asc limit 0," + str(selectWinNos))
@@ -63,7 +64,7 @@ if __name__ == '__main__':
         elif morethan_lessthan=="l" or morethan_lessthan=="L":
             selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintable + " where winvalue!= 'NA' and winvalue<=" + threshold)
     selectedWins.sort(key=lambda listRec:float(listRec[5]))
-    print(selectWinNos,selectedWins[0],selectedWins[-1],len(selectedWins))
+    print(outfilename,selectWinNos,selectedWins[0],selectedWins[-1],len(selectedWins))
     selectedWinMap={}
     for win in selectedWins:
         if win[0] in selectedWinMap:
@@ -117,7 +118,10 @@ if __name__ == '__main__':
 #        winRegion=(win,upextend,downextend)
 #        winGenome.collectTrscptInWin(dbtools, trscptable, vcftable, winRegion)
     for region in sorted(winGenome.winContainTrscptMap.keys()):
-        print("\t".join(map(str,region)),winGenome.winContainTrscptMap[region],sep="\t",file=outfile)
+        tcpts=""
+        for tcpt in winGenome.winContainTrscptMap[region]:
+            tcpts+=(tcpt[0]+"\t")
+        print("\t".join(map(str,region)),tcpts,sep="\t",file=outfile)
         
     winGenome.windbtools.drop_table(winGenome.wintable)        
 #        for gene in winGenome.winContainTrscptMap[win]:

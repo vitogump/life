@@ -189,9 +189,10 @@ if __name__ == '__main__':
                         for i in range(len(fst.FstMapByChrom[currentchrID])):
                             if fst.FstMapByChrom[currentchrID][i][2] != "NA":
                                 zFst = (fst.FstMapByChrom[currentchrID][i][2] - exception) / std1
+                                print(currentchrID + "\t" + str(i) + "\t" + str(fst.FstMapByChrom[currentchrID][i][0]) + "\t" + str(fst.FstMapByChrom[currentchrID][i][1]) + "\t" + '%.18f'%(fst.FstMapByChrom[currentchrID][i][2]) + "\t" + '%.12f'%(zFst), file=outfile) 
                             else:
                                 zFst = "NA"
-                            print(currentchrID + "\t" + str(i) + "\t" + str(fst.FstMapByChrom[currentchrID][i][0]) + "\t" + str(fst.FstMapByChrom[currentchrID][i][1]) + "\t" + str(fst.FstMapByChrom[currentchrID][i][2]) + "\t" + str(zFst), file=outfile)                        
+                                print(currentchrID + "\t" + str(i) + "\t" + str(fst.FstMapByChrom[currentchrID][i][0]) + "\t" + str(fst.FstMapByChrom[currentchrID][i][1]) + "\t" + str(fst.FstMapByChrom[currentchrID][i][2]) + "\t" + str(zFst), file=outfile)                    
 #            for chrom in sorted(fst.FstMapByChrom.keys()):
 
             
@@ -206,7 +207,7 @@ if __name__ == '__main__':
             alldistMap[fstpaire1name+fstpaire2name] = (sum / Number,allspeices.index(fstpaire1name))
             outfile.close()
         for n in alldistMap.keys():
-            print(n + "\t" + str(alldistMap[n]), file=open("testdist.txt", 'a'))
+            print(n + "\t" + '%.12f'%(alldistMap[n]), file=open("testdist.txt", 'a'))
         tatalwins = tempdbtools.operateDB("select", "select count(*) from "+treearrayprename+"treearray")[0][0]
         for i in range(0, tatalwins, 100):
             wins = tempdbtools.operateDB("select","select * from "+treearrayprename+"treearray order by chrID asc,winNo asc limit "+str(i) +",100")
@@ -216,10 +217,11 @@ if __name__ == '__main__':
                 
 #                print("\t"+arraytitle,file=phyliparrayinfile)
                 for i in range(len(win[2:])):
-                    tmparray[tableindextoarrayindex[i][0]][tableindextoarrayindex[i][1]]=str(win[i+2])
-                    tmparray[tableindextoarrayindex[i][1]][tableindextoarrayindex[i][0]]=str(win[i+2])
                     if win[i+2]==None or win[i+2]=="NA" or win[i+2]=='NULL':
                         abandonthisWin=True
+                    else:
+                        tmparray[tableindextoarrayindex[i][0]][tableindextoarrayindex[i][1]]='%.12f'%win[i+2]
+                        tmparray[tableindextoarrayindex[i][1]][tableindextoarrayindex[i][0]]='%.12f'%win[i+2]
                 if abandonthisWin:
                     continue
                 print("    "+str(len(allspeices)),file=phyliparrayinfile)
@@ -300,8 +302,9 @@ if __name__ == '__main__':
                             for i in range(len(globalFstMapByChrom[currentchrID])):
                                 if globalFstMapByChrom[currentchrID][i][2] != "NA":
                                     zgFst = (globalFstMapByChrom[currentchrID][i][2] - exception) / std1
+                                    print(currentchrID + "\t" + str(i) + "\t" + str(globalFstMapByChrom[currentchrID][i][0]) + "\t" + str(globalFstMapByChrom[currentchrID][i][1]) + "\t" + '%.18f'%(globalFstMapByChrom[currentchrID][i][2]) + "\t" + '%.12f'%(zgFst), file=outfile)
                                 else:
                                     zgFst = "NA"
-                                print(currentchrID + "\t" + str(i) + "\t" + str(globalFstMapByChrom[currentchrID][i][0]) + "\t" + str(globalFstMapByChrom[currentchrID][i][1]) + "\t" + str(globalFstMapByChrom[currentchrID][i][2]) + "\t" + str(zgFst), file=outfile)
+                                    print(currentchrID + "\t" + str(i) + "\t" + str(globalFstMapByChrom[currentchrID][i][0]) + "\t" + str(globalFstMapByChrom[currentchrID][i][1]) + "\t" + globalFstMapByChrom[currentchrID][i][2] + "\t" + zgFst, file=outfile)
             outfile.close()                    
     dbtools.disconnect()

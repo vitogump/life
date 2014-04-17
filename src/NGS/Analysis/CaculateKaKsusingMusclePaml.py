@@ -100,7 +100,7 @@ if __name__ == '__main__':
     homotrscpttitle=[e.strip() for e in homotrscpttitle]
     finalkakslist.append(tuple(homotrscpttitle+["dn/ds","dn","ds"]))
 
-        
+    skipthishomotrscptline=False    
     for homotrscptline in homogenefile:
         homotrscptlist = re.split(r'~', homotrscptline)
         i = 0
@@ -142,6 +142,10 @@ if __name__ == '__main__':
                     codon="---"
                 else:
                     codon="".join(cdsSeqMap[cdscurrenttrscpt][locofaa*3+1:locofaa*3+4])
+                    if codon.lower()=="tga" or codon.lower()=="tag" or codon.lower()=="taa":
+                        skipthishomotrscptline=True
+                        print(homotrscptlist[i]+" contain a stop codon ,so skip ")
+                        break
                     locofaa+=1
                 cdsseqfillback+=codon
             print(">"+aacurrenttrscpt+"\n"+cdsseqfillback+"\n",file=pamlinputcdsfile)
@@ -151,10 +155,13 @@ if __name__ == '__main__':
                 break
             curspecies = homotrscpttitle[j].strip()
             aaSeqMap, aacurrenttrscpt, aanexttrscpt = Util.getRefSeqMap(muscleoutfile,currentChromNO=aanexttrscpt)
-            print(aa_cds_filemap[curspecies][3],curspecies,aacurrenttrscpt, aanexttrscpt)
+#            print(aa_cds_filemap[curspecies][3],curspecies,aacurrenttrscpt, aanexttrscpt)
             aa_cds_filemap[curspecies][1].seek(aa_cds_filemap[curspecies][3][aacurrenttrscpt])
             cdsSeqMap, cdscurrenttrscpt, cdsnexttrscpt = Util.getRefSeqMap(aa_cds_filemap[curspecies][1],currentChromNO=aacurrenttrscpt)
         pamlinputcdsfile.close()
+        if skipthishomotrscptline:
+            skipthishomotrscptline=False
+            continue
         #finishing fill back the cds seq file,next run codeml and extract ka ks value from mlc file
         print(pamlcodeml,pamlcodemlctl)
         stat=os.system(pamlcodeml)
