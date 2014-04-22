@@ -49,20 +49,22 @@ if __name__ == '__main__':
 #    dbtools.operateDB("alter","alter table "+gene_sample_venn+" add "+outfilename+" smallint(3) default 0") 
     winGenome = Util.WinInGenome(tempwinDBName, winFileName6Field)
     time.sleep(SLEEP_FOR_NEXT_TRY)
+    selectWinNos="threshold method"
     if percentage!=None:
         totalWin = winGenome.windbtools.operateDB("select", "select count(*) from " + winGenome.wintable)[0][0]
         selectWinNos = int(float(percentage) * totalWin)
         if morethan_lessthan == "m" or morethan_lessthan == "M":
-            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintable + " where winvalue != 'NA' order by winvalue desc limit 0," + str(selectWinNos))
-            print("select * from "+winGenome.wintable + " where winvalue != 'NA' order by winvalue desc limit 0," + str(selectWinNos))
+            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintable + " where zvalue != 'NA' order by zvalue desc limit 0," + str(selectWinNos))
+            print("select * from "+winGenome.wintable + " where zvalue != 'NA' order by zvalue desc limit 0," + str(selectWinNos))
         elif morethan_lessthan == "l" or morethan_lessthan == "L":
-            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintable + " where winvalue != 'NA' order by winvalue asc limit 0," + str(selectWinNos))
-            print("select * from " + winGenome.wintable + " where winvalue != 'NA' order by winvalue asc limit 0," + str(selectWinNos))
+            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintable + " where zvalue != 'NA' order by zvalue asc limit 0," + str(selectWinNos))
+            print("select * from " + winGenome.wintable + " where zvalue != 'NA' order by zvalue asc limit 0," + str(selectWinNos))
     elif threshold!=None:
         if morethan_lessthan=="m" or morethan_lessthan=="M":
-            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintable + " where winvalue!= 'NA' and winvalue>=" + threshold)
+            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintable + " where zvalue!= 'NA' and zvalue>=" + threshold)
         elif morethan_lessthan=="l" or morethan_lessthan=="L":
-            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintable + " where winvalue!= 'NA' and winvalue<=" + threshold)
+            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintable + " where zvalue!= 'NA' and zvalue<=" + threshold)
+        print("select * from " + winGenome.wintable + " where zvalue!= 'NA' and zvalue>=" + threshold)
     selectedWins.sort(key=lambda listRec:float(listRec[5]))
     print(outfilename,selectWinNos,selectedWins[0],selectedWins[-1],len(selectedWins))
     selectedWinMap={}

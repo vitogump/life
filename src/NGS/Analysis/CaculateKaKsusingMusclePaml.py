@@ -4,7 +4,7 @@ Created on 2014-4-3
 
 @author: liurui
 '''
-from NGS.BasicUtil import *
+from NGS.BasicUtil import Util
 from optparse import OptionParser
 import pickle
 import re
@@ -144,7 +144,7 @@ if __name__ == '__main__':
                     codon="".join(cdsSeqMap[cdscurrenttrscpt][locofaa*3+1:locofaa*3+4])
                     if codon.lower()=="tga" or codon.lower()=="tag" or codon.lower()=="taa":
                         skipthishomotrscptline=True
-                        print(homotrscptlist[i]+" contain a stop codon ,so skip ")
+                        print(homotrscptlist[j]+" contain a stop codon ,so skip ")
                         break
                     locofaa+=1
                 cdsseqfillback+=codon

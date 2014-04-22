@@ -696,8 +696,8 @@ class WinInGenome():
             " `winNo` varchar(128) NOT NULL,"
             " `bp_start` varchar(128) NOT NULL,"
             " `bp_end` varchar(128) NOT NULL,"
-            " `winvalue` text NOT NULL,"
-            " `zvalue` text NOT NULL,"
+            " `winvalue` double NOT NULL,"
+            " `zvalue` double NOT NULL,"
             " PRIMARY KEY (`chrID`,`winNo`)"
             ")"
             )

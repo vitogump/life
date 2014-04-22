@@ -207,7 +207,7 @@ if __name__ == '__main__':
             alldistMap[fstpaire1name+fstpaire2name] = (sum / Number,allspeices.index(fstpaire1name))
             outfile.close()
         for n in alldistMap.keys():
-            print(n + "\t" + '%.12f'%(alldistMap[n]), file=open("testdist.txt", 'a'))
+            print(n + "\t" + str(alldistMap[n]), file=open("testdist.txt", 'a'))
         tatalwins = tempdbtools.operateDB("select", "select count(*) from "+treearrayprename+"treearray")[0][0]
         for i in range(0, tatalwins, 100):
             wins = tempdbtools.operateDB("select","select * from "+treearrayprename+"treearray order by chrID asc,winNo asc limit "+str(i) +",100")
@@ -217,11 +217,10 @@ if __name__ == '__main__':
                 
 #                print("\t"+arraytitle,file=phyliparrayinfile)
                 for i in range(len(win[2:])):
+                    tmparray[tableindextoarrayindex[i][0]][tableindextoarrayindex[i][1]]=str(win[i+2])
+                    tmparray[tableindextoarrayindex[i][1]][tableindextoarrayindex[i][0]]=str(win[i+2])
                     if win[i+2]==None or win[i+2]=="NA" or win[i+2]=='NULL':
                         abandonthisWin=True
-                    else:
-                        tmparray[tableindextoarrayindex[i][0]][tableindextoarrayindex[i][1]]='%.12f'%win[i+2]
-                        tmparray[tableindextoarrayindex[i][1]][tableindextoarrayindex[i][0]]='%.12f'%win[i+2]
                 if abandonthisWin:
                     continue
                 print("    "+str(len(allspeices)),file=phyliparrayinfile)
