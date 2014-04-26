@@ -168,6 +168,7 @@ def getRefSeqBypos(refFastahander, refindex, currentChromNO, startpos, endpos, s
         refSeqMap[currentChromNO].extend(list(myseqline))
     plus = myseqline.count('>')
     if plus != 0:
+        print("getRefSeqBypos",currentChromNO, startpos, endpos)
         return -1
     
     return refSeqMap        
@@ -488,7 +489,7 @@ class GATK_depthfile():
         pos = int(re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2))
         if chrom == targetchr and pos == targetloc:
             return linelist
-        if chrom != targetchr and pos > targetloc:
+        if chrom != targetchr or pos > targetloc:
             self.depthfilefp.seek(self.covfileidx[targetchr])
         elif chrom == targetchr and pos < targetloc - 100:
             pass#use the lastposoffilehandler to set the filehanlder quickly
@@ -622,9 +623,9 @@ class Window():
                 
     def slidWindowOverlap(self, L, L_End_Pos, windowWidth, slideSize, Caculator):
         """
-        L = [(pos, REF, ALT, INFO,FORMAT,samples,...),(),(),...........] for het
+        L = [(pos, REF, ALT, INFO,FORMAT,sampleslist),(),(),...........] for any score need one vcf,eg.  het
         or 
-        L = [(pos,REF,ALT,(INFO,FORMAT,samples),(INFO,FORMAT,samples)),(),(),...........] for fst
+        L = [(pos,REF,ALT,(INFO,FORMAT,sampleslist),(INFO,FORMAT,sampleslist)),(),(),...........] for any score need two vcf's compare,eg. fst
         """
         self.winValueL = []  # notice here
         nextIdx = -1

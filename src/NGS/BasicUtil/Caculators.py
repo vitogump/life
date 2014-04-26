@@ -9,6 +9,37 @@ class Caculator():
         pass
     def getResult(self):
         pass
+class Caculate_SNPsPerBIN(Caculator):
+    def __init__(self):
+        self.COUNTED=0
+    def process(self, T,seqerrorrate=0.01):
+        
+        dp4 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", T[3])
+        refdep=0;altalleledep=0
+        if dp4!=None:#vcf from samtools 
+            refdep = int(dp4.group(1)) + int(dp4.group(2))
+            altalleledep = int(dp4.group(3)) + int(dp4.group(4))    
+        else:
+            AD_idx=(re.split(":",T[4])).index("AD")#gatk GT:AD:DP:GQ:PL
+            for sample in T[5]:
+                if len(re.split(":",sample))==1:# ./.
+                    continue
+                AD_depth=re.split(",",re.split(":",sample)[AD_idx])
+                try :
+                    refdep+=int(AD_depth[0])
+                    altalleledep+=int(AD_depth[1])
+                except ValueError:
+                    print(sample,end="|")
+
+        if refdep<=seqerrorrate*(refdep+altalleledep):
+            return
+#        if refdep+altalleledep<10:
+#            return
+        self.COUNTED+=1
+    def getResult(self):
+        snpsinthiswin=self.COUNTED
+        self.COUNTED=0
+        return snpsinthiswin
 class Caculate_phastConsValue(Caculator):
     def __init__(self):
         super().__init__()
@@ -37,7 +68,7 @@ class Caculate_Hp(Caculator):
         self.COUNTED=0
         self.CNMI = 0
         self.CNMA = 0
-    def process(self, T):
+    def process(self, T,seqerrorrate=0.01):
         
         dp4 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", T[3])
         refdep=0;altalleledep=0
@@ -58,7 +89,7 @@ class Caculate_Hp(Caculator):
                             
             
 
-        if refdep==0:
+        if refdep<=seqerrorrate*(refdep+altalleledep):
             return
         if refdep+altalleledep<10:
             return
@@ -88,7 +119,7 @@ class Caculate_Fst(Caculator):
         self.CNk = 0
         self.CDk = 0
         self.COUNTED=0
-    def process(self, T):
+    def process(self, T,seqerrorrate=0.01):
         
         refdep_1=0;refdep_2=0
         altalleledep_1=0;altalleledep_2=0
@@ -126,7 +157,7 @@ class Caculate_Fst(Caculator):
                 except ValueError:
                     print(sample,end="")
                              
-        if refdep_1==0 or refdep_2==0:
+        if refdep_1<=seqerrorrate*(refdep_1+altalleledep_1) or refdep_2<=seqerrorrate*(refdep_2+altalleledep_2):
             return  #NOTICT HERE
         self.COUNTED+=1
         h_1 = refdep_1 * altalleledep_1 / ((refdep_1 + altalleledep_1 - 1) * (refdep_1 + altalleledep_1))

@@ -1,26 +1,40 @@
-import sys
+
 #import Make_Picture
 from NGS.RUtil import *
+from optparse import OptionParser
+
 '''
 Created on 2013-8-11
 
 @author: rui
 '''
-if len(sys.argv) < 5:
-    print("python test.py [inputfile1] [inputfile2] [inputfile3]....[chromPrefix] [postive_negtive(or a)][dataType]")
-    exit(-1)
-dataType=sys.argv[-1]
-if sys.argv[-2]!= "a":
+parser = OptionParser()
+parser.add_option("-p", "--chromPrefix", dest="chromPrefix",# action="callback",type="string",callback=useoptionvalue_previous1,
+                  help="chromPrefix + number")
+parser.add_option("-s", "--postive_negtive_a", dest="postive_negtive_a",# action="callback",type="string",callback=useoptionvalue_previous2,
+                  help="write report to FILE")
+# (options, args) = parser.parse_args()
+parser.add_option("-T","--dataType",dest="dataType",help="default infile1_infile2")#
+parser.add_option("-c","--column",dest="column",default=6,help="default infile2_infile1")#
+parser.add_option("-q", "--quiet",
+                  action="store_false", dest="verbose", default=True,
+                  help="don't print status messages to stdout")
+(options, args) = parser.parse_args()
+#if len(sys.argv) < 5:
+#    print("python test.py [inputfile1] [inputfile2] [inputfile3]....-p [chromPrefix] -s [postive_negtive(or a)] -T [dataType] -c column_num")
+#    exit(-1)
+dataType=options.dataType
+if options.postive_negtive_a!= "a":
     
-    postive_negtive=sys.argv[-2]
+    postive_negtive=options.postive_negtive_a
     print(postive_negtive)
 else:
     postive_negtive=None
-chromPrefix=sys.argv[-3]
+chromPrefix=options
 if __name__ == '__main__':
-    for inputfileName in sys.argv[1:-3]:
+    for inputfileName in args[:]:
         makeMhtGraph = Make_Picture.MakeMhtGraph()
-        if sys.argv[-2]!= "a":
+        if options.postive_negtive_a!= "a":
             makeMhtGraph.makeMhtPicture_HistonPicture(inputfileName,dataType,chromPrefix,postive_negtive,fillvalue="NA")
         else:
             makeMhtGraph.makeMhtPicture_HistonPicture(inputfileName,dataType,chromPrefix,postive_negtive=None,fillvalue="NA")

@@ -47,7 +47,7 @@ class VCF_Data():
             line = vcffile.readline()
         pickle.dump(vcfChromIndex, open(indexFileName, 'wb'))
         vcffile.close()
-    def getVcfListByChrom(self, vcfFileName, chrom):
+    def getVcfListByChrom(self, vcfFileName, chrom,posUniq=True):
         """
             return a list that contain all vcf record of a chrom
         """
@@ -69,8 +69,12 @@ class VCF_Data():
             ALT = linelist[4].strip()
             INFO = linelist[7]
             FORMAT=linelist[8]
-            VcfList_A_Chrom.append((pos, REF, ALT, INFO,FORMAT,samples))
             line = vcfFile.readline()
+            if posUniq and VcfList_A_Chrom and pos==VcfList_A_Chrom[0]:
+                print("VCFutil unique the vcf pos",line,VcfList_A_Chrom[-1])
+                continue
+            VcfList_A_Chrom.append((pos, REF, ALT, INFO,FORMAT,samples))
+            
         return VcfList_A_Chrom
         vcfFile.close()
 

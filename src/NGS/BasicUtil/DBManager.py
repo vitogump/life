@@ -65,7 +65,7 @@ class DBTools():
                 cursor.callproc(sqls[0],data)
         except mysql.connector.Error as e:
             print('query error!{}'.format(e))
-            print("may be the file name is wrong")
+            print("DBManager operateDB","may be the file name is wrong")
             print(sql,data)
             exit(-1)
         finally:
