@@ -3,8 +3,12 @@ Created on 2014-4-25
 
 @author: liurui
 '''
-import NGS.BasicUtil.DerivedalleleProcessor as DAP
+from NGS.BasicUtil import Util
 from optparse import OptionParser
+import NGS.BasicUtil.DBManager as dbm
+import NGS.BasicUtil.DerivedalleleProcessor as DAP
+
+import pickle
 
 parser = OptionParser()
 parser.add_option("-d", "--dbname", dest="dbname",# action="callback",type="string",callback=useoptionvalue_previous1,
@@ -13,14 +17,52 @@ parser.add_option("-v", "--vcffile", dest="vcffile",# action="callback",type="st
                   help="write report to FILE")
 # (options, args) = parser.parse_args()
 parser.add_option("-D","--Depthfile",dest="Depthfile",help="default infile1_infile2")#
-parser.add_option("-s","--slidesize",dest="slidesize",help="default infile2_infile1")#
+parser.add_option("-a","--ancenstryref",dest="ancenstryref")
+parser.add_option("-r","--reference",dest="reference")
+parser.add_option("-c","--chromtable",dest="chromtable")
+parser.add_option("-f","--flanklen",dest="flanklen")
+parser.add_option("-B","--pathtoblastn",dest="pathtoblastn")
+parser.add_option("-b","--pathtoblastdb",dest="pathtoblastdb")
+parser.add_option("-V","--ancenstryvcftable",dest="ancenstryvcftable")
 parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", default=True,
                   help="don't print status messages to stdout")
 (options, args) = parser.parse_args()
 vcfFileName=options.vcffile
 DepthFileName=options.Depthfile
+duckrefhandler=open(options.reference,'r')
+originalspeciesref=options.ancenstryref
+chromtable=options.chromtable
+dbname=options.dbname
+flanklen=int(options.flanklen)
+pathtoblastn=options.pathtoblastn
+pathtoblastdb=options.pathtoblastdb
+ancestralsnptable=options.ancenstryvcftable
+primaryID = "chrID"
+outfile=open("ducksnpflankseq.fa",'w')
+BlastOutFile="ducksnpflankseq.blast"
 if __name__ == '__main__':
-    aaa=DAP.MakeDerivedAlleletable(database="life_pilot",ip="localhost",usrname="root",pw="1234567")
-    aaa.createtable()
-    aaa.filldata(vcfFileName=vcfFileName,depthfileName=DepthFileName)
+    aaa=DAP.MakeDerivedAlleletable(database=dbname,ip="localhost",usrname="root",pw="1234567")
+    dbtools = dbm.DBTools("localhost", "root", "1234567", dbname)
+    try:
+        duckrefindex = pickle.load(open(options.reference + ".myindex", 'rb'))
+        originalspeciesindex = pickle.load(open(originalspeciesref + ".myindex", 'rb'))
+    except IOError:
+        Util.generateIndexByChrom(options.reference, options.reference + ".myindex")
+        Util.generateIndexByChrom(originalspeciesref, originalspeciesref + ".myindex")
+        duckrefindex = pickle.load(open(options.reference + ".myindex", 'rb'))
+        originalspeciesindex = pickle.load(open(originalspeciesref + ".myindex", 'rb'))
+#    aaa.createtable()
+#    aaa.filldata(vcfFileName=vcfFileName,depthfileName=DepthFileName)
+    totalChroms = dbtools.operateDB("select","select count(*) from "+chromtable)[0][0]
+    for i in range(0,totalChroms,20):
+        currentsql="select * from " + chromtable+" order by chrlength limit "+str(i)+",20"
+        result=dbtools.operateDB("select",currentsql)
+        for row in result:
+            currentchrID=row[0]
+            currentchrLen=int(row[2])
+            aaa.getflankseqs(currentchrID, 1+flanklen, currentchrLen, idxedreffilehandler=duckrefhandler, refindex=duckrefindex, flanklen=flanklen,outfile=outfile, tablename="derived_alle_ref")
+    outfile.close()
+    duckrefhandler.close()
+    aaa.callblast(pathtoblastn,pathtoblastdb,"ducksnpflankseq.fa",BlastOutFile)
+    aaa.extarctAncestryAlleleFromBlastOut(BlastOutFile,originalspeciesref,originalspeciesindex,tablename="derived_alle_ref",ancestralsnptable=ancestralsnptable)
