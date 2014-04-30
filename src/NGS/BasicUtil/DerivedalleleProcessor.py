@@ -122,18 +122,18 @@ class MakeDerivedAlleletable():
             self.dbtools.operateDB("insert", "insert into " + tablename + "(chrID,snp_pos,snpID,ref_base,alt_base," + "".join([e + "," for e in poplist[:-1]] + poplist[-1:]) + ") values(%s,%s,%s,%s,%s," + "%s,"*(len(poplist) - 1) + "%s)", data=(chrom, pos, snpID, REF, ALT) + tuple(popsdata))
         depthfile.closedepthfile()
         vcffile.close()
-    def getflankseqs(self, chrom, snpstartpos, snpendpos, idxedreffilehandler, refindex, flanklen,outfile, tablename="derived_alle_ref"):
+    def getflankseqs(self, chrom,chromlen, snpstartpos, snpendpos, idxedreffilehandler, refindex, flanklen,outfile, tablename="derived_alle_ref"):
 
         testfile=open("testsnpfile.txt",'a')
         snps = self.dbtools.operateDB("select", "select * from " + tablename + " where chrID='" + chrom + "' and snp_pos>= " + str(snpstartpos) + " and snp_pos<=" + str(snpendpos))
-        RefSeqMap = Util.getRefSeqBypos(idxedreffilehandler, refindex, chrom, snpstartpos-flanklen, snpendpos+flanklen)
+        RefSeqMap = Util.getRefSeqBypos(idxedreffilehandler, refindex, chrom,chromlen, snpstartpos-flanklen, snpendpos+flanklen)
         
         for snp in snps:
-            currentsnpPos = int(snp[1])
+            currentsnpPos = snp[1]
             if len(snp[3]) != 1 or len(snp[4]) != 1:
         #                        print(snp[4])
                 continue# skip indel
-            currentsnpID=chrom+"_"+snp[1]
+            currentsnpID=chrom+"_"+str(snp[1])
             if currentsnpPos + 25 <= RefSeqMap[chrom][0] + len(RefSeqMap[chrom]) - 1 and currentsnpPos - 25 > RefSeqMap[chrom][0] :
                 snpflankseq = ''.join(RefSeqMap[chrom][(currentsnpPos - 25 - RefSeqMap[chrom][0]):(currentsnpPos + 25 - RefSeqMap[chrom][0] + 1)])
                 print(currentsnpID,snpflankseq[25],file=testfile)
@@ -153,14 +153,15 @@ class MakeDerivedAlleletable():
                 print("what's wrong with the func getflankseqs ?")
                 exit(-1)
 #            if currentsnpPos + 25 <= RefSeqMap[lastchromNo][0] + len(RefSeqMap[lastchromNo]) - 1 and currentsnpPos - 25 > RefSeqMap[lastchromNo][0] :
-            snpflankseq = ''.join(RefSeqMap[chrom][(currentsnpPos - 25 - RefSeqMap[chrom][0]):(currentsnpPos + 25 - RefSeqMap[chrom][0] + 1)])
-            print(currentsnpID, snpflankseq[25], file=testfile)
+#            snpflankseq = ''.join(RefSeqMap[chrom][(currentsnpPos - 25 - RefSeqMap[chrom][0]):(currentsnpPos + 25 - RefSeqMap[chrom][0] + 1)])
+#            print(currentsnpID, snpflankseq[25], file=testfile)
             snpflankseq = snpflankseq[0:25] + 'N' + snpflankseq[26:]
             print(">" + currentsnpID + "\n" + snpflankseq, end='\n', file=outfile)
         testfile.close()
         #                    print("update "+finaltable+" set fafilepos="+str(filepos)+" where snpID='"+currentsnpID+"'")
     def callblast(self,pathtoblastn,pathtorefdb,queryfaFile,BlastOutFile):
-        shellstatment=pathtoblastn+" -query "+queryfaFile+" -task blastn -db "+pathtorefdb+" -out "+BlastOutFile +" outfmt 7 -num_threads 4"
+        shellstatment=pathtoblastn+" -query "+queryfaFile+" -task blastn -db "+pathtorefdb+" -out "+BlastOutFile +" -outfmt 7 -num_threads 4"
+        print(shellstatment)
         a = os.system(shellstatment)
         if a != 0:
             print("DerivedalleleProcessor : callblast func os.system return not 0")

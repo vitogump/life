@@ -113,7 +113,7 @@ def getGtfMap(gtfFileName):
     gtfFileHandler.close()
     return protein_codingMap
 
-def getRefSeqBypos(refFastahander, refindex, currentChromNO, startpos, endpos, seektuple=()):
+def getRefSeqBypos(refFastahander, refindex, currentChromNO,currentChromNOlen, startpos, endpos, seektuple=()):
     '''
     pos start at 1
     seektuple=(filepos,basesbeforefilepos)
@@ -123,6 +123,8 @@ def getRefSeqBypos(refFastahander, refindex, currentChromNO, startpos, endpos, s
     if startpos <= 0:
         startpos = 1
     print(currentChromNO, startpos, endpos)
+    if endpos>currentChromNOlen:
+        endpos=currentChromNOlen
 
     filehander = refFastahander
     if not seektuple or seektuple[1] > startpos:
@@ -147,8 +149,9 @@ def getRefSeqBypos(refFastahander, refindex, currentChromNO, startpos, endpos, s
             myseqn = myseqline.count('\n')
             
 #            print(currentChromNO,myseqline, myseqn)
-            if myseqline.count('>') >= 1:
-                exit(-1)
+        if myseqline.count('>') >= 1:
+            print(currentChromNO,myseqline, myseqn)
+            exit(-1)
         refSeqMap[currentChromNO].extend(list(myseqline))
     else:
         filehander.seek(seektuple[0])  # seekmap is not empty

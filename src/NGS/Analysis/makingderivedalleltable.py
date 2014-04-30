@@ -61,7 +61,7 @@ if __name__ == '__main__':
         for row in result:
             currentchrID=row[0]
             currentchrLen=int(row[2])
-            aaa.getflankseqs(currentchrID, 1+flanklen, currentchrLen, idxedreffilehandler=duckrefhandler, refindex=duckrefindex, flanklen=flanklen,outfile=outfile, tablename="derived_alle_ref")
+            aaa.getflankseqs(currentchrID,currentchrLen, 1+flanklen, currentchrLen, idxedreffilehandler=duckrefhandler, refindex=duckrefindex, flanklen=flanklen,outfile=outfile, tablename="derived_alle_ref")
     outfile.close()
     duckrefhandler.close()
     aaa.callblast(pathtoblastn,pathtoblastdb,"ducksnpflankseq.fa",BlastOutFile)
