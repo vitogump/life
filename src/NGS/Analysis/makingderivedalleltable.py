@@ -9,11 +9,15 @@ import NGS.BasicUtil.DBManager as dbm
 import NGS.BasicUtil.DerivedalleleProcessor as DAP
 
 import pickle
-
+"""
+    the vcf file,every sample is a pop that has the same name in depthfile's title
+"""
 parser = OptionParser()
 parser.add_option("-d", "--dbname", dest="dbname",# action="callback",type="string",callback=useoptionvalue_previous1,
                   help="write report to FILE")
-parser.add_option("-v", "--vcffile", dest="vcffile",# action="callback",type="string",callback=useoptionvalue_previous2,
+parser.add_option("-1", "--mutiplepopsvcffile", dest="mutiplepopsvcffile",# action="callback",type="string",callback=useoptionvalue_previous2,
+                  help="write report to FILE")
+parser.add_option("-2", "--archicpopvcf", dest="archicpopvcf",# action="callback",type="string",callback=useoptionvalue_previous2,
                   help="write report to FILE")
 # (options, args) = parser.parse_args()
 parser.add_option("-D","--Depthfile",dest="Depthfile",help="default infile1_infile2")#
@@ -23,12 +27,12 @@ parser.add_option("-c","--chromtable",dest="chromtable")
 parser.add_option("-f","--flanklen",dest="flanklen")
 parser.add_option("-B","--pathtoblastn",dest="pathtoblastn")
 parser.add_option("-b","--pathtoblastdb",dest="pathtoblastdb")
-parser.add_option("-V","--ancenstryvcftable",dest="ancenstryvcftable")
+parser.add_option("-o","--ancenstryvcftable",dest="ancenstryvcftable")
 parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", default=True,
                   help="don't print status messages to stdout")
 (options, args) = parser.parse_args()
-vcfFileName=options.vcffile
+vcfFileName=options.mutiplepopsvcffile
 DepthFileName=options.Depthfile
 duckrefhandler=open(options.reference,'r')
 originalspeciesref=options.ancenstryref
@@ -38,6 +42,8 @@ flanklen=int(options.flanklen)
 pathtoblastn=options.pathtoblastn
 pathtoblastdb=options.pathtoblastdb
 ancestralsnptable=options.ancenstryvcftable
+archicpopNameindepthFile="fanya"
+archicpopVcfFile=options.archicpopvcf
 primaryID = "chrID"
 outfile=open("ducksnpflankseq.fa",'w')
 BlastOutFile="ducksnpflankseq.blast"
@@ -54,6 +60,7 @@ if __name__ == '__main__':
         originalspeciesindex = pickle.load(open(originalspeciesref + ".myindex", 'rb'))
 #    aaa.createtable()
 #    aaa.filldata(vcfFileName=vcfFileName,depthfileName=DepthFileName)
+    aaa.fillarchicpop(archicpopVcfFile,DepthFileName,chromtable,archicpopNameindepthFile)
     totalChroms = dbtools.operateDB("select","select count(*) from "+chromtable)[0][0]
     for i in range(0,totalChroms,20):
         currentsql="select * from " + chromtable+" order by chrlength limit "+str(i)+",20"

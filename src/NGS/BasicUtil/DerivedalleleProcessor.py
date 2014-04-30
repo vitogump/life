@@ -3,7 +3,7 @@ Created on 2014-4-24
 
 @author: liurui
 '''
-from NGS.BasicUtil import Util
+from NGS.BasicUtil import Util, VCFutil
 import NGS.BasicUtil.DBManager as dbm
 import os
 import re
@@ -40,12 +40,12 @@ class MakeDerivedAlleletable():
             vcfline = vcffile.readline()
         
         if re.search(r'^#', vcfline) != None:
-            poplist = re.split(r'\s+', vcfline.strip())[9:]
-            print(poplist)
+            poptitlelist = re.split(r'\s+', vcfline.strip())[9:]
+            print(poptitlelist)
         else:
             print("need title'#CHROM    POS    ID    REF    ALT    QUAL    FILTER    INFO    FORMAT'")
             exit(-1)   
-        for pop in poplist:
+        for pop in poptitlelist:
             self.dbtools.operateDB("callproc", "mysql_sp_add_column", data=("life_pilot", tablename, pop, "varchar(128)", "default null"))
         popsdata = []#depth for ref or alt
         
@@ -69,7 +69,7 @@ class MakeDerivedAlleletable():
             sample_idx_in_vcf = 0
             for sample in vcflist[9:]:
 
-                samplename = poplist[sample_idx_in_vcf]
+                samplename = poptitlelist[sample_idx_in_vcf]
 
                 sample_idx_in_vcf += 1
                 species_idx = depthfile.title.index("Depth_for_" + samplename)
@@ -85,8 +85,8 @@ class MakeDerivedAlleletable():
                 refdep += int(AD_depth[0])
                 altalleledep += int(AD_depth[1])
                 popsdata.append(re.split(":", sample)[AD_idx])
-            print("insert into " + tablename + "(chrID,snp_pos,snpID,ref_base,alt_base," + "".join([e + "," for e in poplist[:-1]] + poplist[-1:]) + ") values(%s,%s,%s,%s,%s," + "%s,"*(len(poplist) - 1) + "%s)", (chrom, pos, snpID, REF, ALT) + tuple(popsdata))
-            self.dbtools.operateDB("insert", "insert into " + tablename + "(chrID,snp_pos,snpID,ref_base,alt_base," + "".join([e + "," for e in poplist[:-1]] + poplist[-1:]) + ") values(%s,%s,%s,%s,%s," + "%s,"*(len(poplist) - 1) + "%s)", data=(chrom, pos, snpID, REF, ALT) + tuple(popsdata))
+            print("insert into " + tablename + "(chrID,snp_pos,snpID,ref_base,alt_base," + "".join([e + "," for e in poptitlelist[:-1]] + poptitlelist[-1:]) + ") values(%s,%s,%s,%s,%s," + "%s,"*(len(poptitlelist) - 1) + "%s)", (chrom, pos, snpID, REF, ALT) + tuple(popsdata))
+            self.dbtools.operateDB("insert", "insert into " + tablename + "(chrID,snp_pos,snpID,ref_base,alt_base," + "".join([e + "," for e in poptitlelist[:-1]] + poptitlelist[-1:]) + ") values(%s,%s,%s,%s,%s," + "%s,"*(len(poptitlelist) - 1) + "%s)", data=(chrom, pos, snpID, REF, ALT) + tuple(popsdata))
                             
             
         for vcfline in vcffile:
@@ -104,7 +104,7 @@ class MakeDerivedAlleletable():
             sample_idx_in_vcf = 0
             popsdata = []
             for sample in vcflist[9:]:
-                samplename = poplist[sample_idx_in_vcf]
+                samplename = poptitlelist[sample_idx_in_vcf]
                 sample_idx_in_vcf += 1
                 species_idx = depthfile.title.index("Depth_for_" + samplename)
                 if len(re.split(":", sample)) != len(re.split(":", vcflist[8])):# ./.
@@ -118,8 +118,8 @@ class MakeDerivedAlleletable():
                 refdep += int(AD_depth[0])
                 altalleledep += int(AD_depth[1])
                 popsdata.append(re.split(":", sample)[AD_idx])
-            print("insert into " + tablename + "(chrID,snp_pos,snpID,ref_base,alt_base," + "".join([e + "," for e in poplist[:-1]] + poplist[-1:]) + ") values(%s,%s,%s,%s,%s," + "%s,"*(len(poplist) - 1) + "%s)", (chrom, pos, snpID, REF, ALT) + tuple(popsdata))
-            self.dbtools.operateDB("insert", "insert into " + tablename + "(chrID,snp_pos,snpID,ref_base,alt_base," + "".join([e + "," for e in poplist[:-1]] + poplist[-1:]) + ") values(%s,%s,%s,%s,%s," + "%s,"*(len(poplist) - 1) + "%s)", data=(chrom, pos, snpID, REF, ALT) + tuple(popsdata))
+            print("insert into " + tablename + "(chrID,snp_pos,snpID,ref_base,alt_base," + "".join([e + "," for e in poptitlelist[:-1]] + poptitlelist[-1:]) + ") values(%s,%s,%s,%s,%s," + "%s,"*(len(poptitlelist) - 1) + "%s)", (chrom, pos, snpID, REF, ALT) + tuple(popsdata))
+            self.dbtools.operateDB("insert", "insert into " + tablename + "(chrID,snp_pos,snpID,ref_base,alt_base," + "".join([e + "," for e in poptitlelist[:-1]] + poptitlelist[-1:]) + ") values(%s,%s,%s,%s,%s," + "%s,"*(len(poptitlelist) - 1) + "%s)", data=(chrom, pos, snpID, REF, ALT) + tuple(popsdata))
         depthfile.closedepthfile()
         vcffile.close()
     def getflankseqs(self, chrom,chromlen, snpstartpos, snpendpos, idxedreffilehandler, refindex, flanklen,outfile, tablename="derived_alle_ref"):
@@ -168,7 +168,7 @@ class MakeDerivedAlleletable():
             exit(-1)
         print(shellstatment,a)
     def extarctAncestryAlleleFromBlastOut(self,BlastOutFile,ancestryrefFile,ancestryrefidx,tablename="derived_alle_ref",ancestralsnptable=None):
-        ancestryreffile=open("ancestryrefFile",'r')
+        ancestryreffile=open(ancestryrefFile,'r')
         a = os.popen("awk '$1!~/^#/ && $5==1 && $4>26 && $6==0 {print $0}' " + BlastOutFile)
     #    hits=a.readlines()
     
@@ -234,11 +234,11 @@ class MakeDerivedAlleletable():
                 snppos=re.search(chrom+r"_(\d+)",lastsnpID).group(1)
                 onegroup.sort(key=lambda listRec:listRec[1])
                 if len(onegroup)==1 or onegroup[0][1]-onegroup[0][2]>=15:#first , only one query id,second longest hit 15 bases greater than the second longest hit
-                    if ancestralsnptable!=None and self.dbtools.operateDB("select","select count(*) from "+ancestralsnptable+" where chrID= '"+chrom+"' and snp_start_pos= '"+str(snppos)+"'")[0][0]==0:
-                        self.dbtools.operateDB("update", "update " + tablename + " set ancestralallel='" + onegroup[0][0] + "' where chrID='" + chrom + "' snp_pos='"+snppos+"'")
+                    if ancestralsnptable!=None and self.dbtools.operateDB("select","select count(*) from "+ancestralsnptable+" where chrID= '"+chrom+"' and snp_start_pos= "+str(snppos))[0][0]==0:
+                        self.dbtools.operateDB("update", "update " + tablename + " set ancestralallel='" + onegroup[0][0] + "' where chrID='" + chrom + "'and snp_pos="+snppos)
                 elif len(lastbasesAccur.keys()) == 1:
                     for bases in lastbasesAccur:#only once
-                        self.dbtools.operateDB("update", "update " + tablename + " set ancestralallel='" + bases + "' where chrID='" + chrom + "' snp_pos='"+snppos+"'")
+                        self.dbtools.operateDB("update", "update " + tablename + " set ancestralallel='" + bases + "' where chrID='" + chrom + "' and snp_pos="+snppos)
                 elif len(lastbasesAccur.keys()) == 0:
                     exit(-1)
                 RefSeqMap = Util.getRefSeqBypos(refFastahander=ancestryreffile, refindex=ancestryrefidx, currentChromNO=chrom, startpos=sstartpos, endpos=sendpos)
@@ -255,7 +255,47 @@ class MakeDerivedAlleletable():
                 lastbasesAccur[RefSeqMap[chrom][snpindex + 1]] = [(chrom, sstartpos, sendpos)]
 
                 ancestryreffile.close()
-        
-        
+    def fillarchicpop(self,archicpopVcfFile,depthFile,chromtable,archicpopNameindepthFile,tablename="derived_alle_ref",archicpopfieldNameintable="archicpop"):
+        depthfile = Util.GATK_depthfile(depthFile, depthFile + ".index")
+        species_idx = depthfile.title.index("Depth_for_" + archicpopNameindepthFile)
+        archicpop = VCFutil.VCF_Data(archicpopVcfFile)
+        totalChroms = self.dbtools.operateDB("select","select count(*) from "+chromtable)[0][0]
+        for i in range(0,totalChroms,20):
+            currentsql="select * from " + chromtable+" order by chrlength limit "+str(i)+",20"
+            result=self.dbtools.operateDB("select",currentsql)
+            for row in result:
+                currentchrID=row[0]
+                currentchrLen=int(row[2])
+                if currentchrID in archicpop.VcfIndexMap:
+                    archicpopSeqOfAChr={}
+                    archicpopSeqOfAChr[currentchrID]=archicpop.getVcfListByChrom(archicpopVcfFile, currentchrID)
+                    for pos, REF, ALT, INFO,FORMAT,samples in archicpopSeqOfAChr[currentchrID]:
+                        dp4 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", INFO)
+                        refdep=0;altalleledep=0
+                        if dp4!=None:#vcf from samtools 
+                            refdep = int(dp4.group(1)) + int(dp4.group(2))
+                            altalleledep = int(dp4.group(3)) + int(dp4.group(4))    
+                        else:
+                            AD_idx=(re.split(":",FORMAT)).index("AD")#gatk GT:AD:DP:GQ:PL
+                            for sample in samples:
+                                if len(re.split(":",sample))==1:# ./.
+                                    continue
+
+                                AD_depth=re.split(",",re.split(":",sample)[AD_idx])
+                                try :
+                                    refdep+=int(AD_depth[0])
+                                    altalleledep+=int(AD_depth[1])
+                                except ValueError:
+                                    print(sample,end="")
+                                if refdep+altalleledep<2:
+                                    depth_linelist = depthfile.getdepthByPos(currentchrID, pos)
+                                    if int(depth_linelist[species_idx]) <= 1:
+                                        popsdata="no covered"
+                                    else:
+                                        popsdata=(depth_linelist[species_idx] + ",0")
+                                else:
+                                    popsdata=str(refdep)+","+str(altalleledep)
+                            self.dbtools.operateDB("update", "update " + tablename + " set "+archicpopfieldNameintable+" = '" + popsdata+"' where chrID="+"'"+currentchrID+"' and snp_pos="+str(pos))
+                        
         
         
