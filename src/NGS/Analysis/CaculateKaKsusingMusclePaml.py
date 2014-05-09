@@ -104,19 +104,32 @@ if __name__ == '__main__':
     for homotrscptline in homogenefile:
         homotrscptlist = re.split(r'~', homotrscptline)
         i = 0
-        #make the fa file as the input of the muscle and run muscle        
+        lenofhomeAA=[]
+        #make the aa fa file as the input of the muscle and run muscle        
         muscleinfile = open(MuscleInputFileName, 'w')
         for trscpt in homotrscptlist:
+            
             homotrscptlist[i] = re.search(r'transcript:(.*)', trscpt).group(1).strip()
             curspecies = homotrscpttitle[i].strip()
             aa_cds_filemap[curspecies][0].seek(aa_cds_filemap[curspecies][2][homotrscptlist[i]])
             #homotrscptlist[i]==currentChromNO
             refSeqMap, currentChromNO, nextChromNO = Util.getRefSeqMap(aa_cds_filemap[curspecies][0], homotrscptlist[i], mapname="transcript:")
-            if "".join(refSeqMap[homotrscptlist[i]][1:-1]).find("*") != "-1":
+            lenofhomeAA.append(len(refSeqMap[homotrscptlist[i]]))
+            if "".join(refSeqMap[homotrscptlist[i]][1:-1]).find("*") == -1:
+                if "".join(refSeqMap[homotrscptlist[i]][-1])=="*":
+                    refSeqMap[homotrscptlist[i]]=refSeqMap[homotrscptlist[i]][1:-1]
                 print(">" + homotrscptlist[i], file=muscleinfile)
                 print("".join(refSeqMap[homotrscptlist[i]][1:]), file=muscleinfile)
+            else:
+                skipthishomotrscptline=True
+            del refSeqMap[homotrscptlist[i]]
             i += 1
         muscleinfile.close()
+        if max(lenofhomeAA)/min(lenofhomeAA)>=2:
+            skipthishomotrscptline=True
+        if skipthishomotrscptline:
+            skipthishomotrscptline=False
+            continue
         stat=os.system(musclePath+" -in "+MuscleInputFileName+" -fastaout "+ MuscleOutputFileName)
         if stat != 0 :
             print("Error:"+musclePath+" -in "+MuscleInputFileName+" -fastaout "+ MuscleOutputFileName)

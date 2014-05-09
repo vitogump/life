@@ -19,6 +19,8 @@ parser.add_option("-1", "--mutiplepopsvcffile", dest="mutiplepopsvcffile",# acti
                   help="write report to FILE")
 parser.add_option("-2", "--archicpopvcf", dest="archicpopvcf",# action="callback",type="string",callback=useoptionvalue_previous2,
                   help="write report to FILE")
+parser.add_option("-3","--continuechrom",dest="continuechrom")
+parser.add_option("-4","--continuepos",dest="continuepos")
 # (options, args) = parser.parse_args()
 parser.add_option("-D","--Depthfile",dest="Depthfile",help="default infile1_infile2")#
 parser.add_option("-a","--ancenstryref",dest="ancenstryref")
@@ -28,6 +30,7 @@ parser.add_option("-f","--flanklen",dest="flanklen")
 parser.add_option("-B","--pathtoblastn",dest="pathtoblastn")
 parser.add_option("-b","--pathtoblastdb",dest="pathtoblastdb")
 parser.add_option("-o","--ancenstryvcftable",dest="ancenstryvcftable")
+
 parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", default=True,
                   help="don't print status messages to stdout")
@@ -44,6 +47,12 @@ pathtoblastdb=options.pathtoblastdb
 ancestralsnptable=options.ancenstryvcftable
 archicpopNameindepthFile="fanya"
 archicpopVcfFile=options.archicpopvcf
+if options.continuechrom!=None and options.continuepos!=None:
+    continuechrom=options.continuechrom
+    continuepos=int(options.continuepos)
+else:
+    continuechrom=None;continuepos=None
+
 primaryID = "chrID"
 outfile=open("ducksnpflankseq.fa",'w')
 BlastOutFile="ducksnpflankseq.blast"
@@ -59,7 +68,7 @@ if __name__ == '__main__':
         duckrefindex = pickle.load(open(options.reference + ".myindex", 'rb'))
         originalspeciesindex = pickle.load(open(originalspeciesref + ".myindex", 'rb'))
 #    aaa.createtable()
-#    aaa.filldata(vcfFileName=vcfFileName,depthfileName=DepthFileName)
+    aaa.filldata(vcfFileName=vcfFileName,depthfileName=DepthFileName,continuechrom=continuechrom,continuepos=continuepos)
     aaa.fillarchicpop(archicpopVcfFile,DepthFileName,chromtable,archicpopNameindepthFile)
     totalChroms = dbtools.operateDB("select","select count(*) from "+chromtable)[0][0]
     for i in range(0,totalChroms,20):

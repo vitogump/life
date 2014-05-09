@@ -1,5 +1,6 @@
 # -*- coding: UTF-8 -*-
-from NGS.BasicUtil import *
+
+from NGS.BasicUtil import Util, VCFutil
 from optparse import OptionParser
 import pickle
 import re
@@ -32,7 +33,7 @@ parser.add_option("-q", "--quiet",
 reffa = open(options.reffa, 'r')
 #gtffile = open(options.gtffile, 'r')
 vcffile = open(options.variants, 'r')
-covfile = open(options.genomedepth, 'r')
+#covfile = open(options.genomedepth, 'r')
 
 
 cns_string = ""
@@ -43,8 +44,13 @@ outaa = open(options.outfileprename + "_aa.fa", 'w')
 outcdscns = open(options.outfileprename + "_cdscns.fa", 'w')
 cdsmap = {}
 if __name__ == '__main__':
-    depthfile = Util.GATK_depthfile(options.genomedepth, options.genomedepth + ".index")
-    species_idx = depthfile.title.index("Depth_for_" + options.species)
+    if options.genomedepth !=None:
+        depthfile = Util.GATK_depthfile(options.genomedepth, options.genomedepth + ".index")
+        species_idx = depthfile.title.index("Depth_for_" + options.species)
+    else:
+        Considerdepth=False
+        depthfile=None
+        species_idx=-1
     vcfpop = VCFutil.VCF_Data(options.variants)  # new a class
     RefSeqMap, currentChromNO, nextChromNO = Util.getRefSeqMap(refFastafilehander=reffa)
     print(currentChromNO,nextChromNO)
@@ -52,6 +58,7 @@ if __name__ == '__main__':
     gtfMap = Util.getGtfMap(options.gtffile)
     
     lastposofdepthfp = 0#because this time RefSeqMap[0] is 0
+    vcfchrom="begin"
     while currentChromNO != "end of the reffile":
         print("\t\twhile loop:", currentChromNO)
         currentBaselocinGenome = RefSeqMap[currentChromNO][0] + 1
@@ -73,7 +80,9 @@ if __name__ == '__main__':
             reffa_suplemtry.close()
             nearestGenes = Util.genes(gtfMap[currentChromNO], currentBaselocinGenome, RefSeqMap[currentChromNO])
         #the the use of if block upside is that make sure RefSeqMap[currentChromNO] has enough seq contain the geneOverlapList scope
-        vcflist_A_chrom = vcfpop.getVcfListByChrom(options.variants, currentChromNO)
+        if vcfchrom!=currentChromNO:
+            vcflist_A_chrom = vcfpop.getVcfListByChrom(options.variants, currentChromNO)
+            vcfchrom=currentChromNO
         if vcflist_A_chrom:
             idx_vcf=0
         else:
@@ -82,13 +91,19 @@ if __name__ == '__main__':
         idx_RefSeq = 1
         while idx_RefSeq < len(RefSeqMap[currentChromNO]):
             if (not nearestGenes.geneOverlapList) or currentBaselocinGenome < frontmostpos:
-                depth_linelist = depthfile.getdepthByPos(currentChromNO, currentBaselocinGenome)
+                if Considerdepth:
+                    depth_linelist = depthfile.getdepthByPos(currentChromNO, currentBaselocinGenome)
 
-                if depth_linelist and int(depth_linelist[species_idx]) >= mindepth:
+                if (not Considerdepth) or( depth_linelist and int(depth_linelist[species_idx]) >= mindepth):
                     if vcflist_A_chrom and idx_vcf < len(vcflist_A_chrom) and vcflist_A_chrom[idx_vcf][0] == currentBaselocinGenome:
-                        cns_string += vcflist_A_chrom[idx_vcf][2]
-                        idx_RefSeq += len(vcflist_A_chrom[idx_vcf][1]);currentBaselocinGenome += len(vcflist_A_chrom[idx_vcf][1]) 
-                        idx_vcf += 1
+                        if re.search(r'[^a-zA-Z]', vcflist_A_chrom[idx_vcf][2]) != None:#contain ',' ie. multiple alle
+                            cns_string += vcflist_A_chrom[idx_vcf][1]
+                            idx_RefSeq += len(vcflist_A_chrom[idx_vcf][1]);currentBaselocinGenome += len(vcflist_A_chrom[idx_vcf][1])
+                            idx_vcf += 1 
+                        else:
+                            cns_string += vcflist_A_chrom[idx_vcf][2]
+                            idx_RefSeq += len(vcflist_A_chrom[idx_vcf][1]);currentBaselocinGenome += len(vcflist_A_chrom[idx_vcf][1]) 
+                            idx_vcf += 1
                     else:
                         cns_string += RefSeqMap[currentChromNO][idx_RefSeq]
                         idx_RefSeq += 1;currentBaselocinGenome += 1
@@ -134,7 +149,7 @@ if __name__ == '__main__':
                 print(idx_RefSeq,currentBaselocinGenome,frontmostpos,Rearmostpos)
             
         else:
-            lastposofdepthfp = depthfile.depthfilefp.tell()
+#            lastposofdepthfp = depthfile.depthfilefp.tell()
             print(cns_string, end="", file=outcns)
             if nextChromNO == currentChromNO:
                 cns_string = ""
@@ -152,7 +167,7 @@ if __name__ == '__main__':
 #gtffile.close()    
 reffa.close()
 vcffile.close()
-covfile.close()    
+#covfile.close()    
 outcns.close()
 outaa.close()
 outcdscns.close()
