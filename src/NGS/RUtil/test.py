@@ -30,7 +30,7 @@ if options.postive_negtive_a!= "a":
     print(postive_negtive)
 else:
     postive_negtive=None
-chromPrefix=options
+chromPrefix=options.chromPrefix
 if __name__ == '__main__':
     for inputfileName in args[:]:
         makeMhtGraph = Make_Picture.MakeMhtGraph()

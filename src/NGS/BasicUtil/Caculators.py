@@ -13,7 +13,8 @@ class Caculate_SNPsPerBIN(Caculator):
     def __init__(self):
         self.COUNTED=0
     def process(self, T,seqerrorrate=0.01):
-        
+        if len(T[1])!=1 or len(T[2])!=1:
+            return
         dp4 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", T[3])
         refdep=0;altalleledep=0
         if dp4!=None:#vcf from samtools 
