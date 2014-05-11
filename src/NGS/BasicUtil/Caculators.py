@@ -86,7 +86,7 @@ class Caculate_Hp(Caculator):
                     refdep+=int(AD_depth[0])
                     altalleledep+=int(AD_depth[1])
                 except ValueError:
-                    print(sample,end="")
+                    print(sample,end="|")
                             
             
 
@@ -146,7 +146,7 @@ class Caculate_Fst(Caculator):
                     refdep_1+=int(AD_depth[0])
                     altalleledep_1+=int(AD_depth[1])
                 except ValueError:
-                    print(sample,end="")
+                    print(sample,end="|")
 
             for sample in pop2[2][:]:
                 if len(re.split(":",sample))==1:# ./.
@@ -156,7 +156,7 @@ class Caculate_Fst(Caculator):
                     refdep_2+=int(AD_depth[0])
                     altalleledep_2+=int(AD_depth[1])
                 except ValueError:
-                    print(sample,end="")
+                    print(sample,end="|")
                              
         if refdep_1<=seqerrorrate*(refdep_1+altalleledep_1) or refdep_2<=seqerrorrate*(refdep_2+altalleledep_2):
             return  #NOTICT HERE

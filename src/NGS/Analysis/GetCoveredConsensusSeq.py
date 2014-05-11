@@ -47,6 +47,7 @@ if __name__ == '__main__':
     if options.genomedepth !=None:
         depthfile = Util.GATK_depthfile(options.genomedepth, options.genomedepth + ".index")
         species_idx = depthfile.title.index("Depth_for_" + options.species)
+        Considerdepth=True
     else:
         Considerdepth=False
         depthfile=None
@@ -150,8 +151,12 @@ if __name__ == '__main__':
             
         else:
 #            lastposofdepthfp = depthfile.depthfilefp.tell()
+            if cns_string.find(">")!=-1:
+                ntoseq=cns_string.find("\n",cns_string.find(">"))
+                print(cns_string[0:ntoseq+1],end="",file=outcns)
+                cns_string=cns_string[ntoseq+1:]
             while len(cns_string)>60:
-                print(cns_string[0:60],end="",file=outcns)
+                print(cns_string[0:60],end="\n",file=outcns)
                 cns_string=cns_string[60:]
 #           print(cns_string, end="", file=outcns)
             if nextChromNO == currentChromNO:
