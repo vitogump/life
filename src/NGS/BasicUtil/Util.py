@@ -342,7 +342,7 @@ class genes():
                                     tscptSeqAllCds_mut[genename][vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]] = altalle
                                 except IndexError:
                                     print(genename, vcfpos, t4_indx, altalle, elemStart, feature, len(tscptSeqAllCds_mut[genename]))
-                                    exit()
+                                    exit(-1)
        
             idx_vcf += 1
 #该翻译蛋白了吧 还有 看看长度一样不  将最后一个vcf记录之后的序列加入一致序列字符串

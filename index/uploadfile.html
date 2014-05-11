@@ -1,0 +1,52 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>无标题文档</title>
+<!--<Script Language ="JavaScript">
+function submitClick(actonurl){
+InputForm.action=actonurl;
+InputForm.submit();
+var selActionValue = Select_check("radio1");
+if(selActionValue == 0){
+alert("请你做出购买还是不够买的选择！");
+return false;
+}else{
+
+strMsg ="，并且你决定了：" + selActionValue;
+
+alert(strMsg);
+}
+}
+
+function Select_check(objName){
+var obj=document.getElementsByName(objName);
+var selArray = new Array();
+for(var i=0;i<obj.length;i++){
+if(obj[i].checked){
+selArray[i]=obj[i].value;
+}
+}
+return selArray;
+}
+</script>
+</Script>-->
+</head>
+
+<body>
+<form name="InputForm" method="post" action="/upload" enctype="multipart/form-data">
+  <p>
+    <input type="file" name="data" />
+    文件名不包含中文
+    <br>选择分类<br>
+<input type=radio name=radio1 value="1">mRNA/miRNA表达分析<br>
+<input type=radio name=radio1 value="2">自然选择和人工选择<br>
+<input type=radio name=radio1 value="3">基因印迹和表观遗传<br>
+
+<input type=radio name=radio1 value="4">基因定位(GWAS,Linkage, NGS等)<br>
+
+<input type=radio name=radio1 value="5">GBS相关<br>
+<input type="submit" name="Submit" value="上传" />
+    </p>
+</form>
+</body>
+</html>

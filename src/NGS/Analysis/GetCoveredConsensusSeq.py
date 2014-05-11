@@ -36,7 +36,7 @@ vcffile = open(options.variants, 'r')
 #covfile = open(options.genomedepth, 'r')
 
 
-cns_string = ""
+cns_string = ">"
 aa_string = ""
 cdscns_string = ""
 outcns = open(options.outfileprename + "_cns.fa", 'w')
@@ -83,10 +83,10 @@ if __name__ == '__main__':
         if vcfchrom!=currentChromNO:
             vcflist_A_chrom = vcfpop.getVcfListByChrom(options.variants, currentChromNO)
             vcfchrom=currentChromNO
-        if vcflist_A_chrom:
-            idx_vcf=0
-        else:
-            idx_vcf=-1
+            if vcflist_A_chrom:
+                idx_vcf=0
+            else:
+                idx_vcf=-1
 
         idx_RefSeq = 1
         while idx_RefSeq < len(RefSeqMap[currentChromNO]):
@@ -150,11 +150,15 @@ if __name__ == '__main__':
             
         else:
 #            lastposofdepthfp = depthfile.depthfilefp.tell()
-            print(cns_string, end="", file=outcns)
+            while len(cns_string)>60:
+                print(cns_string[0:60],end="",file=outcns)
+                cns_string=cns_string[60:]
+#           print(cns_string, end="", file=outcns)
             if nextChromNO == currentChromNO:
-                cns_string = ""
+#                cns_string = ""
                 RefSeqMap, currentChromNO, nextChromNO = Util.getRefSeqMap(refFastafilehander=reffa, currentChromNO=nextChromNO, preBaseTotal=RefSeqMap[currentChromNO][0] + len(RefSeqMap[currentChromNO]) - 1)
             else:
+                print(cns_string,end="",file=outcns)
                 cns_string = "\n>" + nextChromNO + "\n"
                 RefSeqMap, currentChromNO, nextChromNO = Util.getRefSeqMap(refFastafilehander=reffa, currentChromNO=nextChromNO, preBaseTotal=0)
         print("\t\tone loop end:", currentChromNO)
