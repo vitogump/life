@@ -685,8 +685,7 @@ class Window():
 class WinInGenome():           
     def __init__(self, dbname, winFileName6Field, tableName=None):
         super().__init__()
-#        self.wintable="PoMuJVOr"
-#        self.windbtools = dbm.DBTools("localhost", "root", "1234567", dbname)
+        self.dbname=dbname
         self.windbtools, self.wintable = self.loadWinDataIntoDB(dbname, winFileName6Field, tableName)
         self.winContainTrscptMap = {}
     def loadWinDataIntoDB(self, dbname, winFileName6Field, tableName=None):
@@ -717,21 +716,61 @@ class WinInGenome():
         print(a)
 #        tempdbtools.load_file(tableName,"chrID","winNo","bp_start","bp_end","value","zvalue",fileName=winFileName6Field)
 
-        return tempdbtools, tableName       
+        return tempdbtools, tableName  
+    def appendGeneName(self,TranscriptGenetable,dbtools,winwidth,slideSize,outfileName):
+        outfile=open(outfileName,'w')
+        allwins = self.windbtools.operateDB("select", "select * from " + self.wintable)
+        self.windbtools.operateDB("callproc", "mysql_sp_add_column", data=(self.dbname, self.wintable, "geneName", "varchar(128)", "default null"))
+        self.windbtools.operateDB("callproc", "mysql_sp_add_column", data=(self.dbname, self.wintable, "trscptID", "varchar(128)", "default null"))  
+        for win in allwins:
+            region=(win[0],int(win[1])*slideSize,int(win[1])*slideSize+winwidth,win[1],float(win[5]))
+            geneNames=""
+            trscptIDs=""
+            for rec in self.collectTrscptInWin(dbtools, TranscriptGenetable, None, region):
+                trscptIDs+=rec[0].strip()+";"
+                if rec[2].strip()!="":
+                    geneNames+=(rec[2].strip()+";")
+            self.windbtools.operateDB("update","update "+self.wintable+" set geneName = '"+geneNames+"', trscptID= '"+trscptIDs+"' where chrID= '"+win[0]+"' and winNo="+win[1])
+        allwins = self.windbtools.operateDB("select", "select * from " + self.wintable)
+        for win in allwins:
+            if win[-2]=="":
+                print(*(win[:-2]+("NA",win[-1])),sep="\t",file=outfile)
+            else:
+                print(*win,sep="\t",file=outfile)
+        outfile.close()
+#        exportdatasql = "select * into outfile '/home/liurui/temp/tempsql.txt' from "+self.wintable.strip()
+#        shellstatment = "mysql -uroot -p1234567 -D" + self.dbname.strip() + ' -e "' + exportdatasql + '"'
+#        print(shellstatment)
+#        a = os.system(shellstatment)
+#        if a != 0:
+#            print("Util : loadWinDataIntaDB func os.system return not 0")
+#            exit(-1)
+#        print(a)
+#        os.system("mv /home/liurui/temp/tempsql.txt "+outfileName)
+#        if a != 0:
+#            print("Util : mv command failed")
+#            exit(-1)
+#        print(a)
     def collectTrscptInWin(self, dbtools, trscptableName, vcftable, region):
+        """select region overlaped with the trscpt
+        reture a list of trscpts [tp_generecord1,tp_generecord2,,,]
+        """
+        trscptlist=[]
         transcripttable = trscptableName
         chrID = region[0]
         Region_start=region[1]
         Region_end=region[2]
         """
-        winRegion=(chrID,winNo,winWidth,slideSize,zvalue)
+        region=(chrom,Region_start,Region_end,Nwin,extremeValue)
+        
         """
 
-        selectsql = "select * from " + transcripttable + " where chrID='" + chrID + "' and end_pos >= " + str(Region_start) + " and start_pos <= " + str(Region_end)
+        selectsql = "select * from " + transcripttable + " where chrID='" + chrID + "' and trscpt_end_pos >= " + str(Region_start) + " and trscpt_start_pos <= " + str(Region_end)
         result = dbtools.operateDB("select", selectsql)
-        self.winContainTrscptMap[region] = []
+        
         for row in result:
-            self.winContainTrscptMap[region].append(row)
+            trscptlist.append(row)
+        return trscptlist
 
 class Node(object):
     def __init__(self, val, p=0):

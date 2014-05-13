@@ -39,23 +39,23 @@ class MakeMhtGraph(object):
                             if linelist[5].strip() != "NA":
                                 self.dataForGraphe[ChromNo].append(tuple(linelist[1:]))
                             else:
-                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:4]+[fillvalue,fillvalue]))
+                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:4]+[fillvalue,fillvalue,linelist[5]]))
 #                             endChromNo=ChromNo
                         else:
 #                             self.dataForGraphe[endChromNo].pop(-1)
-                            self.dataForGraphe[ChromNo] = [tuple(linelist[1:4]+[fillvalue,fillvalue])]
+                            self.dataForGraphe[ChromNo] = [tuple(linelist[1:4]+[fillvalue,fillvalue,linelist[5]])]
 #                             self.dataForGraphe[ChromNo] = [tuple(linelist[1:])]
                     elif postive_negtive == "postive":
                         if ChromNo in self.dataForGraphe.keys():
                             if linelist[5].strip()=='NA' or float(linelist[5].strip()) <= 0:
-                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:4]+[fillvalue,fillvalue]))
+                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:4]+[fillvalue,fillvalue,linelist[5]]))
                             else:
                                 self.dataForGraphe[ChromNo].append(tuple(linelist[1:]))
 #                             endChromNo=ChromNo
                         else:
 #                             self.dataForGraphe[endChromNo].pop(-1)
                             if linelist[5].strip()=='NA' or float(linelist[5].strip()) <= 0:
-                                self.dataForGraphe[ChromNo]=[tuple(linelist[1:4]+[fillvalue,fillvalue])]
+                                self.dataForGraphe[ChromNo]=[tuple(linelist[1:4]+[fillvalue,fillvalue,linelist[5]])]
                             else:
                                 self.dataForGraphe[ChromNo]=[tuple(linelist[1:])]
                                 
@@ -74,14 +74,14 @@ class MakeMhtGraph(object):
                     elif postive_negtive == "negtive":
                         if ChromNo in self.dataForGraphe.keys():
                             if linelist[5].strip()=='NA' or float(linelist[5].strip()) >= 0:
-                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:4]+[fillvalue,fillvalue]))
+                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:4]+[fillvalue,fillvalue,linelist[5]]))
                             else:
                                 self.dataForGraphe[ChromNo].append(tuple(linelist[1:]))
 #                             endChromNo=ChromNo
                         else:
 #                             self.dataForGraphe[endChromNo].pop(-1)
                             if linelist[5].strip()=='NA' or float(linelist[5].strip()) >= 0:
-                                self.dataForGraphe[ChromNo] = [tuple(linelist[1:4]+[fillvalue,fillvalue])]
+                                self.dataForGraphe[ChromNo] = [tuple(linelist[1:4]+[fillvalue,fillvalue,linelist[5]])]
                             else:
                                 self.dataForGraphe[ChromNo] = [tuple(linelist[1:])] 
                         
@@ -98,7 +98,7 @@ class MakeMhtGraph(object):
                          
                     else:
                         return "error"
-        print(chromPrefix, "winNo", "bp_start", "bp_end", dataType, "z" + dataType, sep="\t", file=open(self.pathtoOutFileName, "w"))
+        print(chromPrefix, "winNo", "bp_start", "bp_end", dataType, "z" + dataType,"geneName", sep="\t", file=open(self.pathtoOutFileName, "w"))
 #         print(chromPrefix,"bp_start",dataType)
         outfile = open(self.pathtoOutFileName, 'a')
         for chromNo in sorted(self.dataForGraphe.keys(), key=lambda t:int(re.split(r'\.',t)[0])):

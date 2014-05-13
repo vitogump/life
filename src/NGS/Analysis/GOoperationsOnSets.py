@@ -38,6 +38,7 @@ if __name__ == '__main__':
     """
     for selectedgenefileName in args[:]:
         selectedfile=open(selectedgenefileName,'r')
+        selectedgenefileNamewithoutpath = re.search(r'[^/]*$',selectedgenefileName).group(0)
         trsptMap={}
         for line in selectedfile:
             linelist=re.split(r"\s+",line.strip())
@@ -57,13 +58,13 @@ if __name__ == '__main__':
                             trsptMap[tpID].insert(0,(tableRegion,extremeValue))
                         else:
                             trsptMap[tpID].append((tableRegion,extremeValue))
-        filetrsptmap[re.search(r"^.*\.",selectedgenefileName).group(0)[:-1]]=trsptMap
-        tablegeneSet[re.search(r"^.*\.",selectedgenefileName).group(0)[:-1]]=set(trsptMap.keys())
+        filetrsptmap[re.search(r"^.*\.",selectedgenefileNamewithoutpath).group(0)[:-1]]=trsptMap
+        tablegeneSet[re.search(r"^.*\.",selectedgenefileNamewithoutpath).group(0)[:-1]]=set(trsptMap.keys())
         selectedfile.close()
         
         
-    intersectionSet = tablegeneSet[re.search(r"^.*\.",selectedgenefileName).group(0)[:-1]]
-    unionSet = tablegeneSet[re.search(r"^.*\.",selectedgenefileName).group(0)[:-1]]
+    intersectionSet = tablegeneSet[re.search(r"^.*\.",selectedgenefileNamewithoutpath).group(0)[:-1]]
+    unionSet = tablegeneSet[re.search(r"^.*\.",selectedgenefileNamewithoutpath).group(0)[:-1]]
 
     for selectedgenetable in tablegeneSet:
          intersectionSet=intersectionSet & tablegeneSet[selectedgenetable]
@@ -112,6 +113,9 @@ if __name__ == '__main__':
     print(title,file=intersectionSetOutfile)
             
     for intersectionTrspt in intersectionSet:
+        if intersectionTrspt not in gotable:
+            print(intersectionTrspt,"don't have go annotion")
+            continue
         print(intersectionTrspt,end="\t",file=intersectionSetOutfile)
         for selectedgenetablefile in sorted(filetrsptmap.keys()):
             print(filetrsptmap[selectedgenetablefile][intersectionTrspt][0][0],filetrsptmap[selectedgenetablefile][intersectionTrspt][0][1],sep="\t",end="\t",file=intersectionSetOutfile)
@@ -119,6 +123,9 @@ if __name__ == '__main__':
     if len(args)>1:
         print(title,file=unionSetOutfile)
         for unionTrspt in unionSet:
+            if unionTrspt not in gotable:
+                print(unionTrspt,"don't have go annotion")
+                continue
             print(unionTrspt,end="\t",file=unionSetOutfile)
             for selectedgenetablefile in sorted(filetrsptmap.keys()):
                 if unionTrspt in filetrsptmap[selectedgenetablefile]:

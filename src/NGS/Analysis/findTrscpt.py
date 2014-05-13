@@ -32,23 +32,26 @@ parser.add_option("-q", "--quiet",
 upextend=int(options.upextend);slideSize=int(options.slideSize);winWidth=int(options.winWidth)
 downextend=int(options.downextend)
 winFileName6Field = options.winfileName
+path=re.search(r'^.*/',options.winfileName).group(0)
 tempwinDBName = options.tempdbname
 threshold = options.threshold
 percentage = options.percentage
-outfilename=options.outfileprename
+outfilename=path+options.outfileprename
 morethan_lessthan=options.morethan_lessthan
-trscptable=options.trscptable
+TranscriptGenetable=options.trscptable
 if percentage!=None and threshold!=None:
     print("-t conflict with -p")
     exit(-1)
 #gene_sample_venn="gene_sample_venn"
 vcftable=None
 outfile=open(outfilename,'w')
+outfileNameWINwithGENE=winFileName6Field+".wincopywithgene"
 if __name__ == '__main__':
     dbtools = dbm.DBTools("localhost", "root", "1234567", "life_pilot")
 #    dbtools.operateDB("alter","alter table "+gene_sample_venn+" add "+outfilename+" smallint(3) default 0") 
     winGenome = Util.WinInGenome(tempwinDBName, winFileName6Field)
     time.sleep(SLEEP_FOR_NEXT_TRY)
+    
     selectWinNos="threshold method"
     if percentage!=None:
         totalWin = winGenome.windbtools.operateDB("select", "select count(*) from " + winGenome.wintable)[0][0]
@@ -78,6 +81,8 @@ if __name__ == '__main__':
     #mergedRegion [(chrom1, '9', '181586', '219606', '0.3816832053195056', '-0.00013080719016'),(),(),()] continues
     selectedRegion={}
     #fill selectedRegion map
+    #selectedRegion {chrom:[chrom,Region_start,Region_end,Nwin,extremeValue],chrom:[],,,,}
+    #merge continues win into a region
     for chrom in selectedWinMap:
         selectedWinMap[chrom].sort(key=lambda listRec: int(listRec[1]))
         selectedRegion[chrom]=[]
@@ -113,18 +118,19 @@ if __name__ == '__main__':
                 extremeValue=min(extremeValues)            
             selectedRegion[chrom].append((chrom,Region_start,Region_end,Nwin,extremeValue))
 #    get final table
+    final_table={}
     for chrom in selectedRegion:
         for region in selectedRegion[chrom]:
-            final_table = winGenome.collectTrscptInWin(dbtools,trscptable,vcftable,region)
+            final_table[region]=winGenome.collectTrscptInWin(dbtools,TranscriptGenetable,vcftable,region)
 #    for win in selectedWins:
 #        winRegion=(win,upextend,downextend)
-#        winGenome.collectTrscptInWin(dbtools, trscptable, vcftable, winRegion)
-    for region in sorted(winGenome.winContainTrscptMap.keys()):
+#        winGenome.collectTrscptInWin(dbtools, TranscriptGenetable, vcftable, winRegion)
+    for region in sorted(final_table.keys()):
         tcpts=""
-        for tcpt in winGenome.winContainTrscptMap[region]:
+        for tcpt in final_table[region]:
             tcpts+=(tcpt[0]+"\t")
         print("\t".join(map(str,region)),tcpts,sep="\t",file=outfile)
-        
+    winGenome.appendGeneName(TranscriptGenetable, dbtools, winWidth, slideSize, outfileNameWINwithGENE)   
     winGenome.windbtools.drop_table(winGenome.wintable)        
 #        for gene in winGenome.winContainTrscptMap[win]:
 #            print(gene)
