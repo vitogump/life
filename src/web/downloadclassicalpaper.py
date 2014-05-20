@@ -1,12 +1,16 @@
+# -*- coding:utf8 -*-
 '''
 Created on 2014-5-1
 
 @author: liurui
 '''
 from bottle import route, run, template, get, post, request, static_file
+from urllib.parse import quote, unquote
 import os
-import src.web.dba as dba
+import re
 import shutil
+import src.web.dba as dba
+import string
 UPLOAD_BASE = "../../classical_paper"
 @get('/login')
 def login_formc():
@@ -20,11 +24,47 @@ def login_formc():
 #@route('/static/<filename>')
 #def server_static(filename):
 #    return static_file(filename, root='statichtml')
-@route('/classicalpaper')
-def 
-@route('/download/<filename>')
-def server_static(filename):
-    return static_file(filename,root='../../index')
+#@route('/classicalpaper')
+#def 
+@route('/download/:urlpath#.+#')
+def server_static(urlpath):
+    print("sever_static")
+    herfs=""""""
+    catajudge=re.search(r'[^/]*$',urlpath).group(0)
+    if urlpath.endswith("GBS"):
+        path='../../classical_paper/GBS/'
+    elif urlpath.endswith("mRNA_microRNA"):
+        path='../../classical_paper/mRNA_microRNA/'
+    elif urlpath.endswith("imprinting_Epigenetic"):
+        path='../../classical_paper/基因印迹和表观遗传/'
+    elif urlpath.endswith("selection"):
+        path='../../classical_paper/人工选择和自然选择/'
+    elif urlpath.endswith("GeneMapping"):
+        path='../../classical_paper/基因定位/'
+    elif urlpath.endswith(".html"):
+        print("sssss")
+        return static_file(urlpath,root='../../index')
+    else:
+        print(unquote(urlpath))
+        path = "../../"+re.search(r'catalog/(.*)',unquote(urlpath)).group(1)+"/"
+        print(path)
+#    else:#download file
+#        path="../../"+re.search(r'^.*/',unquote(urlpath)).group(0)
+#        print(urlpath,re.search(r'^.*/',urlpath).group(0),re.search(r'[^/]*$',urlpath).group(0))
+#        return static_file(re.search(r'[^/]*$',urlpath).group(0), root='../../classical_paper/'+re.search(r'^.*/',urlpath).group(0),download=re.search(r'[^/]*$',urlpath).group(0))
+    l=os.listdir(path=path)
+    print(l,path)
+    for a in l:
+        if os.path.isdir(path+a):
+            url=quote('/download/catalog/'+re.search(r'\.\./\.\./(.*)',path+a).group(1))
+            herfs+="""<a href="""+url+""" target="_self">"""+a+"""</a></p>
+            """
+        elif os.path.isfile(path+a):
+            url=quote('/downloadfile/'+re.search(r'\.\./\.\./(.*)',path+a).group(1))
+            herfs+="""<a href="""+url+""" target="_self">"""+a+"""</a></p>
+            """
+    return herfs      
+#    return static_file(filename,root='../../index')
             
 @post('/login')
 def login_submit():
@@ -38,9 +78,14 @@ def login_submit():
 def greet(name='Stranger'):
     return 'Hello {},how are you?'.format(name)
 
-@route('/classical_paper/:filename')
-def send_static(filename):
-    return static_file(filename, root='../../classical_paper',download=filename)
+@route('/downloadfile/:urlpath#.+#')
+def send_static(urlpath):
+    print("send_static")
+    filename=re.search(r'[^/]*$',unquote(urlpath)).group(0)
+    path="../../"+re.search(r'^.*/',unquote(urlpath)).group(0)
+    print(path,filename,unquote(urlpath))
+#    print(urlpath,re.search(r'^.*/',urlpath).group(0),re.search(r'[^/]*$',urlpath).group(0))
+    return static_file(filename, root=path,download=filename)
 #upload module
 
 @post('/upload')
