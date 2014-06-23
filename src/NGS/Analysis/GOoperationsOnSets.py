@@ -30,11 +30,11 @@ if __name__ == '__main__':
     print(args[:])
     tablegeneSet={}
     """
-    tablegeneSet={selectedgenefileName:{tpID1:[(selectedRegion,extremeValue)]},selectedgenefileName:{tpID2:[(selectedRegion,extremeValue)]},,,,,,}
+    tablegeneSet={selectedgenefileName:{tpID1,tpID2,,,,,,}}
     """
     filetrsptmap={}
     """
-    filetrsptmap={selectedgenefileName:{tpID1,tpID2,,,,,,}}
+    filetrsptmap={selectedgenefileName:{tpID1:[(selectedRegion,extremeValue)]},selectedgenefileName:{tpID2:[(selectedRegion,extremeValue)]},,,,,,}
     """
     for selectedgenefileName in args[:]:
         selectedfile=open(selectedgenefileName,'r')
@@ -81,9 +81,9 @@ if __name__ == '__main__':
     genenameidx=titlelist.index("associated gene name")
     gotable={}
     """
-    {tp_id1:(geneName,bp,cc,mf),tp_id2:(geneName,bp,cc,mf),,,,,,}
+    {tp_id1:(geneID,geneName,bp,cc,mf),tp_id2:(geneID,geneName,bp,cc,mf),,,,,,}
     """
-    bp="";cc="";mf="";geneName=""
+    bp="";cc="";mf="";geneName="";geneID=""
     for termline in  gotablefile:
         termlist=re.split(r",",termline)
         if termlist[tpididx].strip() in gotable:
@@ -95,8 +95,9 @@ if __name__ == '__main__':
                 mf+=termlist[gotermaccessionidx]+";"+termlist[gotermNameidx]+";"
            
         else:#new gene start
-            gotable[termlist[tpididx].strip()]=(geneName,bp,cc,mf)#both ok to first time or second time
+            gotable[termlist[tpididx].strip()]=(geneID,geneName,bp,cc,mf)#both ok to first time or second time
             geneName=termlist[genenameidx]
+            geneID=termlist[geneididx]
             bp="";cc="";mf=""
             if termlist[godomainidx].lower().strip()=="biological_process":
                 bp+=termlist[gotermaccessionidx]+";"+termlist[gotermNameidx]+";"
@@ -109,7 +110,7 @@ if __name__ == '__main__':
     title="ensembl transcript id\t"
     for selectedgenetablefile in sorted(filetrsptmap.keys()):
         title+=selectedgenetablefile+"Region\textremeValue\t"
-    title+="geneName\tbiological_process domain\tcellular_component domain\tmolecular_function domain"
+    title+="geneID\tgeneName\tbiological_process domain\tcellular_component domain\tmolecular_function domain"
     print(title,file=intersectionSetOutfile)
             
     for intersectionTrspt in intersectionSet:
@@ -119,7 +120,7 @@ if __name__ == '__main__':
         print(intersectionTrspt,end="\t",file=intersectionSetOutfile)
         for selectedgenetablefile in sorted(filetrsptmap.keys()):
             print(filetrsptmap[selectedgenetablefile][intersectionTrspt][0][0],filetrsptmap[selectedgenetablefile][intersectionTrspt][0][1],sep="\t",end="\t",file=intersectionSetOutfile)
-        print(gotable[intersectionTrspt][0],gotable[intersectionTrspt][1],gotable[intersectionTrspt][2],gotable[intersectionTrspt][3],sep="\t",file=intersectionSetOutfile)
+        print(gotable[intersectionTrspt][0],gotable[intersectionTrspt][1],gotable[intersectionTrspt][2],gotable[intersectionTrspt][3],gotable[intersectionTrspt][4],sep="\t",file=intersectionSetOutfile)
     if len(args)>1:
         print(title,file=unionSetOutfile)
         for unionTrspt in unionSet:
@@ -132,6 +133,6 @@ if __name__ == '__main__':
                     print(filetrsptmap[selectedgenetablefile][unionTrspt][0][0],filetrsptmap[selectedgenetablefile][unionTrspt][0][1],sep="\t",end="\t",file=unionSetOutfile)
                 else:
                     print("NA\tNA\t",end="",file=unionSetOutfile)
-            print(gotable[unionTrspt][0],gotable[unionTrspt][1],gotable[unionTrspt][2],gotable[unionTrspt][3],sep="\t",file=unionSetOutfile)    
+            print(gotable[unionTrspt][0],gotable[unionTrspt][1],gotable[unionTrspt][2],gotable[unionTrspt][3],gotable[unionTrspt][4],sep="\t",file=unionSetOutfile)    
         unionSetOutfile.close()
     intersectionSetOutfile.close()

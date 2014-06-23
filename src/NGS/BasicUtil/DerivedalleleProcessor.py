@@ -8,7 +8,7 @@ import NGS.BasicUtil.DBManager as dbm
 import os
 import re
 class MakeDerivedAlleletable():
-    def __init__(self, database="life_pilot", ip="localhost", usrname="root", pw="1234567"):
+    def __init__(self, database="life_pilot", ip="10.2.48.96", usrname="root", pw="1234567"):
         super().__init__()
         self.dbtools = dbm.DBTools(ip, usrname, pw, database)
 
@@ -136,7 +136,7 @@ class MakeDerivedAlleletable():
 
         testfile=open("testsnpfile.txt",'a')
         snps = self.dbtools.operateDB("select", "select * from " + tablename + " where chrID='" + chrom + "' and snp_pos>= " + str(snpstartpos) + " and snp_pos<=" + str(snpendpos))
-        RefSeqMap = Util.getRefSeqBypos(idxedreffilehandler, refindex, chrom,chromlen, snpstartpos-flanklen, snpendpos+flanklen)
+        RefSeqMap = Util.getRefSeqBypos(idxedreffilehandler, refindex, chrom, snpstartpos-flanklen, snpendpos+flanklen,chromlen)
         
         for snp in snps:
             currentsnpPos = snp[1]
@@ -165,7 +165,7 @@ class MakeDerivedAlleletable():
 #            if currentsnpPos + 25 <= RefSeqMap[lastchromNo][0] + len(RefSeqMap[lastchromNo]) - 1 and currentsnpPos - 25 > RefSeqMap[lastchromNo][0] :
 #            snpflankseq = ''.join(RefSeqMap[chrom][(currentsnpPos - 25 - RefSeqMap[chrom][0]):(currentsnpPos + 25 - RefSeqMap[chrom][0] + 1)])
 #            print(currentsnpID, snpflankseq[25], file=testfile)
-            snpflankseq = snpflankseq[0:25] + 'N' + snpflankseq[26:]
+#             snpflankseq = snpflankseq[0:25] + 'N' + snpflankseq[26:]
             print(">" + currentsnpID + "\n" + snpflankseq, end='\n', file=outfile)
         testfile.close()
         #                    print("update "+finaltable+" set fafilepos="+str(filepos)+" where snpID='"+currentsnpID+"'")
@@ -179,6 +179,7 @@ class MakeDerivedAlleletable():
         print(shellstatment,a)
     def extarctAncestryAlleleFromBlastOut(self,BlastOutFile,ancestryrefFile,ancestryrefidx,tablename="derived_alle_ref",ancestralsnptable=None):
         ancestryreffile=open(ancestryrefFile,'r')
+        ancestrysnpflank=open(tablename+"ancestrysnpflank.fa",'w')
         a = os.popen("awk '$1!~/^#/ && $5==1 && $4>26 && $6==0 {print $0}' " + BlastOutFile)
     #    hits=a.readlines()
     
@@ -193,7 +194,7 @@ class MakeDerivedAlleletable():
         sstartpos = int(hitlist[8])
         qstartpos = int(hitlist[6])
         blastlen=int(hitlist[3])
-        snp_loc_s=sstartpos-26+qstartpos
+        snp_loc_s=sstartpos+26-qstartpos
         snpindex = 26 - qstartpos
         if sstartpos > sendpos:
             temp = sstartpos
@@ -219,7 +220,7 @@ class MakeDerivedAlleletable():
             sendpos = int(hitlist[9])
             qstartpos = int(hitlist[6])
             blastlen=int(hitlist[3])
-            snp_loc_s=sstartpos-26+qstartpos
+            snp_loc_s=sstartpos+26-qstartpos
             snpindex = 26 - qstartpos
             if sstartpos > sendpos:
                 temp = sstartpos
@@ -233,7 +234,7 @@ class MakeDerivedAlleletable():
                     tempStr.reverse()
                     RefSeqMap[chrom][1:]=Util.complementary(tempStr)
                     revcom=False            
-                print(lastsnpID,RefSeqMap[chrom][snpindex + 1],str(snp_loc_s),"".join(RefSeqMap[chrom][1:]),file=open(tablename+"ancestrysnpflank.fa",'a'))
+                print(lastsnpID,RefSeqMap[chrom][snpindex + 1],str(snp_loc_s),"".join(RefSeqMap[chrom][1:]),file=ancestrysnpflank)
                 if RefSeqMap[chrom][snpindex + 1] in lastbasesAccur:
                     lastbasesAccur[RefSeqMap[chrom][snpindex + 1]].append((chrom, sstartpos, sendpos))
                 else:
@@ -241,15 +242,22 @@ class MakeDerivedAlleletable():
                 onegroup.append((RefSeqMap[chrom][snpindex + 1],blastlen))
             else:
 #                出入数据库 按照不同的主键 即原来是snpid 现在换成别的
-                snppos=re.search(chrom+r"_(\d+)",lastsnpID).group(1)
-                onegroup.sort(key=lambda listRec:listRec[1])
-                if len(onegroup)==1 or onegroup[0][1]-onegroup[0][2]>=15:#first , only one query id,second longest hit 15 bases greater than the second longest hit
-                    if ancestralsnptable!=None and self.dbtools.operateDB("select","select count(*) from "+ancestralsnptable+" where chrID= '"+chrom+"' and snp_start_pos= "+str(snppos))[0][0]==0:
-                        self.dbtools.operateDB("update", "update " + tablename + " set ancestralallel='" + onegroup[0][0] + "' where chrID='" + chrom + "'and snp_pos="+snppos)
-                elif len(lastbasesAccur.keys()) == 1:
+
+                snppos=re.search(r"_(\d+)",lastsnpID).group(1)
+                snpChrom=re.search(r"(.+)_(\d+)",lastsnpID).group(1)
+                onegroup.sort(key=lambda listRec:listRec[1])                           
+                if len(onegroup)==1 or onegroup[0][1]-onegroup[1][1]>=15:#first , only one query id,second longest hit 15 bases greater than the second longest hit
+                    if ancestralsnptable!=None and self.dbtools.operateDB("select","select count(*) from "+ancestralsnptable+" where chrID= '"+chrom+"' and snp_start_pos= "+str(snp_loc_s))[0][0]==0:
+                        print("update " + tablename + " set ancestralallel='" + onegroup[0][0] + "' where chrID='" + snpChrom + "'and snp_pos="+snppos)
+                        self.dbtools.operateDB("update", "update " + tablename + " set ancestralallel='" + onegroup[0][0] + "' where chrID='" + snpChrom + "'and snp_pos="+snppos)
+                    else:
+                        print("select count(*) from "+ancestralsnptable+" where chrID= '"+chrom+"' and snp_start_pos= "+str(snppos),self.dbtools.operateDB("select","select count(*) from "+ancestralsnptable+" where chrID= '"+chrom+"' and snp_start_pos= "+str(snppos)))
+                elif len(lastbasesAccur.keys()) == 1 and self.dbtools.operateDB("select","select count(*) from "+ancestralsnptable+" where chrID= '"+chrom+"' and snp_start_pos= "+str(snp_loc_s))[0][0]==0:
                     for bases in lastbasesAccur:#only once
-                        self.dbtools.operateDB("update", "update " + tablename + " set ancestralallel='" + bases + "' where chrID='" + chrom + "' and snp_pos="+snppos)
+                        print("update " + tablename + " set ancestralallel='" + bases + "' where chrID='" + snpChrom + "' and snp_pos="+snppos)
+                        self.dbtools.operateDB("update", "update " + tablename + " set ancestralallel='" + bases + "' where chrID='" + snpChrom + "' and snp_pos="+snppos)
                 elif len(lastbasesAccur.keys()) == 0:
+                    print(" len(lastbasesAccur.keys()) == 0")
                     exit(-1)
                 RefSeqMap = Util.getRefSeqBypos(refFastahander=ancestryreffile, refindex=ancestryrefidx, currentChromNO=chrom, startpos=sstartpos, endpos=sendpos)
                 if revcom:
@@ -257,14 +265,14 @@ class MakeDerivedAlleletable():
                     tempStr.reverse()
                     RefSeqMap[chrom][1:]=Util.complementary(tempStr)
                     revcom=False            
-                print(hitlist[0],RefSeqMap[chrom][snpindex + 1],str(snp_loc_s),"".join(RefSeqMap[chrom][1:]),file=open(tablename+"ancestrysnpflank.fa",'a'))
+                print(hitlist[0],RefSeqMap[chrom][snpindex + 1],str(snp_loc_s),"".join(RefSeqMap[chrom][1:]),file=ancestrysnpflank)
     #            dbtools.operateDB("update", "update " + finaltable + " set chicken='" + RefSeqMap[chrom][snpindex + 1] + "' where snpID='" + hitlist[0] + "'")
                 lastsnpID = hitlist[0]
                 
                 lastbasesAccur.clear()
                 lastbasesAccur[RefSeqMap[chrom][snpindex + 1]] = [(chrom, sstartpos, sendpos)]
-
-                ancestryreffile.close()
+        print("finish")
+        ancestryreffile.close()
     def fillarchicpop(self,archicpopVcfFile,depthFile,chromtable,archicpopNameindepthFile,tablename="derived_alle_ref",archicpopfieldNameintable="archicpop"):
         depthfile = Util.GATK_depthfile(depthFile, depthFile + ".index")
         species_idx = depthfile.title.index("Depth_for_" + archicpopNameindepthFile)
@@ -302,9 +310,10 @@ class MakeDerivedAlleletable():
                                     if int(depth_linelist[species_idx]) <= 1:
                                         popsdata="no covered"
                                     else:
-                                        popsdata=(depth_linelist[species_idx] + ",0")
+                                        popsdata=ALT+":"+depth_linelist[species_idx] + ",0"
                                 else:
-                                    popsdata=str(refdep)+","+str(altalleledep)
+                                    popsdata=ALT+":"+str(refdep)+","+str(altalleledep)
+                            print("update " + tablename + " set "+archicpopfieldNameintable+" = '" + popsdata+"' where chrID="+"'"+currentchrID+"' and snp_pos="+str(pos))
                             self.dbtools.operateDB("update", "update " + tablename + " set "+archicpopfieldNameintable+" = '" + popsdata+"' where chrID="+"'"+currentchrID+"' and snp_pos="+str(pos))
                         
         

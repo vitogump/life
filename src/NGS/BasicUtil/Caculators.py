@@ -1,4 +1,4 @@
-import re
+import re,copy
 '''
 Created on 2013-7-2
 
@@ -10,10 +10,11 @@ class Caculator():
     def getResult(self):
         pass
 class Caculate_SNPsPerBIN(Caculator):
-    def __init__(self):
+    def __init__(self,considerINDEL=False):
+        self.considerINDEL=considerINDEL
         self.COUNTED=0
     def process(self, T,seqerrorrate=0.01):
-        if len(T[1])!=1 or len(T[2])!=1:
+        if not self.considerINDEL and (len(T[1])!=1 or len(T[2])!=1):
             return
         dp4 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", T[3])
         refdep=0;altalleledep=0
@@ -21,6 +22,8 @@ class Caculate_SNPsPerBIN(Caculator):
             refdep = int(dp4.group(1)) + int(dp4.group(2))
             altalleledep = int(dp4.group(3)) + int(dp4.group(4))    
         else:
+#             if len(T[1])!=1 or len(T[2])!=1:
+#                 return
             AD_idx=(re.split(":",T[4])).index("AD")#gatk GT:AD:DP:GQ:PL
             for sample in T[5]:
                 if len(re.split(":",sample))==1:# ./.
@@ -114,6 +117,32 @@ class Caculate_Hp(Caculator):
         self.CNMI = 0
         self.COUNTED=0
         return HETEROZY
+class Caculate_depth_judge(Caculator):
+    def __init__(self,sampleNo,winsize,mindepth):
+        self.mindepth=int(mindepth)
+        self.sampleNo=sampleNo
+        self.winsize=winsize
+        self.COVERED_COUNT=[0]*sampleNo
+        self.AVERAGE_DEPTH=[0]*sampleNo
+    def process(self,T,seqerrorrate=0.01):
+        """
+        T=(pos,sample1dp,sample2dp,,,,,,)
+        """
+#         print(T,"\n",self.AVERAGE_DEPTH)
+        for sampleNo in range(1,len(T)):
+            self.AVERAGE_DEPTH[sampleNo-1]+=int(T[sampleNo])
+            if int(T[sampleNo])>=self.mindepth:
+                self.COVERED_COUNT[sampleNo-1]+=1
+            
+    def getResult(self):
+        """pecentage of cover,average depth
+        """
+        countlist=copy.deepcopy(self.COVERED_COUNT);average =  copy.deepcopy(self.AVERAGE_DEPTH)
+        del self.AVERAGE_DEPTH[:]
+        del self.COVERED_COUNT[:]
+        self.COVERED_COUNT=[0]*self.sampleNo
+        self.AVERAGE_DEPTH=[0]*self.sampleNo
+        return ([a/self.winsize for a in countlist],[a/self.winsize for a in average])
 class Caculate_Fst(Caculator):
     def __init__(self):
         super().__init__()

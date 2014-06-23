@@ -16,6 +16,7 @@ parser.add_option("-s", "--postive_negtive_a", dest="postive_negtive_a",# action
 # (options, args) = parser.parse_args()
 parser.add_option("-T","--dataType",dest="dataType",help="default infile1_infile2")#
 parser.add_option("-c","--column",dest="column",default=6,help="default infile2_infile1")#
+parser.add_option("-f","--fillvalue",dest="fillvalue",default=0,help="default infile2_infile1")#
 parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", default=True,
                   help="don't print status messages to stdout")
@@ -30,11 +31,13 @@ if options.postive_negtive_a!= "a":
     print(postive_negtive)
 else:
     postive_negtive=None
+if options.fillvalue=="0":
+    options.fillvalue=0
 chromPrefix=options.chromPrefix
 if __name__ == '__main__':
     for inputfileName in args[:]:
         makeMhtGraph = Make_Picture.MakeMhtGraph()
         if options.postive_negtive_a!= "a":
-            makeMhtGraph.makeMhtPicture_HistonPicture(inputfileName,dataType,chromPrefix,postive_negtive,fillvalue="NA")
+            makeMhtGraph.makeMhtPicture_HistonPicture(inputfileName,dataType,chromPrefix,postive_negtive,fillvalue=options.fillvalue)
         else:
-            makeMhtGraph.makeMhtPicture_HistonPicture(inputfileName,dataType,chromPrefix,postive_negtive=None,fillvalue="NA")
+            makeMhtGraph.makeMhtPicture_HistonPicture(inputfileName,dataType,chromPrefix,postive_negtive=None,fillvalue=options.fillvalue)

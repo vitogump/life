@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 import copy
 import random
 import string
@@ -113,7 +114,7 @@ def getGtfMap(gtfFileName):
     gtfFileHandler.close()
     return protein_codingMap
 
-def getRefSeqBypos(refFastahander, refindex, currentChromNO,currentChromNOlen, startpos, endpos, seektuple=()):
+def getRefSeqBypos(refFastahander, refindex, currentChromNO, startpos, endpos,currentChromNOlen=None,seektuple=()):
     '''
     pos start at 1
     seektuple=(filepos,basesbeforefilepos)
@@ -122,8 +123,8 @@ def getRefSeqBypos(refFastahander, refindex, currentChromNO,currentChromNOlen, s
     refSeqMap = {}
     if startpos <= 0:
         startpos = 1
-    print(currentChromNO, startpos, endpos)
-    if endpos>currentChromNOlen:
+    print("getRefSeqBypos",currentChromNO, startpos, endpos)
+    if currentChromNOlen!=None and endpos>currentChromNOlen:
         endpos=currentChromNOlen
 
     filehander = refFastahander
@@ -421,7 +422,7 @@ class GATK_depthfile():
         currentChrom = None
         lastPosition = 0
         line = depthfile.readline()
-        linelist = re.split(r"\s+", line)
+        linelist = re.split(r"\s+", line.strip())
 #        self.title = linelist
         print("title", line, linelist)
         covfileidx["title"] = linelist
@@ -626,10 +627,15 @@ class Window():
                 
     def slidWindowOverlap(self, L, L_End_Pos, windowWidth, slideSize, Caculator):
         """
-        L = [(pos, REF, ALT, INFO,FORMAT,sampleslist),(),(),...........] for any score need one vcf,eg.  het
+        L = [(pos, REF, ALT, INFO,FORMAT,sampleslist),(pos, REF, ALT, INFO,FORMAT,sampleslist),(),...........] for any score need one vcf,eg.  het
         or 
-        L = [(pos,REF,ALT,(INFO,FORMAT,sampleslist),(INFO,FORMAT,sampleslist)),(),(),...........] for any score need two vcf's compare,eg. fst
+        L = [(pos,REF,ALT,(INFO,FORMAT,sampleslist),(INFO,FORMAT,sampleslist)),(pos,REF,ALT,(INFO,FORMAT,sampleslist),(INFO,FORMAT,sampleslist)),(),...........] for any score need two vcf's compare,eg. fst
+        like the two situation upside,return a value
+        or
+        L = [(pos,samples1dp,samples2dp,samples3dp,,,),(pos,samples1dp,samples2dp,samples3dp,,,),(),(),......]#in this situation ,value formation like this ([sample1_pecentage,sample2_pecentage,,,],[sample1_average_depth,sample2_average_depth,,,])
+        
         """
+#         del self.winValueL[:]
         self.winValueL = []  # notice here
         nextIdx = -1
         currentIdx = 0
@@ -664,6 +670,8 @@ class Window():
                             if L[currentIdx][0] > winStart and L[currentIdx][0] <= (winStart + windowWidth):
                                 break
                             currentIdx += 1
+#                             self.winValueL.append((0,0,'NA'))
+#                             winStart += slideSize
                     continue  # go to |if L[currentIdx][0] > winStart and L[currentIdx][0] < (winStart + windowWidth):| in upside block
                 else:
                     currentIdx = nextIdx
@@ -686,15 +694,16 @@ class WinInGenome():
     def __init__(self, dbname, winFileName6Field, tableName=None):
         super().__init__()
         self.dbname=dbname
-        self.windbtools, self.wintable = self.loadWinDataIntoDB(dbname, winFileName6Field, tableName)
+        self.windbtools, self.wintablewithoutNA,self.wintabletextvalueallwin = self.loadWinDataIntoDB(dbname, winFileName6Field, tableName)
         self.winContainTrscptMap = {}
-    def loadWinDataIntoDB(self, dbname, winFileName6Field, tableName=None):
-        if tableName == None:
-            tableName = random_str()
-        tempdbtools = dbm.DBTools("localhost", "root", "1234567", dbname)
+    def loadWinDataIntoDB(self, dbname, winFileName6Field, tableNamewithNA=None):
+        if tableNamewithNA == None:
+            tableNamewithNA = random_str()
+        tableNametextValueForappendGeneName=tableNamewithNA+"textField"
+        tempdbtools = dbm.DBTools("10.2.48.96", "root", "1234567", dbname)
         TABLES = {}
-        TABLES[tableName] = (
-            "CREATE TABLE " + tableName + " ("
+        TABLES[tableNamewithNA] = (
+            "CREATE TABLE " + tableNamewithNA + " ("
             " `chrID` varchar(128) NOT NULL ,"
             " `winNo` varchar(128) NOT NULL,"
             " `bp_start` varchar(128) NOT NULL,"
@@ -704,35 +713,67 @@ class WinInGenome():
             " PRIMARY KEY (`chrID`,`winNo`)"
             ")"
             )
+        TABLES[tableNametextValueForappendGeneName] = (
+            "CREATE TABLE " + tableNametextValueForappendGeneName + " ("
+            " `chrID` varchar(128) NOT NULL ,"
+            " `winNo` varchar(128) NOT NULL,"
+            " `bp_start` varchar(128) NOT NULL,"
+            " `bp_end` varchar(128) NOT NULL,"
+            " `winvalue` text NOT NULL,"
+            " `zvalue` text NOT NULL,"
+            " PRIMARY KEY (`chrID`,`winNo`)"
+            ")"
+            )        
         
         tempdbtools.create_table(TABLES)
-        loaddatasql = "load data local infile '" + winFileName6Field + "' into table " + tableName + " fields terminated by '\\t'"
+        
+        a=os.system("awk '$0!~/NA/ && NR!=1{print $0}' "+winFileName6Field+">"+winFileName6Field+"_tmpfile")
+        if a != 0:
+            print("awk '$0!~/NA/ && NR!=1{print $0}' "+winFileName6Field+">"+winFileName6Field+"_tmpfile"+": failed")
+            exit(-1)
+        print("awk '$0!~/NA/ && NR!=1{print $0}' "+winFileName6Field+">"+winFileName6Field+"_tmpfile"+": ok")
+        loaddatasql = "load data local infile '" + winFileName6Field + "_tmpfile' into table " + tableNamewithNA + " fields terminated by '\\t'"
+        
         shellstatment = "mysql -uroot -p1234567 -D" + dbname.strip() + ' -e "' + loaddatasql + '"'
-        print(shellstatment)
+        
         a = os.system(shellstatment)
         if a != 0:
-            print("Util : loadWinDataIntaDB func os.system return not 0")
+            print("Util : loadWinDataIntoDB func os.system return not 0")
             exit(-1)
-        print(a)
+        print(shellstatment+":ok")
+        os.system("rm "+winFileName6Field+"_tmpfile")
+        
+        loaddatasql = "load data local infile '" + winFileName6Field + "' into table " + tableNametextValueForappendGeneName + " fields terminated by '\\t'"
+        
+        shellstatment = "mysql -uroot -p1234567 -D" + dbname.strip() + ' -e "' + loaddatasql + '"'
+        
+        a = os.system(shellstatment)
+        if a != 0:
+            print(shellstatment+":failed")
+            exit(-1)
+        print(shellstatment+":ok")        
 #        tempdbtools.load_file(tableName,"chrID","winNo","bp_start","bp_end","value","zvalue",fileName=winFileName6Field)
 
-        return tempdbtools, tableName  
+        return tempdbtools, tableNamewithNA,tableNametextValueForappendGeneName 
     def appendGeneName(self,TranscriptGenetable,dbtools,winwidth,slideSize,outfileName):
         outfile=open(outfileName,'w')
-        allwins = self.windbtools.operateDB("select", "select * from " + self.wintable)
-        self.windbtools.operateDB("callproc", "mysql_sp_add_column", data=(self.dbname, self.wintable, "geneName", "varchar(128)", "default null"))
-        self.windbtools.operateDB("callproc", "mysql_sp_add_column", data=(self.dbname, self.wintable, "trscptID", "varchar(128)", "default null"))  
+        allwins = self.windbtools.operateDB("select", "select * from " + self.wintabletextvalueallwin)
+        self.windbtools.operateDB("callproc", "mysql_sp_add_column", data=(self.dbname, self.wintabletextvalueallwin, "geneName", "varchar(128)", "default null"))
+        self.windbtools.operateDB("callproc", "mysql_sp_add_column", data=(self.dbname, self.wintabletextvalueallwin, "trscptID", "varchar(128)", "default null"))  
         for win in allwins:
-            region=(win[0],int(win[1])*slideSize,int(win[1])*slideSize+winwidth,win[1],float(win[5]))
+            region=(win[0],int(win[1])*slideSize,int(win[1])*slideSize+winwidth,win[1],win[5])
             geneNames=""
             trscptIDs=""
             for rec in self.collectTrscptInWin(dbtools, TranscriptGenetable, None, region):
                 trscptIDs+=rec[0].strip()+";"
                 if rec[2].strip()!="":
                     geneNames+=(rec[2].strip()+";")
-            self.windbtools.operateDB("update","update "+self.wintable+" set geneName = '"+geneNames+"', trscptID= '"+trscptIDs+"' where chrID= '"+win[0]+"' and winNo="+win[1])
-        allwins = self.windbtools.operateDB("select", "select * from " + self.wintable)
+            self.windbtools.operateDB("update","update "+self.wintabletextvalueallwin+" set geneName = '"+geneNames+"', trscptID= '"+trscptIDs+"' where chrID= '"+win[0]+"' and winNo="+win[1])
+        allwins = self.windbtools.operateDB("select", "select * from " + self.wintabletextvalueallwin)
         for win in allwins:
+            if str(win[0])=="chrNo" and str(win[1])=="winNo" and str(win[2])=='firstsnppos' and str(win[3])=="lastsnppos":
+                continue
+#                 win=tuple([a for a in win[0:4]]+['NA','NA']+[a for a in win[6:]])
             if win[-2]=="":
                 print(*(win[:-2]+("NA",win[-1])),sep="\t",file=outfile)
             else:
@@ -772,173 +813,31 @@ class WinInGenome():
             trscptlist.append(row)
         return trscptlist
 
-class Node(object):
-    def __init__(self, val, p=0):
-        self.data = val
-        self.next = p
-
-class LinkList(object):
-    def __init__(self):
-        self.head = 0
-
-    def __getitem__(self, key):
-
-        if self.is_empty():
-            print('linklist is empty.')
-            return
-
-        elif key < 0  or key > self.getlength():
-            print('the given key is error')
-            return
-
-        else:
-            return self.getitem(key)
-
-
-
-    def __setitem__(self, key, value):
-
-        if self.is_empty():
-            print('linklist is empty.')
-            return
-
-        elif key < 0  or key > self.getlength():
-            print('the given key is error')
-            return
-
-        else:
-            self.delete(key)
-            return self.insert(key)
-
-    def initlist(self, data):
-
-        self.head = Node(data[0])
-
-        p = self.head
-
-        for i in data[1:]:
-            node = Node(i)
-            p.next = node
-            p = p.next
-
-    def getlength(self):
-
-        p = self.head
-        length = 0
-        while p != 0:
-            length += 1
-            p = p.next
-
-        return length
-
-    def is_empty(self):
-
-        if self.getlength() == 0:
-            return True
-        else:
-            return False
-
-    def clear(self):
-
-        self.head = 0
-
-
-    def append(self, item):
-
-        q = Node(item)
-        if self.head == 0:
-            self.head = q
-        else:
-            p = self.head
-            while p.next != 0:
-                p = p.next
-            p.next = q
-
-
-    def getitem(self, index):
-
-        if self.is_empty():
-            print('Linklist is empty.')
-            return
-        j = 0
-        p = self.head
-
-        while p.next != 0 and j < index:
-            p = p.next
-            j += 1
-
-        if j == index:
-            return p.data
-
-        else:
-
-            print('target is not exist!')
-
-    def insert(self, index, item):
-
-        if self.is_empty() or index < 0 or index > self.getlength():
-            print('Linklist is empty.')
-            return
-
-        if index == 0:
-            q = Node(item, self.head)
-
-            self.head = q
-
-        p = self.head
-        post = self.head
-        j = 0
-        while p.next != 0 and j < index:
-            post = p
-            p = p.next
-            j += 1
-
-        if index == j:
-            q = Node(item, p)
-            post.next = q
-            q.next = p
-
-
-    def delete(self, index):
-
-        if self.is_empty() or index < 0 or index > self.getlength():
-            print('Linklist is empty.')
-            return
-
-        if index == 0:
-            self.head = self.head.next
-            return
-#            q = Node(item,self.head)
-#
-#            self.head = q
-
-        p = self.head
-        post = self.head
-        j = 0
-        while p.next != 0 and j < index:
-            post = p
-            p = p.next
-            j += 1
-
-        if index == j:
-            post.next = p.next
-
-    def index(self, value):
-
-        if self.is_empty():
-            print('Linklist is empty.')
-            return
-
-        p = self.head
-        i = 0
-        while p.next != 0 and not p.data == value:
-            p = p.next
-            i += 1
-
-        if p.data == value:
-            return i
-        else:
-            return -1        
+class BinDepth():
+    def __init__(self,depthbinFileName):
+        """
+        chr:[(win0),(win1),(firstpos,endpos,sample1,sample2,,,),(40001,50000,passed,passed,passed,filtered,),,,]
+        """
+        self.speciesname,self.depthbinmap=BinDepth.readDepthfileintoaMap(depthbinFileName)
+    @staticmethod
+    def readDepthfileintoaMap(depthbinFileName):
+        depthbinmap={}
+        depthfile=open(depthbinFileName,'r')
+        titlelist=re.split(r"\s+",depthfile.readline().strip())
+        title=titlelist[3:]
+        print("class BinDepth",titlelist)
+        linelist=re.split(r'\s+',depthfile.readline().strip())
+        depthbinmap[linelist[0].strip()]=[tuple(linelist[2:])]
+        for line in depthfile:
+            linelist=re.split(r'\s+',line.strip())
+            if linelist[0] in depthbinmap:
+                depthbinmap[linelist[0]].append(tuple(linelist[2:]))
+            else:
+                depthbinmap[linelist[0]]=[tuple(linelist[2:])]
+        depthfile.close()
+        return title,depthbinmap
+        
+        
         
         
         

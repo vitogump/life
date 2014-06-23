@@ -54,11 +54,12 @@ else:
     continuechrom=None;continuepos=None
 
 primaryID = "chrID"
+OUTFILENAME="ducksnpflankseq.fa"
 outfile=open("ducksnpflankseq.fa",'w')
 BlastOutFile="ducksnpflankseq.blast"
 if __name__ == '__main__':
-    aaa=DAP.MakeDerivedAlleletable(database=dbname,ip="localhost",usrname="root",pw="1234567")
-    dbtools = dbm.DBTools("localhost", "root", "1234567", dbname)
+    aaa=DAP.MakeDerivedAlleletable(database=dbname,ip="10.2.48.96",usrname="root",pw="1234567")
+    dbtools = dbm.DBTools("10.2.48.96", "root", "1234567", dbname)
     try:
         duckrefindex = pickle.load(open(options.reference + ".myindex", 'rb'))
         originalspeciesindex = pickle.load(open(originalspeciesref + ".myindex", 'rb'))
@@ -67,9 +68,9 @@ if __name__ == '__main__':
         Util.generateIndexByChrom(originalspeciesref, originalspeciesref + ".myindex")
         duckrefindex = pickle.load(open(options.reference + ".myindex", 'rb'))
         originalspeciesindex = pickle.load(open(originalspeciesref + ".myindex", 'rb'))
-#    aaa.createtable()
-    aaa.filldata(vcfFileName=vcfFileName,depthfileName=DepthFileName,continuechrom=continuechrom,continuepos=continuepos)
-    aaa.fillarchicpop(archicpopVcfFile,DepthFileName,chromtable,archicpopNameindepthFile)
+#     aaa.createtable()
+#     aaa.filldata(vcfFileName=vcfFileName,depthfileName=DepthFileName,continuechrom=continuechrom,continuepos=continuepos)
+#     aaa.fillarchicpop(archicpopVcfFile,DepthFileName,chromtable,archicpopNameindepthFile)
     totalChroms = dbtools.operateDB("select","select count(*) from "+chromtable)[0][0]
     for i in range(0,totalChroms,20):
         currentsql="select * from " + chromtable+" order by chrlength limit "+str(i)+",20"
@@ -80,5 +81,5 @@ if __name__ == '__main__':
             aaa.getflankseqs(currentchrID,currentchrLen, 1+flanklen, currentchrLen, idxedreffilehandler=duckrefhandler, refindex=duckrefindex, flanklen=flanklen,outfile=outfile, tablename="derived_alle_ref")
     outfile.close()
     duckrefhandler.close()
-    aaa.callblast(pathtoblastn,pathtoblastdb,"ducksnpflankseq.fa",BlastOutFile)
+    aaa.callblast(pathtoblastn,pathtoblastdb,OUTFILENAME,BlastOutFile)
     aaa.extarctAncestryAlleleFromBlastOut(BlastOutFile,originalspeciesref,originalspeciesindex,tablename="derived_alle_ref",ancestralsnptable=ancestralsnptable)

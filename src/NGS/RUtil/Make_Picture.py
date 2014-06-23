@@ -29,7 +29,7 @@ class MakeMhtGraph(object):
         else:
             self.pathtoOutFileName = inputfileName + "_" + postive_negtive + ".z" + dataType
         for line in originalfile:
-            linelist = re.split(r'\s+', line)
+            linelist = re.split(r'\s+', line.strip())
             currentChrom = linelist[0].strip()
             ChromNo = re.search(r"([\d.]+)$", currentChrom).group(1)
             if re.search(r"^" + chromPrefix, currentChrom):
@@ -98,6 +98,8 @@ class MakeMhtGraph(object):
                          
                     else:
                         return "error"
+#         if len(linelist)==6:
+#             print(chromPrefix, "winNo", "bp_start", "bp_end", dataType, "z" + dataType, sep="\t", file=open(self.pathtoOutFileName, "w"))
         print(chromPrefix, "winNo", "bp_start", "bp_end", dataType, "z" + dataType,"geneName", sep="\t", file=open(self.pathtoOutFileName, "w"))
 #         print(chromPrefix,"bp_start",dataType)
         outfile = open(self.pathtoOutFileName, 'a')
@@ -116,8 +118,9 @@ class MakeMhtGraph(object):
         r("library(gap)")
          
         r("pdf('" + name + ".pdf',width=10,height=4.5)")
-         
+        print('x=read.table("' + self.pathtoOutFileName + '",header=T)') 
         r('x=read.table("' + self.pathtoOutFileName + '",header=T)')
+        
         r("data=with(x,cbind(" + chromPrefix + ",bp_start,z" + dataType + "))")
         r('colors <- rep(c("green2","firebrick1"),38000)')
         r('par(las=1, xpd=TRUE, cex.axis=1.0, cex=0.5)')

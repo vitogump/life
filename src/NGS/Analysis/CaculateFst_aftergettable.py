@@ -3,7 +3,7 @@ from NGS.BasicUtil import *
 from itertools import combinations
 import NGS.BasicUtil.Util
 import src.NGS.BasicUtil.DBManager as dbm
-import re
+import re,copy
 import numpy
 import sys
 import pickle
@@ -105,7 +105,7 @@ class Fst():
             print("caculateFst value in "+currentchrID)
             
             win.slidWindowOverlap(self.doubleVcfMap[currentchrID], currentchrLen,winwidth, slideSize, caculator)
-            self.FstMapByChrom[currentchrID] = win.winValueL
+            self.FstMapByChrom[currentchrID] = copy.deepcopy(win.winValueL)
         except TypeError:#vcfMap2(pop2) don't contation the current chromosome
             print("caculateFst TypeError")
             fillNA=[(0,0,'NA')]

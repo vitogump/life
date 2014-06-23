@@ -36,11 +36,19 @@ def server_static(urlpath):
     elif urlpath.endswith("mRNA_microRNA"):
         path='../../classical_paper/mRNA_microRNA/'
     elif urlpath.endswith("imprinting_Epigenetic"):
-        path='../../classical_paper/基因印迹和表观遗传/'
+        path='../../classical_paper/imprinting_epigenetic/'
     elif urlpath.endswith("selection"):
-        path='../../classical_paper/人工选择和自然选择/'
+        path='../../classical_paper/naturalselection_artificialselection/'
     elif urlpath.endswith("GeneMapping"):
-        path='../../classical_paper/基因定位/'
+        path='../../classical_paper/geneMapping/'
+    elif urlpath.endswith("aglorithms_in_biology"):
+        path='../../ppt_for_share/aglorithms_in_biology/'
+    elif urlpath.endswith("freshtoread"):
+        path='../../ppt_for_share/freshtoread/'
+    elif urlpath.endswith("genomics"):
+        path='../../ppt_for_share/genomics/'
+    elif urlpath.endswith("renbin"):
+        path='../../ppt_for_share/renbin/'
     elif urlpath.endswith(".html"):
         print("sssss")
         return static_file(urlpath,root='../../index')

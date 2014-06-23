@@ -13,7 +13,7 @@ parser.add_option("-i", "--winfile", dest="winfileName",
                   help="reference.fa", metavar="FILE")
 parser.add_option("-D", "--tempDBname", dest="tempdbname", help="dbname")
 parser.add_option("-t", "--threshold", dest="threshold", help="conflict with -p")
-parser.add_option("-p", "--percentage", dest="percentage", help="conflict with -t")
+parser.add_option("-p", "--percentage", dest="percentage",default=None, help="conflict with -t")
 parser.add_option("-o", "--outfileprename", dest="outfileprename", help="outfileprename")
 parser.add_option("-x", "--morethan_lessthan", dest="morethan_lessthan", help="morethan or lessthan")
 parser.add_option("-T", "--trscptable", dest="trscptable", help="trscptable")
@@ -21,6 +21,7 @@ parser.add_option("-u", "--upextend", dest="upextend", help="upextend")
 parser.add_option("-d", "--downextend", dest="downextend", help="downextend")
 parser.add_option("-s","--slideSize",dest="slideSize",default="20000",help="win slide size")
 parser.add_option("-w","--winWidth",dest="winWidth",default="40000",help="win width ")
+parser.add_option("-X","--winType",dest="winType",default="zvalue",help="winvalue or zvalue")
 parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", default=True,
                   help="don't print status messages to stdout")
@@ -47,29 +48,34 @@ vcftable=None
 outfile=open(outfilename,'w')
 outfileNameWINwithGENE=winFileName6Field+".wincopywithgene"
 if __name__ == '__main__':
-    dbtools = dbm.DBTools("localhost", "root", "1234567", "life_pilot")
+    dbtools = dbm.DBTools("10.2.48.96", "root", "1234567", "life_pilot")
 #    dbtools.operateDB("alter","alter table "+gene_sample_venn+" add "+outfilename+" smallint(3) default 0") 
     winGenome = Util.WinInGenome(tempwinDBName, winFileName6Field)
     time.sleep(SLEEP_FOR_NEXT_TRY)
     
     selectWinNos="threshold method"
     if percentage!=None:
-        totalWin = winGenome.windbtools.operateDB("select", "select count(*) from " + winGenome.wintable)[0][0]
+        totalWin = winGenome.windbtools.operateDB("select", "select count(*) from " + winGenome.wintablewithoutNA)[0][0]
         selectWinNos = int(float(percentage) * totalWin)
         if morethan_lessthan == "m" or morethan_lessthan == "M":
-            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintable + " where zvalue != 'NA' order by zvalue desc limit 0," + str(selectWinNos))
-            print("select * from "+winGenome.wintable + " where zvalue != 'NA' order by zvalue desc limit 0," + str(selectWinNos))
+            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintablewithoutNA + " where "+options.winType+" != 'NA' order by "+options.winType+" desc limit 0," + str(selectWinNos))
+            print("select * from "+winGenome.wintablewithoutNA + " where zvalue != 'NA' order by zvalue desc limit 0," + str(selectWinNos))
         elif morethan_lessthan == "l" or morethan_lessthan == "L":
-            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintable + " where zvalue != 'NA' order by zvalue asc limit 0," + str(selectWinNos))
-            print("select * from " + winGenome.wintable + " where zvalue != 'NA' order by zvalue asc limit 0," + str(selectWinNos))
+            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintablewithoutNA + " where "+options.winType+" != 'NA' order by "+options.winType+" asc limit 0," + str(selectWinNos))
+            print("select * from " + winGenome.wintablewithoutNA + " where "+options.winType+" != 'NA' order by "+options.winType+" asc limit 0," + str(selectWinNos))
     elif threshold!=None:
         if morethan_lessthan=="m" or morethan_lessthan=="M":
-            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintable + " where zvalue!= 'NA' and zvalue>=" + threshold)
+            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintablewithoutNA + " where "+options.winType+"!= 'NA' and "+options.winType+">=" + threshold)
         elif morethan_lessthan=="l" or morethan_lessthan=="L":
-            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintable + " where zvalue!= 'NA' and zvalue<=" + threshold)
-        print("select * from " + winGenome.wintable + " where zvalue!= 'NA' and zvalue>=" + threshold)
+            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintablewithoutNA + " where "+options.winType+"!= 'NA' and "+options.winType+"<=" + threshold)
+            print("select * from " + winGenome.wintablewithoutNA + " where "+options.winType+"!= 'NA' and "+options.winType+"<=" + threshold)
+        selectWinNos=len(selectedWins)
     selectedWins.sort(key=lambda listRec:float(listRec[5]))
-    print(outfilename,selectWinNos,selectedWins[0],selectedWins[-1],len(selectedWins))
+    if selectWinNos==0:
+        outfile.close()
+        print("selectWinNos==0")
+        exit(0)
+    print(outfilename,selectWinNos,"~=",len(selectedWins),selectedWins[0],selectedWins[-1])
     selectedWinMap={}
     for win in selectedWins:
         if win[0] in selectedWinMap:
@@ -97,7 +103,10 @@ if __name__ == '__main__':
                 Nwin=len(mergedRegion)
                 extremeValues=[]
                 for e in mergedRegion:
-                    extremeValues.append(float(e[5]))
+                    if options.winType=="winvalue":
+                        extremeValues.append(float(e[4]))
+                    elif options.winType=="zvalue": 
+                        extremeValues.append(float(e[5]))
                 if morethan_lessthan == "m" or morethan_lessthan == "M":
                     extremeValue=max(extremeValues)
                 elif morethan_lessthan == "l" or morethan_lessthan == "L":
@@ -111,7 +120,10 @@ if __name__ == '__main__':
             Nwin=len(mergedRegion)
             extremeValues=[]
             for e in mergedRegion:
-                extremeValues.append(float(e[5]))
+                if options.winType=="winvalue":
+                    extremeValues.append(float(e[4]))
+                elif options.winType=="zvalue": 
+                    extremeValues.append(float(e[5]))
             if morethan_lessthan == "m" or morethan_lessthan == "M":
                 extremeValue=max(extremeValues)
             elif morethan_lessthan == "l" or morethan_lessthan == "L":
@@ -131,7 +143,8 @@ if __name__ == '__main__':
             tcpts+=(tcpt[0]+"\t")
         print("\t".join(map(str,region)),tcpts,sep="\t",file=outfile)
     winGenome.appendGeneName(TranscriptGenetable, dbtools, winWidth, slideSize, outfileNameWINwithGENE)   
-    winGenome.windbtools.drop_table(winGenome.wintable)        
+    winGenome.windbtools.drop_table(winGenome.wintabletextvalueallwin)
+    winGenome.windbtools.drop_table(winGenome.wintablewithoutNA)     
 #        for gene in winGenome.winContainTrscptMap[win]:
 #            print(gene)
 #            print("update "+gene_sample_venn+" set "+outfilename+"=1 where geneID='"+gene[0]+"'")

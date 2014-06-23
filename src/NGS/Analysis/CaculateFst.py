@@ -6,7 +6,7 @@ import numpy
 import pickle
 import re
 import src.NGS.BasicUtil.DBManager as dbm
-import sys
+import sys,copy
 import time
 SLEEP_FOR_NEXT_TRY=10
 
@@ -110,7 +110,7 @@ class Fst():
             print("caculateFst value in "+currentchrID)
             
             win.slidWindowOverlap(doubleVcfMap[currentchrID], currentchrLen,winwidth, slideSize, caculator)
-            self.FstMapByChrom[currentchrID] = win.winValueL
+            self.FstMapByChrom[currentchrID] = copy.deepcopy(win.winValueL)
         except TypeError:#vcfMap2(pop2) don't contation the current chromosome
             print("caculateFst TypeError")
             fillNA=[(0,0,'NA')]
@@ -158,7 +158,7 @@ if __name__ == '__main__':
             tableindextoarrayindex.append((allspeices.index(fstpaire1name),allspeices.index(fstpaire2name)))
             
             outfile = open(fstpaire1name + fstpaire2name + ".fst"+str(windowWidth)+"_"+str(slideSize), 'w')
-            
+            print("chrNo\twinNo\tfirstsnppos\tlastsnppos\twinvalue\tzvalue",file=outfile)
 #             win = Util.Window()
             fst_caculator = Caculators.Caculate_Fst()
 
@@ -209,8 +209,8 @@ if __name__ == '__main__':
         for n in alldistMap.keys():
             print(n + "\t" + str(alldistMap[n]), file=open("testdist.txt", 'a'))
         tatalwins = tempdbtools.operateDB("select", "select count(*) from "+treearrayprename+"treearray")[0][0]
-        for i in range(0, tatalwins, 100):
-            wins = tempdbtools.operateDB("select","select * from "+treearrayprename+"treearray order by chrID asc,winNo asc limit "+str(i) +",100")
+        for j in range(0, tatalwins, 100):
+            wins = tempdbtools.operateDB("select","select * from "+treearrayprename+"treearray order by chrID asc,winNo asc limit "+str(j) +",100")
             for win in wins:
                 abandonthisWin=False
                 tmparray=[[0 for x in range(len(allspeices))] for y in range(len(allspeices))]
@@ -255,6 +255,7 @@ if __name__ == '__main__':
                 fstlist.append(Fst())
                 fstlist[-1].caculateFstAccordingdb(dbtools, chromtable, majorpop, othrpop, fst_caculator, windowWidth,slideSize)          
             outfile=open(majorpop+'.gfst'+str(windowWidth)+"_"+str(slideSize)+"_"+specisnum,'w')
+            print("chrNo\twinNo\tfirstsnppos\tlastsnppos\twinvalue\tzvalue",file=outfile)
             if len(fstlist) != 0:
                 for chrom in fstlist[0].FstMapByChrom.keys():
                     globalFstMapByChrom[chrom]=[]
