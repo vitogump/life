@@ -14,7 +14,7 @@ Created on 2013-7-2
 
 primaryID = "chrID"
 #if len(sys.argv) < 4:
-#    print("python CaculateSNPratePerBin.py [vcf1] [vcf2] [vcf3]....-d [dbname] -c [chromtable] -w [winwidth] -s [slidesize]")
+#    print("python CaculateSNPratePerBin.py [vcf1] [vcf2] [vcf3]....-d [dbname] -c [chromtable] -w [winwidth] -s [slidesize] -n [species1] -n [species2] ...")
 #    exit(-1)
     
 parser = OptionParser()
@@ -25,7 +25,7 @@ parser.add_option("-c", "--chromtable", dest="chromtable",# action="callback",ty
 # (options, args) = parser.parse_args()
 parser.add_option("-C","--Coveragedbin",dest="coveragebin")
 parser.add_option("-w","--winwidth",dest="winwidth",help="default infile1_infile2")#
-parser.add_option("-n", "--speciesname", dest="species", help="species name")
+parser.add_option("-n", "--speciesname", action="append",dest="specieses",default=[],help="species name")
 parser.add_option("-s","--slidesize",dest="slidesize",help="default infile2_infile1")#
 parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", default=True,
@@ -44,9 +44,12 @@ class SNPsPerBIN():
         self.SNPsPerBINMap = {}
 
 if __name__ == '__main__':
-    bindepth=Util.BinDepth(options.coveragebin)
-    if len(args[:])==1 and options.species!=None:
-        speicesidx_inbindepthmap=bindepth.speciesname.index("Depth_for_" + options.species)+2
+    
+    speicesidxs_inbindepthmap=[]
+    if len(args[:])==1 and len(options.specieses)!=0 and options.coveragebin!=None:
+        bindepth=Util.BinDepth(options.coveragebin)
+        for species in options.specieses:
+            speicesidxs_inbindepthmap.append(bindepth.speciesname.index("Depth_for_" + species)+2)
         consider_Depth=True
     else:
         consider_Depth=False
@@ -101,21 +104,29 @@ if __name__ == '__main__':
                 if currentchrID in snpbinmap.SNPsPerBINMap:       
         #        for chrom in sorted(hscore.HeterozyMap.keys()):
                     for i in range(len(snpbinmap.SNPsPerBINMap[currentchrID])):
-                            if consider_Depth:
-                                if bindepth.depthbinmap[currentchrID][i][speicesidx_inbindepthmap]=="filtered":
+                            if consider_Depth and len(speicesidxs_inbindepthmap)==1:
+                                if bindepth.depthbinmap[currentchrID][i][speicesidxs_inbindepthmap[0]]=="filtered":
                                     print(currentchrID + "\t" + str(i) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][0]) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][1]) + "\t" + "NA" + "\t" + 'NA', file=outfile)
-                                elif bindepth.depthbinmap[currentchrID][i][speicesidx_inbindepthmap]=="passed":
+                                elif bindepth.depthbinmap[currentchrID][i][speicesidxs_inbindepthmap[0]]=="passed":
 #                                 snpsperkb = snpbinmap.SNPsPerBINMap[currentchrID][i][2]/(windowWidth/1000)
                                     log2snpsperbin = numpy.log2(snpbinmap.SNPsPerBINMap[currentchrID][i][2])
                                     print(currentchrID + "\t" + str(i) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][0]) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][1]) + "\t" + '%.18f'%(snpbinmap.SNPsPerBINMap[currentchrID][i][2]) + "\t" + '%.12f'%(log2snpsperbin), file=outfile)
                                 else:
                                     print(currentchrID,str(i),snpbinmap.SNPsPerBINMap[currentchrID],"doesnot exist in snpbinmap")
-                            else:
+                            elif consider_Depth and len(speicesidxs_inbindepthmap)>1:# 
+                                for idx in speicesidxs_inbindepthmap:# pass if any speicese is "passed"
+                                    if bindepth.depthbinmap[currentchrID][i][idx]=="passed":
+                                        log2snpsperbin = numpy.log2(snpbinmap.SNPsPerBINMap[currentchrID][i][2])
+                                        print(currentchrID + "\t" + str(i) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][0]) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][1]) + "\t" + '%.18f'%(snpbinmap.SNPsPerBINMap[currentchrID][i][2]) + "\t" + '%.12f'%(log2snpsperbin), file=outfile)
+                                        break
+                                else:
+                                    print(currentchrID + "\t" + str(i) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][0]) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][1]) + "\t" + "NA" + "\t" + 'NA', file=outfile)
+                            elif not consider_Depth:
                                 log2snpsperbin = numpy.log2(snpbinmap.SNPsPerBINMap[currentchrID][i][2])
                                 print(currentchrID + "\t" + str(i) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][0]) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][1]) + "\t" + '%.18f'%(snpbinmap.SNPsPerBINMap[currentchrID][i][2]) + "\t" + '%.12f'%(log2snpsperbin), file=outfile)
                 else:
-                    print(currentchrID)
-        print(vcf, str(expectation), str(std0), str(std1), file=open("caculateSNPratePerBinstaticvalue.txt", 'a'))
+                    print("not find this chr:",currentchrID)
+        print(vcf+str(windowWidth)+"_"+str(slideSize), str(expectation), str(std0), str(std1), file=open("caculateSNPratePerBinstaticvalue.txt", 'a'))
         outfile.close()
     dbtools.disconnect()
 

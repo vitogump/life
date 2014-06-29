@@ -3,6 +3,7 @@ import re, numpy, sys, pickle,copy
 from NGS.BasicUtil import *
 import NGS.BasicUtil.Util
 import src.NGS.BasicUtil.DBManager as dbm
+from optparse import OptionParser
 '''
 Created on 2013-7-2
 
@@ -10,17 +11,33 @@ Created on 2013-7-2
 '''
 
 primaryID = "chrID"
+parser = OptionParser()
+parser.add_option("-d", "--dbname", dest="dbname",# action="callback",type="string",callback=useoptionvalue_previous1,
+                  help="write report to FILE")
+parser.add_option("-c", "--chromtable", dest="chromtable",# action="callback",type="string",callback=useoptionvalue_previous2,
+                  help="write report to FILE")
+# (options, args) = parser.parse_args()
+
+parser.add_option("-w","--winwidth",dest="winwidth",help="default infile1_infile2")#
+parser.add_option("-s","--slideSize",dest="slideSize",help="default infile2_infile1")#
+parser.add_option("-m","--minlength",dest="minlength")
+parser.add_option("-q", "--quiet",
+                  action="store_false", dest="verbose", default=True,
+                  help="don't print status messages to stdout")
+(options, args) = parser.parse_args()
 
 
 
-if len(sys.argv) < 4:
-    print("python CaculateHeterozygosityScore.py [vcf1] [vcf2] [vcf3]....[dbname] [chromtable] [winwidth] [slidesize]")
-    exit(-1)
-windowWidth=int(sys.argv[-2])
-slideSize=int(sys.argv[-1])
-chromtable=sys.argv[-3]
-dbname=sys.argv[-4]
-sql = "select * from " + chromtable
+
+# if len(sys.argv) < 4:
+#     print("python CaculateHeterozygosityScore.py [vcf1] [vcf2] [vcf3]....[dbname] [chromtable] [winwidth] [slidesize]")
+#     exit(-1)
+minlength=options.minlength
+windowWidth=int(options.winwidth)
+slideSize=int(options.slideSize)
+chromtable=options.chromtable
+dbname=options.dbname
+sql = "select * from " + chromtable+" where chrlength>="+minlength
 
 class HeterozygosityScore():
     def __init__(self):
@@ -28,7 +45,7 @@ class HeterozygosityScore():
 
 if __name__ == '__main__':
     dbtools = dbm.DBTools("localhost", "root", "1234567", dbname)
-    for vcf in sys.argv[1:-4]:
+    for vcf in args[:]:
         outfile = open(vcf + ".het"+str(windowWidth)+"_"+str(slideSize), 'w')
         print("chrNo\twinNo\tfirstsnppos\tlastsnppos\twinvalue\tzvalue",file=outfile)
         win = Util.Window()
@@ -37,7 +54,7 @@ if __name__ == '__main__':
         hscore = HeterozygosityScore()
 #        pop.getVcfMap(vcf)
         
-        totalChroms = dbtools.operateDB("select","select count(*) from "+chromtable)[0][0]
+        totalChroms = dbtools.operateDB("select","select count(*) from "+chromtable + " where chrlength>="+minlength)[0][0]
         for i in range(0,totalChroms,20):
             currentsql=sql+" order by "+primaryID+" limit "+str(i)+",20"
             result=dbtools.operateDB("select",currentsql)
@@ -64,7 +81,7 @@ if __name__ == '__main__':
         std1 = numpy.std(winCrossGenome, ddof=1)
         del winCrossGenome
 
-        totalChroms = dbtools.operateDB("select","select count(*) from "+chromtable)[0][0]
+        totalChroms = dbtools.operateDB("select","select count(*) from "+chromtable+ " where chrlength>="+minlength)[0][0]
         for i in range(0,totalChroms,20):
             currentsql=sql+" order by "+primaryID+" limit "+str(i)+",20"
             result=dbtools.operateDB("select",currentsql)

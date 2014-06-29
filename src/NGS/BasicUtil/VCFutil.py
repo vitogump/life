@@ -1,5 +1,5 @@
 # -*- coding: UTF-8 -*-
-import re, numpy, sys, pickle
+import re, numpy, sys, pickle,copy
 '''
 Created on 2013-6-30
 
@@ -47,7 +47,7 @@ class VCF_Data():
             line = vcffile.readline()
         pickle.dump(vcfChromIndex, open(indexFileName, 'wb'))
         vcffile.close()
-    def getVcfListByChrom(self, vcfFileName, chrom,posUniq=True):
+    def getVcfListByChrom(self, vcfFileName, chrom,posUniq=True,considerINDEL=False):
         """
             return a list that contain all vcf record of a chrom
         """
@@ -56,7 +56,7 @@ class VCF_Data():
         try:
             print("getVcfListByChrom", self.VcfIndexMap[chrom], chrom)            
             vcfFile.seek(self.VcfIndexMap[chrom])
-            line = vcfFile.readline()
+            line = vcfFile.readline().strip()
         except KeyError:
             print(chrom + "didn't find in " + vcfFileName)
             return []
@@ -67,6 +67,8 @@ class VCF_Data():
             pos = int(linelist[1].strip())
             REF = linelist[3].strip()
             ALT = linelist[4].strip()
+            if considerINDEL and len(REF)>1 and len(ALT)>1:
+                continue
             INFO = linelist[7]
             FORMAT=linelist[8]
             line = vcfFile.readline()
@@ -75,7 +77,7 @@ class VCF_Data():
                 continue
             VcfList_A_Chrom.append((pos, REF, ALT, INFO,FORMAT,samples))
             
-        return VcfList_A_Chrom
+        return copy.deepcopy(VcfList_A_Chrom)
         vcfFile.close()
 
     def getVcfMap(self, vcfFileName):

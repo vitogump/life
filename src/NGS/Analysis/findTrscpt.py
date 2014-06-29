@@ -93,7 +93,10 @@ if __name__ == '__main__':
         selectedWinMap[chrom].sort(key=lambda listRec: int(listRec[1]))
         selectedRegion[chrom]=[]
         mergedRegion=[selectedWinMap[chrom][0]]
-        for i in range(1,len(selectedWinMap[chrom])):
+        i=1
+        while i < len(selectedWinMap[chrom]):
+#             print(chrom,selectedWinMap[chrom][i])
+#             try:
             if int(selectedWinMap[chrom][i-1][1])+1==int(selectedWinMap[chrom][i][1]):#continues win
                 mergedRegion.append(selectedWinMap[chrom][i])
             else:#not continues
@@ -113,7 +116,13 @@ if __name__ == '__main__':
                     extremeValue=min(extremeValues)
                 selectedRegion[chrom].append((chrom,Region_start,Region_end,Nwin,extremeValue))
                 #process this win
-                mergedRegion=[selectedWinMap[chrom][i]]
+                if i!=len(selectedWinMap[chrom]):
+                    mergedRegion=[selectedWinMap[chrom][i]]
+                    i+=1
+            i+=1
+#             except IndexError:
+#                 print(i,len(selectedWinMap[chrom]),selectedWinMap[chrom])
+#                 exit(-1)
         else:
             Region_start=int(mergedRegion[0][1])*slideSize-upextend
             Region_end=int(mergedRegion[-1][1])*slideSize+winWidth+downextend

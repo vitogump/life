@@ -13,6 +13,19 @@ Created on 2013-6-30
 
 @author: rui
 '''
+def bedfiletools(bedfilename,withtitle=False):
+    m={}
+    f=open(bedfilename,'r')
+    if withtitle:
+        f.readline()
+    for line in f:
+        linelist=re.split(r"\s+",line)
+        if linelist[0] in m:
+            m[linelist[0].strip()].append((int(linelist[1]),int(linelist[2])))
+        else:
+            m[linelist[0].strip()]=[(int(linelist[1]),int(linelist[2]))]
+    f.close()
+    return m
 def complementary(seq):
     newseq = []
     for i in range(0, len(seq)):
@@ -297,7 +310,7 @@ class genes():
             genename = gene[0]
 #            print(gene, self.cds_frame[genename], sep="\n", file=open("testgeneOverlapList.txt", 'a'))
             
-            tscptSeqAllCds_mut[genename] = copy.copy(self.tscptSeqAllCds[genename])
+            tscptSeqAllCds_mut[genename] = copy.deepcopy(self.tscptSeqAllCds[genename])
             originallen[genename] = len(tscptSeqAllCds_mut[genename])#just for test
         
         while idx_vcf!=-1 and idx_vcf != len(VcfList) and VcfList[idx_vcf][0] <= self.geneOverlapList[-1][3]:
@@ -637,7 +650,7 @@ class Window():
         """
 #         del self.winValueL[:]
         self.winValueL = []  # notice here
-        nextIdx = -1
+        nextIdx = -1#always be -1 if windowWidth == slideSize
         currentIdx = 0
         winStart = 0
         FoundNextIdx = False
@@ -658,18 +671,30 @@ class Window():
                 value = Caculator.getResult()
                 try:
                     self.winValueL.append((startPos, lastPos, value))
-                except UnboundLocalError:
-                    self.winValueL.append((0, 0, value))
+                except:
+                    print("no snp in first win",len(L),currentIdx,value,L[currentIdx])
+                    self.winValueL.append((0,0,value))
+                    winStart+=slideSize
+                    continue
+#                 self.winValueL.append((0, 0, value))
                 winStart += slideSize
                 firstComeInWin = True
                 
                 FoundNextIdx = False
                 if nextIdx == -1:
                     if slideSize >= windowWidth:
-                        while currentIdx != len(L):
-                            if L[currentIdx][0] > winStart and L[currentIdx][0] <= (winStart + windowWidth):
-                                break
-                            currentIdx += 1
+                        while not (L[currentIdx][0] > winStart and  L[currentIdx][0] <= (winStart + windowWidth)) and L[currentIdx][0]> winStart+windowWidth:
+                            
+                            winStart+=slideSize
+                            self.winValueL.append((0, 0, Caculator.getResult()))
+                        if L[currentIdx][0]<winStart:
+                            while currentIdx != len(L):
+                                if L[currentIdx][0] > winStart and L[currentIdx][0] <= (winStart + windowWidth):
+                                    break
+                                elif L[currentIdx][0] < winStart:
+                                    winStart+=slideSize
+                                    self.winValueL.append((0, 0, Caculator.getResult()))
+                                currentIdx += 1
 #                             self.winValueL.append((0,0,'NA'))
 #                             winStart += slideSize
                     continue  # go to |if L[currentIdx][0] > winStart and L[currentIdx][0] < (winStart + windowWidth):| in upside block
@@ -681,14 +706,12 @@ class Window():
             currentIdx += 1
         else:
             value = Caculator.getResult()
-            try:
-                self.winValueL.append((startPos, lastPos, value))
-            except UnboundLocalError:
-                self.winValueL.append((0, 0, value))
+            self.winValueL.append((startPos, lastPos, value))
+#             self.winValueL.append((0, 0, value))
         
         n = int((L_End_Pos - (len(self.winValueL) * slideSize + windowWidth)) / slideSize) + 1
         for i in range(n):
-            self.winValueL.append((0, 0, 'NA'))
+            self.winValueL.append((0, 0, Caculator.getResult()))
         
 class WinInGenome():           
     def __init__(self, dbname, winFileName6Field, tableName=None):
@@ -757,7 +780,8 @@ class WinInGenome():
         return tempdbtools, tableNamewithNA,tableNametextValueForappendGeneName 
     def appendGeneName(self,TranscriptGenetable,dbtools,winwidth,slideSize,outfileName):
         outfile=open(outfileName,'w')
-        allwins = self.windbtools.operateDB("select", "select * from " + self.wintabletextvalueallwin)
+        totalWins=self.windbtools.operateDB("select","select count(*) from "+self.wintabletextvalueallwin)[0][0]
+        allwins = self.windbtools.operateDB("select", "select * from " + self.wintabletextvalueallwin+" limit 1,"+str(totalWins))
         self.windbtools.operateDB("callproc", "mysql_sp_add_column", data=(self.dbname, self.wintabletextvalueallwin, "geneName", "varchar(128)", "default null"))
         self.windbtools.operateDB("callproc", "mysql_sp_add_column", data=(self.dbname, self.wintabletextvalueallwin, "trscptID", "varchar(128)", "default null"))  
         for win in allwins:
@@ -837,7 +861,7 @@ class BinDepth():
         depthfile.close()
         return title,depthbinmap
         
-        
+     
         
         
         

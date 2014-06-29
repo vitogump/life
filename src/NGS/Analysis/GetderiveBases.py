@@ -52,7 +52,7 @@ if __name__ == '__main__':
         duckrefindex = pickle.load(open(duckref + ".myindex", 'rb'))
         originalspeciesindex = pickle.load(open(originalspeciesref + ".myindex", 'rb'))
         
-    dbtools = dbm.DBTools("localhost", "root", "1234567", "life_pilot")
+    dbtools = dbm.DBTools("10.2.48.96", "root", "1234567", "life_pilot")
     TABLES = {}
     TABLES[finaltable] = (
         "CREATE TABLE " + finaltable + " ("

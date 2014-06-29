@@ -2,11 +2,9 @@
 from NGS.BasicUtil import *
 from itertools import combinations
 import NGS.BasicUtil.Util
-import numpy
-import pickle
-import re
+import numpy,pickle,re,sys,copy
+from optparse import OptionParser
 import src.NGS.BasicUtil.DBManager as dbm
-import sys,copy
 import time
 SLEEP_FOR_NEXT_TRY=10
 
@@ -15,12 +13,28 @@ Created on 2013-6-30
 
 @author: rui
 '''
-if len(sys.argv) < 7:
-    print("python CaculateFst.py [vcf1] [vcf2] [vcf3]....[globe_Fst(G)/reletivepaire_Fsts(R)] [winwidth] [slidesize] [chromtable]")
-    exit(-1)
-windowWidth=int(sys.argv[-3])
-slideSize=int(sys.argv[-2])
-chromtable = sys.argv[-1]
+parser = OptionParser()
+parser.add_option("-d", "--dbname", dest="dbname",# action="callback",type="string",callback=useoptionvalue_previous1,
+                  help="write report to FILE")
+parser.add_option("-c", "--chromtable", dest="chromtable",# action="callback",type="string",callback=useoptionvalue_previous2,
+                  help="write report to FILE")
+# (options, args) = parser.parse_args()
+parser.add_option("-t","--fsttype",dest="fsttype",help="R(r)/G(g)")
+parser.add_option("-w","--winwidth",dest="winwidth",help="default infile1_infile2")#
+parser.add_option("-s","--slideSize",dest="slideSize",help="default infile2_infile1")#
+parser.add_option("-m","--minlength",dest="minlength")
+parser.add_option("-q", "--quiet",
+                  action="store_false", dest="verbose", default=True,
+                  help="don't print status messages to stdout")
+(options, args) = parser.parse_args()
+# if len(sys.argv) < 7:
+#     print("python CaculateFst.py [vcf1] [vcf2] [vcf3]....[globe_Fst(G)/reletivepaire_Fsts(R)] [winwidth] [slidesize] [chromtable]")
+#     exit(-1)
+minlength=options.minlength
+windowWidth=int(options.winwidth)
+slideSize=int(options.slideSize)
+chromtable = options.chromtable
+fsttype=options.fsttype
 primaryID = "chrID"
 
 sql = "select * from " + chromtable
@@ -58,29 +72,38 @@ class Fst():
 #                dp4 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", SNPrec[3])
 #                 print(dp4.group(0))
                 
-                while low < high:
+                while low <= high:
                     
-                    mid = int((low + high) / 2)
-                    if posInPop1 == vcfMap2[currentChrom][mid][0]:
+                    mid = (low + high)>>1
+                    if vcfMap2[currentChrom][mid][0]<posInPop1:
+                        low=mid+1
+                    elif vcfMap2[currentChrom][mid][0]>posInPop1:
+                        high=mid-1
+                    else:
                         if AltInPop1 == vcfMap2[currentChrom][mid][2]:#same alt alle
                             doubleVcfMap[currentChrom].append((posInPop1,RefInPop1,AltInPop1,SNPrec[3:] , vcfMap2[currentChrom][mid][3:]))
                         break
-                    elif posInPop1 < vcfMap2[currentChrom][mid][0]:
-                        high = mid - 1
-                    else:
-                        low = mid + 1
+#                     if posInPop1 == vcfMap2[currentChrom][mid][0]:
+#                         if AltInPop1 == vcfMap2[currentChrom][mid][2]:#same alt alle
+#                             doubleVcfMap[currentChrom].append((posInPop1,RefInPop1,AltInPop1,SNPrec[3:] , vcfMap2[currentChrom][mid][3:]))
+#                         break
+#                     elif posInPop1 < vcfMap2[currentChrom][mid][0]:
+#                         high = mid - 1
+#                     else:
+#                         low = mid + 1
                 else:
                     pass
+#                     print("snp not found in vcfMap2",SNPrec)
 #                     self.doubleVcfMap[currentChrom].append(SNPrec+)
         return doubleVcfMap
 
-    def caculateFstAccordingdb(self,dbtools,chromstable,vcfNAME_POP1,vcfNAME_POP2,caculator,winwidth,slideSize):
+    def caculateFstAccordingdb(self,dbtools,chromstable,vcfNAME_POP1,vcfNAME_POP2,caculator,winwidth,slideSize,minlengthOfchrom):
         pop1 = VCFutil.VCF_Data(vcfNAME_POP1)  # new a class
         pop2 = VCFutil.VCF_Data(vcfNAME_POP2)  # new a class
-        totalChroms = dbtools.operateDB("select","select count(*) from "+chromstable)[0][0]
+        totalChroms = dbtools.operateDB("select","select count(*) from "+chromstable+" where chrlength>="+minlengthOfchrom)[0][0]
         ########################### caculate Fst across all vcf file and fill in self.FstMapByChrom 
         for i in range(0,totalChroms,20):
-            currentsql=sql+" order by "+primaryID+" limit "+str(i)+",20"
+            currentsql=sql+" where chrlength>="+minlengthOfchrom+" order by "+primaryID+" limit "+str(i)+",20"
             result=dbtools.operateDB("select",currentsql)
 
             for row in result:
@@ -119,13 +142,13 @@ class Fst():
             self.FstMapByChrom[currentchrID]=fillNA           
 
 if __name__ == '__main__':
-    dbtools = dbm.DBTools("localhost", "root", "1234567", "life_pilot")
-    if sys.argv[-4]=='R' or sys.argv[-4]=='r':
+    dbtools = dbm.DBTools("10.2.48.96", "root", "1234567", "life_pilot")
+    if fsttype=='R' or fsttype=='r':
         
         allspeices=[]
         tableindextoarrayindex=[]
         treearrayprename=""
-        for pathtoname in sys.argv[1:-4]:
+        for pathtoname in args[:]:
             allspeices.append(re.search(r"[^/]*$",pathtoname).group(0).replace('.','_'))
             treearrayprename+=re.search(r"[^/]*$",pathtoname).group(0)[0]
         phyliparrayinfile=open(treearrayprename+"phylip.arrayin"+str(windowWidth)+"_"+str(slideSize),'w')
@@ -137,9 +160,9 @@ if __name__ == '__main__':
         for namerow in allspeices:
             print(namerow[0:8]+"\n")        
             
-        allkindofpaire = list(combinations(sys.argv[1:-4], 2))
+        allkindofpaire = list(combinations(args[:], 2))
         alldistMap={}
-        tempdbtools = dbm.DBTools("localhost", "root", "1234567", "temp")
+        tempdbtools = dbm.DBTools("10.2.48.96", "root", "1234567", "temp")
         TABLES = {}
         TABLES[treearrayprename+"treearray"] = (
             "CREATE TABLE "+treearrayprename+"treearray ("
@@ -166,7 +189,7 @@ if __name__ == '__main__':
             tempdbtools.operateDB("callproc", "mysql_sp_add_column", data=("temp", treearrayprename+"treearray", (fstpaire1name[0:5]+fstpaire2name[0:5]), "text", "default null"))
                 
             print("startcaculatefst:\n", fstpaire1name,fstpaire[0],'\n', fstpaire2name,fstpaire[1])
-            fst.caculateFstAccordingdb(dbtools, chromtable, fstpaire[0], fstpaire[1], fst_caculator, windowWidth,slideSize)
+            fst.caculateFstAccordingdb(dbtools, chromtable, fstpaire[0], fstpaire[1], fst_caculator, windowWidth,slideSize,minlength)
 
             winCrossGenome = []
             for chrom in fst.FstMapByChrom.keys():
@@ -178,9 +201,9 @@ if __name__ == '__main__':
             std1 = numpy.std(winCrossGenome, ddof=1)
             del winCrossGenome
             
-            totalChroms = dbtools.operateDB("select","select count(*) from "+chromtable)[0][0]
+            totalChroms = dbtools.operateDB("select","select count(*) from "+chromtable+" where chrlength>="+minlength)[0][0]
             for i in range(0,totalChroms,20):
-                currentsql=sql+" order by "+primaryID+" limit "+str(i)+",20"
+                currentsql=sql+" where chrlength>="+minlength+" order by "+primaryID+" limit "+str(i)+",20"
                 result=dbtools.operateDB("select",currentsql)
                 for row in result:
                     currentchrID=row[0]
@@ -234,26 +257,26 @@ if __name__ == '__main__':
                         exit(-1)
         tempdbtools.disconnect()
         phyliparrayinfile.close()
-    elif sys.argv[-4] == 'G' or sys.argv[-4] == 'g':
+    elif fsttype == 'G' or fsttype == 'g':
         globalFstMapByChrom={}
         fst_caculator = Caculators.Caculate_Fst()
 
         
 #         fst = Fst() 
-        specisnum=str(len(sys.argv[1:-4]))
-        for majorpop in sys.argv[1:-4]:
+        specisnum=str(len(args[:]))
+        for majorpop in args[:]:
 #            pop1 = VCFutil.VCF_Data(majorpop)  # new a class
 #            pop1.getVcfMap(majorpop)
 
             fstlist=[]   
-            for othrpop in sys.argv[1:-4]:
+            for othrpop in args[:]:
                 if majorpop == othrpop:
                     continue
 #                pop2 = VCFutil.VCF_Data(othrpop)  # new a class 
 #                pop2.getVcfMap(othrpop)
                 print("startcaculatefst", majorpop, othrpop)
                 fstlist.append(Fst())
-                fstlist[-1].caculateFstAccordingdb(dbtools, chromtable, majorpop, othrpop, fst_caculator, windowWidth,slideSize)          
+                fstlist[-1].caculateFstAccordingdb(dbtools, chromtable, majorpop, othrpop, fst_caculator, windowWidth,slideSize,minlength)          
             outfile=open(majorpop+'.gfst'+str(windowWidth)+"_"+str(slideSize)+"_"+specisnum,'w')
             print("chrNo\twinNo\tfirstsnppos\tlastsnppos\twinvalue\tzvalue",file=outfile)
             if len(fstlist) != 0:
@@ -270,7 +293,7 @@ if __name__ == '__main__':
                                     sumFstInAWin+=fstlist[i].FstMapByChrom[chrom][winNo][2]
                             except IndexError:
                                 for j in range(0,len(fstlist)):
-                                    print(str(j),sys.argv[1+j],chrom,str(winNo),str(len(fstlist[j].FstMapByChrom[chrom])))
+                                    print(str(j),args[j],chrom,str(winNo),str(len(fstlist[j].FstMapByChrom[chrom])))
                                 continue# always in the last position,and the value is caculate any way,so can't mispostion.
                         try:
                             gfst=sumFstInAWin/Number
@@ -290,9 +313,9 @@ if __name__ == '__main__':
                 std1 = numpy.std(winCrossGenome, ddof=1)
                 del winCrossGenome
 
-                totalChroms = dbtools.operateDB("select","select count(*) from "+chromtable)[0][0]
+                totalChroms = dbtools.operateDB("select","select count(*) from "+chromtable+" where chrlength>="+minlength)[0][0]
                 for i in range(0,totalChroms,20):
-                    currentsql=sql+" order by "+primaryID+" limit "+str(i)+",20"
+                    currentsql=sql+" where chrlength>="+minlength+" order by "+primaryID+" limit "+str(i)+",20"
                     result=dbtools.operateDB("select",currentsql)
                     for row in result:
                         currentchrID=row[0]

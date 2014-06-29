@@ -274,6 +274,9 @@ class MakeDerivedAlleletable():
         print("finish")
         ancestryreffile.close()
     def fillarchicpop(self,archicpopVcfFile,depthFile,chromtable,archicpopNameindepthFile,tablename="derived_alle_ref",archicpopfieldNameintable="archicpop"):
+        """
+        abandon the snps which exist in archicpopVcfFile but absence in all others pop snp sets 
+        """
         depthfile = Util.GATK_depthfile(depthFile, depthFile + ".index")
         species_idx = depthfile.title.index("Depth_for_" + archicpopNameindepthFile)
         archicpop = VCFutil.VCF_Data(archicpopVcfFile)

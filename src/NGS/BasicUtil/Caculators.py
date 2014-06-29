@@ -67,8 +67,9 @@ class Caculate_phastConsValue(Caculator):
             return winvalue
         
 class Caculate_Hp(Caculator):
-    def __init__(self):
+    def __init__(self,minsnps=3):
         super().__init__()
+        self.minsnps=minsnps
         self.COUNTED=0
         self.CNMI = 0
         self.CNMA = 0
@@ -111,7 +112,7 @@ class Caculate_Hp(Caculator):
         except ZeroDivisionError:
             #print("the Heterozigosity value of currentwindow is dividsion by zero,so set it to be NA")
             HETEROZY = 'NA'
-        if self.COUNTED<=3:
+        if self.COUNTED<=self.minsnps:
             HETEROZY= 'NA'
         self.CNMA = 0
         self.CNMI = 0
@@ -144,8 +145,9 @@ class Caculate_depth_judge(Caculator):
         self.AVERAGE_DEPTH=[0]*self.sampleNo
         return ([a/self.winsize for a in countlist],[a/self.winsize for a in average])
 class Caculate_Fst(Caculator):
-    def __init__(self):
+    def __init__(self,minsnps=3):
         super().__init__()
+        self.minsnps=minsnps
         self.CNk = 0
         self.CDk = 0
         self.COUNTED=0
@@ -202,7 +204,7 @@ class Caculate_Fst(Caculator):
         except ZeroDivisionError:
             #print("the Fst value of currentwindow is dividsion by zero,so set it to be NA")
             Fst = 'NA'
-        if self.COUNTED<=3:
+        if self.COUNTED<=self.minsnps:
             Fst='NA'
         self.CDk = 0
         self.CNk = 0
