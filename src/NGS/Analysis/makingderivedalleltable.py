@@ -70,16 +70,16 @@ if __name__ == '__main__':
         originalspeciesindex = pickle.load(open(originalspeciesref + ".myindex", 'rb'))
 #     aaa.createtable()
 #     aaa.filldata(vcfFileName=vcfFileName,depthfileName=DepthFileName,continuechrom=continuechrom,continuepos=continuepos)
-#     aaa.fillarchicpop(archicpopVcfFile,DepthFileName,chromtable,archicpopNameindepthFile)
-    totalChroms = dbtools.operateDB("select","select count(*) from "+chromtable)[0][0]
-    for i in range(0,totalChroms,20):
-        currentsql="select * from " + chromtable+" order by chrlength limit "+str(i)+",20"
-        result=dbtools.operateDB("select",currentsql)
-        for row in result:
-            currentchrID=row[0]
-            currentchrLen=int(row[2])
-            aaa.getflankseqs(currentchrID,currentchrLen, 1+flanklen, currentchrLen, idxedreffilehandler=duckrefhandler, refindex=duckrefindex, flanklen=flanklen,outfile=outfile, tablename="derived_alle_ref")
-    outfile.close()
-    duckrefhandler.close()
-    aaa.callblast(pathtoblastn,pathtoblastdb,OUTFILENAME,BlastOutFile)
-    aaa.extarctAncestryAlleleFromBlastOut(BlastOutFile,originalspeciesref,originalspeciesindex,tablename="derived_alle_ref",ancestralsnptable=ancestralsnptable)
+    aaa.fillarchicpop(archicpopVcfFile,DepthFileName,chromtable,archicpopNameindepthFile)
+#     totalChroms = dbtools.operateDB("select","select count(*) from "+chromtable)[0][0]
+#     for i in range(0,totalChroms,20):
+#         currentsql="select * from " + chromtable+" order by chrlength limit "+str(i)+",20"
+#         result=dbtools.operateDB("select",currentsql)
+#         for row in result:
+#             currentchrID=row[0]
+#             currentchrLen=int(row[2])
+#             aaa.getflankseqs(currentchrID,currentchrLen, 1+flanklen, currentchrLen, idxedreffilehandler=duckrefhandler, refindex=duckrefindex, flanklen=flanklen,outfile=outfile, tablename="derived_alle_ref")
+#     outfile.close()
+#     duckrefhandler.close()
+#     aaa.callblast(pathtoblastn,pathtoblastdb,OUTFILENAME,BlastOutFile)
+#     aaa.extarctAncestryAlleleFromBlastOut(BlastOutFile,originalspeciesref,originalspeciesindex,tablename="derived_alle_ref",ancestralsnptable=ancestralsnptable)

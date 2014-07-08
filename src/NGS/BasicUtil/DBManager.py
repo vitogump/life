@@ -66,7 +66,7 @@ class DBTools():
         except mysql.connector.Error as e:
             print('query error!{}'.format(e))
             print("DBManager operateDB","may be the file name is wrong")
-            print(sql,data)
+            print(sqls,data)
             exit(-1)
         finally:
             cursor.close()

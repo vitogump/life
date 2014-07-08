@@ -501,6 +501,7 @@ class GATK_depthfile():
         pos = int(re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2))
         return chrom, pos, linelist, self.depthfilefp.tell()
     def getdepthByPos(self, targetchr, targetloc, lastposoffilehandler=0):
+        
         linelist = re.split(r"\s+", self.depthfilefp.readline())
         chrom = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1)
         pos = int(re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2))
@@ -780,6 +781,7 @@ class WinInGenome():
         return tempdbtools, tableNamewithNA,tableNametextValueForappendGeneName 
     def appendGeneName(self,TranscriptGenetable,dbtools,winwidth,slideSize,outfileName):
         outfile=open(outfileName,'w')
+        print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tgeneName\ttrscptID",file=outfile)
         totalWins=self.windbtools.operateDB("select","select count(*) from "+self.wintabletextvalueallwin)[0][0]
         allwins = self.windbtools.operateDB("select", "select * from " + self.wintabletextvalueallwin+" limit 1,"+str(totalWins))
         self.windbtools.operateDB("callproc", "mysql_sp_add_column", data=(self.dbname, self.wintabletextvalueallwin, "geneName", "varchar(128)", "default null"))

@@ -34,6 +34,7 @@ class MakeDerivedAlleletable():
 
     def filldata(self, vcfFileName, depthfileName, tablename="derived_alle_ref", posUniq=True,continuechrom=None,continuepos=None):
         depthfile = Util.GATK_depthfile(depthfileName, depthfileName + ".index")
+        depth_linelist=None
         vcffile = open(vcfFileName, 'r')
         vcfline = vcffile.readline()
         while re.search(r'^##', vcfline) != None:
@@ -84,7 +85,7 @@ class MakeDerivedAlleletable():
     
                     sample_idx_in_vcf += 1
                     species_idx = depthfile.title.index("Depth_for_" + samplename)
-                    if len(re.split(":", sample)) != len(re.split(":", vcflist[8])):# ./. when lack of variantion information,then consider the depthfile
+                    if len(re.split(":", sample)) != len(re.split(":", vcflist[8])) and depth_linelist==None:# ./. when lack of variantion information,then consider the depthfile
                         depth_linelist = depthfile.getdepthByPos(chrom, pos)
     
                         if int(depth_linelist[species_idx]) <= 1:
@@ -92,9 +93,16 @@ class MakeDerivedAlleletable():
                         else:
                             popsdata.append(depth_linelist[species_idx] + ",0")
                         continue
+                    elif len(re.split(":", sample)) != len(re.split(":", vcflist[8])) and depth_linelist!=None:
+                        if int(depth_linelist[species_idx]) <= 1:
+                            popsdata.append('no covered')
+                        else:
+                            popsdata.append(depth_linelist[species_idx] + ",0")
+                        continue                        
 
 
                     popsdata.append(re.split(":", sample)[AD_idx])
+                depth_linelist=None
                 print("insert into " + tablename + "(chrID,snp_pos,snpID,ref_base,alt_base," + "".join([e + "," for e in poptitlelist[:-1]] + poptitlelist[-1:]) + ") select %s,%s,%s,%s,%s," + "%s,"*(len(poptitlelist) - 1) + "%s from dual where not exists( select * from "+tablename+" where "+tablename+".chrID='"+chrom+"' and "+tablename+".snp_pos="+str(pos)+")", (chrom, pos, snpID, REF, ALT) + tuple(popsdata))
                 self.dbtools.operateDB("insert", "insert into " + tablename + "(chrID,snp_pos,snpID,ref_base,alt_base," + "".join([e + "," for e in poptitlelist[:-1]] + poptitlelist[-1:]) + ") select %s,%s,%s,%s,%s," + "%s,"*(len(poptitlelist) - 1) + "%s from dual where not exists( select * from "+tablename+" where "+tablename+".chrID='"+chrom+"' and "+tablename+".snp_pos="+str(pos)+")", data=(chrom, pos, snpID, REF, ALT) + tuple(popsdata))
                             
@@ -118,16 +126,23 @@ class MakeDerivedAlleletable():
                 samplename = poptitlelist[sample_idx_in_vcf]
                 sample_idx_in_vcf += 1
                 species_idx = depthfile.title.index("Depth_for_" + samplename)
-                if len(re.split(":", sample)) != len(re.split(":", vcflist[8])):# ./.
+                if len(re.split(":", sample)) != len(re.split(":", vcflist[8])) and depth_linelist==None:# ./.
                     depth_linelist = depthfile.getdepthByPos(chrom, pos)
                     if int(depth_linelist[species_idx]) <= 1:
                         popsdata.append('no covered')
                     else:
                         popsdata.append(depth_linelist[species_idx] + ",0")
                     continue
-                AD_depth = re.split(",", re.split(":", sample)[AD_idx])
+                elif len(re.split(":", sample)) != len(re.split(":", vcflist[8])) and depth_linelist!=None:
+                    if int(depth_linelist[species_idx]) <= 1:
+                        popsdata.append('no covered')
+                    else:
+                        popsdata.append(depth_linelist[species_idx] + ",0")
+                    continue                    
+#                 AD_depth = re.split(",", re.split(":", sample)[AD_idx])
 
                 popsdata.append(re.split(":", sample)[AD_idx])
+            depth_linelist=None
             print("insert into " + tablename + "(chrID,snp_pos,snpID,ref_base,alt_base," + "".join([e + "," for e in poptitlelist[:-1]] + poptitlelist[-1:]) + ") select %s,%s,%s,%s,%s," + "%s,"*(len(poptitlelist) - 1) + "%s from dual where not exists( select * from "+tablename+" where "+tablename+".chrID='"+chrom+"' and "+tablename+".snp_pos="+str(pos)+")", (chrom, pos, snpID, REF, ALT) + tuple(popsdata))
             self.dbtools.operateDB("insert","insert into " + tablename + "(chrID,snp_pos,snpID,ref_base,alt_base," + "".join([e + "," for e in poptitlelist[:-1]] + poptitlelist[-1:]) + ") select %s,%s,%s,%s,%s," + "%s,"*(len(poptitlelist) - 1) + "%s from dual where not exists( select * from "+tablename+" where "+tablename+".chrID='"+chrom+"' and "+tablename+".snp_pos="+str(pos)+")", data=(chrom, pos, snpID, REF, ALT) + tuple(popsdata))
         depthfile.closedepthfile()
@@ -176,7 +191,7 @@ class MakeDerivedAlleletable():
         if a != 0:
             print("DerivedalleleProcessor : callblast func os.system return not 0")
             exit(-1)
-        print(shellstatment,a)
+        print(shellstatment,a,"OK")
     def extarctAncestryAlleleFromBlastOut(self,BlastOutFile,ancestryrefFile,ancestryrefidx,tablename="derived_alle_ref",ancestralsnptable=None):
         ancestryreffile=open(ancestryrefFile,'r')
         ancestrysnpflank=open(tablename+"ancestrysnpflank.fa",'w')
@@ -252,7 +267,7 @@ class MakeDerivedAlleletable():
                         self.dbtools.operateDB("update", "update " + tablename + " set ancestralallel='" + onegroup[0][0] + "' where chrID='" + snpChrom + "'and snp_pos="+snppos)
                     else:
                         print("select count(*) from "+ancestralsnptable+" where chrID= '"+chrom+"' and snp_start_pos= "+str(snppos),self.dbtools.operateDB("select","select count(*) from "+ancestralsnptable+" where chrID= '"+chrom+"' and snp_start_pos= "+str(snppos)))
-                elif len(lastbasesAccur.keys()) == 1 and self.dbtools.operateDB("select","select count(*) from "+ancestralsnptable+" where chrID= '"+chrom+"' and snp_start_pos= "+str(snp_loc_s))[0][0]==0:
+                elif (len(lastbasesAccur.keys()) == 1  and self.dbtools.operateDB("select","select count(*) from "+ancestralsnptable+" where chrID= '"+chrom+"' and snp_start_pos= "+str(snp_loc_s))[0][0]==0):
                     for bases in lastbasesAccur:#only once
                         print("update " + tablename + " set ancestralallel='" + bases + "' where chrID='" + snpChrom + "' and snp_pos="+snppos)
                         self.dbtools.operateDB("update", "update " + tablename + " set ancestralallel='" + bases + "' where chrID='" + snpChrom + "' and snp_pos="+snppos)

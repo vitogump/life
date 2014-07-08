@@ -10,11 +10,13 @@ class Caculator():
     def getResult(self):
         pass
 class Caculate_SNPsPerBIN(Caculator):
-    def __init__(self,considerINDEL=False):
-        self.considerINDEL=considerINDEL
+    def __init__(self,considerINDEL="no"):
+        self.considerINDEL=considerINDEL.lower()
         self.COUNTED=0
     def process(self, T,seqerrorrate=0.01):
-        if not self.considerINDEL and (len(T[1])!=1 or len(T[2])!=1):
+        if self.considerINDEL=="no" and (len(T[1])!=1 or len(T[2])!=1):
+            return
+        if self.considerINDEL=="just" and (len(T[1])==1 and len(T[2])==1):
             return
         dp4 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", T[3])
         refdep=0;altalleledep=0

@@ -24,20 +24,23 @@ parser.add_option("-c", "--chromtable", dest="chromtable",# action="callback",ty
                   help="write report to FILE")
 # (options, args) = parser.parse_args()
 parser.add_option("-C","--Coveragedbin",dest="coveragebin")
+parser.add_option("-I","--howtoIndel",dest="howtoIndel")
 parser.add_option("-w","--winwidth",dest="winwidth",help="default infile1_infile2")#
 parser.add_option("-n", "--speciesname", action="append",dest="specieses",default=[],help="species name")
 parser.add_option("-s","--slidesize",dest="slidesize",help="default infile2_infile1")#
+parser.add_option("-m","--minlength",dest="minlength")
 parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", default=True,
                   help="don't print status messages to stdout")
 (options, args) = parser.parse_args()
 
-
+howtoIndel=options.howtoIndel.strip()
 windowWidth=int(options.winwidth)
 slideSize=int(options.slidesize)
 chromtable=options.chromtable
 dbname=options.dbname
-sql = "select * from " + chromtable
+minlength=options.minlength
+sql = "select * from " + chromtable+" where chrlength>="+minlength
 
 class SNPsPerBIN():
     def __init__(self):
@@ -60,12 +63,12 @@ if __name__ == '__main__':
         outfile = open(vcf + ".snpperbin"+str(windowWidth)+"_"+str(slideSize), 'w')
         print("chrNo\twinNo\tfirstsnppos\tlastsnppos\twinvalue\tzvalue",file=outfile)
         win = Util.Window()
-        snpcounter = Caculators.Caculate_SNPsPerBIN()
+        snpcounter = Caculators.Caculate_SNPsPerBIN(considerINDEL=howtoIndel)
         pop = VCFutil.VCF_Data(vcf)  # new a class
         snpbinmap = SNPsPerBIN()
 #        pop.getVcfMap(vcf)
         
-        totalChroms = dbtools.operateDB("select","select count(*) from "+chromtable)[0][0]
+        totalChroms = dbtools.operateDB("select","select count(*) from "+chromtable+" where chrlength>="+minlength)[0][0]
         for i in range(0,totalChroms,20):
             currentsql=sql+" order by "+primaryID+" limit "+str(i)+",20"
             result=dbtools.operateDB("select",currentsql)
@@ -93,7 +96,7 @@ if __name__ == '__main__':
         std1 = numpy.std(winCrossGenome, ddof=1)
         del winCrossGenome
 
-        totalChroms = dbtools.operateDB("select","select count(*) from "+chromtable)[0][0]
+        totalChroms = dbtools.operateDB("select","select count(*) from "+chromtable+" where chrlength>="+minlength)[0][0]
         for j in range(0,totalChroms,20):
             currentsql=sql+" order by "+primaryID+" limit "+str(j)+",20"
             result=dbtools.operateDB("select",currentsql)
