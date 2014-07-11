@@ -1,11 +1,56 @@
-import re
-import rpy2.robjects as robjects
-
 '''
 Created on 2013-8-10
 
 @author: rui
 '''
+
+from itertools import combinations
+import re, os, math
+
+import numpy
+
+from NGS.BasicUtil import Caculators
+import NGS.BasicUtil.DerivedalleleProcessor as DAP
+import rpy2.robjects as robjects
+
+
+class Dstistics_allpop(object):
+    def __init__(self, allpopslist):
+        super().__init__()
+        self.allpossiblecombination = list(combinations(allpopslist, 3))
+    def caculateDofAllpossibleCombination(self,database,ip,usrname,pw,allpopssnptable, chromstable, winwidth, minlengthOfchrom, filenamepre):
+        listtofinalfile = []
+        D_sum_file=open(filenamepre+"D_SUM.txt","w")
+        print("p1,p2,p3\tABBA\tBABA\tD-fixed\tSE-fixed\tD-SNP\tSE-SNP",file=D_sum_file)
+        tempfiletomakebox = open(filenamepre + "test.box", 'w')
+        
+        print("D","group",file=tempfiletomakebox)
+        for p1name, p2name, p3name in self.allpossiblecombination:
+            allABBAcount = 0;allBABAcount = 0
+            
+            D = DAP.Dstatistics(database=database,ip=ip,usrname=usrname,pw=pw,allpopssnptable=allpopssnptable)
+            D_caculator = Caculators.Caculate_Dstatistics()
+            D.caculateFstAccordingdb(chromstable, p1name, p2name, p3name, D_caculator, winwidth, minlengthOfchrom)
+            winCrossGenome_fix = []
+            winCrossGenome_snp = []
+            for chrom in D.DMapByChrom:
+                if D.DMapByChrom[chrom][3] != 'NA':
+                    winCrossGenome_snp.append(D.DMapByChrom[chrom][3])
+                if D.DMapByChrom[chrom][2] != 'NA':
+                    winCrossGenome_fix.append(D.DMapByChrom[chrom][2])
+                allABBAcount += D.DMapByChrom[chrom][0]
+                allBABAcount += D.DMapByChrom[chrom][1]
+                print(str(D.DMapByChrom[chrom][3]),p1name+p2name+p3name,sep='\t',file=tempfiletomakebox)
+            exception_fix = numpy.mean(winCrossGenome_fix);exception_snp = numpy.mean(winCrossGenome_snp)
+            variance_fix = numpy.var(winCrossGenome_fix);variance_snp = numpy.var(winCrossGenome_snp)
+            stderr_fix = math.sqrt(variance_fix * len(winCrossGenome_fix));stderr_snp = math.sqrt(variance_snp * len(winCrossGenome_snp))
+            listtofinalfile.append((p1name + p2name + p3name, str(allABBAcount), str(allBABAcount), str(exception_fix), str(stderr_fix), str(exception_snp), str(stderr_snp)))
+            D.dbtools.disconnect()
+            tempfiletomakebox.close()
+        for rec in listtofinalfile:
+            print("\t".join(rec),file=D_sum_file)
+        D_sum_file.close()
+        
 
 class MakeMhtGraph(object):
     '''
@@ -21,14 +66,14 @@ class MakeMhtGraph(object):
         '''
         Constructor
         '''
-    def prepareMhtFileWithgeneName(self, inputfileName, dataType, chromPrefix="", postive_negtive=None,fillvalue=0):
+    def prepareMhtFileWithgeneName(self, inputfileName, dataType, chromPrefix="", postive_negtive=None, fillvalue=0):
         """fill all NA value window with fillvalue,and fill all window that zvalue<=0 with fillvalue when postive_negtive= postive....
         """
         originalfile = open(inputfileName, 'r')
         
-        print("title",originalfile.readline())
+        print("title", originalfile.readline())
         if postive_negtive == None:
-            print(inputfileName,dataType)
+            print(inputfileName, dataType)
             self.pathtoOutFileName = inputfileName + ".z" + dataType
         else:
             self.pathtoOutFileName = inputfileName + "_" + postive_negtive + ".z" + dataType
@@ -38,13 +83,13 @@ class MakeMhtGraph(object):
             try:
                 ChromNo = re.search(r"([\d]+)", currentChrom).group(1)
             except AttributeError:
-                ChromString = re.search(r""+chromPrefix+"([\d\D]+)$", currentChrom).group(1)
-                ChromNo=0
+                ChromString = re.search(r"" + chromPrefix + "([\d\D]+)$", currentChrom).group(1)
+                ChromNo = 0
                 for e in ChromString:
                     if e.isalpha():
-                        ChromNo+=ord(e)
+                        ChromNo += ord(e)
                     elif e.isdigit():
-                        ChromNo+=int(e) 
+                        ChromNo += int(e) 
                 print(ChromNo)
             if re.search(r"^" + chromPrefix, currentChrom):
                 if linelist[4].strip() != "NA" or linelist[5].strip() != "NA" or True:
@@ -53,40 +98,40 @@ class MakeMhtGraph(object):
                             if linelist[5].strip() != "NA":
                                 self.dataForGraphe[ChromNo].append(tuple(linelist[1:7]))
                             else:
-                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:4]+[fillvalue,fillvalue,linelist[6]]))
+                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:4] + [fillvalue, fillvalue, linelist[6]]))
                         else:
-                            self.dataForGraphe[ChromNo] = [tuple(linelist[1:4]+[fillvalue,fillvalue,linelist[6]])]
+                            self.dataForGraphe[ChromNo] = [tuple(linelist[1:4] + [fillvalue, fillvalue, linelist[6]])]
                     elif postive_negtive == "postive":
                         if ChromNo in self.dataForGraphe.keys():
-                            if linelist[5].strip()=='NA' or float(linelist[5].strip()) <= 0:
-                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:4]+[fillvalue,fillvalue,linelist[6]]))
+                            if linelist[5].strip() == 'NA' or float(linelist[5].strip()) <= 0:
+                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:4] + [fillvalue, fillvalue, linelist[6]]))
                             else:
                                 self.dataForGraphe[ChromNo].append(tuple(linelist[1:7]))
                         else:
-                            if linelist[5].strip()=='NA' or float(linelist[5].strip()) <= 0:
-                                self.dataForGraphe[ChromNo]=[tuple(linelist[1:4]+[fillvalue,fillvalue,linelist[6]])]
+                            if linelist[5].strip() == 'NA' or float(linelist[5].strip()) <= 0:
+                                self.dataForGraphe[ChromNo] = [tuple(linelist[1:4] + [fillvalue, fillvalue, linelist[6]])]
                             else:
-                                self.dataForGraphe[ChromNo]=[tuple(linelist[1:7])]
+                                self.dataForGraphe[ChromNo] = [tuple(linelist[1:7])]
                     elif postive_negtive == "negtive":
                         if ChromNo in self.dataForGraphe.keys():
-                            if linelist[5].strip()=='NA' or float(linelist[5].strip()) >= 0:
-                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:4]+[fillvalue,fillvalue,linelist[6]]))
+                            if linelist[5].strip() == 'NA' or float(linelist[5].strip()) >= 0:
+                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:4] + [fillvalue, fillvalue, linelist[6]]))
                             else:
                                 self.dataForGraphe[ChromNo].append(tuple(linelist[1:7]))
                         else:
-                            if linelist[5].strip()=='NA' or float(linelist[5].strip()) >= 0:
-                                self.dataForGraphe[ChromNo] = [tuple(linelist[1:4]+[fillvalue,fillvalue,linelist[6]])]
+                            if linelist[5].strip() == 'NA' or float(linelist[5].strip()) >= 0:
+                                self.dataForGraphe[ChromNo] = [tuple(linelist[1:4] + [fillvalue, fillvalue, linelist[6]])]
                             else:
                                 self.dataForGraphe[ChromNo] = [tuple(linelist[1:7])]                           
                     else:
                         return "error"
                 else:
                     if ChromNo in self.dataForGraphe.keys():
-                        self.dataForGraphe[ChromNo].append(tuple(linelist[1:4]+[fillvalue,fillvalue,linelist[6]]))
+                        self.dataForGraphe[ChromNo].append(tuple(linelist[1:4] + [fillvalue, fillvalue, linelist[6]]))
                     
 #         if len(linelist)==6:
 #             print(chromPrefix, "winNo", "bp_start", "bp_end", dataType, "z" + dataType, sep="\t", file=open(self.pathtoOutFileName, "w"))
-        print(chromPrefix, "winNo", "bp_start", "bp_end", dataType, "z" + dataType,"geneName", sep="\t", file=open(self.pathtoOutFileName, "w"))
+        print(chromPrefix, "winNo", "bp_start", "bp_end", dataType, "z" + dataType, "geneName", sep="\t", file=open(self.pathtoOutFileName, "w"))
 #         print(chromPrefix,"bp_start",dataType)
         outfile = open(self.pathtoOutFileName, 'a')
         for chromNo in sorted(self.dataForGraphe.keys(), key=lambda t:int(t)):
@@ -96,13 +141,13 @@ class MakeMhtGraph(object):
         return re.search(r"[^/]*$", self.pathtoOutFileName).group(0)  # for linux
 
 
-    def prepareMhtFile(self, inputfileName, dataType, chromPrefix="", postive_negtive=None,fillvalue=0):
+    def prepareMhtFile(self, inputfileName, dataType, chromPrefix="", postive_negtive=None, fillvalue=0):
         """fill all NA value window with fillvalue,and fill all window that zvalue<=0 with fillvalue when postive_negtive= postive....
         """
         originalfile = open(inputfileName, 'r')
-        print("title",originalfile.readline())
+        print("title", originalfile.readline())
         if postive_negtive == None:
-            print(inputfileName,dataType)
+            print(inputfileName, dataType)
             self.pathtoOutFileName = inputfileName + ".z" + dataType
         else:
             self.pathtoOutFileName = inputfileName + "_" + postive_negtive + ".z" + dataType
@@ -112,13 +157,13 @@ class MakeMhtGraph(object):
             try:
                 ChromNo = re.search(r"([\d]+)", currentChrom).group(1)
             except AttributeError:
-                ChromString = re.search(r""+chromPrefix+"([\d\D]+)$", currentChrom).group(1)
-                ChromNo=0
+                ChromString = re.search(r"" + chromPrefix + "([\d\D]+)$", currentChrom).group(1)
+                ChromNo = 0
                 for e in ChromString:
                     if e.isalpha():
-                        ChromNo+=ord(e)
+                        ChromNo += ord(e)
                     elif e.isdigit():
-                        ChromNo+=int(e) 
+                        ChromNo += int(e) 
                 print(ChromNo)
             if re.search(r"^" + chromPrefix, currentChrom):
                 if linelist[4].strip() != "NA" or linelist[5].strip() != "NA" or True:
@@ -127,36 +172,36 @@ class MakeMhtGraph(object):
                             if linelist[5].strip() != "NA":
                                 self.dataForGraphe[ChromNo].append(tuple(linelist[1:6]))
                             else:
-                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:4]+[fillvalue,fillvalue]))
+                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:4] + [fillvalue, fillvalue]))
                         else:
-                            self.dataForGraphe[ChromNo] = [tuple(linelist[1:4]+[fillvalue,fillvalue])]
+                            self.dataForGraphe[ChromNo] = [tuple(linelist[1:4] + [fillvalue, fillvalue])]
                     elif postive_negtive == "postive":
                         if ChromNo in self.dataForGraphe.keys():
-                            if linelist[5].strip()=='NA' or float(linelist[5].strip()) <= 0:
-                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:4]+[fillvalue,fillvalue]))
+                            if linelist[5].strip() == 'NA' or float(linelist[5].strip()) <= 0:
+                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:4] + [fillvalue, fillvalue]))
                             else:
                                 self.dataForGraphe[ChromNo].append(tuple(linelist[1:6]))
                         else:
-                            if linelist[5].strip()=='NA' or float(linelist[5].strip()) <= 0:
-                                self.dataForGraphe[ChromNo]=[tuple(linelist[1:4]+[fillvalue,fillvalue])]
+                            if linelist[5].strip() == 'NA' or float(linelist[5].strip()) <= 0:
+                                self.dataForGraphe[ChromNo] = [tuple(linelist[1:4] + [fillvalue, fillvalue])]
                             else:
-                                self.dataForGraphe[ChromNo]=[tuple(linelist[1:6])]
+                                self.dataForGraphe[ChromNo] = [tuple(linelist[1:6])]
                     elif postive_negtive == "negtive":
                         if ChromNo in self.dataForGraphe.keys():
-                            if linelist[5].strip()=='NA' or float(linelist[5].strip()) >= 0:
-                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:4]+[fillvalue,fillvalue]))
+                            if linelist[5].strip() == 'NA' or float(linelist[5].strip()) >= 0:
+                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:4] + [fillvalue, fillvalue]))
                             else:
                                 self.dataForGraphe[ChromNo].append(tuple(linelist[1:6]))
                         else:
-                            if linelist[5].strip()=='NA' or float(linelist[5].strip()) >= 0:
-                                self.dataForGraphe[ChromNo] = [tuple(linelist[1:4]+[fillvalue,fillvalue])]
+                            if linelist[5].strip() == 'NA' or float(linelist[5].strip()) >= 0:
+                                self.dataForGraphe[ChromNo] = [tuple(linelist[1:4] + [fillvalue, fillvalue])]
                             else:
                                 self.dataForGraphe[ChromNo] = [tuple(linelist[1:6])]                           
                     else:
                         return "error"
                 else:
                     if ChromNo in self.dataForGraphe.keys():
-                        self.dataForGraphe[ChromNo].append(tuple(linelist[1:4]+[fillvalue,fillvalue]))
+                        self.dataForGraphe[ChromNo].append(tuple(linelist[1:4] + [fillvalue, fillvalue]))
                     
 #         if len(linelist)==6:
 #             print(chromPrefix, "winNo", "bp_start", "bp_end", dataType, "z" + dataType, sep="\t", file=open(self.pathtoOutFileName, "w"))
@@ -168,13 +213,13 @@ class MakeMhtGraph(object):
                 print(chromNo, *self.dataForGraphe[chromNo][i], sep="\t", file=outfile)
         outfile.close()
         return re.search(r"[^/]*$", self.pathtoOutFileName).group(0)  # for linux
-    def makeMhtPicture_HistonPicture(self, inputfileName, dataType, chromPrefix="", postive_negtive=None,fillvalue=0):
-        line=open(inputfileName,'r').readline().strip()
-        open(inputfileName,'r').close()
-        if 8==len(re.split(r'\s+',line)):
-            name=self.prepareMhtFileWithgeneName(inputfileName, dataType, chromPrefix, postive_negtive, fillvalue)
-        elif 6==len(re.split(r'\s+',line)):
-            name = self.prepareMhtFile(inputfileName, dataType, chromPrefix, postive_negtive,fillvalue)
+    def makeMhtPicture_HistonPicture(self, inputfileName, dataType, chromPrefix="", postive_negtive=None, fillvalue=0):
+        line = open(inputfileName, 'r').readline().strip()
+        open(inputfileName, 'r').close()
+        if 8 == len(re.split(r'\s+', line)):
+            name = self.prepareMhtFileWithgeneName(inputfileName, dataType, chromPrefix, postive_negtive, fillvalue)
+        elif 6 == len(re.split(r'\s+', line)):
+            name = self.prepareMhtFile(inputfileName, dataType, chromPrefix, postive_negtive, fillvalue)
         dir = re.search(r"^.*/", self.pathtoOutFileName).group(0)
         r = robjects.r
         print(name, self.pathtoOutFileName, dir)
@@ -192,7 +237,7 @@ class MakeMhtGraph(object):
         r('par(las=1, xpd=TRUE, cex.axis=1.0, cex=0.5)')
         r('mhtplot(data,control=mht.control(logscale=FALSE,colors=colors,cex=0.5),pch=20,ylab="z' + dataType + '")')
         r('axis(2)')
-        r("title('"+name+"')")
+        r("title('" + name + "')")
         r('dev.off()')
 #         print(name,dataType,"tiff('" + name + "histon_" + dataType + ".tiff'")
         r("CairoPNG('" + name + "histon_" + dataType + ".png')")
@@ -201,7 +246,7 @@ class MakeMhtGraph(object):
 #             r("bins=seq(0,0.6,by=0.001)")
 #         elif dataType =="Fst":
 #             r("bins=seq(-6,6,by=0.001)")
-        r("hist(x$" + dataType + ",breaks=1000,main='"+name+"')")
+        r("hist(x$" + dataType + ",breaks=1000,main='" + name + "')")
         r('dev.off()')
         
         r("CairoPNG('" + name + "histon_z" + dataType + ".png')")
@@ -210,7 +255,7 @@ class MakeMhtGraph(object):
 #         elif dataType == "Fst":
 #             r("zbins=seq(-3.5,6,by=0.02)")
         
-        r("hist(x$z" + dataType + ",breaks=1000,main='"+name+"')")
+        r("hist(x$z" + dataType + ",breaks=1000,main='" + name + "')")
         r('dev.off()')
 
         

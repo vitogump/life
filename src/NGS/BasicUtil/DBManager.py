@@ -1,7 +1,6 @@
 from mysql.connector import errorcode
-import mysql.connector
-import re
-import time
+import mysql.connector,re,time
+
 '''
 Created on 2013-8-22
 

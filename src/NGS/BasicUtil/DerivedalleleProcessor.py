@@ -3,10 +3,69 @@ Created on 2014-4-24
 
 @author: liurui
 '''
-from NGS.BasicUtil import Util, VCFutil
+from NGS.BasicUtil import Util, VCFutil,Caculators
 import NGS.BasicUtil.DBManager as dbm
-import os
-import re
+import os,re
+
+
+primaryID = "chrID"
+class Dstatistics():
+    def __init__(self,database="life_pilot",ip="10.2.48.96",usrname="root",pw="1234567",allpopssnptable="derived_alle_ref"):
+        super().__init__()
+        self.dbtools=dbm.DBTools(ip,usrname,pw,database)
+        self.DMapByChrom={}#{chrom1:[(first_snp_pos,last_snp_pos,fst),(),(),...],chrom2:[],....}
+        self.allpopssnptable=allpopssnptable
+#     def 
+    def caculateFstAccordingdb(self,chromstable,p1name,p2name,p3name,caculator,winwidth,minlengthOfchrom='0'):
+        totalChroms = self.dbtools.operateDB("select","select count(*) from "+chromstable+" where chrlength>="+minlengthOfchrom)[0][0]
+        for i in range(0,totalChroms,20):
+            currentsql="select * from " + chromstable+" where chrlength>="+minlengthOfchrom+" order by "+primaryID+" limit "+str(i)+",20"
+            chrs=self.dbtools.operateDB("select",currentsql)
+            for chrinfo in chrs:
+                currentchrID=chrinfo[0]
+                currentchrLen=int(chrinfo[2])
+                snpsInAChr=self.dbtools.operateDB("select","select snp_pos,ref_base,alt_base,ancestralallel,archicpop,"+p1name+","+p2name+","+p3name+" from "+self.allpopssnptable+" where chrID='"+currentchrID+"'")
+                all4popallposInAChr=[]
+                if len(snpsInAChr)==0:
+                    self.DMapByChrom[currentchrID]=[(0,0,'NA','NA')]
+                    continue
+                for snp in snpsInAChr:
+                    if snp[4]==None or snp[4].strip() == "no covered" or snp[5].strip()=="no covered" or snp[6].strip()=="no covered" or snp[7].strip()=="no covered":
+                        continue
+                    snp_pos=snp[0]
+                    ref_base=snp[1].strip()
+                    alt_base=snp[2].strip()
+                    ancestralallel=snp[3]
+                    if snp[4]==None or re.search(r'[\w\W]+[,][\w\W]+:\d+,\d+',snp[4])!=None:
+                        continue
+                    archicpop=re.search(r'([ATCGatcg]+):(\d+),(\d+)',snp[4])
+                    archic_base=archicpop.group(1).strip()
+                    if len(re.split(r',',alt_base))!=1:
+                        continue
+                    if ancestralallel!=None and archic_base!= ancestralallel.strip():
+                        continue
+                    if archic_base!=alt_base:
+                        continue                    
+                    if archicpop.group(2).strip()!='0' and archicpop.group(3).strip()!='0':
+                        continue
+                    elif archicpop.group(2).strip()=='0':
+                        A_base_idx=1#alt_allele is the ancestral allele
+                    elif archicpop.group(3).strip()=='0':
+                        A_base_idx=0#ref_allele is the ancestral allele
+                    all4popallposInAChr.append((snp_pos,snp[5],snp[6],snp[7],A_base_idx))
+                if winwidth==None:
+                    for site in all4popallposInAChr:
+                        caculator.process(site)
+                    else:
+                        ABBAcount,BABAcount,D_fixed,D_snp=caculator.getResult()
+                    self.DMapByChrom[currentchrID]=[(ABBAcount,BABAcount,D_fixed,D_snp)]
+                else:
+                    print("ing....")#call self.caculateDstatistics() to caculate D in every windows
+                    pass
+                        
+    def caculateDstatistics(self,p1,p2,p3,p4,caculator,currentchrID,currentchrLen, winwidth=None):
+        win = Util.Window()
+
 class MakeDerivedAlleletable():
     def __init__(self, database="life_pilot", ip="10.2.48.96", usrname="root", pw="1234567"):
         super().__init__()
@@ -300,39 +359,51 @@ class MakeDerivedAlleletable():
             currentsql="select * from " + chromtable+" order by chrlength limit "+str(i)+",20"
             result=self.dbtools.operateDB("select",currentsql)
             for row in result:
+                
                 currentchrID=row[0]
+                print(currentchrID+":",end="")
                 currentchrLen=int(row[2])
-                if currentchrID in archicpop.VcfIndexMap:
-                    archicpopSeqOfAChr={}
-                    archicpopSeqOfAChr[currentchrID]=archicpop.getVcfListByChrom(archicpopVcfFile, currentchrID)
-                    for pos, REF, ALT, INFO,FORMAT,samples in archicpopSeqOfAChr[currentchrID]:
-                        dp4 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", INFO)
-                        refdep=0;altalleledep=0
-                        if dp4!=None:#vcf from samtools 
-                            refdep = int(dp4.group(1)) + int(dp4.group(2))
-                            altalleledep = int(dp4.group(3)) + int(dp4.group(4))    
+                archicpopSeqOfAChr={}
+                archicpopSeqOfAChr[currentchrID]=archicpop.getVcfListByChrom(archicpopVcfFile, currentchrID)
+                allsnpsInAchr=self.dbtools.operateDB("select","select snp_pos,alt_base from "+tablename+" where chrID='"+currentchrID+"'")
+                for snp in allsnpsInAchr:
+                    snp_pos=int(snp[0])
+                    ALT=snp[1]
+                    low=0
+                    high=len(archicpopSeqOfAChr[currentchrID])-1
+                    while low <=high:
+                        mid=(low+high)>>1
+                        if archicpopSeqOfAChr[currentchrID][mid][0]< snp_pos:
+                            low=mid+1
+                        elif archicpopSeqOfAChr[currentchrID][mid][0]> snp_pos:
+                            high=mid-1
+                        else:#find the pos
+                            pos, REF, ALT, INFO,FORMAT,samples = archicpopSeqOfAChr[currentchrID][mid]
+                            dp4 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", INFO)
+                            refdep=0;altalleledep=0
+                            if dp4!=None:#vcf from samtools 
+                                refdep = int(dp4.group(1)) + int(dp4.group(2))
+                                altalleledep = int(dp4.group(3)) + int(dp4.group(4))    
+                            else:
+                                AD_idx=(re.split(":",FORMAT)).index("AD")#gatk GT:AD:DP:GQ:PL
+                                for sample in samples:
+                                    if len(re.split(":",sample))==1:# ./.
+                                        continue
+                                    AD_depth=re.split(",",re.split(":",sample)[AD_idx])
+                                    try :
+                                        refdep+=int(AD_depth[0])
+                                        altalleledep+=int(AD_depth[1])
+                                    except ValueError:
+                                        print(sample,end="")
+                            popsdata=ALT+":"+str(refdep)+","+str(altalleledep)
+                            break
+                    else:
+                        depth_linelist = depthfile.getdepthByPos(currentchrID, snp_pos)
+                        if int(depth_linelist[species_idx]) <= 1:
+                            popsdata="no covered"
                         else:
-                            AD_idx=(re.split(":",FORMAT)).index("AD")#gatk GT:AD:DP:GQ:PL
-                            for sample in samples:
-                                if len(re.split(":",sample))==1:# ./.
-                                    continue
+                            popsdata=ALT+":"+depth_linelist[species_idx] + ",0"
+                    print(snp[0],end="\t")     
+                    self.dbtools.operateDB("update", "update " + tablename + " set "+archicpopfieldNameintable+" = '" + popsdata+"' where chrID="+"'"+currentchrID+"' and snp_pos="+str(snp[0]))
 
-                                AD_depth=re.split(",",re.split(":",sample)[AD_idx])
-                                try :
-                                    refdep+=int(AD_depth[0])
-                                    altalleledep+=int(AD_depth[1])
-                                except ValueError:
-                                    print(sample,end="")
-                                if refdep+altalleledep<2:
-                                    depth_linelist = depthfile.getdepthByPos(currentchrID, pos)
-                                    if int(depth_linelist[species_idx]) <= 1:
-                                        popsdata="no covered"
-                                    else:
-                                        popsdata=ALT+":"+depth_linelist[species_idx] + ",0"
-                                else:
-                                    popsdata=ALT+":"+str(refdep)+","+str(altalleledep)
-                            print("update " + tablename + " set "+archicpopfieldNameintable+" = '" + popsdata+"' where chrID="+"'"+currentchrID+"' and snp_pos="+str(pos))
-                            self.dbtools.operateDB("update", "update " + tablename + " set "+archicpopfieldNameintable+" = '" + popsdata+"' where chrID="+"'"+currentchrID+"' and snp_pos="+str(pos))
-                        
-        
         

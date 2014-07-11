@@ -67,6 +67,54 @@ class Caculate_phastConsValue(Caculator):
             self.conservationvalue=0
             self.totalPostionsAwin=0
             return winvalue
+
+class Caculate_Dstatistics(Caculator):
+    def __init__(self):
+        super().__init__()
+        self.ABBA=0
+        self.BABA=0
+        self.numerator_fixed=0
+        self.denominator_fixed=0
+        self.numerator_snp=0
+        self.denominator_snp=0
+    def process(self,T,seqerrorrate=0.01):
+        """T:(pos,"a,b","c,d","e,f",A_base_idx)     1 - A_base_idx= B_base_idx ie. T[4] is the A idx . 1-T[4] is the B idx
+        """
+        p1A=int(re.split(r",",T[1])[T[4]]);p1B=int(re.split(r",",T[1])[1-T[4]])
+        p2A=int(re.split(r",",T[2])[T[4]]);p2B=int(re.split(r",",T[2])[1-T[4]])
+        p3A=int(re.split(r",",T[3])[T[4]]);p3B=int(re.split(r",",T[3])[1-T[4]])
+        if p3A==0 and p3B!=0:#p3 fixed as B
+            if p2A==0 and p2B!=0:#p2 fixed as B
+                if p1B==0 and p1A!=0:#p1 fixed as A
+                    self.ABBA+=1
+                    print(T,"abba")
+                    self.numerator_fixed+=1
+                    self.denominator_fixed+=1
+            elif p2B==0 and p2A!=0:#p2 fixed as A
+                if p1A==0 and p1B!=0:#p1 fixed as B
+                    self.BABA+=1
+                    print(T,"baba")
+                    self.numerator_fixed+=-1
+                    self.denominator_fixed+=1
+        try:
+            self.numerator_snp+=p3B/(p3B+p3A) * ((p1A/(p1A+p1B))*(p2B/(p2A+p2B)) - (p1B/(p1A+p1B))*(p2A/(p2A+p2B)))
+            self.denominator_snp+=p3B/(p3B+p3A) * ((p1A/(p1A+p1B))*(p2B/(p2A+p2B)) + (p1B/(p1A+p1B))*(p2A/(p2A+p2B)))
+        except ZeroDivisionError:
+            pass
+    def getResult(self):
+        ABBAcount=self.ABBA
+        BABAcount=self.BABA
+        try:
+            D_fixed=self.numerator_fixed/self.denominator_fixed
+            D_snp=self.numerator_snp/self.denominator_snp
+        except ZeroDivisionError:
+            D_fixed='NA'
+            D_snp='NA'
+        self.numerator_fixed=0;self.denominator_fixed=0;self.ABBA=0;self.BABA=0
+        self.numerator_snp=0;self.denominator_snp=0
+        return ABBAcount,BABAcount,D_fixed,D_snp
+        
+        
         
 class Caculate_Hp(Caculator):
     def __init__(self,minsnps=3):

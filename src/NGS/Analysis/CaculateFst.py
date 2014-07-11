@@ -123,7 +123,6 @@ class Fst():
                                  
     def caculateFst(self, vcfMap1_ref, vcfMap2, caculator,currentchrID,currentchrLen, winwidth, slideSize):
         win = Util.Window()
-        tempmap={}
         try:
 #            self.doubleVcfMap={}
             doubleVcfMap = self.alin2PopSnpPos(vcfMap1_ref, vcfMap2)#produce self.doubleVcfMap{}

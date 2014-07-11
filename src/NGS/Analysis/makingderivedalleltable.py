@@ -7,6 +7,7 @@ from NGS.BasicUtil import Util
 from optparse import OptionParser
 import NGS.BasicUtil.DBManager as dbm
 import NGS.BasicUtil.DerivedalleleProcessor as DAP
+import NGS.RUtil.Make_Picture as MP
 
 import pickle
 """
@@ -29,12 +30,15 @@ parser.add_option("-c","--chromtable",dest="chromtable")
 parser.add_option("-f","--flanklen",dest="flanklen")
 parser.add_option("-B","--pathtoblastn",dest="pathtoblastn")
 parser.add_option("-b","--pathtoblastdb",dest="pathtoblastdb")
+parser.add_option("-m","--minlength",dest="minlength")
+parser.add_option("-p","--prefilename",dest="prefilename")
 parser.add_option("-o","--ancenstryvcftable",dest="ancenstryvcftable")
-
 parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", default=True,
                   help="don't print status messages to stdout")
 (options, args) = parser.parse_args()
+allpop=args[:]
+minlengthOfchrom=options.minlength
 vcfFileName=options.mutiplepopsvcffile
 DepthFileName=options.Depthfile
 duckrefhandler=open(options.reference,'r')
@@ -52,29 +56,31 @@ if options.continuechrom!=None and options.continuepos!=None:
     continuepos=int(options.continuepos)
 else:
     continuechrom=None;continuepos=None
-
+chromstable=options.chromtable
 primaryID = "chrID"
 OUTFILENAME="ducksnpflankseq.fa"
 outfile=open("ducksnpflankseq.fa",'w')
 BlastOutFile="ducksnpflankseq.blast"
 if __name__ == '__main__':
-    aaa=DAP.MakeDerivedAlleletable(database=dbname,ip="10.2.48.96",usrname="root",pw="1234567")
-    dbtools = dbm.DBTools("10.2.48.96", "root", "1234567", dbname)
-    try:
-        duckrefindex = pickle.load(open(options.reference + ".myindex", 'rb'))
-        originalspeciesindex = pickle.load(open(originalspeciesref + ".myindex", 'rb'))
-    except IOError:
-        Util.generateIndexByChrom(options.reference, options.reference + ".myindex")
-        Util.generateIndexByChrom(originalspeciesref, originalspeciesref + ".myindex")
-        duckrefindex = pickle.load(open(options.reference + ".myindex", 'rb'))
-        originalspeciesindex = pickle.load(open(originalspeciesref + ".myindex", 'rb'))
+#     aaa=DAP.MakeDerivedAlleletable(database=dbname,ip="10.2.48.96",usrname="root",pw="1234567")
+    ddd=MP.Dstistics_allpop(allpop)
+    ddd.caculateDofAllpossibleCombination(database=dbname,ip="10.2.48.96",usrname="root",pw="1234567", allpopssnptable="derived_alle_ref", chromstable=chromstable, winwidth=None, minlengthOfchrom=minlengthOfchrom, filenamepre=options.prefilename)
+#     dbtoolsforchrom = dbm.DBTools("10.2.48.96", "root", "1234567", dbname)
+#     try:
+#         duckrefindex = pickle.load(open(options.reference + ".myindex", 'rb'))
+#         originalspeciesindex = pickle.load(open(originalspeciesref + ".myindex", 'rb'))
+#     except IOError:
+#         Util.generateIndexByChrom(options.reference, options.reference + ".myindex")
+#         Util.generateIndexByChrom(originalspeciesref, originalspeciesref + ".myindex")
+#         duckrefindex = pickle.load(open(options.reference + ".myindex", 'rb'))
+#         originalspeciesindex = pickle.load(open(originalspeciesref + ".myindex", 'rb'))
 #     aaa.createtable()
 #     aaa.filldata(vcfFileName=vcfFileName,depthfileName=DepthFileName,continuechrom=continuechrom,continuepos=continuepos)
-    aaa.fillarchicpop(archicpopVcfFile,DepthFileName,chromtable,archicpopNameindepthFile)
-#     totalChroms = dbtools.operateDB("select","select count(*) from "+chromtable)[0][0]
+#     aaa.fillarchicpop(archicpopVcfFile,DepthFileName,chromstable,archicpopNameindepthFile)
+#     totalChroms = dbtoolsforchrom.operateDB("select","select count(*) from "+chromstable)[0][0]
 #     for i in range(0,totalChroms,20):
-#         currentsql="select * from " + chromtable+" order by chrlength limit "+str(i)+",20"
-#         result=dbtools.operateDB("select",currentsql)
+#         currentsql="select * from " + chromstable+" order by chrlength limit "+str(i)+",20"
+#         result=dbtoolsforchrom.operateDB("select",currentsql)
 #         for row in result:
 #             currentchrID=row[0]
 #             currentchrLen=int(row[2])
@@ -83,3 +89,4 @@ if __name__ == '__main__':
 #     duckrefhandler.close()
 #     aaa.callblast(pathtoblastn,pathtoblastdb,OUTFILENAME,BlastOutFile)
 #     aaa.extarctAncestryAlleleFromBlastOut(BlastOutFile,originalspeciesref,originalspeciesindex,tablename="derived_alle_ref",ancestralsnptable=ancestralsnptable)
+    
