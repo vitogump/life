@@ -31,6 +31,11 @@ parser.add_option("-q", "--quiet",
                                                                                                                                                           
 (options, args) = parser.parse_args()
 reffa = open(options.reffa, 'r')
+
+with open(options.reffa,'r') as testminintervalbetweengenes_basesperfaline:
+    testminintervalbetweengenes_basesperfaline.readline()
+    minintervalbetweengenes_basesperfaline=len(testminintervalbetweengenes_basesperfaline.readline().strip())
+    print(minintervalbetweengenes_basesperfaline)
 #gtffile = open(options.gtffile, 'r')
 vcffile = open(options.variants, 'r')
 #covfile = open(options.genomedepth, 'r')
@@ -72,12 +77,17 @@ if __name__ == '__main__':
         nearestGenes = Util.genes(gtfListOfCurrentChrom, currentBaselocinGenome, RefSeqMap[currentChromNO])
         if nearestGenes.geneOverlapList:
             frontmostpos = nearestGenes.geneOverlapList[0][2];Rearmostpos = nearestGenes.geneOverlapList[-1][3]
-        if nearestGenes.geneOverlapList and len(RefSeqMap[currentChromNO]) <= (Rearmostpos - frontmostpos + 1):
+        if nearestGenes.geneOverlapList and len(RefSeqMap[currentChromNO])-1+RefSeqMap[currentChromNO][0]+1 < Rearmostpos:
+            bases_to_get=Rearmostpos -len(RefSeqMap[currentChromNO])-RefSeqMap[currentChromNO][0]
+            lins_to_get=int(bases_to_get/minintervalbetweengenes_basesperfaline)+1
             curposoffilehandler = reffa.tell()
             reffa_suplemtry = open(options.reffa, 'r')
             reffa_suplemtry.seek(curposoffilehandler)
-            RefSeqMap_suplemtry, lastchromNo_suplemtry = Util.getRefSeqMap(reffa_suplemtry, currentChromNO=currentChromNO, preBaseTotal=RefSeqMap[currentChromNO][0] + len(RefSeqMap[currentChromNO]) - 1)
-            RefSeqMap[currentChromNO] += RefSeqMap_suplemtry[1:]
+            RefSeqMap_suplemtry, currentchromNo_suplemtry,nextChromNO = Util.getRefSeqMap(reffa_suplemtry, currentChromNO=currentChromNO, preBaseTotal=RefSeqMap[currentChromNO][0] + len(RefSeqMap[currentChromNO]) - 1,linesOnce=lins_to_get)
+            if currentchromNo_suplemtry!=currentChromNO:
+                print("this if block just for test")
+                exit(-1)
+            RefSeqMap[currentChromNO] += RefSeqMap_suplemtry[currentchromNo_suplemtry][1:]
             reffa_suplemtry.close()
             nearestGenes = Util.genes(gtfMap[currentChromNO], currentBaselocinGenome, RefSeqMap[currentChromNO])
         #the the use of if block upside is that make sure RefSeqMap[currentChromNO] has enough seq contain the geneOverlapList scope
@@ -140,11 +150,16 @@ if __name__ == '__main__':
                 if nearestGenes.geneOverlapList:
                     frontmostpos = nearestGenes.geneOverlapList[0][2];Rearmostpos = nearestGenes.geneOverlapList[-1][3]
                 if nearestGenes.geneOverlapList and len(RefSeqMap[currentChromNO]) <= (Rearmostpos - frontmostpos + 1):
+                    bases_to_get=Rearmostpos -len(RefSeqMap[currentChromNO])-RefSeqMap[currentChromNO][0]
+                    lins_to_get=int(bases_to_get/minintervalbetweengenes_basesperfaline)+1
                     curposoffilehandler = reffa.tell()
                     reffa_suplemtry = open(options.reffa, 'r')
                     reffa_suplemtry.seek(curposoffilehandler)
-                    RefSeqMap_suplemtry, lastchromNo_suplemtry = Util.getRefSeqMap(reffa_suplemtry, currentChromNO=currentChromNO, preBaseTotal=RefSeqMap[currentChromNO][0] + len(RefSeqMap[currentChromNO]) - 1)
-                    RefSeqMap[currentChromNO] += RefSeqMap_suplemtry[1:]
+                    RefSeqMap_suplemtry, currentchromNo_suplemtry,nextChromNO = Util.getRefSeqMap(reffa_suplemtry, currentChromNO=currentChromNO, preBaseTotal=RefSeqMap[currentChromNO][0] + len(RefSeqMap[currentChromNO]) - 1,linesOnce=lins_to_get)
+                    if currentchromNo_suplemtry!=currentChromNO:
+                        print("this if block just for test")
+                        exit(-1)
+                    RefSeqMap[currentChromNO] += RefSeqMap_suplemtry[currentchromNo_suplemtry][1:]
                     reffa_suplemtry.close()
                     nearestGenes = Util.genes(gtfMap[currentChromNO], currentBaselocinGenome, RefSeqMap[currentChromNO])
                 print(idx_RefSeq,currentBaselocinGenome,frontmostpos,Rearmostpos)

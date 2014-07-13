@@ -53,7 +53,7 @@ if __name__ == '__main__':
     print(titlelist)
     for speciesName in options.speciesesName:
         outfile=open(options.outfilepreName+speciesName,'w')
-        print("snpID\tregion\tDAF\tMAF",file=outfile)
+        print("snpID\tregion\tDAF\tMAF\tgroup",file=outfile)
         speciesidx=titlelist.index(speciesName)
         
         for bedfileName in args[:]:
@@ -70,30 +70,41 @@ if __name__ == '__main__':
                     if selectedsnps==None:
                         continue
                     for snp in selectedsnps:
-                        if snp[6]==None or snp[speciesidx].strip()=="no covered":
+                        if snp[6]==None or snp[speciesidx].strip()=="no covered" or snp[6]=="no covered" or re.search(r'[\w\W]+[,][\w\W]+:\d+,\d+',snp[4])!=None:
                             continue
                         snpid=snp[0].strip()+"_"+str(snp[1])
-                        archicsnp = re.search(r"(\w*):(\d*),(\d*)", snp[6])
-                        archicaltalle=archicsnp.group(1).strip().upper()
-                        archicrefcount=int(archicsnp.group(2).strip())
-                        archicaltcount=int(archicsnp.group(3).strip())
-                        if snp[5]!=None:
-                            if snp[5].strip().upper()!=archicaltalle:
-                                print("skip:",snp)
-                                continue
+                        archicpop=re.search(r'([ATCGatcg]+):(\d+),(\d+)',snp[6])
+                        archic_base=archicpop.group(1).strip().upper()
+#                         archicsnp = re.search(r"(\w*):(\d*),(\d*)", snp[6])
+#                         archicaltalle=archicsnp.group(1).strip().upper()
+                        archicrefcount=int(archicpop.group(2).strip())
+                        archicaltcount=int(archicpop.group(3).strip())
+#                         ancestralallel=snp[5].strip().upper()
+                        ref_base=snp[3].strip().upper()
+#                         if snp[5]!=None:
+#                             if snp[5].strip().upper()!=archicaltalle:
+#                                 print("skip:",snp)
+#                                 continue
                         if (archicrefcount!=0 and archicaltcount!=0) or (archicrefcount+archicaltcount)<mindepth:
                             print("skip:",snp)
                             continue
                         popsnpcount=re.split(r',',snp[speciesidx])
                         if int(popsnpcount[0].strip())+int(popsnpcount[1].strip())<mindepth:
                             continue
-                        
-                        if archicaltalle==snp[3].strip().upper():#ancestral allel is the same with ref allele type
-                            DAF=int(popsnpcount[0])/(int(popsnpcount[0])+int(popsnpcount[1]))
-                        elif archicaltalle==snp[4].strip().upper():#ancestral allel is the same with alt allele type
-                            DAF=int(popsnpcount[1])/(int(popsnpcount[0])+int(popsnpcount[1]))
-                        else:
-                            continue
+                        if archicpop.group(2).strip()=='0':
+                            if snp[5]!=None and archic_base!= snp[5].strip().upper():
+                                continue
+                            DAF=int(popsnpcount[1])/(int(popsnpcount[0])+int(popsnpcount[1]))#alt_allele is the ancestral allele
+                        elif archicpop.group(3).strip()=='0':
+                            if snp[5]!=None and snp[5].strip().upper()!=ref_base:
+                                continue
+                            DAF=int(popsnpcount[0])/(int(popsnpcount[0])+int(popsnpcount[1]))#ref_allele is the ancestral allele
+#                         if archicaltalle==snp[3].strip().upper():#ancestral allel is the same with ref allele type
+#                             DAF=int(popsnpcount[0])/(int(popsnpcount[0])+int(popsnpcount[1]))
+#                         elif archicaltalle==snp[4].strip().upper():#ancestral allel is the same with alt allele type
+#                             DAF=int(popsnpcount[1])/(int(popsnpcount[0])+int(popsnpcount[1]))
+#                         else:
+#                             continue
                         MAF=min(int(popsnpcount[0]),int(popsnpcount[1]))/(int(popsnpcount[0])+int(popsnpcount[1]))
                         print("insert into "+tablename+"(snpID,region,DAF,MAF) values(%s,%s,%s,%s)")
                         tempdbtools.operateDB("insert","insert into "+tablename+"(snpID,region,DAF,MAF) values(%s,%s,%s,%s)",data=(snpid,regionName,DAF,MAF))

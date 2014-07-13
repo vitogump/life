@@ -34,19 +34,19 @@ class Dstistics_allpop(object):
             winCrossGenome_fix = []
             winCrossGenome_snp = []
             for chrom in D.DMapByChrom:
-                if D.DMapByChrom[chrom][3] != 'NA':
-                    winCrossGenome_snp.append(D.DMapByChrom[chrom][3])
-                if D.DMapByChrom[chrom][2] != 'NA':
-                    winCrossGenome_fix.append(D.DMapByChrom[chrom][2])
-                allABBAcount += D.DMapByChrom[chrom][0]
-                allBABAcount += D.DMapByChrom[chrom][1]
-                print(str(D.DMapByChrom[chrom][3]),p1name+p2name+p3name,sep='\t',file=tempfiletomakebox)
+                if D.DMapByChrom[chrom][0][3] != 'NA':
+                    winCrossGenome_snp.append(D.DMapByChrom[chrom][0][3])
+                if D.DMapByChrom[chrom][0][2] != 'NA':
+                    winCrossGenome_fix.append(D.DMapByChrom[chrom][0][2])
+                allABBAcount += D.DMapByChrom[chrom][0][0]
+                allBABAcount += D.DMapByChrom[chrom][0][1]
+                print(str(D.DMapByChrom[chrom][0][3]),p1name+p2name+p3name,sep='\t',file=tempfiletomakebox)
             exception_fix = numpy.mean(winCrossGenome_fix);exception_snp = numpy.mean(winCrossGenome_snp)
             variance_fix = numpy.var(winCrossGenome_fix);variance_snp = numpy.var(winCrossGenome_snp)
             stderr_fix = math.sqrt(variance_fix * len(winCrossGenome_fix));stderr_snp = math.sqrt(variance_snp * len(winCrossGenome_snp))
-            listtofinalfile.append((p1name + p2name + p3name, str(allABBAcount), str(allBABAcount), str(exception_fix), str(stderr_fix), str(exception_snp), str(stderr_snp)))
+            listtofinalfile.append((p1name +","+ p2name+"," + p3name, str(allABBAcount), str(allBABAcount), str(exception_fix), str(stderr_fix), str(exception_snp), str(stderr_snp)))
             D.dbtools.disconnect()
-            tempfiletomakebox.close()
+        tempfiletomakebox.close()
         for rec in listtofinalfile:
             print("\t".join(rec),file=D_sum_file)
         D_sum_file.close()

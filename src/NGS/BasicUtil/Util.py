@@ -62,7 +62,7 @@ def generateIndexByChrom(refFastaFileName, indexFileName,mapname=None):
     pickle.dump(refChromIndex, open(indexFileName, 'wb'))
     refFastaFile.close()
 
-def getGtfMap(gtfFileName):
+def getGtfMap(gtfFileName,elementTypes=["CDS","start_codon","stop_codon"]):
     """protein_codingMap={chromNo:[[transcript_id,strand,start,end,(feature, elemStart, elemEnd, frame),(),(),,,,,],
                         [transcript_id,strand,start,end,(),(),(),,,],[],,,,,,,],
                chromNo:[],,,,,,,,,,,,,,}
@@ -78,12 +78,21 @@ def getGtfMap(gtfFileName):
     protein_codingMap[chromNo] = []
     transcript_id = re.search(r'\"(.*)\";',gtfColList[11].strip()).group(1)
     countInChrom = 0
-    protein_codingMap[chromNo] = [[transcript_id, gtfColList[6], int(gtfColList[3]), int(gtfColList[4]), (gtfColList[2], int(gtfColList[3]), int(gtfColList[4]), gtfColList[7])]]
+    for elementType in elementTypes:
+        if elementType==gtfColList[2].strip():
+            protein_codingMap[chromNo] = [[transcript_id, gtfColList[6], int(gtfColList[3]), int(gtfColList[4]), (gtfColList[2], int(gtfColList[3]), int(gtfColList[4]), gtfColList[7])]]
+    else:
+        print(gtfline)
+    
     chrtranscrpitididxMap[chromNo] = {transcript_id:0}
     for gtfline in gtfFileHandler:
         gtfColList = re.split(r'\s+', gtfline)
         transcript_id = re.search(r'\"(.*)\";',gtfColList[11].strip()).group(1)
-        if "protein_coding" != gtfColList[1]:
+        for elementType in elementTypes:
+            if elementType==gtfColList[2].strip():
+                break
+        else:
+            print(gtfline)
             continue
         chromNo = gtfColList[0].strip()
         if chromNo in protein_codingMap:
@@ -209,7 +218,12 @@ def getRefSeqMap(refFastafilehander, currentChromNO=None, preBaseTotal=0, linesO
         return refSeqMap, currentChromNO, "end of the reffile"
     else:
         refSeqMap[currentChromNO] = [preBaseTotal]
-    for refline in refFastafilehander:
+#     for refline in refFastafilehander:
+    
+    while 1:
+        refline=refFastafilehander.readline()
+        if not refline:
+            return refSeqMap, currentChromNO, "end of the reffile"
         if re.search(r'^[>]', refline) != None:
             collist = re.split(r'\s+', refline)
             print("getRefSeqMap", re.search(r'[^>]+', collist[0]).group(0))
@@ -225,11 +239,15 @@ def getRefSeqMap(refFastafilehander, currentChromNO=None, preBaseTotal=0, linesO
         return refSeqMap, currentChromNO, "end of the reffile"
     return refSeqMap, currentChromNO, currentChromNO
 class genes():
-    def __init__(self, gtfList, pos, RefSeqList):
+    def __init__(self, gtfList, pos, RefSeqList,minintervalbetweengenes_basesperfaline=60):
         super().__init__()
+        self.lastgenesRearpos=0
+        self.minintervalbetweengenes_basesperfaline=minintervalbetweengenes_basesperfaline
         self.geneOverlapList = self.getNearestGeneOverlapList(gtfList, pos)
         self.tscptSeqAllCds = {}
         self.cds_frame = {}#{transcript_id:{cdsidx:(frame,startpos of this cds),cdsidx:(),,,,,}}
+        
+        
         for gene in self.geneOverlapList:
             
             genename = gene[0]
@@ -245,8 +263,9 @@ class genes():
                 elif  feature == "stop_codon":#feature == 'start_codon' or
                     self.cds_frame[genename][cdsidx] = (int(frame), len(self.tscptSeqAllCds[genename]))
                     self.tscptSeqAllCds[genename] += RefSeqList[(elemStart - RefSeqList[0]):(elemEnd - RefSeqList[0] + 1)]
-            if genename=='"ENSAPLT00000005931";':
-                print(genename,elemStart - RefSeqList[0],elemEnd - RefSeqList[0] + 1,elemStart - RefSeqList[0],elemEnd - RefSeqList[0] + 1,RefSeqList[0],len(RefSeqList))
+
+#         print(genename,elemStart - RefSeqList[0],elemEnd - RefSeqList[0] + 1,elemStart - RefSeqList[0],elemEnd - RefSeqList[0] + 1,RefSeqList[0],len(RefSeqList))
+#         print(self.cds_frame)
     def getNearestGeneOverlapList(self, gtfList, pos):
         """
         input:for a chrom,contain all transcript of this chrom
@@ -260,7 +279,7 @@ class genes():
         if gtfList == None:
             return []
         for i in range(len(gtfList)):
-            if gtfList[i][2]>=pos :
+            if gtfList[i][2]>=pos and (pos==0 or self.lastgenesRearpos+self.minintervalbetweengenes_basesperfaline<=gtfList[i][2]): #the distance between two genes must longer than minintervalbetweengenes_basesperfaline except overlapped genes
                 geneOverlapList=[gtfList[i]]
                 break
         else:
@@ -278,6 +297,7 @@ class genes():
             furthest = max(furthest, gtfList[i][3])
             i += 1
         print("getNearestGeneOverlapList", i, geneOverlapList,pos)
+        self.lastgenesRearpos=geneOverlapList[-1][3]
         return geneOverlapList
     def getgeneConsensus(self, RefSeqList, idx_RefSeq, VcfList, idx_vcf, depthfile):
         """
@@ -391,6 +411,7 @@ class genes():
                 tscptSeqAllCds_mut_str_Revr_Cmplm.reverse()
                 tscptSeqAllCds_mut_str_Revr_Cmplm = "".join(tscptSeqAllCds_mut_str_Revr_Cmplm)
                 tscptSeqAllCds_mut[genename] = list(tscptSeqAllCds_mut_str_Revr_Cmplm)
+#                 print(genename,sorted(self.cds_frame[genename].keys()),len(tscptSeqAllCds_mut_str_Revr_Cmplm),3)
                 for i in range(self.cds_frame[genename][sorted(self.cds_frame[genename].keys())[-1]][0], len(tscptSeqAllCds_mut_str_Revr_Cmplm), 3):
 #                    codon = "".join(self.tscptSeqAllCds[genename][i:i+3]).lower()
                     codon_m = tscptSeqAllCds_mut_str_Revr_Cmplm[i:i + 3].lower()
