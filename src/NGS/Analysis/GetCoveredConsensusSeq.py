@@ -149,7 +149,7 @@ if __name__ == '__main__':
                 nearestGenes = Util.genes(gtfMap[currentChromNO], currentBaselocinGenome, RefSeqMap[currentChromNO])
                 if nearestGenes.geneOverlapList:
                     frontmostpos = nearestGenes.geneOverlapList[0][2];Rearmostpos = nearestGenes.geneOverlapList[-1][3]
-                if nearestGenes.geneOverlapList and len(RefSeqMap[currentChromNO]) <= (Rearmostpos - frontmostpos + 1):
+                if nearestGenes.geneOverlapList and  len(RefSeqMap[currentChromNO])-1+RefSeqMap[currentChromNO][0]+1 < Rearmostpos:
                     bases_to_get=Rearmostpos -len(RefSeqMap[currentChromNO])-RefSeqMap[currentChromNO][0]
                     lins_to_get=int(bases_to_get/minintervalbetweengenes_basesperfaline)+1
                     curposoffilehandler = reffa.tell()

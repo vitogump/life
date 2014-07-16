@@ -4,7 +4,7 @@ Created on 2013-8-10
 @author: rui
 '''
 
-from itertools import combinations
+import itertools
 import re, os, math
 
 import numpy
@@ -17,7 +17,7 @@ import rpy2.robjects as robjects
 class Dstistics_allpop(object):
     def __init__(self, allpopslist):
         super().__init__()
-        self.allpossiblecombination = list(combinations(allpopslist, 3))
+        self.allpossiblecombination = list(itertools.permutations(allpopslist, 3))
     def caculateDofAllpossibleCombination(self,database,ip,usrname,pw,allpopssnptable, chromstable, winwidth, minlengthOfchrom, filenamepre):
         listtofinalfile = []
         D_sum_file=open(filenamepre+"D_SUM.txt","w")

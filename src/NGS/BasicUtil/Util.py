@@ -72,17 +72,22 @@ def getGtfMap(gtfFileName,elementTypes=["CDS","start_codon","stop_codon"]):
     gtfFileHandler = open(gtfFileName, 'r')
     protein_codingMap = {}
     chrtranscrpitididxMap = {}
-    gtfline = gtfFileHandler.readline()
-    gtfColList = re.split(r'\s+', gtfline)
-    chromNo = gtfColList[0].strip()
-    protein_codingMap[chromNo] = []
-    transcript_id = re.search(r'\"(.*)\";',gtfColList[11].strip()).group(1)
-    countInChrom = 0
-    for elementType in elementTypes:
-        if elementType==gtfColList[2].strip():
-            protein_codingMap[chromNo] = [[transcript_id, gtfColList[6], int(gtfColList[3]), int(gtfColList[4]), (gtfColList[2], int(gtfColList[3]), int(gtfColList[4]), gtfColList[7])]]
-    else:
-        print(gtfline)
+#     gtfline = gtfFileHandler.readline()
+    jumpout=False
+    for getfirstcds in gtfFileHandler:
+        gtfColList = re.split(r'\s+', getfirstcds)
+        chromNo = gtfColList[0].strip()
+        protein_codingMap[chromNo] = []
+        transcript_id = re.search(r'\"(.*)\";',gtfColList[11].strip()).group(1)
+        countInChrom = 0        
+        for elementType in elementTypes:
+            if elementType==gtfColList[2].strip():
+                jumpout=True
+                protein_codingMap[chromNo] = [[transcript_id, gtfColList[6], int(gtfColList[3]), int(gtfColList[4]), (gtfColList[2], int(gtfColList[3]), int(gtfColList[4]), gtfColList[7])]]
+        else:
+            print(getfirstcds)
+        if jumpout:
+            break
     
     chrtranscrpitididxMap[chromNo] = {transcript_id:0}
     for gtfline in gtfFileHandler:
@@ -98,6 +103,7 @@ def getGtfMap(gtfFileName,elementTypes=["CDS","start_codon","stop_codon"]):
         if chromNo in protein_codingMap:
             if transcript_id in chrtranscrpitididxMap[chromNo].keys():
                 tanscript_id_idx = chrtranscrpitididxMap[chromNo][transcript_id]
+                print(chromNo,tanscript_id_idx,gtfColList)
                 protein_codingMap[chromNo][tanscript_id_idx].append((gtfColList[2], int(gtfColList[3]), int(gtfColList[4]), gtfColList[7]))
                 protein_codingMap[chromNo][tanscript_id_idx][2] = min(protein_codingMap[chromNo][tanscript_id_idx][2], int(gtfColList[3]))
                 protein_codingMap[chromNo][tanscript_id_idx][3] = max(protein_codingMap[chromNo][tanscript_id_idx][3], int(gtfColList[4]))
@@ -279,14 +285,14 @@ class genes():
         if gtfList == None:
             return []
         for i in range(len(gtfList)):
-            if gtfList[i][2]>=pos and (pos==0 or self.lastgenesRearpos+self.minintervalbetweengenes_basesperfaline<=gtfList[i][2]): #the distance between two genes must longer than minintervalbetweengenes_basesperfaline except overlapped genes
+            if gtfList[i][2]>=pos and (pos==1 or self.lastgenesRearpos+self.minintervalbetweengenes_basesperfaline<=gtfList[i][2]): #the distance between two genes must longer than minintervalbetweengenes_basesperfaline except overlapped genes
                 geneOverlapList=[gtfList[i]]
                 break
         else:
             if pos > gtfList[-1][3]:
                 return []
             else:
-                print(pos,gtfList)
+                print("getNearestGeneOverlapList",pos,gtfList)
                 exit(-1)
  
         furthest = gtfList[i][3]
@@ -375,6 +381,7 @@ class genes():
                                 try:
                                     tscptSeqAllCds_mut[genename][vcfpos - elemStart + self.cds_frame[genename][t4_indx][1]] = altalle
                                 except IndexError:
+                                    print(self.cds_frame)
                                     print(genename, vcfpos, t4_indx, altalle, elemStart, feature, len(tscptSeqAllCds_mut[genename]))
                                     exit(-1)
        
