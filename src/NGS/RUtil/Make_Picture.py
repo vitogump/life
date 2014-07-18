@@ -24,7 +24,7 @@ class Dstistics_allpop(object):
         print("p1,p2,p3\tABBA\tBABA\tD-fixed\tSE-fixed\tD-SNP\tSE-SNP",file=D_sum_file)
         tempfiletomakebox = open(filenamepre + "test.box", 'w')
         
-        print("D","group",file=tempfiletomakebox)
+        print("D","group","chrom",file=tempfiletomakebox)
         for p1name, p2name, p3name in self.allpossiblecombination:
             allABBAcount = 0;allBABAcount = 0
             
@@ -40,7 +40,7 @@ class Dstistics_allpop(object):
                     winCrossGenome_fix.append(D.DMapByChrom[chrom][0][2])
                 allABBAcount += D.DMapByChrom[chrom][0][0]
                 allBABAcount += D.DMapByChrom[chrom][0][1]
-                print(str(D.DMapByChrom[chrom][0][3]),p1name+p2name+p3name,sep='\t',file=tempfiletomakebox)
+                print(str(D.DMapByChrom[chrom][0][3]),p1name+p2name+p3name,chrom,sep='\t',file=tempfiletomakebox)
             exception_fix = numpy.mean(winCrossGenome_fix);exception_snp = numpy.mean(winCrossGenome_snp)
             variance_fix = numpy.var(winCrossGenome_fix);variance_snp = numpy.var(winCrossGenome_snp)
             stderr_fix = math.sqrt(variance_fix * len(winCrossGenome_fix));stderr_snp = math.sqrt(variance_snp * len(winCrossGenome_snp))

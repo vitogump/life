@@ -100,7 +100,7 @@ if __name__ == '__main__':
     homotrscpttitle=[e.strip() for e in homotrscpttitle]
     finalkakslist.append(tuple(homotrscpttitle+["dn/ds","dn","ds"]))
 
-    skipthishomotrscptline=False    
+    skipthishomotrscptline=False  
     for homotrscptline in homogenefile:
         homotrscptlist = re.split(r'~', homotrscptline)
         i = 0
@@ -111,6 +111,10 @@ if __name__ == '__main__':
             
             homotrscptlist[i] = re.search(r'transcript:(.*)', trscpt).group(1).strip()
             curspecies = homotrscpttitle[i].strip()
+            if homotrscptlist[i] not in aa_cds_filemap[curspecies][2]:
+                print(homotrscptlist[i],"not in aa file or cds file")
+                skipthishomotrscptline=True
+                break
             aa_cds_filemap[curspecies][0].seek(aa_cds_filemap[curspecies][2][homotrscptlist[i]])
             #homotrscptlist[i]==currentChromNO
             refSeqMap, currentChromNO, nextChromNO = Util.getRefSeqMap(aa_cds_filemap[curspecies][0], homotrscptlist[i], mapname="transcript:")
@@ -125,6 +129,9 @@ if __name__ == '__main__':
             del refSeqMap[homotrscptlist[i]]
             i += 1
         muscleinfile.close()
+        if skipthishomotrscptline:
+            skipthishomotrscptline=False
+            continue
         if max(lenofhomeAA)/min(lenofhomeAA)>=2:
             skipthishomotrscptline=True
         if skipthishomotrscptline:
@@ -179,11 +186,17 @@ if __name__ == '__main__':
         print(pamlcodeml,pamlcodemlctl)
         stat=os.system(pamlcodeml)
         if stat!=0:
-            print("Error")
-            exit(-1)
+            print("call paml maybe call this Error",pamlInputCDSFileName,"The seq file appears to be in fasta format, but not aligned?")
+            continue
+#             exit(-1)
         mlcfile=open(tempPath+"/mlc",'r')
         mlclines=mlcfile.readlines()
-        valuesabj=re.search(r'dN/dS=(.*)dN =(.*)dS =(.*)',mlclines[-1])
+        try:
+            valuesabj=re.search(r'dN/dS=(.*)dN =(.*)dS =(.*)',mlclines[-1])
+        except:
+            print("may be cause this Error:Make sure to separate the sequence from its name by 2 or more spaces.")
+            mlcfile.close()
+            continue
         dnds=valuesabj.group(1).strip()
         dn=valuesabj.group(2).strip()
         ds=valuesabj.group(3).strip()

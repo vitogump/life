@@ -2,9 +2,8 @@
 
 from NGS.BasicUtil import Util, VCFutil
 from optparse import OptionParser
-import pickle
 import re
-import sys
+import sys,pickle
 
 '''
 Created on 2014-2-12

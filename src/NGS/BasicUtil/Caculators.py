@@ -100,7 +100,7 @@ class Caculate_Dstatistics(Caculator):
             self.numerator_snp+=p3B/(p3B+p3A) * ((p1A/(p1A+p1B))*(p2B/(p2A+p2B)) - (p1B/(p1A+p1B))*(p2A/(p2A+p2B)))
             self.denominator_snp+=p3B/(p3B+p3A) * ((p1A/(p1A+p1B))*(p2B/(p2A+p2B)) + (p1B/(p1A+p1B))*(p2A/(p2A+p2B)))
         except ZeroDivisionError:
-            pass
+            print(self.denominator_snp,self.numerator_snp,T)
     def getResult(self):
         ABBAcount=self.ABBA
         BABAcount=self.BABA

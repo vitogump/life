@@ -35,7 +35,7 @@ class Dstatistics():
                     snp_pos=snp[0]
                     ref_base=snp[1].strip()
                     alt_base=snp[2].strip()
-                    ancestralallel=snp[3].strip().upper()
+#                     ancestralallel=snp[3].strip().upper()
                     if snp[4]==None or re.search(r'[\w\W]+[,][\w\W]+:\d+,\d+',snp[4])!=None:
                         continue
                     archicpop=re.search(r'([ATCGatcg]+):(\d+),(\d+)',snp[4])
