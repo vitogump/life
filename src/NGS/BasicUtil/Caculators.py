@@ -37,7 +37,7 @@ class Caculate_SNPsPerBIN(Caculator):
                 except ValueError:
                     print(sample,end="|")
 
-        if refdep<=seqerrorrate*(refdep+altalleledep):
+        if refdep<=seqerrorrate*(refdep+altalleledep):#not fixed
             return
 #        if refdep+altalleledep<10:
 #            return
@@ -69,7 +69,7 @@ class Caculate_phastConsValue(Caculator):
             return winvalue
 
 class Caculate_Dstatistics(Caculator):
-    def __init__(self):
+    def __init__(self,considerFixed=False):
         super().__init__()
         self.ABBA=0
         self.BABA=0
@@ -77,6 +77,7 @@ class Caculate_Dstatistics(Caculator):
         self.denominator_fixed=0
         self.numerator_snp=0
         self.denominator_snp=0
+        self.considerFixed=considerFixed
     def process(self,T,seqerrorrate=0.01):
         """T:(pos,"a,b","c,d","e,f",A_base_idx)     1 - A_base_idx= B_base_idx ie. T[4] is the A idx . 1-T[4] is the B idx
         """
@@ -96,6 +97,8 @@ class Caculate_Dstatistics(Caculator):
                     print(T,"baba")
                     self.numerator_fixed+=-1
                     self.denominator_fixed+=1
+        if (not self.considerFixed) and( p1A==0 or p1B==0 or p2A==0 or p2B==0 or p3A==0 or p3B==0):
+            return
         try:
             self.numerator_snp+=p3B/(p3B+p3A) * ((p1A/(p1A+p1B))*(p2B/(p2A+p2B)) - (p1B/(p1A+p1B))*(p2A/(p2A+p2B)))
             self.denominator_snp+=p3B/(p3B+p3A) * ((p1A/(p1A+p1B))*(p2B/(p2A+p2B)) + (p1B/(p1A+p1B))*(p2A/(p2A+p2B)))
@@ -117,12 +120,13 @@ class Caculate_Dstatistics(Caculator):
         
         
 class Caculate_Hp(Caculator):
-    def __init__(self,minsnps=3):
+    def __init__(self,minsnps=3,considerFixed=False):
         super().__init__()
         self.minsnps=minsnps
         self.COUNTED=0
         self.CNMI = 0
         self.CNMA = 0
+        self.considerFixed=considerFixed
     def process(self, T,seqerrorrate=0.01):
         
         dp4 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", T[3])
@@ -144,7 +148,7 @@ class Caculate_Hp(Caculator):
                             
             
 
-        if refdep<=seqerrorrate*(refdep+altalleledep):
+        if (not self.considerFixed) and refdep<=seqerrorrate*(refdep+altalleledep):#not fixed
             return
         if refdep+altalleledep<10:
             return
@@ -195,12 +199,13 @@ class Caculate_depth_judge(Caculator):
         self.AVERAGE_DEPTH=[0]*self.sampleNo
         return ([a/self.winsize for a in countlist],[a/self.winsize for a in average])
 class Caculate_Fst(Caculator):
-    def __init__(self,minsnps=3):
+    def __init__(self,minsnps=3,considerFixed=False):
         super().__init__()
         self.minsnps=minsnps
         self.CNk = 0
         self.CDk = 0
         self.COUNTED=0
+        self.considerFixed=considerFixed
     def process(self, T,seqerrorrate=0.01):
         
         refdep_1=0;refdep_2=0
@@ -239,7 +244,7 @@ class Caculate_Fst(Caculator):
                 except ValueError:
                     print(sample,end="|")
                              
-        if refdep_1<=seqerrorrate*(refdep_1+altalleledep_1) or refdep_2<=seqerrorrate*(refdep_2+altalleledep_2):
+        if (not self.considerFixed) and ( refdep_1<=seqerrorrate*(refdep_1+altalleledep_1) or refdep_2<=seqerrorrate*(refdep_2+altalleledep_2)):
             return  #NOTICT HERE
         self.COUNTED+=1
         h_1 = refdep_1 * altalleledep_1 / ((refdep_1 + altalleledep_1 - 1) * (refdep_1 + altalleledep_1))

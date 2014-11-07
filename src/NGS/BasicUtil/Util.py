@@ -529,16 +529,19 @@ class GATK_depthfile():
         pos = int(re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2))
         return chrom, pos, linelist, self.depthfilefp.tell()
     def getdepthByPos(self, targetchr, targetloc, lastposoffilehandler=0):
-        
+         
         linelist = re.split(r"\s+", self.depthfilefp.readline())
-        chrom = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1)
-        pos = int(re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2))
-        if chrom == targetchr and pos == targetloc:
-            return linelist
-        if chrom != targetchr or pos > targetloc:
+        if linelist[0]=="":#read the last line of the depthfile
             self.depthfilefp.seek(self.covfileidx[targetchr])
-        elif chrom == targetchr and pos < targetloc - 100:
-            pass#use the lastposoffilehandler to set the filehanlder quickly
+        else:
+            chrom = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1)
+            pos = int(re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2))
+            if chrom == targetchr and pos == targetloc:
+                return linelist
+            if chrom != targetchr or pos > targetloc:
+                self.depthfilefp.seek(self.covfileidx[targetchr])
+            elif chrom == targetchr and pos < targetloc - 100:
+                pass#use the lastposoffilehandler to set the filehanlder quickly
         linelist = re.split(r"\s+", self.depthfilefp.readline())
         chrom = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1)
         pos = int(re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2))
@@ -754,7 +757,7 @@ class WinInGenome():
         if tableNamewithNA == None:
             tableNamewithNA = random_str()
         tableNametextValueForappendGeneName=tableNamewithNA+"textField"
-        tempdbtools = dbm.DBTools("10.2.48.96", "root", "1234567", dbname)
+        tempdbtools = dbm.DBTools("10.2.48.140", "root", "1234567", dbname)
         TABLES = {}
         TABLES[tableNamewithNA] = (
             "CREATE TABLE " + tableNamewithNA + " ("
@@ -811,7 +814,7 @@ class WinInGenome():
         return tempdbtools, tableNamewithNA,tableNametextValueForappendGeneName 
     def appendGeneName(self,TranscriptGenetable,dbtools,winwidth,slideSize,outfileName):
         outfile=open(outfileName,'w')
-        print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tgeneName\ttrscptID",file=outfile)
+        print("chrNo\twinNo\tfirstsnppos\tlastsnppos\twinvalue\tzvalue\tgeneName\ttrscptID",file=outfile)
         totalWins=self.windbtools.operateDB("select","select count(*) from "+self.wintabletextvalueallwin)[0][0]
         allwins = self.windbtools.operateDB("select", "select * from " + self.wintabletextvalueallwin+" limit 1,"+str(totalWins))
         self.windbtools.operateDB("callproc", "mysql_sp_add_column", data=(self.dbname, self.wintabletextvalueallwin, "geneName", "varchar(128)", "default null"))

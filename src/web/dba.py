@@ -9,7 +9,7 @@ import mysql.connector
 import web.entity as entity
 
 db_config = {
-    'host': '10.2.48.96',
+    'host': '10.2.48.140',
     'user': 'root',
     'passwd': '1234567',
     'db':'ninglabweb',

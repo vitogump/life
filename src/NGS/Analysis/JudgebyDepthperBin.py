@@ -43,7 +43,7 @@ if __name__ == '__main__':
     
     depthbinmap={}
     mywin = Util.Window()
-    dbtools = dbm.DBTools("10.2.48.96", "root", "1234567", dbname)
+    dbtools = dbm.DBTools("10.2.48.140", "root", "1234567", dbname)
     depthfile = Util.GATK_depthfile(options.genomedepth, options.genomedepth + ".index")
     depthfile.title.remove("")
     print(depthfile.title,len(depthfile.title)-3)

@@ -24,7 +24,7 @@ class Dstistics_allpop(object):
         print("p1,p2,p3\tABBA\tBABA\tD-fixed\tSE-fixed\tD-SNP\tSE-SNP",file=D_sum_file)
         tempfiletomakebox = open(filenamepre + "test.box", 'w')
         
-        print("D","group","chrom",file=tempfiletomakebox)
+        print("D","group","chrom",sep='\t',file=tempfiletomakebox)
         for p1name, p2name, p3name in self.allpossiblecombination:
             allABBAcount = 0;allBABAcount = 0
             
@@ -33,22 +33,23 @@ class Dstistics_allpop(object):
             D.caculateFstAccordingdb(chromstable, p1name, p2name, p3name, D_caculator, winwidth, minlengthOfchrom)
             winCrossGenome_fix = []
             winCrossGenome_snp = []
-            for chrom in D.DMapByChrom:
+            for chrom in sorted(D.DMapByChrom.keys()):
                 if D.DMapByChrom[chrom][0][3] != 'NA':
                     winCrossGenome_snp.append(D.DMapByChrom[chrom][0][3])
                 if D.DMapByChrom[chrom][0][2] != 'NA':
                     winCrossGenome_fix.append(D.DMapByChrom[chrom][0][2])
                 allABBAcount += D.DMapByChrom[chrom][0][0]
                 allBABAcount += D.DMapByChrom[chrom][0][1]
-                print(str(D.DMapByChrom[chrom][0][3]),p1name+p2name+p3name,chrom,sep='\t',file=tempfiletomakebox)
+                print(str(D.DMapByChrom[chrom][0][3]),p1name+","+p2name+","+p3name,chrom,sep='\t',file=tempfiletomakebox)
             exception_fix = numpy.mean(winCrossGenome_fix);exception_snp = numpy.mean(winCrossGenome_snp)
             variance_fix = numpy.var(winCrossGenome_fix);variance_snp = numpy.var(winCrossGenome_snp)
             stderr_fix = math.sqrt(variance_fix * len(winCrossGenome_fix));stderr_snp = math.sqrt(variance_snp * len(winCrossGenome_snp))
+            print(p1name +","+ p2name+"," + p3name,str(allABBAcount), str(allBABAcount), str(exception_fix), str(stderr_fix), str(exception_snp), str(stderr_snp),sep="\t",file=D_sum_file)
             listtofinalfile.append((p1name +","+ p2name+"," + p3name, str(allABBAcount), str(allBABAcount), str(exception_fix), str(stderr_fix), str(exception_snp), str(stderr_snp)))
             D.dbtools.disconnect()
         tempfiletomakebox.close()
-        for rec in listtofinalfile:
-            print("\t".join(rec),file=D_sum_file)
+#         for rec in listtofinalfile:
+#             print("\t".join(rec),file=D_sum_file)
         D_sum_file.close()
         
 
@@ -66,17 +67,17 @@ class MakeMhtGraph(object):
         '''
         Constructor
         '''
-    def prepareMhtFileWithgeneName(self, inputfileName, dataType, chromPrefix="", postive_negtive=None, fillvalue=0):
-        """fill all NA value window with fillvalue,and fill all window that zvalue<=0 with fillvalue when postive_negtive= postive....
+    def prepareMhtFileWithgeneName(self, inputfileName, dataType, chromPrefix="", positive_negtive=None, fillvalue=0):
+        """fill all NA value window with fillvalue,and fill all window that zvalue<=0 with fillvalue when positive_negtive= positive....
         """
         originalfile = open(inputfileName, 'r')
         
         print("title", originalfile.readline())
-        if postive_negtive == None:
+        if positive_negtive == None:
             print(inputfileName, dataType)
             self.pathtoOutFileName = inputfileName + ".z" + dataType
         else:
-            self.pathtoOutFileName = inputfileName + "_" + postive_negtive + ".z" + dataType
+            self.pathtoOutFileName = inputfileName + "_" + positive_negtive + ".z" + dataType
         for line in originalfile:
             linelist = re.split(r'\s+', line.strip())
             currentChrom = linelist[0].strip()
@@ -93,7 +94,7 @@ class MakeMhtGraph(object):
                 print(ChromNo)
             if re.search(r"^" + chromPrefix, currentChrom):
                 if linelist[4].strip() != "NA" or linelist[5].strip() != "NA" or True:
-                    if postive_negtive == None:
+                    if positive_negtive == None:
                         if ChromNo in self.dataForGraphe.keys():
                             if linelist[5].strip() != "NA":
                                 self.dataForGraphe[ChromNo].append(tuple(linelist[1:7]))
@@ -101,7 +102,7 @@ class MakeMhtGraph(object):
                                 self.dataForGraphe[ChromNo].append(tuple(linelist[1:4] + [fillvalue, fillvalue, linelist[6]]))
                         else:
                             self.dataForGraphe[ChromNo] = [tuple(linelist[1:4] + [fillvalue, fillvalue, linelist[6]])]
-                    elif postive_negtive == "postive":
+                    elif positive_negtive == "positive":
                         if ChromNo in self.dataForGraphe.keys():
                             if linelist[5].strip() == 'NA' or float(linelist[5].strip()) <= 0:
                                 self.dataForGraphe[ChromNo].append(tuple(linelist[1:4] + [fillvalue, fillvalue, linelist[6]]))
@@ -112,7 +113,7 @@ class MakeMhtGraph(object):
                                 self.dataForGraphe[ChromNo] = [tuple(linelist[1:4] + [fillvalue, fillvalue, linelist[6]])]
                             else:
                                 self.dataForGraphe[ChromNo] = [tuple(linelist[1:7])]
-                    elif postive_negtive == "negtive":
+                    elif positive_negtive == "negtive":
                         if ChromNo in self.dataForGraphe.keys():
                             if linelist[5].strip() == 'NA' or float(linelist[5].strip()) >= 0:
                                 self.dataForGraphe[ChromNo].append(tuple(linelist[1:4] + [fillvalue, fillvalue, linelist[6]]))
@@ -141,16 +142,16 @@ class MakeMhtGraph(object):
         return re.search(r"[^/]*$", self.pathtoOutFileName).group(0)  # for linux
 
 
-    def prepareMhtFile(self, inputfileName, dataType, chromPrefix="", postive_negtive=None, fillvalue=0):
-        """fill all NA value window with fillvalue,and fill all window that zvalue<=0 with fillvalue when postive_negtive= postive....
+    def prepareMhtFile(self, inputfileName, dataType, chromPrefix="", positive_negtive=None, fillvalue=0):
+        """fill all NA value window with fillvalue,and fill all window that zvalue<=0 with fillvalue when positive_negtive= positive....
         """
         originalfile = open(inputfileName, 'r')
         print("title", originalfile.readline())
-        if postive_negtive == None:
+        if positive_negtive == None:
             print(inputfileName, dataType)
             self.pathtoOutFileName = inputfileName + ".z" + dataType
         else:
-            self.pathtoOutFileName = inputfileName + "_" + postive_negtive + ".z" + dataType
+            self.pathtoOutFileName = inputfileName + "_" + positive_negtive + ".z" + dataType
         for line in originalfile:
             linelist = re.split(r'\s+', line.strip())
             currentChrom = linelist[0].strip()
@@ -167,7 +168,7 @@ class MakeMhtGraph(object):
                 print(ChromNo)
             if re.search(r"^" + chromPrefix, currentChrom):
                 if linelist[4].strip() != "NA" or linelist[5].strip() != "NA" or True:
-                    if postive_negtive == None:
+                    if positive_negtive == None:
                         if ChromNo in self.dataForGraphe.keys():
                             if linelist[5].strip() != "NA":
                                 self.dataForGraphe[ChromNo].append(tuple(linelist[1:6]))
@@ -175,7 +176,7 @@ class MakeMhtGraph(object):
                                 self.dataForGraphe[ChromNo].append(tuple(linelist[1:4] + [fillvalue, fillvalue]))
                         else:
                             self.dataForGraphe[ChromNo] = [tuple(linelist[1:4] + [fillvalue, fillvalue])]
-                    elif postive_negtive == "postive":
+                    elif positive_negtive == "positive":
                         if ChromNo in self.dataForGraphe.keys():
                             if linelist[5].strip() == 'NA' or float(linelist[5].strip()) <= 0:
                                 self.dataForGraphe[ChromNo].append(tuple(linelist[1:4] + [fillvalue, fillvalue]))
@@ -186,7 +187,7 @@ class MakeMhtGraph(object):
                                 self.dataForGraphe[ChromNo] = [tuple(linelist[1:4] + [fillvalue, fillvalue])]
                             else:
                                 self.dataForGraphe[ChromNo] = [tuple(linelist[1:6])]
-                    elif postive_negtive == "negtive":
+                    elif positive_negtive == "negtive":
                         if ChromNo in self.dataForGraphe.keys():
                             if linelist[5].strip() == 'NA' or float(linelist[5].strip()) >= 0:
                                 self.dataForGraphe[ChromNo].append(tuple(linelist[1:4] + [fillvalue, fillvalue]))
@@ -213,13 +214,13 @@ class MakeMhtGraph(object):
                 print(chromNo, *self.dataForGraphe[chromNo][i], sep="\t", file=outfile)
         outfile.close()
         return re.search(r"[^/]*$", self.pathtoOutFileName).group(0)  # for linux
-    def makeMhtPicture_HistonPicture(self, inputfileName, dataType, chromPrefix="", postive_negtive=None, fillvalue=0):
+    def makeMhtPicture_HistonPicture(self, inputfileName, dataType, chromPrefix="", positive_negtive=None, fillvalue=0):
         line = open(inputfileName, 'r').readline().strip()
         open(inputfileName, 'r').close()
         if 8 == len(re.split(r'\s+', line)):
-            name = self.prepareMhtFileWithgeneName(inputfileName, dataType, chromPrefix, postive_negtive, fillvalue)
+            name = self.prepareMhtFileWithgeneName(inputfileName, dataType, chromPrefix, positive_negtive, fillvalue)
         elif 6 == len(re.split(r'\s+', line)):
-            name = self.prepareMhtFile(inputfileName, dataType, chromPrefix, postive_negtive, fillvalue)
+            name = self.prepareMhtFile(inputfileName, dataType, chromPrefix, positive_negtive, fillvalue)
         dir = re.search(r"^.*/", self.pathtoOutFileName).group(0)
         r = robjects.r
         print(name, self.pathtoOutFileName, dir)

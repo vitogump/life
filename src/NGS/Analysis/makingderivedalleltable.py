@@ -7,7 +7,7 @@ from NGS.BasicUtil import Util
 from optparse import OptionParser
 import NGS.BasicUtil.DBManager as dbm
 import NGS.BasicUtil.DerivedalleleProcessor as DAP
-import NGS.RUtil.Make_Picture as MP
+# import NGS.RUtil.Make_Picture as MP
 
 import pickle
 """
@@ -59,13 +59,13 @@ else:
 chromstable=options.chromtable
 primaryID = "chrID"
 OUTFILENAME="ducksnpflankseq.fa"
-outfile=open("ducksnpflankseq.fa",'w')
+# outfile=open("ducksnpflankseq.fa",'w')
 BlastOutFile="ducksnpflankseq.blast"
 if __name__ == '__main__':
-#     aaa=DAP.MakeDerivedAlleletable(database=dbname,ip="10.2.48.96",usrname="root",pw="1234567")
-    ddd=MP.Dstistics_allpop(allpop)
-    ddd.caculateDofAllpossibleCombination(database=dbname,ip="10.2.48.96",usrname="root",pw="1234567", allpopssnptable="derived_alle_ref", chromstable=chromstable, winwidth=None, minlengthOfchrom=minlengthOfchrom, filenamepre=options.prefilename)
-#     dbtoolsforchrom = dbm.DBTools("10.2.48.96", "root", "1234567", dbname)
+    aaa=DAP.MakeDerivedAlleletable(database=dbname,ip="10.2.48.140",usrname="root",pw="1234567")
+#     ddd=MP.Dstistics_allpop(allpop)
+#     ddd.caculateDofAllpossibleCombination(database=dbname,ip="10.2.48.140",usrname="root",pw="1234567", allpopssnptable="derived_alle_ref", chromstable=chromstable, winwidth=None, minlengthOfchrom=minlengthOfchrom, filenamepre=options.prefilename)
+#     dbtoolsforchrom = dbm.DBTools("10.2.48.140", "root", "1234567", dbname)
 #     try:
 #         duckrefindex = pickle.load(open(options.reference + ".myindex", 'rb'))
 #         originalspeciesindex = pickle.load(open(originalspeciesref + ".myindex", 'rb'))
@@ -76,7 +76,7 @@ if __name__ == '__main__':
 #         originalspeciesindex = pickle.load(open(originalspeciesref + ".myindex", 'rb'))
 #     aaa.createtable()
 #     aaa.filldata(vcfFileName=vcfFileName,depthfileName=DepthFileName,continuechrom=continuechrom,continuepos=continuepos)
-#     aaa.fillarchicpop(archicpopVcfFile,DepthFileName,chromstable,archicpopNameindepthFile)
+    aaa.fillarchicpop(archicpopVcfFile,DepthFileName,chromstable,archicpopNameindepthFile)
 #     totalChroms = dbtoolsforchrom.operateDB("select","select count(*) from "+chromstable)[0][0]
 #     for i in range(0,totalChroms,20):
 #         currentsql="select * from " + chromstable+" order by chrlength limit "+str(i)+",20"

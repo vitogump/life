@@ -44,7 +44,7 @@ class HeterozygosityScore():
         self.HeterozyMap = {}
 
 if __name__ == '__main__':
-    dbtools = dbm.DBTools("localhost", "root", "1234567", dbname)
+    dbtools = dbm.DBTools("10.2.48.140", "root", "1234567", dbname)
     for vcf in args[:]:
         outfile = open(vcf + ".het"+str(windowWidth)+"_"+str(slideSize), 'w')
         print("chrNo\twinNo\tfirstsnppos\tlastsnppos\twinvalue\tzvalue",file=outfile)

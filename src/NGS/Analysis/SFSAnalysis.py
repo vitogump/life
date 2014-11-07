@@ -30,7 +30,7 @@ parser.add_option("-s","--speciesesName",dest="speciesesName",action="append",de
 allpop_with_derived_alletable=options.derived_alletable
 mindepth=int(options.mindepth)
 if __name__ == '__main__':
-    dbtools = dbm.DBTools("10.2.48.96", "root", "1234567", options.dbname)
+    dbtools = dbm.DBTools("10.2.48.140", "root", "1234567", options.dbname)
     tableprename=""
     TABLES = {}
     for bedfileName in args[:]:
@@ -47,7 +47,7 @@ if __name__ == '__main__':
         ")"
         )
     
-    tempdbtools=dbm.DBTools("10.2.48.96","root","1234567",tempdbname)
+    tempdbtools=dbm.DBTools("10.2.48.140","root","1234567",tempdbname)
     tempdbtools.create_table(TABLES)
     titlelist=[a[0].strip() for a in dbtools.operateDB("select","select column_name  from information_schema.columns where table_schema='"+options.dbname+"' and table_name='"+options.derived_alletable+"'")]
     print(titlelist)

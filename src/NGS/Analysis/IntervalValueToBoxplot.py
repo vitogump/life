@@ -55,7 +55,7 @@ outfile=open(outfilename,'w')
 dndscolidx = int(options.dndsfile[1]) - 1
 dndstitle = dndsfile.readline()
 if __name__ == '__main__':
-    dbtools = dbm.DBTools("10.2.48.96", "root", "1234567", "life_pilot")
+    dbtools = dbm.DBTools("10.2.48.140", "root", "1234567", "life_pilot")
     winGenome = Util.WinInGenome(tempwinDBName, winFileName6Field)
     while minvalue <= maxvalue - dincrease:
         intervalmap[minvalue,minvalue + dincrease]=[]
@@ -133,10 +133,19 @@ if __name__ == '__main__':
             kaksMap[linelist[0].strip()]=float(linelist[dndscolidx])
         except:
             print(line)
+    meankaksmap={}
     for a,b in sorted(intervalmap.keys()):
+        meankaksmap[a,b]=0
+        n=0
         for trscptrec in intervalmap[a,b]:
             if trscptrec[0].strip() in kaksMap:
+                if int(kaksMap[trscptrec[0].strip()])<2:
+                    n+=1
+                    meankaksmap[a,b]+=kaksMap[trscptrec[0].strip()]
+                               
                 print(str(a)+str(b),str(kaksMap[trscptrec[0].strip()]),trscptrec[0],sep="\t",file=outfile)
+        else:
+            print(str(a)+str(b),str(meankaksmap[a,b]/n))
     winGenome.windbtools.drop_table(winGenome.wintabletextvalueallwin)
     winGenome.windbtools.drop_table(winGenome.wintablewithoutNA)    
     

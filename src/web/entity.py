@@ -11,7 +11,7 @@ from sqlalchemy.sql.schema import Sequence
 from sqlalchemy.sql.sqltypes import Integer, String, Text
 
 db_config = {
-    'host': '10.2.48.96',
+    'host': '10.2.48.140',
     'user': 'root',
     'passwd': '1234567',
     'db':'ninglabweb',

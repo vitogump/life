@@ -10,7 +10,7 @@ import os,re
 
 primaryID = "chrID"
 class Dstatistics():
-    def __init__(self,database="life_pilot",ip="10.2.48.96",usrname="root",pw="1234567",allpopssnptable="derived_alle_ref"):
+    def __init__(self,database="life_pilot",ip="10.2.48.140",usrname="root",pw="1234567",allpopssnptable="derived_alle_ref"):
         super().__init__()
         self.dbtools=dbm.DBTools(ip,usrname,pw,database)
         self.DMapByChrom={}#{chrom1:[(first_snp_pos,last_snp_pos,fst),(),(),...],chrom2:[],....}
@@ -73,7 +73,7 @@ class Dstatistics():
         win = Util.Window()
 
 class MakeDerivedAlleletable():
-    def __init__(self, database="life_pilot", ip="10.2.48.96", usrname="root", pw="1234567"):
+    def __init__(self, database="life_pilot", ip="10.2.48.140", usrname="root", pw="1234567"):
         super().__init__()
         self.dbtools = dbm.DBTools(ip, usrname, pw, database)
 
@@ -362,7 +362,7 @@ class MakeDerivedAlleletable():
         archicpop = VCFutil.VCF_Data(archicpopVcfFile)
         totalChroms = self.dbtools.operateDB("select","select count(*) from "+chromtable)[0][0]
         for i in range(0,totalChroms,20):
-            currentsql="select * from " + chromtable+" order by chrlength limit "+str(i)+",20"
+            currentsql="select * from " + chromtable+" order by chrlength desc limit "+str(i)+",20"
             result=self.dbtools.operateDB("select",currentsql)
             for row in result:
                 
@@ -409,7 +409,7 @@ class MakeDerivedAlleletable():
                             popsdata="no covered"
                         else:
                             popsdata=ALT+":"+depth_linelist[species_idx] + ",0"
-                    print(snp[0],end="\t")     
+#                     print(snp[0],end="\t")     
                     self.dbtools.operateDB("update", "update " + tablename + " set "+archicpopfieldNameintable+" = '" + popsdata+"' where chrID="+"'"+currentchrID+"' and snp_pos="+str(snp[0]))
 
         

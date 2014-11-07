@@ -48,7 +48,7 @@ vcftable=None
 outfile=open(outfilename,'w')
 outfileNameWINwithGENE=winFileName6Field+".wincopywithgene"
 if __name__ == '__main__':
-    dbtools = dbm.DBTools("10.2.48.96", "root", "1234567", "life_pilot")
+    dbtools = dbm.DBTools("10.2.48.140", "root", "1234567", "life_pilot")
 #    dbtools.operateDB("alter","alter table "+gene_sample_venn+" add "+outfilename+" smallint(3) default 0") 
     winGenome = Util.WinInGenome(tempwinDBName, winFileName6Field)
     time.sleep(SLEEP_FOR_NEXT_TRY)

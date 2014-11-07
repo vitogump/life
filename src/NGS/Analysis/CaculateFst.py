@@ -141,7 +141,7 @@ class Fst():
             self.FstMapByChrom[currentchrID]=fillNA           
 
 if __name__ == '__main__':
-    dbtools = dbm.DBTools("10.2.48.96", "root", "1234567", "life_pilot")
+    dbtools = dbm.DBTools("10.2.48.140", "root", "1234567", "life_pilot")
     if fsttype=='R' or fsttype=='r':
         
         allspeices=[]
@@ -161,7 +161,7 @@ if __name__ == '__main__':
             
         allkindofpaire = list(combinations(args[:], 2))
         alldistMap={}
-        tempdbtools = dbm.DBTools("10.2.48.96", "root", "1234567", "temp")
+        tempdbtools = dbm.DBTools("10.2.48.140", "root", "1234567", "temp")
         TABLES = {}
         TABLES[treearrayprename+"treearray"] = (
             "CREATE TABLE "+treearrayprename+"treearray ("
