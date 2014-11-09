@@ -1,1 +1,1 @@
-__all__=["NGS","web"]
+__all__=["NGS","web","pipelinecontrol"]
