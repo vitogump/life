@@ -58,7 +58,7 @@ class OperatorWithData_mode1(OperatorWithData):
                         
                     # sub was acted from the first to the rear most
         print("pathToOutputdata_createdir",pathToOutputdata_createdir)
-        print(self.scriptcontext+newcmdline, file=open(self.scriptsdir + pathToOutputdata_createdir.replace("/", "_")[1:] + leftPathName_filenamepre + updirname + "."+ updirname + "_script.sh", "a"))
+        print(self.scriptcontext+newcmdline, file=open(self.scriptsdir + pathToOutputdata_createdir.replace("/", "_")[1:] + leftPathName_filenamepre + updirname + "."+ updirname + "Script.sh", "a"))
         return newcmdline
 class OperatorWithData_mode2(OperatorWithData):
     def __init__(self, cmdline, outputpath, suffix):

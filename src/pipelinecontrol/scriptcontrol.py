@@ -40,12 +40,12 @@ scriptcontent=open(options.cmdexamplefile,'r').read()
 
 scriptcontext=re.search(r"([\s\S]*(\n)*)cmdline=.*",scriptcontent).group(1)
 
-inputdatafilespath=re.search(r"(\n)*inputdatafilespath=\s*(.*)",scriptcontext).group(2)
+inputdatafilesrootpath=re.search(r"(\n)*inputdatafilesrootpath=\s*(.*)",scriptcontext).group(2)
 scriptcmdline=re.search(r"(.*(\n)*)cmdline=\s*(.*)",scriptcontent).group(3)
-print(scriptcontent,scriptcontext,inputdatafilespath,scriptcmdline,sep="\n")
+print(scriptcontent,scriptcontext,inputdatafilesrootpath,scriptcmdline,sep="\n")
 
 outputpath=re.search(r"\${output=\s*([^\s]*)}",scriptcmdline).group(1)
-print(inputdatafilespath,outputpath)
+print(inputdatafilesrootpath,outputpath)
 
 
 mode2_Interceptor=options.interceptdirs
@@ -59,18 +59,18 @@ if __name__ == '__main__':
         if len(mode2_Interceptor)>1:
             print("warning: option -2 is useless in mode 1")
         #progamma logic
-        operatorwithdata_mode1=OperatorWithData_mode1(scriptcmdline,outputpath,outsuffix,inputdatafilespath,n_subdirs=n_subdirs,scriptcontext=scriptcontext)
-        upTodownTravelDir(inputdatafilespath,OperatorWithData=operatorwithdata_mode1,datadepth=datadepth)
+        operatorwithdata_mode1=OperatorWithData_mode1(scriptcmdline,outputpath,outsuffix,inputdatafilesrootpath,n_subdirs=n_subdirs,scriptcontext=scriptcontext)
+        upTodownTravelDir(inputdatafilesrootpath,OperatorWithData=operatorwithdata_mode1,datadepth=datadepth)
         
     elif mode==2:
         if options.depthoffoldertocopy!=0:
             print("warning: option -1 is not used in mode 2")
             
         operatorwithdata_mode2=OperatorWithData_mode2(scriptcmdline,outputpath,outsuffix)
-        upTodownTravelDir(inputdatafilespath,OperatorWithData=operatorwithdata_mode2,datadepth=datadepth)
+        upTodownTravelDir(inputdatafilesrootpath,OperatorWithData=operatorwithdata_mode2,datadepth=datadepth)
         #finalcmdline=re.sub(r"\${output}")
         finalcmdline=re.sub(r"[-\w\d]+[=\s]+\${.*?}"," ",operatorwithdata_mode2.newcmdline)
-        print(scriptcontext+finalcmdline,file=open("F:/work/pipelinecontrol/scripts/"+outsuffix+"_script.sh",'a'))
+        print(scriptcontext+finalcmdline,file=open("F:/work/pipelinecontrol/scripts/"+outsuffix+"Script.sh",'a'))
     print("==============")
 #     cmdline=operatorwithdata_mode1.cmdline
 
