@@ -18,7 +18,7 @@ parser.add_option("-c", "--cmdexample", dest="cmdexamplefile",help="oneline scri
 parser.add_option("-d", "--datadepth", dest="datadepth", help="it's the depth of the dir from the inputdatapath which the data file that need to be process in it,the depth of the inputdatapath is 0")
 
 
-parser.add_option("-s", "--suffix", dest="suffixname", default="", help="bam bai sam sorted.bam vcf blast and so on. note this is just used in the cmdline output parameter")
+parser.add_option("-s", "--scriptstorepath", dest="scriptstorepath", help="bam bai sam sorted.bam vcf blast and so on. note this is just used in the cmdline output parameter")
 parser.add_option("-m", "--mode", dest="mode",
                   help="1 :means produce cmdline scripts for every terminal folder,the input data should be all the data files under the terminal folder. 2:use all selected data files as the input parameters in the only one cmdline script")
 parser.add_option("-1","--depthoffoldertocopy",dest="depthoffoldertocopy",default="0",help="0 means don't creat folder in the output folder")
@@ -32,7 +32,7 @@ datadepth=int(options.datadepth)
 
 
 # outputpath=options.outputpath
-outsuffix=options.suffixname
+scriptsstoredir=options.scriptstorepath
 mode=int(options.mode)
 n_subdirs=int(options.depthoffoldertocopy)
 
@@ -44,8 +44,9 @@ inputdatafilesrootpath=re.search(r"(\n)*inputdatafilesrootpath=\s*(.*)",scriptco
 scriptcmdline=re.search(r"(.*(\n)*)cmdline=\s*(.*)",scriptcontent).group(3)
 print(scriptcontent,scriptcontext,inputdatafilesrootpath,scriptcmdline,sep="\n")
 
-outputpath=re.search(r"\${output=\s*([^\s]*)}",scriptcmdline).group(1)
-print(inputdatafilesrootpath,outputpath)
+outputpath=re.search(r"\${output=\s*([^\s^\|]*)\|suffix=(.*)}",scriptcmdline).group(1)
+outsuffix=re.search(r"\${output=\s*([^\s^\|]*)\|suffix=(.*)}",scriptcmdline).group(2)
+print(inputdatafilesrootpath,"outputpath=",outputpath,outsuffix)
 
 
 mode2_Interceptor=options.interceptdirs
@@ -59,18 +60,21 @@ if __name__ == '__main__':
         if len(mode2_Interceptor)>1:
             print("warning: option -2 is useless in mode 1")
         #progamma logic
-        operatorwithdata_mode1=OperatorWithData_mode1(scriptcmdline,outputpath,outsuffix,inputdatafilesrootpath,n_subdirs=n_subdirs,scriptcontext=scriptcontext)
+        operatorwithdata_mode1=OperatorWithData_mode1(scriptcmdline,outputpath,outsuffix,inputdatafilesrootpath,n_subdirs=n_subdirs,scriptcontext=scriptcontext,scriptsstoredir=scriptsstoredir)
         upTodownTravelDir(inputdatafilesrootpath,OperatorWithData=operatorwithdata_mode1,datadepth=datadepth)
         
     elif mode==2:
         if options.depthoffoldertocopy!=0:
             print("warning: option -1 is not used in mode 2")
             
-        operatorwithdata_mode2=OperatorWithData_mode2(scriptcmdline,outputpath,outsuffix)
+        operatorwithdata_mode2=OperatorWithData_mode2(scriptcmdline,outputpath,outsuffix,scriptsstoredir)
         upTodownTravelDir(inputdatafilesrootpath,OperatorWithData=operatorwithdata_mode2,datadepth=datadepth)
         #finalcmdline=re.sub(r"\${output}")
         finalcmdline=re.sub(r"[-\w\d]+[=\s]+\${.*?}"," ",operatorwithdata_mode2.newcmdline)
-        print(scriptcontext+finalcmdline,file=open("F:/work/pipelinecontrol/scripts/"+outsuffix+"Script.sh",'a'))
+        try:
+            print(scriptcontext+finalcmdline,file=open("F:/work/pipelinecontrol/scripts/"+outsuffix+"Script.sh",'a'))
+        except FileNotFoundError:
+            print(scriptcontext+finalcmdline,file=open("F:/work/pipelinecontrol/scripts/"+outsuffix+"Script.sh",'w'))
     print("==============")
 #     cmdline=operatorwithdata_mode1.cmdline
 

@@ -7,14 +7,14 @@ Created on 2014-11-8
 import os, re
 
 class OperatorWithData():
-    def __init__(self, scriptsdir="F:/work/pipelinecontrol/scripts"):
-        self.scriptsdir = scriptsdir + "/"
+    def __init__(self, scriptsstoredir="F:/work/pipelinecontrol/scripts"):
+        self.scriptsstoredir = scriptsstoredir + "/"
     def process(self, p, d):
         print(p, d)
 # myprint=OperatorWithData()
 class OperatorWithData_mode1(OperatorWithData):
-    def __init__(self, cmdline, outputpath, suffix, inputdatapath, n_subdirs,scriptcontext):
-        super().__init__()
+    def __init__(self, cmdline, outputpath, suffix, inputdatapath, n_subdirs,scriptcontext,scriptsstoredir):
+        super().__init__(scriptsstoredir)
         self.cmdline = cmdline
         self.outputpath = outputpath
         self.suffix = suffix
@@ -58,11 +58,14 @@ class OperatorWithData_mode1(OperatorWithData):
                         
                     # sub was acted from the first to the rear most
         print("pathToOutputdata_createdir",pathToOutputdata_createdir)
-        print(self.scriptcontext+newcmdline, file=open(self.scriptsdir + pathToOutputdata_createdir.replace("/", "_")[1:] + leftPathName_filenamepre + updirname + "."+ updirname + "Script.sh", "a"))
+        try:
+            print(self.scriptcontext+newcmdline, file=open(self.scriptsstoredir + pathToOutputdata_createdir.replace("/", "_")[1:] + leftPathName_filenamepre + updirname + "."+ updirname + "Script.sh", "a"))
+        except FileNotFoundError:
+            print(self.scriptcontext+newcmdline, file=open(self.scriptsstoredir + pathToOutputdata_createdir.replace("/", "_")[1:] + leftPathName_filenamepre + updirname + "."+ updirname + "Script.sh", "w"))
         return newcmdline
 class OperatorWithData_mode2(OperatorWithData):
-    def __init__(self, cmdline, outputpath, suffix):
-        super().__init__()
+    def __init__(self, cmdline, outputpath, suffix,scriptsstoredir):
+        super().__init__(scriptsstoredir)
         outputoptionstr = re.search(r"([-\w\d]+[=\s]+)\${output=.*}", cmdline).group(1)  # for example "OUTPUT=${output} -o ${output}"
 
         self.newcmdline = re.sub(r"[-\w\d]+[=\s]+\${output=.*}",outputoptionstr +outputpath+"/"+ suffix  + " ",cmdline)
