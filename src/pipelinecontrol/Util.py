@@ -51,9 +51,9 @@ class OperatorWithData_mode1(OperatorWithData):
                 if re.search(r".*?" + targetdatasuffix[i], datafilename) != None:
                     newcmdline = re.sub(r"\${\s*" + targetdatasuffix[i] + "\s*}", " " + curpath + "/" + datafilename + " ", newcmdline)
                     if self.inputdatapath == self.outputpath:  # input data files and output data files are in the same dir. and this situation leftPathName_filenamepre==None 
-                        newcmdline = re.sub(r"\${output=.*}", self.outputpath + "/" + updirname + "." + self.suffix, newcmdline)
+                        newcmdline = re.sub(r"\${output=.*\|suffix=.*}", self.outputpath + "/" + updirname + "." + self.suffix, newcmdline)
                     else:  # when curdepth ==  self.n_subdirs,the leftPathName_filenamepre contain the updirname
-                        newcmdline = re.sub(r"\${output=.*}", self.outputpath + pathToOutputdata_createdir + leftPathName_filenamepre + updirname + "." + self.suffix, newcmdline)
+                        newcmdline = re.sub(r"\${output=.*\|suffix=.*}", self.outputpath + pathToOutputdata_createdir + leftPathName_filenamepre + updirname + "." + self.suffix, newcmdline)
                     
                         
                     # sub was acted from the first to the rear most
@@ -66,9 +66,9 @@ class OperatorWithData_mode1(OperatorWithData):
 class OperatorWithData_mode2(OperatorWithData):
     def __init__(self, cmdline, outputpath, suffix,scriptsstoredir):
         super().__init__(scriptsstoredir)
-        outputoptionstr = re.search(r"([-\w\d]+[=\s]+)\${output=.*}", cmdline).group(1)  # for example "OUTPUT=${output} -o ${output}"
+        outputoptionstr = re.search(r"([-\w\d]+[=\s]+)\${output=.*\|suffix=.*}", cmdline).group(1)  # for example "OUTPUT=${output} -o ${output}"
 
-        self.newcmdline = re.sub(r"[-\w\d]+[=\s]+\${output=.*}",outputoptionstr +outputpath+"/"+ suffix  + " ",cmdline)
+        self.newcmdline = re.sub(r"[-\w\d]+[=\s]+\${output=.*\|suffix=.*}",outputoptionstr +outputpath+"/"+ suffix  + " ",cmdline)
         print("OperatorWithData_mode2 __init__",self.newcmdline)
 #         self.outputpath = outputpath
 #         self.suffix = suffix
