@@ -12,9 +12,9 @@ from src.pipelinecontrol.Util import OperatorWithData_mode1,upTodownTravelDir,Op
 
 parser = OptionParser()
 
-parser.add_option("-p", "--inputdatapath", dest="inputdatapath", help="output data name is defined as 'inputdatapath folder name'+'is subfolder name'+'is subfolder name'+...")
+#"output data name is defined as 'inputdatapath folder name'+'is subfolder name'+'is subfolder name'+..."
 parser.add_option("-c", "--cmdexample", dest="cmdexamplefile",help="oneline scriptexamplefile")
-parser.add_option("-o", "--outputpath", dest="outputpath", help="outputpath")
+# parser.add_option("-o", "--outputpath", dest="outputpath", help="outputpath")
 parser.add_option("-d", "--datadepth", dest="datadepth", help="it's the depth of the dir from the inputdatapath which the data file that need to be process in it,the depth of the inputdatapath is 0")
 
 
@@ -29,14 +29,24 @@ parser.add_option("-q", "--quiet",
                                                                                                                                                           
 (options, args) = parser.parse_args()
 datadepth=int(options.datadepth)
-inputdatapath=options.inputdatapath
 
-outputpath=options.outputpath
+
+# outputpath=options.outputpath
 outsuffix=options.suffixname
 mode=int(options.mode)
 n_subdirs=int(options.depthoffoldertocopy)
 
-cmdline=open(options.cmdexamplefile,'r').readline()
+scriptcontent=open(options.cmdexamplefile,'r').read()
+
+scriptcontext=re.search(r"([\s\S]*(\n)*)cmdline=.*",scriptcontent).group(1)
+
+inputdatafilespath=re.search(r"(\n)*inputdatafilespath=\s*(.*)",scriptcontext).group(2)
+scriptcmdline=re.search(r"(.*(\n)*)cmdline=\s*(.*)",scriptcontent).group(3)
+print(scriptcontent,scriptcontext,inputdatafilespath,scriptcmdline,sep="\n")
+
+outputpath=re.search(r"\${output=\s*([^\s]*)}",scriptcmdline).group(1)
+print(inputdatafilespath,outputpath)
+
 
 mode2_Interceptor=options.interceptdirs
 print(mode2_Interceptor)
@@ -49,18 +59,18 @@ if __name__ == '__main__':
         if len(mode2_Interceptor)>1:
             print("warning: option -2 is useless in mode 1")
         #progamma logic
-        operatorwithdata_mode1=OperatorWithData_mode1(cmdline,outputpath,outsuffix,inputdatapath,n_subdirs=n_subdirs)
-        upTodownTravelDir(inputdatapath,OperatorWithData=operatorwithdata_mode1,datadepth=datadepth)
+        operatorwithdata_mode1=OperatorWithData_mode1(scriptcmdline,outputpath,outsuffix,inputdatafilespath,n_subdirs=n_subdirs,scriptcontext=scriptcontext)
+        upTodownTravelDir(inputdatafilespath,OperatorWithData=operatorwithdata_mode1,datadepth=datadepth)
         
     elif mode==2:
         if options.depthoffoldertocopy!=0:
             print("warning: option -1 is not used in mode 2")
             
-        operatorwithdata_mode2=OperatorWithData_mode2(cmdline,outputpath,outsuffix)
-        upTodownTravelDir(inputdatapath,OperatorWithData=operatorwithdata_mode2,datadepth=datadepth)
+        operatorwithdata_mode2=OperatorWithData_mode2(scriptcmdline,outputpath,outsuffix)
+        upTodownTravelDir(inputdatafilespath,OperatorWithData=operatorwithdata_mode2,datadepth=datadepth)
         #finalcmdline=re.sub(r"\${output}")
         finalcmdline=re.sub(r"[-\w\d]+[=\s]+\${.*?}"," ",operatorwithdata_mode2.newcmdline)
-        print(finalcmdline,file=open("F:/work/pipelinecontrol/scripts/"+outsuffix+"_script.sh",'a'))
+        print(scriptcontext+finalcmdline,file=open("F:/work/pipelinecontrol/scripts/"+outsuffix+"_script.sh",'a'))
     print("==============")
 #     cmdline=operatorwithdata_mode1.cmdline
 

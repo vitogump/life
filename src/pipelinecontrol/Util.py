@@ -13,13 +13,14 @@ class OperatorWithData():
         print(p, d)
 # myprint=OperatorWithData()
 class OperatorWithData_mode1(OperatorWithData):
-    def __init__(self, cmdline, outputpath, suffix, inputdatapath, n_subdirs):
+    def __init__(self, cmdline, outputpath, suffix, inputdatapath, n_subdirs,scriptcontext):
         super().__init__()
         self.cmdline = cmdline
         self.outputpath = outputpath
         self.suffix = suffix
         self.inputdatapath = inputdatapath
         self.n_subdirs = n_subdirs
+        self.scriptcontext=scriptcontext
     def process(self, curpath, curdepth):
         print("mode1 process")
         newcmdline = self.cmdline
@@ -27,7 +28,7 @@ class OperatorWithData_mode1(OperatorWithData):
         targetdatasuffix = []
         for target in subtargets:
             c = re.search(r'\${(.*?)}', target).group(1)
-            if "output" == c:
+            if re.search(r"output=.*",c) != None:
                 print(target, subtargets)
                 subtargets.remove(target)
                 continue
@@ -50,20 +51,20 @@ class OperatorWithData_mode1(OperatorWithData):
                 if re.search(r".*?" + targetdatasuffix[i], datafilename) != None:
                     newcmdline = re.sub(r"\${\s*" + targetdatasuffix[i] + "\s*}", " " + curpath + "/" + datafilename + " ", newcmdline)
                     if self.inputdatapath == self.outputpath:  # input data files and output data files are in the same dir. and this situation leftPathName_filenamepre==None 
-                        newcmdline = re.sub(r"\${output}", self.outputpath + "/" + updirname + "." + self.suffix, newcmdline)
+                        newcmdline = re.sub(r"\${output=.*}", self.outputpath + "/" + updirname + "." + self.suffix, newcmdline)
                     else:  # when curdepth ==  self.n_subdirs,the leftPathName_filenamepre contain the updirname
-                        newcmdline = re.sub(r"\${output}", self.outputpath + pathToOutputdata_createdir + leftPathName_filenamepre + updirname + "." + self.suffix, newcmdline)
+                        newcmdline = re.sub(r"\${output=.*}", self.outputpath + pathToOutputdata_createdir + leftPathName_filenamepre + updirname + "." + self.suffix, newcmdline)
                     
                         
                     # sub was acted from the first to the rear most
-        print(newcmdline, file=open(self.scriptsdir + pathToOutputdata_createdir.replace("/", ".")[1:] + updirname + "_script.sh", "a"))
+        print(self.scriptcontext+newcmdline, file=open(self.scriptsdir + pathToOutputdata_createdir.replace("/", ".")[1:] + updirname + "_script.sh", "a"))
         return newcmdline
 class OperatorWithData_mode2(OperatorWithData):
     def __init__(self, cmdline, outputpath, suffix):
         super().__init__()
-        optionstr = re.search(r"([-\w\d]+[=\s]+)\${output}", cmdline).group(1)  # for example "INPUT=${.bam} -i ${.sam}"
+        outputoptionstr = re.search(r"([-\w\d]+[=\s]+)\${output=.*}", cmdline).group(1)  # for example "OUTPUT=${output} -o ${output}"
 
-        self.newcmdline = re.sub(r"[-\w\d]+[=\s]+\${output}",optionstr +outputpath+"/"+ suffix  + " ",cmdline)
+        self.newcmdline = re.sub(r"[-\w\d]+[=\s]+\${output=.*}",outputoptionstr +outputpath+"/"+ suffix  + " ",cmdline)
         print("OperatorWithData_mode2 __init__",self.newcmdline)
 #         self.outputpath = outputpath
 #         self.suffix = suffix
