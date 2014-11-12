@@ -5,6 +5,8 @@ Created on 2014-11-8
 @author: liurui
 '''
 import os, re
+import time
+
 
 class OperatorWithData():
     def __init__(self, scriptsstoredir="F:/work/pipelinecontrol/scripts"):
@@ -49,7 +51,7 @@ class OperatorWithData_mode1(OperatorWithData):
         for i in range(0, len(targetdatasuffix)):
             for datafilename in datafiles:
                 if re.search(r".*?" + targetdatasuffix[i], datafilename) != None:
-                    newcmdline = re.sub(r"\${\s*" + targetdatasuffix[i] + "\s*}", " " + curpath + "/" + datafilename + " ", newcmdline)
+                    newcmdline = re.sub(r"\${\s*" + targetdatasuffix[i] + "\s*}", " " + curpath + "/" + datafilename.strip(), newcmdline)
                     if self.inputdatapath == self.outputpath:  # input data files and output data files are in the same dir. and this situation leftPathName_filenamepre==None 
                         newcmdline = re.sub(r"\${output=.*\|suffix=.*}", self.outputpath + "/" + updirname + "." + self.suffix, newcmdline)
                     else:  # when curdepth ==  self.n_subdirs,the leftPathName_filenamepre contain the updirname
@@ -91,6 +93,43 @@ class OperatorWithData_mode2(OperatorWithData):
 
         self.newcmdline = newcmdline
         return newcmdline
+
+
+class JobTracker():
+    def __init__(self,scriptDir,mode="series",logfile="/tmp/JobTrackerlife.log"):
+        self.scriptDir=scriptDir
+        self.mode=mode
+        self.logfile=logfile
+
+    def run(self):
+        ISOTIMEFORMAT='%Y-%m-%d %X'
+        scriptfiles=os.listdir(path=self.scriptDir)
+        print(scriptfiles)
+        a=os.system("chmod +x "+self.scriptDir+"/*.sh")
+        if a!=0:
+            print("JobTracker chmod error")
+            exit(-1)
+        if self.mode=="series":
+            for scriptfile in scriptfiles:
+                if re.search(r".*\.sh$",scriptfile)==None:
+                    print("skip",scriptfile)
+                    continue
+                print(scriptfile+"  "+time.strftime(ISOTIMEFORMAT,time.localtime())+"\n\n",file=open(self.logfile,"a"))
+                print(self.scriptDir+"/"+scriptfile+">>"+self.logfile+" 2>&1")
+                a=os.system(self.scriptDir+"/"+scriptfile+">>"+self.logfile+" 2>&1")
+                if a!=0:
+                    print("JobTracker run error"+scriptfile)
+        if self.mode=="parallel":
+            for scriptfile in scriptfiles:
+                scriptfileout=re.sub(r"\.sh$",".out",scriptfile)
+                if re.search(r".*\.sh$",scriptfile)==None:
+                    print(scriptfileout,scriptfile)
+                    continue
+                print("nohup "+self.scriptDir+"/"+scriptfile+">"+self.scriptDir+"/"+scriptfileout+ " 2>&1 &")
+                a=os.system("nohup "+self.scriptDir+"/"+scriptfile+">"+self.scriptDir+"/"+scriptfileout+ " 2>&1 &")
+                if a!=0:
+                    print("JobTracker run error"+scriptfile)
+
 def upTodownTravelDir(rootDir, OperatorWithData, datadepth=9999, curdepth=0, mode2_Interceptor=[]):
     """
         Interceptor=([subdir names list],depth of the names expected)
