@@ -40,7 +40,8 @@ class OperatorWithData_mode1(OperatorWithData):
         updirname = re.search(r".*/([^/]+)$", curpath).group(1)
         print("OperatorWithData_mode1", datafiles)
         pathToOutputdata_createdir = ""
-        if self.inputdatapath != self.outputpath and self.n_subdirs <= curdepth:
+        leftPathName_filenamepre=""
+        if self.n_subdirs <= curdepth:
             pathToOutputdata_createdir = re.search(r"" + self.inputdatapath + "((/.*?){" + str(self.n_subdirs) + "}[/])", curpath + "/").group(1)
             leftPathName_filenamepre = re.search(r"" + self.inputdatapath + pathToOutputdata_createdir + "(.*)", curpath + "/").group(1).replace("/", ".")
             if not os.path.exists(self.outputpath + pathToOutputdata_createdir):
@@ -48,16 +49,18 @@ class OperatorWithData_mode1(OperatorWithData):
         elif self.n_subdirs > curdepth:
             print(curdepth, self.n_subdirs, "OperatorWithData_mode1 error")
             exit(-1)
+
+        newcmdline = re.sub(r"\${output=.*\|suffix=.*}", self.outputpath + pathToOutputdata_createdir + leftPathName_filenamepre + updirname + "." + self.suffix, newcmdline)
         for i in range(0, len(targetdatasuffix)):
             for datafilename in datafiles:
+
                 if re.search(r".*?" + targetdatasuffix[i], datafilename) != None:
-                    newcmdline = re.sub(r"\${\s*" + targetdatasuffix[i] + "\s*}", " " + curpath + "/" + datafilename.strip(), newcmdline)
-                    if self.inputdatapath == self.outputpath:  # input data files and output data files are in the same dir. and this situation leftPathName_filenamepre==None 
-                        newcmdline = re.sub(r"\${output=.*\|suffix=.*}", self.outputpath + "/" + updirname + "." + self.suffix, newcmdline)
-                    else:  # when curdepth ==  self.n_subdirs,the leftPathName_filenamepre contain the updirname
-                        newcmdline = re.sub(r"\${output=.*\|suffix=.*}", self.outputpath + pathToOutputdata_createdir + leftPathName_filenamepre + updirname + "." + self.suffix, newcmdline)
+                    option_suffix_obj = re.search(r"([-\w\d]+[=\s]+)\${(\s*" + targetdatasuffix[i] + "\s*)}", newcmdline)  # for example "INPUT=${.bam} -i ${.sam}"
+                    optionstr = option_suffix_obj.group(1)
+                    suffixstr = option_suffix_obj.group(2)
+                    newcmdline = re.sub(r"[-\w\d]+[=\s]+\${\s*" + targetdatasuffix[i] + "\s*}", optionstr + " " + curpath + "/" + datafilename.strip()+ " " + option_suffix_obj.group(0), newcmdline)
                     
-                        
+        newcmdline=re.sub(r"[-\w\d]+[=\s]+\${.*?}"," ",newcmdline)                
                     # sub was acted from the first to the rear most
         print("pathToOutputdata_createdir",pathToOutputdata_createdir)
         try:

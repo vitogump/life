@@ -18,7 +18,7 @@ parser.add_option("-d", "--scriptDir", dest="scriptDir",help="scriptDir")
 # parser.add_option("-o", "--outputpath", dest="outputpath", help="outputpath")
 
 parser.add_option("-l", "--logfile", dest="logfile", help="bam bai sam sorted.bam vcf blast and so on. note this is just used in the cmdline output parameter")
-parser.add_option("-m", "--mode", dest="mode",help="parallel series")
+parser.add_option("-m", "--mode", dest="mode",help="p:parallel s:series")
 
                                                                                                                                                           
 (options, args) = parser.parse_args()
