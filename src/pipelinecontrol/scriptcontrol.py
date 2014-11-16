@@ -21,8 +21,8 @@ parser.add_option("-d", "--datadepth", dest="datadepth", help="it's the depth of
 parser.add_option("-s", "--scriptstorepath", dest="scriptstorepath", help="bam bai sam sorted.bam vcf blast and so on. note this is just used in the cmdline output parameter")
 parser.add_option("-m", "--mode", dest="mode",
                   help="1 :means produce cmdline scripts for every terminal folder,the input data should be all the data files under the terminal folder. 2:use all selected data files as the input parameters in the only one cmdline script")
-parser.add_option("-1","--depthoffoldertocopy",dest="depthoffoldertocopy",default="0",help="0 means don't creat folder in the output folder")
-parser.add_option("-2", "--interceptdirs", dest="interceptdirs", default=[],action="append", help="winvalue or zvalue")
+parser.add_option("-I","--Interceptor_depth",dest="Interceptor_depth",default="0",help="0 means don't creat folder in the output folder")
+parser.add_option("-l", "--interceptdirs", dest="interceptdirs", default=[],action="append", help="winvalue or zvalue")
 parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", default=True,
                   help="don't print status messages to stdout")
@@ -34,7 +34,7 @@ datadepth=int(options.datadepth)
 # outputpath=options.outputpath
 scriptsstoredir=options.scriptstorepath
 mode=int(options.mode)
-n_subdirs=int(options.depthoffoldertocopy)
+Interceptor_depth=int(options.Interceptor_depth)
 
 scriptcontent=open(options.cmdexamplefile,'r').read()
 
@@ -49,26 +49,20 @@ outsuffix=re.search(r"\${output=\s*([^\s^\|]*)\|suffix=(.*)}",scriptcmdline).gro
 print(inputdatafilesrootpath,"outputpath=",outputpath,outsuffix)
 
 
-mode2_Interceptor=options.interceptdirs
-print(mode2_Interceptor)
+interceptdirs=options.interceptdirs
+print(interceptdirs)
 
 if __name__ == '__main__':
     if mode==1:
-        #friendly ui interaction
-        if options.depthoffoldertocopy==0:
-            print("option -1 default 0")
-        if len(mode2_Interceptor)>1:
-            print("warning: option -2 is useless in mode 1")
+
         #progamma logic
-        operatorwithdata_mode1=OperatorWithData_mode1(scriptcmdline,outputpath,outsuffix,inputdatafilesrootpath,n_subdirs=n_subdirs,scriptcontext=scriptcontext,scriptsstoredir=scriptsstoredir)
-        upTodownTravelDir(inputdatafilesrootpath,OperatorWithData=operatorwithdata_mode1,datadepth=datadepth)
+        operatorwithdata_mode1=OperatorWithData_mode1(scriptcmdline,outputpath,outsuffix,inputdatafilesrootpath,scriptcontext=scriptcontext,scriptsstoredir=scriptsstoredir)
+        upTodownTravelDir(inputdatafilesrootpath,operatorwithdata_mode1,datadepth,Interceptor_depth)
         
     elif mode==2:
-        if options.depthoffoldertocopy!=0:
-            print("warning: option -1 is not used in mode 2")
             
         operatorwithdata_mode2=OperatorWithData_mode2(scriptcmdline,outputpath,outsuffix,scriptsstoredir)
-        upTodownTravelDir(inputdatafilesrootpath,OperatorWithData=operatorwithdata_mode2,datadepth=datadepth)
+        upTodownTravelDir(inputdatafilesrootpath,operatorwithdata_mode2,datadepth,Interceptor_depth)
         #finalcmdline=re.sub(r"\${output}")
         finalcmdline=re.sub(r"[-\w\d]+[=\s]+\${.*?}"," ",operatorwithdata_mode2.newcmdline)
         try:
