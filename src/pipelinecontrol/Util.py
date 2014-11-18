@@ -4,10 +4,14 @@ Created on 2014-11-8
 
 @author: liurui
 '''
+from multiprocessing.dummy import Pool
 import os, re
 import time
 
+import src.web.DBA as DBA
 
+
+ISOTIMEFORMAT = '%Y-%m-%d %X'
 class OperatorWithData():
     def __init__(self, scriptsstoredir="F:/work/pipelinecontrol/scripts"):
         self.scriptsstoredir = scriptsstoredir + "/"
@@ -15,16 +19,18 @@ class OperatorWithData():
         print(p, d)
 # myprint=OperatorWithData()
 class OperatorWithData_mode1(OperatorWithData):
-    def __init__(self, cmdline, outputpath, suffix, inputdatapath, scriptcontext, scriptsstoredir):
+    def __init__(self, cmdline, outputpath, suffix, inputdatapath, scriptcontext, scriptsstoredir,interceptdirs=[]):
         super().__init__(scriptsstoredir)
         self.cmdline = cmdline
         self.outputpath = outputpath
         self.suffix = suffix
         self.inputdatapath = inputdatapath
-#         self.n_subdirs_to_copy = n_subdirs_to_copy
+        self.interceptdirs=interceptdirs
         self.scriptcontext = scriptcontext
     def process(self, curpath, datadepth, curdepth):
         print("mode1 process")
+        if self.interceptdirs!=[] and re.search(r".*/([^/]+)$",curpath).group(1).strip() not in self.interceptdirs:
+            return
         interceptdepth=curdepth
         newcmdline = self.cmdline
         subtargets = re.findall(r"\${.*?}", newcmdline)
@@ -37,11 +43,10 @@ class OperatorWithData_mode1(OperatorWithData):
                 continue
             targetdatasuffix.append(c)
         
-#         datafiles = os.listdir(path=curpath)
         updirname = re.search(r".*/([^/]+)$", curpath).group(1)
-#         print("OperatorWithData_mode1", datafiles)
+
         pathToOutputdata_createdir = ""
-#         leftPathName_filenamepre = ""
+
         if curdepth<=datadepth:
             pathToOutputdata_createdir = re.search(r"" + self.inputdatapath + "((/.*?){" + str(interceptdepth) + "}[/])", curpath + "/").group(1)
             
@@ -101,12 +106,12 @@ def upTodownTravelDir(rootDir, OperatorWithData, datadepth=9999, Interceptor_dep
 
 
 class OperatorWithData_mode2(OperatorWithData):
-    def __init__(self, cmdline, outputpath, suffix, scriptsstoredir, Interceptor=[]):
+    def __init__(self, cmdline, outputpath, suffix, scriptsstoredir, interceptdirs=[]):
         """
-        Interceptor=([subdir names list expected in the assigned depth])
+        interceptdirs=([subdir names list expected in the assigned depth])
         """
         super().__init__(scriptsstoredir)
-        self.Interceptor=Interceptor
+        self.interceptdirs=interceptdirs
         outputoptionstr = re.search(r"([-\w\d]+[=\s]+)\${output=.*\|suffix=.*}", cmdline).group(1)  # for example "OUTPUT=${output} -o ${output}"
 
         self.newcmdline = re.sub(r"[-\w\d]+[=\s]+\${output=.*\|suffix=.*}", outputoptionstr + outputpath + "/" + suffix + " ", cmdline)
@@ -115,7 +120,7 @@ class OperatorWithData_mode2(OperatorWithData):
 #         self.suffix = suffix
     def process(self, curpath, datadepth, curdepth):
         print("mode2 process")
-        if re.search(r".*/([^/])$",curpath).group(1).strip() not in self.Interceptor:
+        if self.interceptdirs!=[] and re.search(r".*/([^/]+)$",curpath).group(1).strip() not in self.interceptdirs:
             return
         newcmdline = self.newcmdline
 
@@ -126,11 +131,13 @@ class OperatorWithData_mode2(OperatorWithData):
         
         datafiles = os.listdir(path=curpath)
         print("OperatorWithData_mode2", datafiles)
-        for datafilename in datafiles:
-#             print("curfilename", curpath + "/" + datafilename)
-            if re.search(r".*?" + suffixstr, datafilename) != None:
-                newcmdline = re.sub(r"[-\w\d]+[=\s]+\${.*?}", optionstr + " " + curpath + "/" + datafilename + " " + option_suffix_obj.group(0), newcmdline)
-#                 print(newcmdline)
+        lists =os.walk(curpath)    
+        for rootStr,dirs,files in lists:
+            if len(re.split(r"/",rootStr))==len(re.split(r"/",self.inputdatapath))+datadepth:# reach the depth that datafiles in it
+                for datafilename in files:
+                    if re.search(r".*?" + suffixstr, datafilename) != None:
+                        newcmdline = re.sub(r"[-\w\d]+[=\s]+\${.*?}", optionstr + " " + curpath + "/" + datafilename + " " + option_suffix_obj.group(0), newcmdline)
+
 
         self.newcmdline = newcmdline
         return newcmdline
@@ -138,37 +145,67 @@ class OperatorWithData_mode2(OperatorWithData):
 
 
 
-class JobTracker():
-    def __init__(self, scriptDir, mode="series", logfile="/tmp/JobTrackerlife.log"):
+class JobTracker():#for one dir
+    def __init__(self, scriptDir, NumOfThread=8):
         self.scriptDir = scriptDir
-        self.mode = mode
-        self.logfile = logfile
-
-    def run(self):
-        ISOTIMEFORMAT = '%Y-%m-%d %X'
+        self.NumOfThread = int(NumOfThread)
+    def __runashell(self,scriptname):
+        session=DBA.getSession()
+        session.execute("update jobsstat set state='1' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
+        session.execute("update jobsstat set startdate='"+time.strftime(ISOTIMEFORMAT, time.localtime()) +"' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
+        scriptout=re.sub(r".sh$",".out",scriptname)
+        a=os.system(self.scriptDir+"/"+scriptname+">>"+self.scriptDir+"/"+scriptout+" 2>&1")
+        logfile=open(self.scriptDir+"/"+scriptout,'r')
+        logtext=logfile.read()
+        logfile.close()
+        if a!=0:
+            print("JobTracker . runshell error")
+            exit(-1)
+        else:
+            session.execute("update jobsstat set outputinfo='"+logtext+"' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
+            session.execute("update jobsstat set state='2' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
+            session.execute("update jobsstat set finishdate='"+time.strftime(ISOTIMEFORMAT, time.localtime()) +"' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
+    def callsh_updateDB(self):
+        pool=Pool(self.NumOfThread)
         scriptfiles = os.listdir(path=self.scriptDir)
-        print(scriptfiles)
+        for filename in scriptfiles:
+            if re.search(r".*\.sh$", filename) == None:
+                print("skip",filename)
+                scriptfiles.remove(filename)
+        DBA.addJobs(scriptfiles,self.scriptDir)
         a = os.system("chmod +x " + self.scriptDir + "/*.sh")
-        if a != 0:
+        if a!=0:
             print("JobTracker chmod error")
             exit(-1)
-        if self.mode == "series":
-            for scriptfile in scriptfiles:
-                if re.search(r".*\.sh$", scriptfile) == None:
-                    print("skip", scriptfile)
-                    continue
-                print(scriptfile + "  " + time.strftime(ISOTIMEFORMAT, time.localtime()) + "\n\n", file=open(self.logfile, "a"))
-                print(self.scriptDir + "/" + scriptfile + ">>" + self.logfile + " 2>&1")
-                a = os.system(self.scriptDir + "/" + scriptfile + ">>" + self.logfile + " 2>&1")
-                if a != 0:
-                    print("JobTracker run error" + scriptfile)
-        if self.mode == "parallel":
-            for scriptfile in scriptfiles:
-                scriptfileout = re.sub(r"\.sh$", ".out", scriptfile)
-                if re.search(r".*\.sh$", scriptfile) == None:
-                    print(scriptfileout, scriptfile)
-                    continue
-                print("nohup " + self.scriptDir + "/" + scriptfile + ">" + self.scriptDir + "/" + scriptfileout + " 2>&1 &")
-                a = os.system("nohup " + self.scriptDir + "/" + scriptfile + ">" + self.scriptDir + "/" + scriptfileout + " 2>&1 &")
-                if a != 0:
-                    print("JobTracker run error" + scriptfile)
+        pool.map(self.__runashell,scriptfiles)
+        
+#     def run(self):
+#         scriptfiles = os.listdir(path=self.scriptDir)
+#         print(scriptfiles)
+#         a = os.system("chmod +x " + self.scriptDir + "/*.sh")
+#         if a != 0:
+#             print("JobTracker chmod error")
+#             exit(-1)
+#         
+#         mypool=Pool(self.NumOfThread)
+#         
+#         if self.mode == "series":
+#             for scriptfile in scriptfiles:
+#                 if re.search(r".*\.sh$", scriptfile) == None:
+#                     print("skip", scriptfile)
+#                     continue
+#                 print(scriptfile + "  " + time.strftime(ISOTIMEFORMAT, time.localtime()) + "\n\n", file=open(self.logfile, "a"))
+#                 print(self.scriptDir + "/" + scriptfile + ">>" + self.logfile + " 2>&1")
+#                 a = os.system(self.scriptDir + "/" + scriptfile + ">>" + self.logfile + " 2>&1")
+#                 if a != 0:
+#                     print("JobTracker run error" + scriptfile)
+#         if self.mode == "parallel":
+#             for scriptfile in scriptfiles:
+#                 scriptfileout = re.sub(r"\.sh$", ".out", scriptfile)
+#                 if re.search(r".*\.sh$", scriptfile) == None:
+#                     print(scriptfileout, scriptfile)
+#                     continue
+#                 print("nohup " + self.scriptDir + "/" + scriptfile + ">" + self.scriptDir + "/" + scriptfileout + " 2>&1 &")
+#                 a = os.system("nohup " + self.scriptDir + "/" + scriptfile + ">" + self.scriptDir + "/" + scriptfileout + " 2>&1 &")
+#                 if a != 0:
+#                     print("JobTracker run error" + scriptfile)

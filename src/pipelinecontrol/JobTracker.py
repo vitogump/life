@@ -17,18 +17,13 @@ parser = OptionParser()
 parser.add_option("-d", "--scriptDir", dest="scriptDir",help="scriptDir")
 # parser.add_option("-o", "--outputpath", dest="outputpath", help="outputpath")
 
-parser.add_option("-l", "--logfile", dest="logfile", help="bam bai sam sorted.bam vcf blast and so on. note this is just used in the cmdline output parameter")
-parser.add_option("-m", "--mode", dest="mode",help="p:parallel s:series")
+# parser.add_option("-l", "--logfile", dest="logfile", help="bam bai sam sorted.bam vcf blast and so on. note this is just used in the cmdline output parameter")
+parser.add_option("-t", "--ThreadsNum", dest="ThreadsNum",help="p:parallel s:series")
 
                                                                                                                                                           
 (options, args) = parser.parse_args()
-if options.mode.lower()=="s":
-    print("series")
-    mode="series"
-elif options.mode.lower()=="p":
-    print("parallel")
-    mode="parallel"
+
 if __name__ == '__main__':
-    jk=JobTracker(scriptDir=options.scriptDir,mode=mode,logfile=options.logfile)
-    jk.run()
+    jk=JobTracker(scriptDir=options.scriptDir,NumOfThread=int(options.ThreadsNum))
+    jk.callsh_updateDB()
     print("finish")

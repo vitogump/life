@@ -3,12 +3,18 @@ Created on 2014-5-4
 
 @author: liurui
 '''
+# from datetime import datetime
+
+import datetime
+import time
+
 from sqlalchemy import Column, ForeignKey
 from sqlalchemy.engine import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql.schema import Sequence
-from sqlalchemy.sql.sqltypes import Integer, String, Text
+from sqlalchemy.sql.sqltypes import Integer, String, Text, Date, DateTime
+
 
 db_config = {
     'host': '10.2.48.140',
@@ -25,6 +31,26 @@ engine = create_engine('mysql+mysqlconnector://%s:%s@%s/%s?charset=%s'%(db_confi
                                                          db_config['charset']), echo=True)
 
 Base = declarative_base()
+ISOTIMEFORMAT = '%Y-%m-%d %X'
+class Jobstat(Base):
+    __tablename__="jobsstat"
+    id = Column(Integer,Sequence("jobsstat_id_seq"),primary_key=True)
+    
+    scriptname=Column(String(1000))
+    foldername=Column(String(1000))
+    scriptcontent=Column(String(1000))
+    outputinfo=Column(Text())
+# startdate=Column(DateTime, default=time.strftime(ISOTIMEFORMAT, time.localtime()))
+    startdate=Column(DateTime)
+    finishdate=Column(DateTime)
+    state=Column(Integer)
+    def __init__(self,scriptname,foldername,state):
+        self.scriptname=scriptname
+        self.foldername=foldername
+        self.state=state
+
+    def __repr(self):
+        return "<Jobstat('%s')>"%(self.scriptname)
 class Catalogue(Base):
     __tablename__="catalogues"
     id = Column(Integer,Sequence("catalogue_id_seq"),primary_key=True)

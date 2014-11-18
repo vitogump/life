@@ -9,7 +9,7 @@ from urllib.parse import quote, unquote
 import os
 import re
 import shutil
-import src.web.dba as dba
+import src.web.DBA as dba
 import string
 UPLOAD_BASE = "../../classical_paper"
 @get('/login')

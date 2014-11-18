@@ -3,10 +3,18 @@ Created on 2014-5-4
 
 @author: liurui
 '''
+
+import datetime
+import time
+
+import markdown2
+import mysql.connector
+import src.web.Entity as Entity
 from sqlalchemy import *
 from sqlalchemy.orm import *
-import mysql.connector
-import web.entity as entity
+from sqlalchemy.sql.sqltypes import Date, DateTime
+
+
 
 db_config = {
     'host': '10.2.48.140',
@@ -21,19 +29,35 @@ engine = create_engine('mysql+mysqlconnector://%s:%s@%s/%s?charset=%s'%(db_confi
                                                          db_config['host'],
                                                          db_config['db'],
                                                          db_config['charset']), echo=True)
-def addArticle(name,catalogue_id):
-    print("aaaaaaaaaa")
+
+ISOTIMEFORMAT = '%Y-%m-%d %X'
+def getSession():
     Session = sessionmaker(bind=engine)
     session = Session()
-    rc=entity.Article(name,catalogue_id)
+    return session
+def addArticle(name,catalogue_id):
+    print("aaaaaaaaaa")
+    session = getSession()
+    rc=Entity.Article(name,catalogue_id)
     session.add(rc)
     session.commit()
-Session = sessionmaker(bind=engine)
-session = Session()   
-l = session.query(entity.Article).all()
 
-for i in l:
-    print(i.title,i.catalogue_id)
+def addJobs(scriptslist,foldername,state=0):
+    
+    session = getSession()
+    for scriptname in scriptslist:
+        sc=Entity.Jobstat(foldername=foldername,scriptname=scriptname,state=state)
+        session.add(sc)
+        session.commit()
+# def addShell(scriptslist):
+# session.add(jb)
+# session.add(jb2)
+# session.commit()
+
+
+# 
+# for i in l:
+#     print(i.title,i.catalogue_id)
 #c1=entity.Catalogue("mRNA/miRNA表达分析")
 #c2=entity.Catalogue("自然选择和人工选择")
 #c3=entity.Catalogue("基因印迹和表观遗传")

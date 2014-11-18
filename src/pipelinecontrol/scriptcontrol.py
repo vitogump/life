@@ -56,12 +56,12 @@ if __name__ == '__main__':
     if mode==1:
 
         #progamma logic
-        operatorwithdata_mode1=OperatorWithData_mode1(scriptcmdline,outputpath,outsuffix,inputdatafilesrootpath,scriptcontext=scriptcontext,scriptsstoredir=scriptsstoredir)
+        operatorwithdata_mode1=OperatorWithData_mode1(scriptcmdline,outputpath,outsuffix,inputdatafilesrootpath,scriptcontext=scriptcontext,scriptsstoredir=scriptsstoredir,interceptdirs=interceptdirs)
         upTodownTravelDir(inputdatafilesrootpath,operatorwithdata_mode1,datadepth,Interceptor_depth)
         
     elif mode==2:
             
-        operatorwithdata_mode2=OperatorWithData_mode2(scriptcmdline,outputpath,outsuffix,scriptsstoredir)
+        operatorwithdata_mode2=OperatorWithData_mode2(scriptcmdline,outputpath,outsuffix,scriptsstoredir,interceptdirs)
         upTodownTravelDir(inputdatafilesrootpath,operatorwithdata_mode2,datadepth,Interceptor_depth)
         #finalcmdline=re.sub(r"\${output}")
         finalcmdline=re.sub(r"[-\w\d]+[=\s]+\${.*?}"," ",operatorwithdata_mode2.newcmdline)
