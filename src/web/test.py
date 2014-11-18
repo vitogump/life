@@ -17,29 +17,30 @@ import src.web.DBA as aaa
 
 ISOTIMEFORMAT = '%Y-%m-%d %X'
 if __name__ == '__main__':
-    ll=["addJobs","ddddd"]
-    addJobs(ll,"kkkk")
-    llll=["test","luowen"]
-    addJobs(llll,"lhomelcomlfuc")
-    
-    print("update jobsstat set startdate='"+time.strftime(ISOTIMEFORMAT, time.localtime()) +"' where id='1'")
-    print(datetime.datetime.now())
-    
-    results=[]
+#     ll=["addJobs","ddddd"]
+#     addJobs(ll,"kkkk")
+#     llll=["test","luowen"]
+#     addJobs(llll,"lhomelcomlfuc")
+#     
+#     print("update jobsstat set startdate='"+time.strftime(ISOTIMEFORMAT, time.localtime()) +"' where id='1'")
+#     print(datetime.datetime.now())
+#     
+#     results=[]
+#     
+#     file=open("F:\work\pyhtmlmarkdown\\tttt.txt",'r')
+#     bowtieout=file.read()
+#     file.close()
+#     results.append(session.execute("update jobsstat set startdate='"+time.strftime(ISOTIMEFORMAT, time.localtime()) +"' where id='1'"))
+#     results.append(session.execute("update jobsstat set outputinfo='"+bowtieout+"' where id = '1'"))
+#     print("results",results)
     session=aaa.getSession()
-    file=open("F:\work\pyhtmlmarkdown\\tttt.txt",'r')
-    bowtieout=file.read()
-    file.close()
-    results.append(session.execute("update jobsstat set startdate='"+time.strftime(ISOTIMEFORMAT, time.localtime()) +"' where id='1'"))
-    results.append(session.execute("update jobsstat set outputinfo='"+bowtieout+"' where id = '1'"))
-    print("results",results)
     l = session.query(Entity.Jobstat).all()
-    header=["*scriptname*","*foldername*","*state*","*outputinfo*"]
+    header=["*scriptname*","*foldername*","*starttime*","*finishtime*"," *state*","*outputinfo*"]
     mylist=[]
     
     for i in l:
         print("sssssssssssssssss",i.outputinfo)
-        mylist.append([i.scriptname,i.foldername,i.state,("""<input type="button" value="go" onclick="location.href='http://www.baidu.com'">""")])
+        mylist.append([i.scriptname,i.foldername[10:],("&nbsp;"+str(i.startdate)+"&nbsp;"),("&nbsp;"+str(i.finishdate)+"&nbsp;"),("&nbsp;"+str(i.state)),("""<input type="button" value="outputinfo" onclick="location.href='http://www.baidu.com'">""")])
     print(mylist)
     print("======orgtbl=====================")
     print(tabulate(mylist,header,tablefmt="orgtbl"))    

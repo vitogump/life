@@ -22,7 +22,7 @@ parser.add_option("-s", "--scriptstorepath", dest="scriptstorepath", help="bam b
 parser.add_option("-m", "--mode", dest="mode",
                   help="1 :means produce cmdline scripts for every terminal folder,the input data should be all the data files under the terminal folder. 2:use all selected data files as the input parameters in the only one cmdline script")
 parser.add_option("-I","--Interceptor_depth",dest="Interceptor_depth",default="0",help="depth of the folder to output")
-parser.add_option("-l", "--interceptdirs", dest="interceptdirs", default=[],action="append", help="winvalue or zvalue")
+parser.add_option("-l", "--interceptdirs", dest="interceptdirs",action="append", default=[], help="winvalue or zvalue")
 parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", default=True,
                   help="don't print status messages to stdout")

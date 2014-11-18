@@ -24,7 +24,7 @@ parser.add_option("-c", "--derived_alletable", dest="derived_alletable",# action
 parser.add_option("-o","--outfileprename",dest="outfilepreName",help="outfilepreName with path")
 parser.add_option("-m","--mindepth",dest="mindepth",help="mindepth for both archicpop and ancestralallel")#
 # parser.add_option("-e", "--bedfile", action="append",dest="bedfile",default=[],help="measure region of bedfile")
-parser.add_option("-s","--speciesesName",dest="speciesesName",action="append",default=[],help="speciesName in table")#
+parser.add_option("-s","--speciesesName",action="append",dest="speciesesName",default=[],help="speciesName in table")#
                                                                                                                                                           
 (options, args) = parser.parse_args()
 allpop_with_derived_alletable=options.derived_alletable
