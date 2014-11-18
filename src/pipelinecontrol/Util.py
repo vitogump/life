@@ -68,7 +68,7 @@ class OperatorWithData_mode1(OperatorWithData):
                             option_suffix_obj = re.search(r"([-\w\d]+[=\s]+)\${(\s*" + targetdatasuffix[i] + "\s*)}", newcmdline)  # for example "INPUT=${.bam} -i ${.sam}"
                             optionstr = option_suffix_obj.group(1)
                             suffixstr = option_suffix_obj.group(2)
-                            newcmdline=re.sub(r"[-\w\d]+[=\s]+\${\s*" + targetdatasuffix[i] + "\s*}", optionstr + " " + curpath + "/" + datafilename.strip() + " " + option_suffix_obj.group(0), newcmdline)                
+                            newcmdline=re.sub(r"[-\w\d]+[=\s]+\${\s*" + targetdatasuffix[i] + "\s*}", optionstr  + rootStr + "/" + datafilename.strip() + " " + option_suffix_obj.group(0), newcmdline)                
         newcmdline = re.sub(r"[-\w\d]+[=\s]+\${.*?}", " ", newcmdline)                
                     # sub was acted from the first to the rear most
         print("pathToOutputdata_createdir", pathToOutputdata_createdir)
@@ -159,6 +159,7 @@ class JobTracker():#for one dir
         logtext=logfile.read()
         logfile.close()
         if a!=0:
+            session.execute("update jobsstat set state='-1' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
             print("JobTracker . runshell error")
             exit(-1)
         else:
@@ -179,33 +180,3 @@ class JobTracker():#for one dir
             exit(-1)
         pool.map(self.__runashell,scriptfiles)
         
-#     def run(self):
-#         scriptfiles = os.listdir(path=self.scriptDir)
-#         print(scriptfiles)
-#         a = os.system("chmod +x " + self.scriptDir + "/*.sh")
-#         if a != 0:
-#             print("JobTracker chmod error")
-#             exit(-1)
-#         
-#         mypool=Pool(self.NumOfThread)
-#         
-#         if self.mode == "series":
-#             for scriptfile in scriptfiles:
-#                 if re.search(r".*\.sh$", scriptfile) == None:
-#                     print("skip", scriptfile)
-#                     continue
-#                 print(scriptfile + "  " + time.strftime(ISOTIMEFORMAT, time.localtime()) + "\n\n", file=open(self.logfile, "a"))
-#                 print(self.scriptDir + "/" + scriptfile + ">>" + self.logfile + " 2>&1")
-#                 a = os.system(self.scriptDir + "/" + scriptfile + ">>" + self.logfile + " 2>&1")
-#                 if a != 0:
-#                     print("JobTracker run error" + scriptfile)
-#         if self.mode == "parallel":
-#             for scriptfile in scriptfiles:
-#                 scriptfileout = re.sub(r"\.sh$", ".out", scriptfile)
-#                 if re.search(r".*\.sh$", scriptfile) == None:
-#                     print(scriptfileout, scriptfile)
-#                     continue
-#                 print("nohup " + self.scriptDir + "/" + scriptfile + ">" + self.scriptDir + "/" + scriptfileout + " 2>&1 &")
-#                 a = os.system("nohup " + self.scriptDir + "/" + scriptfile + ">" + self.scriptDir + "/" + scriptfileout + " 2>&1 &")
-#                 if a != 0:
-#                     print("JobTracker run error" + scriptfile)

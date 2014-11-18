@@ -21,7 +21,7 @@ parser.add_option("-d", "--datadepth", dest="datadepth", help="it's the depth of
 parser.add_option("-s", "--scriptstorepath", dest="scriptstorepath", help="bam bai sam sorted.bam vcf blast and so on. note this is just used in the cmdline output parameter")
 parser.add_option("-m", "--mode", dest="mode",
                   help="1 :means produce cmdline scripts for every terminal folder,the input data should be all the data files under the terminal folder. 2:use all selected data files as the input parameters in the only one cmdline script")
-parser.add_option("-I","--Interceptor_depth",dest="Interceptor_depth",default="0",help="0 means don't creat folder in the output folder")
+parser.add_option("-I","--Interceptor_depth",dest="Interceptor_depth",default="0",help="depth of the folder to output")
 parser.add_option("-l", "--interceptdirs", dest="interceptdirs", default=[],action="append", help="winvalue or zvalue")
 parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", default=True,
