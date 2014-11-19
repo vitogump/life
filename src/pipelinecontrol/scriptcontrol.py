@@ -44,9 +44,9 @@ inputdatafilesrootpath=re.search(r"(\n)*inputdatafilesrootpath=\s*(.*)",scriptco
 scriptcmdline=re.search(r"(.*(\n)*)cmdline=\s*(.*)",scriptcontent).group(3)
 print(scriptcontent,scriptcontext,inputdatafilesrootpath,scriptcmdline,sep="\n")
 
-outputpath=re.search(r"\${output=\s*([^\s^\|]*)\|suffix=(.*)}",scriptcmdline).group(1)
-outsuffix=re.search(r"\${output=\s*([^\s^\|]*)\|suffix=(.*)}",scriptcmdline).group(2)
-print(inputdatafilesrootpath,"outputpath=",outputpath,outsuffix)
+# outputpath=re.search(r"\${output=\s*([^\s^\|]*)\|suffix=(.*)}",scriptcmdline).group(1)
+# outsuffix=re.search(r"\${output=\s*([^\s^\|]*)\|suffix=(.*)}",scriptcmdline).group(2)
+# print(inputdatafilesrootpath,"outputpath=",outputpath,outsuffix)
 
 
 interceptdirs=options.interceptdirs
@@ -56,7 +56,7 @@ if __name__ == '__main__':
     if mode==1:
 
         #progamma logic
-        operatorwithdata_mode1=OperatorWithData_mode1(scriptcmdline,outputpath,outsuffix,inputdatafilesrootpath,scriptcontext=scriptcontext,scriptsstoredir=scriptsstoredir,interceptdirs=interceptdirs)
+        operatorwithdata_mode1=OperatorWithData_mode1(scriptcmdline,inputdatafilesrootpath,scriptcontext=scriptcontext,scriptsstoredir=scriptsstoredir,interceptdirs=interceptdirs)
         upTodownTravelDir(inputdatafilesrootpath,operatorwithdata_mode1,datadepth,Interceptor_depth)
         
     elif mode==2:
@@ -66,9 +66,9 @@ if __name__ == '__main__':
         #finalcmdline=re.sub(r"\${output}")
         finalcmdline=re.sub(r"[-\w\d]+[=\s]+\${.*?}"," ",operatorwithdata_mode2.newcmdline)
         try:
-            print(scriptcontext+finalcmdline,file=open("F:/work/pipelinecontrol/scripts/"+outsuffix+"Script.sh",'a'))
+            print(scriptcontext+finalcmdline,file=open("F:/work/pipelinecontrol/scripts/"+operatorwithdata_mode2.outsuffix+"Script.sh",'a'))
         except FileNotFoundError:
-            print(scriptcontext+finalcmdline,file=open("F:/work/pipelinecontrol/scripts/"+outsuffix+"Script.sh",'w'))
+            print(scriptcontext+finalcmdline,file=open("F:/work/pipelinecontrol/scripts/"+operatorwithdata_mode2.outsuffix+"Script.sh",'w'))
     print("==============")
 #     cmdline=operatorwithdata_mode1.cmdline
 

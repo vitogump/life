@@ -11,7 +11,7 @@ from sqlalchemy.orm import session
 from tabulate import tabulate
 
 from src.web import Entity
-from src.web.DBA import addJobs
+from src.web.DBA import addJobs2jobstate
 import src.web.DBA as aaa
 
 
@@ -34,7 +34,7 @@ if __name__ == '__main__':
 #     results.append(session.execute("update jobsstat set outputinfo='"+bowtieout+"' where id = '1'"))
 #     print("results",results)
     session=aaa.getSession()
-    l = session.query(Entity.Jobstat).all()
+    l = session.query(Entity.Jobstate).all()
     header=["*scriptname*","*foldername*","*starttime*","*finishtime*"," *state*","*outputinfo*"]
     mylist=[]
     

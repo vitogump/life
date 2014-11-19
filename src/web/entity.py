@@ -32,9 +32,9 @@ engine = create_engine('mysql+mysqlconnector://%s:%s@%s/%s?charset=%s'%(db_confi
 
 Base = declarative_base()
 ISOTIMEFORMAT = '%Y-%m-%d %X'
-class Jobstat(Base):
-    __tablename__="jobsstat"
-    id = Column(Integer,Sequence("jobsstat_id_seq"),primary_key=True)
+class Jobstate(Base):
+    __tablename__="jobsstate"
+    id = Column(Integer,Sequence("jobsstate_id_seq"),primary_key=True)
     
     scriptname=Column(String(1000))
     foldername=Column(String(1000))

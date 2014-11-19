@@ -42,11 +42,11 @@ def addArticle(name,catalogue_id):
     session.add(rc)
     session.commit()
 
-def addJobs(scriptslist,foldername,state=0):
+def addJobs2jobstate(scriptslist,foldername,state=0):
     
     session = getSession()
     for scriptname in scriptslist:
-        sc=Entity.Jobstat(foldername=foldername,scriptname=scriptname,state=state)
+        sc=Entity.Jobstate(foldername=foldername,scriptname=scriptname,state=state)
         session.add(sc)
         session.commit()
 # def addShell(scriptslist):

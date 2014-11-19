@@ -19,11 +19,16 @@ class OperatorWithData():
         print(p, d)
 # myprint=OperatorWithData()
 class OperatorWithData_mode1(OperatorWithData):
-    def __init__(self, cmdline, outputpath, suffix, inputdatapath, scriptcontext, scriptsstoredir,interceptdirs=[]):
+    def __init__(self, cmdline, inputdatapath, scriptcontext, scriptsstoredir,interceptdirs=[]):
         super().__init__(scriptsstoredir)
+        self.outputlist=re.findall(r"\${output=\s*([^\s^\|]*)\|suffix=(.*?)}",cmdline)
+#         for subtuple in sublist:
+#             pass
+#             
+#         outputpath=re.search(r"\${output=\s*("+sublist[1]+")\|suffix=(.*?)}",cmdline).group(1)
+#         outsuffix=re.search(r"\${output=\s*([^\s^\|]*)\|suffix=(.*?)}",cmdline).group(2)
+        #print(inputdatafilesrootpath,"outputpath=",outputpath,outsuffix)
         self.cmdline = cmdline
-        self.outputpath = outputpath
-        self.suffix = suffix
         self.inputdatapath = inputdatapath
         self.interceptdirs=interceptdirs
         self.scriptcontext = scriptcontext
@@ -51,13 +56,16 @@ class OperatorWithData_mode1(OperatorWithData):
             pathToOutputdata_createdir = re.search(r"" + self.inputdatapath + "((/.*?){" + str(interceptdepth) + "}[/])", curpath + "/").group(1)
             
             #leftPathName_filenamepre = re.search(r"" + self.inputdatapath + pathToOutputdata_createdir + "(.*)", curpath + "/").group(1).replace("/", ".")
-            if not os.path.exists(self.outputpath + pathToOutputdata_createdir):
-                os.makedirs(self.outputpath + pathToOutputdata_createdir)
+            for outputtuple in self.outputlist:
+                if not os.path.exists(outputtuple[1] + pathToOutputdata_createdir):
+                    os.makedirs(outputtuple[1] + pathToOutputdata_createdir)
         else:
             print(curdepth, datadepth, "OperatorWithData_mode1 error")
             exit(-1)
-
-        newcmdline = re.sub(r"\${output=.*\|suffix=.*}", self.outputpath + pathToOutputdata_createdir + updirname + "." + self.suffix, newcmdline)
+        for outputtuple in self.outputlist:
+            outputpath=re.search(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}",newcmdline).group(1)
+            outsuffix=re.search(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}",newcmdline).group(2)
+            newcmdline = re.sub(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}", outputpath + pathToOutputdata_createdir + updirname + "." + outsuffix, newcmdline)
         for i in range(0, len(targetdatasuffix)):
             lists =os.walk(curpath)    
             for rootStr,dirs,files in lists:
@@ -106,15 +114,20 @@ def upTodownTravelDir(rootDir, OperatorWithData, datadepth=9999, Interceptor_dep
 
 
 class OperatorWithData_mode2(OperatorWithData):
-    def __init__(self, cmdline, outputpath, suffix, scriptsstoredir, interceptdirs=[]):
+    def __init__(self, cmdline, scriptsstoredir, interceptdirs=[]):
         """
         interceptdirs=([subdir names list expected in the assigned depth])
         """
         super().__init__(scriptsstoredir)
         self.interceptdirs=interceptdirs
-        outputoptionstr = re.search(r"([-\w\d]+[=\s]+)\${output=.*\|suffix=.*}", cmdline).group(1)  # for example "OUTPUT=${output} -o ${output}"
-
-        self.newcmdline = re.sub(r"[-\w\d]+[=\s]+\${output=.*\|suffix=.*}", outputoptionstr + outputpath + "/" + suffix + " ", cmdline)
+        self.outputlist=re.findall(r"\${output=\s*([^\s^\|]*)\|suffix=(.*?)}",cmdline)
+        outputoptionstr = re.search(r"([-\w\d]+[=\s]+)\${output=.*\|suffix=.*?}", cmdline).group(1)  # for example "OUTPUT=${output} -o ${output}"
+        
+        for outputtuple in self.outputlist:
+            outputpath=re.search(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}",cmdline).group(1)
+            outsuffix=re.search(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}",cmdline).group(2)
+            self.newcmdline = re.sub(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}", outputpath + "/" + outsuffix + " ", cmdline)
+#         self.newcmdline = re.sub(r"[-\w\d]+[=\s]+\${output=.*\|suffix=.*?}", outputoptionstr + outputpath + "/" + suffix + " ", cmdline)
         print("OperatorWithData_mode2 __init__", self.newcmdline)
 #         self.outputpath = outputpath
 #         self.suffix = suffix
@@ -151,21 +164,21 @@ class JobTracker():#for one dir
         self.NumOfThread = int(NumOfThread)
     def __runashell(self,scriptname):
         session=DBA.getSession()
-        session.execute("update jobsstat set state='1' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
-        session.execute("update jobsstat set startdate='"+time.strftime(ISOTIMEFORMAT, time.localtime()) +"' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
+        session.execute("update jobsstate set state='1' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
+        session.execute("update jobsstate set startdate='"+time.strftime(ISOTIMEFORMAT, time.localtime()) +"' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
         scriptout=re.sub(r".sh$",".out",scriptname)
         a=os.system(self.scriptDir+"/"+scriptname+">>"+self.scriptDir+"/"+scriptout+" 2>&1")
-        logfile=open(self.scriptDir+"/"+scriptout,'r')
-        logtext=logfile.read()
-        logfile.close()
+#         logfile=open(self.scriptDir+"/"+scriptout,'r')
+#         logtext=logfile.read()
+#         logfile.close()
         if a!=0:
-            session.execute("update jobsstat set state='-1' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
+            session.execute("update jobsstate set state='-1' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
             print("JobTracker . runshell error")
             exit(-1)
         else:
-            session.execute("update jobsstat set outputinfo='"+logtext+"' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
-            session.execute("update jobsstat set state='2' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
-            session.execute("update jobsstat set finishdate='"+time.strftime(ISOTIMEFORMAT, time.localtime()) +"' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
+            #session.execute("update jobsstate set outputinfo='"+logtext+"' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
+            session.execute("update jobsstate set state='2' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
+            session.execute("update jobsstate set finishdate='"+time.strftime(ISOTIMEFORMAT, time.localtime()) +"' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
     def callsh_updateDB(self):
         pool=Pool(self.NumOfThread)
         scriptfiles = os.listdir(path=self.scriptDir)
@@ -173,7 +186,7 @@ class JobTracker():#for one dir
             if re.search(r".*\.sh$", filename) == None:
                 print("skip",filename)
                 scriptfiles.remove(filename)
-        DBA.addJobs(scriptfiles,self.scriptDir)
+        DBA.addJobs2jobstate(scriptfiles,self.scriptDir)
         a = os.system("chmod +x " + self.scriptDir + "/*.sh")
         if a!=0:
             print("JobTracker chmod error")
