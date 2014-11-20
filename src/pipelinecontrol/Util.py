@@ -22,12 +22,7 @@ class OperatorWithData_mode1(OperatorWithData):
     def __init__(self, cmdline, inputdatapath, scriptcontext, scriptsstoredir,interceptdirs=[]):
         super().__init__(scriptsstoredir)
         self.outputlist=re.findall(r"\${output=\s*([^\s^\|]*)\|suffix=(.*?)}",cmdline)
-#         for subtuple in sublist:
-#             pass
-#             
-#         outputpath=re.search(r"\${output=\s*("+sublist[1]+")\|suffix=(.*?)}",cmdline).group(1)
-#         outsuffix=re.search(r"\${output=\s*([^\s^\|]*)\|suffix=(.*?)}",cmdline).group(2)
-        #print(inputdatafilesrootpath,"outputpath=",outputpath,outsuffix)
+
         self.cmdline = cmdline
         self.inputdatapath = inputdatapath
         self.interceptdirs=interceptdirs
@@ -49,6 +44,7 @@ class OperatorWithData_mode1(OperatorWithData):
             targetdatasuffix.append(c)
         
         updirname = re.search(r".*/([^/]+)$", curpath).group(1)
+        newcmdline=re.sub(r"\${tag}",updirname,newcmdline)
 
         pathToOutputdata_createdir = ""
 
@@ -57,8 +53,8 @@ class OperatorWithData_mode1(OperatorWithData):
             
             #leftPathName_filenamepre = re.search(r"" + self.inputdatapath + pathToOutputdata_createdir + "(.*)", curpath + "/").group(1).replace("/", ".")
             for outputtuple in self.outputlist:
-                if not os.path.exists(outputtuple[1] + pathToOutputdata_createdir):
-                    os.makedirs(outputtuple[1] + pathToOutputdata_createdir)
+                if not os.path.exists(outputtuple[0] + pathToOutputdata_createdir):
+                    os.makedirs(outputtuple[0] + pathToOutputdata_createdir)
         else:
             print(curdepth, datadepth, "OperatorWithData_mode1 error")
             exit(-1)

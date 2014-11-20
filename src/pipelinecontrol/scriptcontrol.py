@@ -61,7 +61,7 @@ if __name__ == '__main__':
         
     elif mode==2:
             
-        operatorwithdata_mode2=OperatorWithData_mode2(scriptcmdline,outputpath,outsuffix,scriptsstoredir,interceptdirs)
+        operatorwithdata_mode2=OperatorWithData_mode2(scriptcmdline,scriptsstoredir,interceptdirs)
         upTodownTravelDir(inputdatafilesrootpath,operatorwithdata_mode2,datadepth,Interceptor_depth)
         #finalcmdline=re.sub(r"\${output}")
         finalcmdline=re.sub(r"[-\w\d]+[=\s]+\${.*?}"," ",operatorwithdata_mode2.newcmdline)

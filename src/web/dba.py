@@ -49,6 +49,7 @@ def addJobs2jobstate(scriptslist,foldername,state=0):
         sc=Entity.Jobstate(foldername=foldername,scriptname=scriptname,state=state)
         session.add(sc)
         session.commit()
+print("this line meaning this py module arc execute when import ")
 # def addShell(scriptslist):
 # session.add(jb)
 # session.add(jb2)
