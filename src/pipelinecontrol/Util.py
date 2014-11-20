@@ -35,14 +35,13 @@ class OperatorWithData_mode1(OperatorWithData):
         newcmdline = self.cmdline
         subtargets = re.findall(r"\${.*?}", newcmdline)
         targetdatasuffix = []
-        for target in subtargets:
+        for target in subtargets[:]:
             c = re.search(r'\${(.*?)}', target).group(1)
             if re.search(r"output=.*", c) != None:
                 print(target, subtargets)
                 subtargets.remove(target)
                 continue
             targetdatasuffix.append(c)
-        
         updirname = re.search(r".*/([^/]+)$", curpath).group(1)
         newcmdline=re.sub(r"\${tag}",updirname,newcmdline)
 
@@ -62,6 +61,7 @@ class OperatorWithData_mode1(OperatorWithData):
             outputpath=re.search(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}",newcmdline).group(1)
             outsuffix=re.search(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}",newcmdline).group(2)
             newcmdline = re.sub(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}", outputpath + pathToOutputdata_createdir + updirname + "." + outsuffix, newcmdline)
+        
         for i in range(0, len(targetdatasuffix)):
             lists =os.walk(curpath)    
             for rootStr,dirs,files in lists:
@@ -169,8 +169,8 @@ class JobTracker():#for one dir
 #         logfile.close()
         if a!=0:
             session.execute("update jobsstate set state='-1' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
-            print("JobTracker . runshell error")
-            exit(-1)
+            print("JobTracker "+scriptname+" runshell error")
+            exit(-1)#just exit this threads the python programma still go on
         else:
             #session.execute("update jobsstate set outputinfo='"+logtext+"' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
             session.execute("update jobsstate set state='2' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
