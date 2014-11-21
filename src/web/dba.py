@@ -28,7 +28,7 @@ engine = create_engine('mysql+mysqlconnector://%s:%s@%s/%s?charset=%s'%(db_confi
                                                          db_config['passwd'],
                                                          db_config['host'],
                                                          db_config['db'],
-                                                         db_config['charset']), echo=True)
+                                                         db_config['charset']), echo=True,pool_recycle=3600)
 
 ISOTIMEFORMAT = '%Y-%m-%d %X'
 def getSession():
