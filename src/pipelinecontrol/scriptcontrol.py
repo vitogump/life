@@ -61,14 +61,14 @@ if __name__ == '__main__':
         
     elif mode==2:
             
-        operatorwithdata_mode2=OperatorWithData_mode2(scriptcmdline,scriptsstoredir,interceptdirs)
+        operatorwithdata_mode2=OperatorWithData_mode2(scriptcmdline,inputdatafilesrootpath,scriptcontext,scriptsstoredir,interceptdirs)
         upTodownTravelDir(inputdatafilesrootpath,operatorwithdata_mode2,datadepth,Interceptor_depth)
         #finalcmdline=re.sub(r"\${output}")
         finalcmdline=re.sub(r"[-\w\d]+[=\s]+\${.*?}"," ",operatorwithdata_mode2.newcmdline)
         try:
-            print(scriptcontext+finalcmdline,file=open("F:/work/pipelinecontrol/scripts/"+operatorwithdata_mode2.outsuffix+"Script.sh",'a'))
+            print(scriptcontext+finalcmdline,file=open(operatorwithdata_mode2.scriptsstoredir+"/"+operatorwithdata_mode2.suffixstr+"Script.sh",'a'))
         except FileNotFoundError:
-            print(scriptcontext+finalcmdline,file=open("F:/work/pipelinecontrol/scripts/"+operatorwithdata_mode2.outsuffix+"Script.sh",'w'))
+            print(scriptcontext+finalcmdline,file=open(operatorwithdata_mode2.scriptsstoredir+"/"+operatorwithdata_mode2.suffixstr+"Script.sh",'w'))
     print("==============")
 #     cmdline=operatorwithdata_mode1.cmdline
 

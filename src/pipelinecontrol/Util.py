@@ -12,12 +12,59 @@ import src.web.DBA as DBA
 
 
 ISOTIMEFORMAT = '%Y-%m-%d %X'
+def upTodownTravelDir(rootDir, OperatorWithData, datadepth=9999, Interceptor_depth=0, curdepth=0):
+    """
+        
+    """
+    print(rootDir)
+    if Interceptor_depth == 0:
+        # data files are under the curdepth
+        newcmdline = OperatorWithData.process(rootDir, datadepth, curdepth)#curdepth== the beginning value of the Interceptor_depth
+        print('rootDir', rootDir, newcmdline)
+        return
+    # now go into a deeper dir
+    curdepth = curdepth + 1
+    Interceptor_depth = Interceptor_depth - 1
+    for elem in os.listdir(path=rootDir):
+        path = rootDir + "/" + elem
+        if not os.path.isdir(path):
+            # this is a data file
+            pass
+            # print("data",path)
+        else:
+            # this is a folder
+#             if len(mode2_Interceptor) > 1 and curdepth == mode2_Interceptor[0] and elem not in mode2_Interceptor[1:]:
+#                 continue  # this is for mode 2 only
+#             print("go into folder", path)
+            upTodownTravelDir(path, OperatorWithData, datadepth, Interceptor_depth, curdepth)
+
+
 class OperatorWithData():
     def __init__(self, scriptsstoredir="F:/work/pipelinecontrol/scripts"):
         self.scriptsstoredir = scriptsstoredir + "/"
     def process(self, p, d):
         print(p, d)
 # myprint=OperatorWithData()
+class OperatorWithData_loadintodatabase(OperatorWithData):
+    def __init__(self,inputdatapath,ancestralalleletabletools,interceptdirs):
+        self.inputdatapath=inputdatapath
+        self.ancestralalleletabletools=ancestralalleletabletools
+        self.interceptdirs=interceptdirs
+    def process(self,curpath,datadepth,curdepth):
+        if self.interceptdirs!=[] and re.search(r".*/([^/]+)$",curpath).group(1).strip() not in self.interceptdirs:
+            return        
+        lists =os.walk(curpath)
+        for rootStr,dirs,files in lists:
+            if len(re.split(r"/",rootStr))==len(re.split(r"/",self.inputdatapath))+datadepth:
+                for datafilename in files:
+                    if re.search(r".*?.vcf$", datafilename) != None:
+                        signal=self.ancestralalleletabletools.createtable(rootStr + "/" +datafilename)
+                        if signal=="already exist":
+                            pass
+                        elif signal=="OK":
+                            tablename=self.ancestralalleletabletools.tablename
+                            self.ancestralalleletabletools.filldata(rootStr + "/" +datafilename,tablename=tablename)
+        return "OperatorWithData_loadintodatabase return"
 class OperatorWithData_mode1(OperatorWithData):
     def __init__(self, cmdline, inputdatapath, scriptcontext, scriptsstoredir,interceptdirs=[]):
         super().__init__(scriptsstoredir)
@@ -82,50 +129,28 @@ class OperatorWithData_mode1(OperatorWithData):
             print(self.scriptcontext + newcmdline, file=open(self.scriptsstoredir + pathToOutputdata_createdir.replace("/", "_")[1:]  + updirname + "." + updirname + "Script.sh", "w"))
         return newcmdline
 
-def upTodownTravelDir(rootDir, OperatorWithData, datadepth=9999, Interceptor_depth=0, curdepth=0):
-    """
-        
-    """
-    print(rootDir)
-    if Interceptor_depth == 0:
-        # data files are under the curdepth
-        newcmdline = OperatorWithData.process(rootDir, datadepth, curdepth)#curdepth== the beginning value of the Interceptor_depth
-        print('rootDir', rootDir, newcmdline)
-        return
-    # now go into a deeper dir
-    curdepth = curdepth + 1
-    Interceptor_depth = Interceptor_depth - 1
-    for elem in os.listdir(path=rootDir):
-        path = rootDir + "/" + elem
-        if not os.path.isdir(path):
-            # this is a data file
-            pass
-            # print("data",path)
-        else:
-            # this is a folder
-#             if len(mode2_Interceptor) > 1 and curdepth == mode2_Interceptor[0] and elem not in mode2_Interceptor[1:]:
-#                 continue  # this is for mode 2 only
-#             print("go into folder", path)
-            upTodownTravelDir(path, OperatorWithData, datadepth, Interceptor_depth, curdepth)
-
 
 class OperatorWithData_mode2(OperatorWithData):
-    def __init__(self, cmdline, scriptsstoredir, interceptdirs=[]):
+    def __init__(self, cmdline, inputdatapath, scriptcontext, scriptsstoredir,interceptdirs=[]):
         """
         interceptdirs=([subdir names list expected in the assigned depth])
         """
         super().__init__(scriptsstoredir)
         self.interceptdirs=interceptdirs
+        self.inputdatapath=inputdatapath
+        self.scriptcontext=scriptcontext
+        self.suffixstr=""
         self.outputlist=re.findall(r"\${output=\s*([^\s^\|]*)\|suffix=(.*?)}",cmdline)
         outputoptionstr = re.search(r"([-\w\d]+[=\s]+)\${output=.*\|suffix=.*?}", cmdline).group(1)  # for example "OUTPUT=${output} -o ${output}"
         
         for outputtuple in self.outputlist:
             outputpath=re.search(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}",cmdline).group(1)
             outsuffix=re.search(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}",cmdline).group(2)
+            if not os.path.exists(outputpath):
+                os.makedirs(outputpath)
             self.newcmdline = re.sub(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}", outputpath + "/" + outsuffix + " ", cmdline)
 #         self.newcmdline = re.sub(r"[-\w\d]+[=\s]+\${output=.*\|suffix=.*?}", outputoptionstr + outputpath + "/" + suffix + " ", cmdline)
         print("OperatorWithData_mode2 __init__", self.newcmdline)
-#         self.outputpath = outputpath
 #         self.suffix = suffix
     def process(self, curpath, datadepth, curdepth):
         print("mode2 process")
@@ -137,7 +162,7 @@ class OperatorWithData_mode2(OperatorWithData):
         optionstr = option_suffix_obj.group(1)
         suffixstr = option_suffix_obj.group(2)
         print(optionstr, suffixstr)
-        
+        self.suffixstr=suffixstr
         datafiles = os.listdir(path=curpath)
         print("OperatorWithData_mode2", datafiles)
         lists =os.walk(curpath)    

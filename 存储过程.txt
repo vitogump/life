@@ -1,28 +1,35 @@
 DELIMITER $$
 
-DROP PROCEDURE IF EXISTS `life_pilot`.`mysql_sp_add_column`$$
-
-CREATE DEFINER=``@`` PROCEDURE `mysql_sp_add_column`(
+DROP PROCEDURE IF EXISTS `ninglabvariantdata`.`mysql_sp_add_column`$$
+CREATE PROCEDURE `mysql_sp_add_column`(
   IN p_DBName varchar(64)        -- 数据库名
 , IN p_TableName varchar(100)    -- 表名
 , IN p_ColumnName varchar(100)   -- 字段名
 , IN p_ColumnType varchar(200)   -- 字段类型
 , IN p_ColumnOtherInfo varchar(200)  -- 字段其他属性
 )
+    NOT DETERMINISTIC
+    CONTAINS SQL
+    SQL SECURITY DEFINER
+    COMMENT ''
 BEGIN
    declare tmpColumnName varchar(100);
    declare tmpSqlStr varchar(500);
    declare tmpSqlToRun varchar(500);
+
 select column_name into tmpColumnName from information_schema.columns
        where table_name = p_TableName  and column_name = p_ColumnName ;
+
+
 if tmpColumnName  is null then
    set tmpSqlStr = " ";
    set tmpSqlStr = concat(tmpSqlStr ,"  ALTER TABLE " , p_TableName);
    set tmpSqlStr = concat(tmpSqlStr ," ADD ", p_ColumnName, " "  ,p_ColumnType , " "  ,p_ColumnOtherInfo , " ; " );
    SET @sql = tmpSqlStr;
+
  prepare tmpSqlToRun from @sql;
  EXECUTE tmpSqlToRun;
-end if;
-END$$
 
-DELIMITER ;
+end if;
+
+END;

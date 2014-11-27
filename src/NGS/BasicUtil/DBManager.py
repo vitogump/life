@@ -94,12 +94,14 @@ class DBTools():
                 cursor.execute(table[key])
             except mysql.connector.Error as err:
                 if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
-                    print('already exist.')
-                    return 0
+                    print(table,'already exist.')
+                    return "already exist"
                 else:
                     print(err.errmsg)
+                    return -1
             else:
                 print('OK')
+                return 'OK'
         cursor.close()
 #    def load_file(self,sql):
 #        print(sql)
