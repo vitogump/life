@@ -58,16 +58,16 @@ class AncestralAlleletabletools():
         for col in colslist:
             print("col name",col,"adding to mysql databases")
             self.dbtools.operateDB("callproc", "mysql_sp_add_column", data=(self.dbname, tablename, col, "char(128)", "default null"))
-        a=os.system("""awk '$0!~/#/{OFS="\t";for(i=10;i<=NF;i++) printf $1"\t"$2"\t"$3"\t"$4"\t"$5"\t"$i"\t"FS;print ""}' """+vcffilename+">/tmp/tempstep1")
+        a=os.system("""awk '$0!~/#/{OFS="\t";for(i=10;i<=NF;i++) printf $1"\t"$2"\t"$3"\t"$4"\t"$5"\t"$i"\t"FS;print ""}' """+vcffilename+">"+vcffilename+"tempstep1")
         if a!=0:
-            print("error",""""awk '$0!~/#/{OFS="\t";for(i=10;i<=NF;i++) printf $1"\t"$2"\t"$3"\t"$4"\t"$5"\t"$i"\t"FS;print ""}' """+vcffilename+">/tmp/tempstep1")
-        loaddatasql = "load data local infile '/tmp/tempstep1' into table " + tablename + " fields terminated by '\\t'"
+            print("error",""""awk '$0!~/#/{OFS="\t";for(i=10;i<=NF;i++) printf $1"\t"$2"\t"$3"\t"$4"\t"$5"\t"$i"\t"FS;print ""}' """+vcffilename+">"+vcffilename+"tempstep1")
+        loaddatasql = "load data local infile '"+vcffilename+"tempstep1"+"' into table " + tablename + " fields terminated by '\\t'"
         shellstatment = "mysql -uroot -p1234567 -D" + self.dbname.strip() + ' -e "' + loaddatasql + '"'
         
         a = os.system(shellstatment)
         if a!=0:
             print("error",shellstatment)
-        os.system("rm tempstep1")
+        os.system("rm "+vcffilename+"tempstep1")
 #     def filldata(self, vcfFileName, depthfileName, tablename="derived_alle_ref", posUniq=True,continuechrom=None,continuepos=None):
 #         depthfile = Util.GATK_depthfile(depthfileName, depthfileName + ".index")
 #         depth_linelist=None
