@@ -58,12 +58,8 @@ class OperatorWithData_loadintodatabase(OperatorWithData):
             if len(re.split(r"/",rootStr))==len(re.split(r"/",self.inputdatapath))+datadepth:
                 for datafilename in files:
                     if re.search(r".*?.vcf$", datafilename) != None:
-                        signal=self.ancestralalleletabletools.createtable(rootStr + "/" +datafilename)
-                        if signal=="already exist":
-                            pass
-                        elif signal=="OK":
-                            tablename=self.ancestralalleletabletools.tablename
-                            self.ancestralalleletabletools.filldata(rootStr + "/" +datafilename,tablename=tablename)
+                        tablename=self.ancestralalleletabletools.createtable(rootStr + "/" +datafilename)
+                        self.ancestralalleletabletools.filldata(rootStr + "/" +datafilename,tablename=tablename)
         return "OperatorWithData_loadintodatabase return"
 class OperatorWithData_mode1(OperatorWithData):
     def __init__(self, cmdline, inputdatapath, scriptcontext, scriptsstoredir,interceptdirs=[]):
