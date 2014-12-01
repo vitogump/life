@@ -25,5 +25,5 @@ archicpopVcfFile=options.archicpopVcfFile
 chromtable=options.chromtable
 toplevelsnptablename=options.toplevelsnptable
 if __name__ == '__main__':
-    ancestralalleletabletools=AncestralAlleletabletools(database="ninglabvariantdata", ip="10.2.48.140", usrname="root", pw="1234567")
+    ancestralalleletabletools=AncestralAlleletabletools(database="ninglabvariantdata_tmp", ip="10.2.48.140", usrname="root", pw="1234567")
     ancestralalleletabletools.fillAncestral(archicpopVcfFile=archicpopVcfFile.strip(),chromtable=chromtable.strip(),toplevelsnptablename="ducksnp_toplevel")

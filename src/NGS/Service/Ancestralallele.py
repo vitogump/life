@@ -11,10 +11,10 @@ from NGS.BasicUtil import *
 
 
 class AncestralAlleletabletools():
-    def __init__(self, database="ninglabvariantdata", ip="10.2.48.140", usrname="root", pw="1234567",genomedb="genomebasicinfo"):
+    def __init__(self, database="ninglabvariantdata", ip="10.2.48.140", usrname="root", pw="1234567",dbgenome="genomebasicinfo"):
         super().__init__()
         self.dbtools = dbm.DBTools(ip, usrname, pw, database)
-        self.dbgenome=dbm.DBTools(ip, usrname, pw, genomedb)
+        self.dbgenome=dbm.DBTools(ip, usrname, pw, dbgenome)
         self.dbname=database
 
     def createtable(self, vcffilename="derived_alle_ref"):
@@ -388,12 +388,12 @@ class AncestralAlleletabletools():
                         continue
                     self.dbtools.operateDB("update", "update " + toplevelsnptablename + " set "+archicpop_colname+" = '" + popsdata+"' where chrID="+"'"+currentchrID+"' and snp_pos="+str(snp[0]))
     def leftjoinSelectedTables(self,chromtable,outtableName,vcftables=[]):
-        sqlselectstatementpart="select ducksnp_toplevel"
+        sqlselectstatementpart="select t.*"
         sqlfromstatementpart=" from ducksnp_toplevel as t "
-        totalChroms = self.dbtools.operateDB("select","select count(*) from "+chromtable)[0][0]
+        totalChroms = self.dbgenome.operateDB("select","select count(*) from "+chromtable)[0][0]
         for i in range(0,totalChroms,20):
             currentsql="select * from " + chromtable+" order by chrlength desc limit "+str(i)+",20"
-            result=self.dbtools.operateDB("select",currentsql)
+            result=self.dbgenome.operateDB("select",currentsql)
             for row in result:
                 currentchrID=row[0]
                 print(currentchrID+":",end="")
@@ -402,11 +402,11 @@ class AncestralAlleletabletools():
                     indvdnameslist=titlelist[5:]
                     print(vcftable,indvdnameslist)
                     sqlselectstatementpart=sqlselectstatementpart+","+vcftable.strip()+".alt_base as "+vcftable+"_alt_base"
-                    for indvdname in sqlselectstatementpart:
+                    for indvdname in indvdnameslist:
                         sqlselectstatementpart=sqlselectstatementpart+","+vcftable.strip()+"."+indvdname.strip()
                 print(sqlselectstatementpart)
                 for vcftable in vcftables:
                     sqlfromstatementpart=sqlfromstatementpart+" left join "+vcftable.strip()+" using(chrID,snp_pos)"
-                sqlstatement=sqlselectstatementpart+sqlfromstatementpart+" where chrID="+currentchrID
+                sqlstatement=sqlselectstatementpart+sqlfromstatementpart+" where chrID='"+currentchrID+"'"
                 print(sqlstatement)
                 exit()
