@@ -24,8 +24,9 @@ parser.add_option("-q", "--quiet",
 vcftablenames=options.vcffilelist
 print(vcftablenames)
 chromtable=options.chromtable
-outtablename=options.outputtablename
-print(chromtable,outtablename)
+toplevelsnptable=options.toplevelsnptable
+outtable_filename=options.outputtablename
+print(chromtable,outtable_filename,toplevelsnptable)
 if __name__ == '__main__':
-    atools=AncestralAlleletabletools(database="ninglabvariantdata", ip="10.2.48.140", usrname="root", pw="1234567")
-    atools.leftjoinSelectedTables(chromtable,outtablename,vcftablenames)
+    atools=AncestralAlleletabletools(database="ninglabvariantdata_tmp", ip="10.2.48.140", usrname="root", pw="1234567")
+    atools.leftjoinSelectedTables(chromtable,outtable_filename,vcftablenames,toplevelsnptable)

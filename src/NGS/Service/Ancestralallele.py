@@ -386,18 +386,25 @@ class AncestralAlleletabletools():
 #                             popsdata=ALT+":"+depth_linelist[species_idx] + ",0"
                         print("no find snp   :",snp," in archicpopVcfFile,here should check the depth")
                         continue
+                    #change to insert if exist skip
+                    print("update")
                     self.dbtools.operateDB("update", "update " + toplevelsnptablename + " set "+archicpop_colname+" = '" + popsdata+"' where chrID="+"'"+currentchrID+"' and snp_pos="+str(snp[0]))
-    def leftjoinSelectedTables(self,chromtable,outtableName,vcftables=[]):
-        sqlselectstatementpart="select t.*"
-        sqlfromstatementpart=" from ducksnp_toplevel as t "
+    def leftjoinSelectedTables(self,chromtable,outtable_file_Name,vcftables=[],toplevelsnptable="ducksnp_toplevel",FORMAT="GT:AD:DP:GQ:PL"):
+        outfile=open(outtable_file_Name,'w')
+        
+        
         totalChroms = self.dbgenome.operateDB("select","select count(*) from "+chromtable)[0][0]
         for i in range(0,totalChroms,20):
             currentsql="select * from " + chromtable+" order by chrlength desc limit "+str(i)+",20"
             result=self.dbgenome.operateDB("select",currentsql)
             for row in result:
+                sqlselectstatementpart="select t.*"
+                sqlfromstatementpart=" from "+toplevelsnptable+" as t "
                 currentchrID=row[0]
                 print(currentchrID+":",end="")
+                #sql statement produce part1
                 for vcftable in vcftables:
+                    
                     titlelist=[a[0].strip() for a in self.dbtools.operateDB("select","select column_name  from information_schema.columns where table_schema='"+self.dbname+"' and table_name='"+vcftable+"'")]              
                     indvdnameslist=titlelist[5:]
                     print(vcftable,indvdnameslist)
@@ -405,8 +412,44 @@ class AncestralAlleletabletools():
                     for indvdname in indvdnameslist:
                         sqlselectstatementpart=sqlselectstatementpart+","+vcftable.strip()+"."+indvdname.strip()
                 print(sqlselectstatementpart)
+                #sql statement produce part2
                 for vcftable in vcftables:
                     sqlfromstatementpart=sqlfromstatementpart+" left join "+vcftable.strip()+" using(chrID,snp_pos)"
+                #sql where statement append
                 sqlstatement=sqlselectstatementpart+sqlfromstatementpart+" where chrID='"+currentchrID+"'"
                 print(sqlstatement)
-                exit()
+                allsnpOfJoinTableinAchr=self.dbtools.operateDB("select",sqlstatement)
+                #process value,merge into one col
+                NumOfColOftoplevel_fix=len(self.dbtools.operateDB("select","select column_name  from information_schema.columns where table_schema='"+self.dbname+"' and table_name='"+toplevelsnptable+"'"))
+                for rec in allsnpOfJoinTableinAchr:
+                    NumOfColOftoplevel=NumOfColOftoplevel_fix
+                    recToPrint=list(rec[0:NumOfColOftoplevel])
+                    print("recToPrintpre",recToPrint,"rec",rec)
+                    for vcftable in vcftables:
+                        titlelist=[a[0].strip() for a in self.dbtools.operateDB("select","select column_name  from information_schema.columns where table_schema='"+self.dbname+"' and table_name='"+vcftable+"'")]
+                        indvdnameslist=titlelist[5:]
+                        refdep=0;altalleledep=0
+                        print("lastpart",rec[NumOfColOftoplevel:NumOfColOftoplevel+1+len(indvdnameslist)])
+                        if rec[NumOfColOftoplevel]==None:
+                            recToPrint=recToPrint+["unknow"]
+                            NumOfColOftoplevel=NumOfColOftoplevel+1+len(indvdnameslist)
+#                             continue
+                        else:
+                            ALT=rec[NumOfColOftoplevel]
+                            AD_idx=(re.split(":",FORMAT)).index("AD")
+                            for sample in rec[NumOfColOftoplevel+1:NumOfColOftoplevel+1+len(indvdnameslist)]:
+                                if len(re.split(":",sample))==1:
+                                    continue
+                                AD_depth=re.split(",",re.split(":",sample)[AD_idx])
+                                try:
+                                    refdep+=int(AD_depth[0])
+                                    altalleledep+=int(AD_depth[1])
+                                except ValueError:
+                                    print("ValueError",sample,end="")
+                            popsdata=ALT+":"+str(refdep)+","+str(altalleledep)
+                            recToPrint=recToPrint+[popsdata]
+                            NumOfColOftoplevel=NumOfColOftoplevel+1+len(indvdnameslist)
+                    print(*recToPrint,sep="\t",file=outfile)
+
+                        
+                
