@@ -68,121 +68,6 @@ class AncestralAlleletabletools():
         if a!=0:
             print("error",shellstatment)
         os.system("rm "+vcffilename+"tempstep1")
-#     def filldata(self, vcfFileName, depthfileName, tablename="derived_alle_ref", posUniq=True,continuechrom=None,continuepos=None):
-#         depthfile = Util.GATK_depthfile(depthfileName, depthfileName + ".index")
-#         depth_linelist=None
-#         vcffile = open(vcfFileName, 'r')
-#         vcfline = vcffile.readline()
-#         while re.search(r'^##', vcfline) != None:
-#             vcfline = vcffile.readline()
-#         
-#         if re.search(r'^#', vcfline) != None:
-#             poptitlelist = re.split(r'\s+', vcfline.strip())[9:]
-#             print(poptitlelist)
-#         else:
-#             print("need title'#CHROM    POS    ID    REF    ALT    QUAL    FILTER    INFO    FORMAT'")
-#             exit(-1)   
-#         for pop in poptitlelist:
-#             self.dbtools.operateDB("callproc", "mysql_sp_add_column", data=("life_pilot", tablename, pop, "varchar(128)", "default null"))
-#         popsdata = []#depth for ref or alt
-#         if continuechrom!=None and continuepos!=None:
-#             print("filldata",continuechrom,continuepos)
-#             vcfpossearcher=VCF_Data(vcfFileName)
-#             vcffile.seek(vcfpossearcher.VcfIndexMap[continuechrom])
-#             vcfline= vcffile.readline()
-#             while vcfline:
-#                 vcflist = re.split(r'\s+', vcfline.strip())
-#                 chrom = vcflist[0].strip()
-#                 pos = int(vcflist[1].strip())
-#                 print(chrom,pos)
-#                 if chrom ==continuechrom and pos== continuepos:
-#                     break
-#                 vcfline =vcffile.readline()
-#         else:
-#             justiceGATKorSamtools = vcffile.readline()
-#             vcflist = re.split(r'\s+', justiceGATKorSamtools.strip())
-#             dp4 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", vcflist[7])
-#             refdep = 0;altalleledep = 0
-#             if dp4 != None:#vcf from samtools 
-#                 print("function for samtools vcf is still need to be finish")
-#                 exit(-1)  
-#             else:
-#                 chrom = vcflist[0].strip()
-#                 pos = int(vcflist[1].strip())
-#                 snpID = vcflist[2].strip()
-#                 REF = vcflist[3].strip()
-#                 ALT = vcflist[4].strip()
-#                 
-#                 AD_idx = (re.split(":", vcflist[8])).index("AD")#gatk GT:AD:DP:GQ:PL
-#                 sample_idx_in_vcf = 0
-#                 for sample in vcflist[9:]:
-#     
-#                     samplename = poptitlelist[sample_idx_in_vcf]
-#     
-#                     sample_idx_in_vcf += 1
-#                     species_idx = depthfile.title.index("Depth_for_" + samplename)
-#                     if len(re.split(":", sample)) != len(re.split(":", vcflist[8])) and depth_linelist==None:# ./. when lack of variantion information,then consider the depthfile
-#                         depth_linelist = depthfile.getdepthByPos(chrom, pos)
-#     
-#                         if int(depth_linelist[species_idx]) <= 1:
-#                             popsdata.append('no covered')
-#                         else:
-#                             popsdata.append(depth_linelist[species_idx] + ",0")
-#                         continue
-#                     elif len(re.split(":", sample)) != len(re.split(":", vcflist[8])) and depth_linelist!=None:
-#                         if int(depth_linelist[species_idx]) <= 1:
-#                             popsdata.append('no covered')
-#                         else:
-#                             popsdata.append(depth_linelist[species_idx] + ",0")
-#                         continue                        
-# 
-# 
-#                     popsdata.append(re.split(":", sample)[AD_idx])
-#                 depth_linelist=None
-#                 print("insert into " + tablename + "(chrID,snp_pos,snpID,ref_base,alt_base," + "".join([e + "," for e in poptitlelist[:-1]] + poptitlelist[-1:]) + ") select %s,%s,%s,%s,%s," + "%s,"*(len(poptitlelist) - 1) + "%s from dual where not exists( select * from "+tablename+" where "+tablename+".chrID='"+chrom+"' and "+tablename+".snp_pos="+str(pos)+")", (chrom, pos, snpID, REF, ALT) + tuple(popsdata))
-#                 self.dbtools.operateDB("insert", "insert into " + tablename + "(chrID,snp_pos,snpID,ref_base,alt_base," + "".join([e + "," for e in poptitlelist[:-1]] + poptitlelist[-1:]) + ") select %s,%s,%s,%s,%s," + "%s,"*(len(poptitlelist) - 1) + "%s from dual where not exists( select * from "+tablename+" where "+tablename+".chrID='"+chrom+"' and "+tablename+".snp_pos="+str(pos)+")", data=(chrom, pos, snpID, REF, ALT) + tuple(popsdata))
-#                             
-#             
-#         for vcfline in vcffile:
-#             
-#             vcflist = re.split(r'\s+', vcfline.strip())
-#             print(vcfline)
-#             if posUniq and pos == int(vcflist[1].strip()):
-#                 continue
-#             chrom = vcflist[0].strip()
-#             pos = int(vcflist[1].strip())
-#             snpID = vcflist[2].strip()
-#             REF = vcflist[3].strip()
-#             ALT = vcflist[4].strip()
-#             
-#             AD_idx = (re.split(":", vcflist[8])).index("AD")#gatk GT:AD:DP:GQ:PL
-#             sample_idx_in_vcf = 0
-#             popsdata = []
-#             for sample in vcflist[9:]:
-#                 samplename = poptitlelist[sample_idx_in_vcf]
-#                 sample_idx_in_vcf += 1
-#                 species_idx = depthfile.title.index("Depth_for_" + samplename)
-#                 if len(re.split(":", sample)) != len(re.split(":", vcflist[8])) and depth_linelist==None:# ./.
-#                     depth_linelist = depthfile.getdepthByPos(chrom, pos)
-#                     if int(depth_linelist[species_idx]) <= 1:
-#                         popsdata.append('no covered')
-#                     else:
-#                         popsdata.append(depth_linelist[species_idx] + ",0")
-#                     continue
-#                 elif len(re.split(":", sample)) != len(re.split(":", vcflist[8])) and depth_linelist!=None:
-#                     if int(depth_linelist[species_idx]) <= 1:
-#                         popsdata.append('no covered')
-#                     else:
-#                         popsdata.append(depth_linelist[species_idx] + ",0")
-#                     continue                    
-# #                 AD_depth = re.split(",", re.split(":", sample)[AD_idx])
-# 
-#                 popsdata.append(re.split(":", sample)[AD_idx])
-#             depth_linelist=None
-#             print("insert into " + tablename + "(chrID,snp_pos,snpID,ref_base,alt_base," + "".join([e + "," for e in poptitlelist[:-1]] + poptitlelist[-1:]) + ") select %s,%s,%s,%s,%s," + "%s,"*(len(poptitlelist) - 1) + "%s from dual where not exists( select * from "+tablename+" where "+tablename+".chrID='"+chrom+"' and "+tablename+".snp_pos="+str(pos)+")", (chrom, pos, snpID, REF, ALT) + tuple(popsdata))
-#             self.dbtools.operateDB("insert","insert into " + tablename + "(chrID,snp_pos,snpID,ref_base,alt_base," + "".join([e + "," for e in poptitlelist[:-1]] + poptitlelist[-1:]) + ") select %s,%s,%s,%s,%s," + "%s,"*(len(poptitlelist) - 1) + "%s from dual where not exists( select * from "+tablename+" where "+tablename+".chrID='"+chrom+"' and "+tablename+".snp_pos="+str(pos)+")", data=(chrom, pos, snpID, REF, ALT) + tuple(popsdata))
-#         depthfile.closedepthfile()
-#         vcffile.close()
     def getflankseqs(self, chrom,chromlen, snpstartpos, snpendpos, idxedreffilehandler, refindex, flanklen,outfile, tablename="derived_alle_ref"):
 
         testfile=open("testsnpfile.txt",'a')
@@ -325,16 +210,17 @@ class AncestralAlleletabletools():
                 lastbasesAccur[RefSeqMap[chrom][snpindex + 1]] = [(chrom, sstartpos, sendpos)]
         print("finish")
         ancestryreffile.close()
-    def fillAncestral(self,archicpopVcfFile,chromtable,toplevelsnptablename="ducksnp_toplevel"):
+    def fillAncestral(self,archicpopVcfFile,depthFile,archicpopNameindepthFile,chromtable,toplevelsnptablename="ducksnp_toplevel"):
         """
         abandon the snps which exist in archicpopVcfFile but absence in all others pop snp sets 
         """
+        depthfile = Util.GATK_depthfile(depthFile, depthFile + ".index")
+        species_idx = depthfile.title.index("Depth_for_" + archicpopNameindepthFile)
+        
         archicpop_colname=re.search(r'[^/]*$',archicpopVcfFile).group(0)
         archicpop_colname=re.sub(r"[^\w^\d]","_",archicpop_colname)
-        print(archicpop_colname)
         self.dbtools.operateDB("callproc", "mysql_sp_add_column", data=(self.dbname, toplevelsnptablename, archicpop_colname, "char(128)", "default null"))       
         archicpop = VCFutil.VCF_Data(archicpopVcfFile)
-        print(archicpopVcfFile)
         totalChroms = self.dbgenome.operateDB("select","select count(*) from "+chromtable)[0][0]
         for i in range(0,totalChroms,20):
             currentsql="select * from " + chromtable+" order by chrlength desc limit "+str(i)+",20"
@@ -379,11 +265,11 @@ class AncestralAlleletabletools():
                             popsdata=ALT+":"+str(refdep)+","+str(altalleledep)
                             break
                     else:
-#                         depth_linelist = depthfile.getdepthByPos(currentchrID, snp_pos)
-#                         if int(depth_linelist[species_idx]) <= 1:
-#                             popsdata="no covered"
-#                         else:
-#                             popsdata=ALT+":"+depth_linelist[species_idx] + ",0"
+                        depth_linelist = depthfile.getdepthByPos(currentchrID, snp_pos)
+                        if int(depth_linelist[species_idx]) <= 1:
+                            popsdata="no covered"
+                        else:
+                            popsdata=ALT+":"+depth_linelist[species_idx] + ",0"
                         print("no find snp   :",snp," in archicpopVcfFile,here should check the depth")
                         continue
                     #change to insert if exist skip
@@ -392,8 +278,10 @@ class AncestralAlleletabletools():
     def leftjoinSelectedTables(self,chromtable,outtable_file_Name,vcftables=[],toplevelsnptable="ducksnp_toplevel",FORMAT="GT:AD:DP:GQ:PL"):
         outfile=open(outtable_file_Name,'w')
         
-        
         totalChroms = self.dbgenome.operateDB("select","select count(*) from "+chromtable)[0][0]
+        titlelist=[a[0].strip() for a in self.dbtools.operateDB("select","select column_name  from information_schema.columns where table_schema='"+self.dbname+"' and table_name='"+toplevelsnptable+"'")]  
+        titlelist=titlelist+vcftables
+        print(*titlelist,sep="\t",file=outfile)
         for i in range(0,totalChroms,20):
             currentsql="select * from " + chromtable+" order by chrlength desc limit "+str(i)+",20"
             result=self.dbgenome.operateDB("select",currentsql)

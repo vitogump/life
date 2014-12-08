@@ -103,7 +103,14 @@ class OperatorWithData_mode1(OperatorWithData):
         for outputtuple in self.outputlist:
             outputpath=re.search(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}",newcmdline).group(1)
             outsuffix=re.search(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}",newcmdline).group(2)
-            newcmdline = re.sub(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}", outputpath + pathToOutputdata_createdir + updirname + "." + outsuffix, newcmdline)
+            if outsuffix.strip()[-1]=="/":
+                newcmdline = re.sub(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}", outputpath + pathToOutputdata_createdir + updirname + "_" + outsuffix, newcmdline)
+                print(outputpath + pathToOutputdata_createdir + updirname + "_" + outsuffix)
+                if not os.path.exists(outputpath + pathToOutputdata_createdir + updirname + "_" + outsuffix):
+                    
+                    os.makedirs(outputpath + pathToOutputdata_createdir + updirname + "_" + outsuffix)
+            else:
+                newcmdline = re.sub(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}", outputpath + pathToOutputdata_createdir + updirname + "." + outsuffix, newcmdline)
         
         for i in range(0, len(targetdatasuffix)):
             lists =os.walk(curpath)    
