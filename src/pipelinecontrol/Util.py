@@ -62,14 +62,20 @@ class OperatorWithData_loadintodatabase(OperatorWithData):
                         self.ancestralalleletabletools.filldata(rootStr + "/" +datafilename,tablename=tablename)
         return "OperatorWithData_loadintodatabase return"
 class OperatorWithData_mode1(OperatorWithData):
-    def __init__(self, cmdline, inputdatapath, scriptcontext, scriptsstoredir,interceptdirs=[]):
+    def __init__(self, cmdtemplatefile, scriptsstoredir,interceptdirs=[]):
         super().__init__(scriptsstoredir)
-        self.outputlist=re.findall(r"\${output=\s*([^\s^\|]*)\|suffix=(.*?)}",cmdline)
+        self.cmdtemplatefilename=re.search(r"[^/]*$",cmdtemplatefile).group(0)
+        scriptcontent=open(cmdtemplatefile,'r').read()
+        
+        self.scriptcontext=re.search(r"([\s\S]*(\n)*)cmdline=.*",scriptcontent).group(1)
+        
+        self.inputdatapath=re.search(r"(\n)*inputdatafilesrootpath=\s*(.*)",self.scriptcontext).group(2)
+        self.cmdline=re.search(r"(.*(\n)*)cmdline=\s*(.*)",scriptcontent).group(3)
+        print(scriptcontent,self.scriptcontext,self.inputdatapath,self.cmdline,sep="\n")
+        self.outputlist=re.findall(r"\${output=\s*([^\s^\|]*)\|suffix=(.*?)}",self.cmdline)
 
-        self.cmdline = cmdline
-        self.inputdatapath = inputdatapath
         self.interceptdirs=interceptdirs
-        self.scriptcontext = scriptcontext
+
     def process(self, curpath, datadepth, curdepth):
         print("mode1 process")
         if self.interceptdirs!=[] and re.search(r".*/([^/]+)$",curpath).group(1).strip() not in self.interceptdirs:
@@ -104,11 +110,13 @@ class OperatorWithData_mode1(OperatorWithData):
             outputpath=re.search(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}",newcmdline).group(1)
             outsuffix=re.search(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}",newcmdline).group(2)
             if outsuffix.strip()[-1]=="/":
-                newcmdline = re.sub(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}", outputpath + pathToOutputdata_createdir + updirname + "_" + outsuffix, newcmdline)
-                print(outputpath + pathToOutputdata_createdir + updirname + "_" + outsuffix)
-                if not os.path.exists(outputpath + pathToOutputdata_createdir + updirname + "_" + outsuffix):
+                if outsuffix.strip()=="/":
+                    outsuffix=""
+                newcmdline = re.sub(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}", outputpath + pathToOutputdata_createdir + outsuffix, newcmdline)
+                print(outputpath + pathToOutputdata_createdir )
+                if not os.path.exists(outputpath + pathToOutputdata_createdir + outsuffix):
                     
-                    os.makedirs(outputpath + pathToOutputdata_createdir + updirname + "_" + outsuffix)
+                    os.makedirs(outputpath + pathToOutputdata_createdir  + outsuffix)
             else:
                 newcmdline = re.sub(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}", outputpath + pathToOutputdata_createdir + updirname + "." + outsuffix, newcmdline)
         
@@ -118,7 +126,7 @@ class OperatorWithData_mode1(OperatorWithData):
                 if len(re.split(r"/",rootStr))==len(re.split(r"/",self.inputdatapath))+datadepth:# reach the depth that datafiles in it
                     print(rootStr+"/",files)
                     for datafilename in files:
-                        if re.search(r".*?" + targetdatasuffix[i], datafilename) != None:
+                        if re.search(r".*?" + targetdatasuffix[i]+"$", datafilename) != None:
                             option_suffix_obj = re.search(r"([-\w\d]+[=\s]+)\${(\s*" + targetdatasuffix[i] + "\s*)}", newcmdline)  # for example "INPUT=${.bam} -i ${.sam}"
                             optionstr = option_suffix_obj.group(1)
                             suffixstr = option_suffix_obj.group(2)
@@ -127,32 +135,44 @@ class OperatorWithData_mode1(OperatorWithData):
                     # sub was acted from the first to the rear most
         print("pathToOutputdata_createdir", pathToOutputdata_createdir)
         try:
-            print(self.scriptcontext + newcmdline, file=open(self.scriptsstoredir + pathToOutputdata_createdir.replace("/", "_")[1:]  + updirname + "." + updirname + "Script.sh", "a"))
+            print(self.scriptcontext + newcmdline, file=open(self.scriptsstoredir + self.cmdtemplatefilename + "." + updirname + "Script.sh", "a"))
         except FileNotFoundError:
-            print(self.scriptcontext + newcmdline, file=open(self.scriptsstoredir + pathToOutputdata_createdir.replace("/", "_")[1:]  + updirname + "." + updirname + "Script.sh", "w"))
+            print(self.scriptcontext + newcmdline, file=open(self.scriptsstoredir + self.cmdtemplatefilename + "." + updirname + "Script.sh", "w"))
         return newcmdline
 
 
 class OperatorWithData_mode2(OperatorWithData):
-    def __init__(self, cmdline, inputdatapath, scriptcontext, scriptsstoredir,interceptdirs=[]):
+    def __init__(self, cmdtemplatefile, scriptsstoredir,interceptdirs=[]):
         """
         interceptdirs=([subdir names list expected in the assigned depth])
         """
         super().__init__(scriptsstoredir)
+        self.cmdtemplatefilename=re.search(r"[^/]*$",cmdtemplatefile).group(0)
+        scriptcontent=open(cmdtemplatefile,'r').read()
+        
+        self.scriptcontext=re.search(r"([\s\S]*(\n)*)cmdline=.*",scriptcontent).group(1)
+        
+        self.inputdatapath=re.search(r"(\n)*inputdatafilesrootpath=\s*(.*)",self.scriptcontext).group(2)
+        self.cmdline=re.search(r"(.*(\n)*)cmdline=\s*(.*)",scriptcontent).group(3)
+        print(scriptcontent,self.scriptcontext,self.inputdatapath,self.cmdline,sep="\n")
+        self.outputlist=re.findall(r"\${output=\s*([^\s^\|]*)\|suffix=(.*?)}",self.cmdline)
+
+        
         self.interceptdirs=interceptdirs
-        self.inputdatapath=inputdatapath
-        self.scriptcontext=scriptcontext
+
         self.suffixstr=""
-        self.outputlist=re.findall(r"\${output=\s*([^\s^\|]*)\|suffix=(.*?)}",cmdline)
-        outputoptionstr = re.search(r"([-\w\d]+[=\s]+)\${output=.*\|suffix=.*?}", cmdline).group(1)  # for example "OUTPUT=${output} -o ${output}"
+        self.outputlist=re.findall(r"\${output=\s*([^\s^\|]*)\|suffix=(.*?)}",self.cmdline)
+        outputoptionstr = re.search(r"(-[\w\d]+[=\s]+)\${output=.*\|suffix=.*?}", self.cmdline).group(1)  # for example "OUTPUT=${output} -o ${output}"
         
         for outputtuple in self.outputlist:
-            outputpath=re.search(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}",cmdline).group(1)
-            outsuffix=re.search(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}",cmdline).group(2)
+            outputpath=re.search(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}",self.cmdline).group(1)
+            outsuffix=re.search(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}",self.cmdline).group(2)
             if not os.path.exists(outputpath):
                 os.makedirs(outputpath)
-            self.newcmdline = re.sub(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}", outputpath + "/" + outsuffix + " ", cmdline)
-#         self.newcmdline = re.sub(r"[-\w\d]+[=\s]+\${output=.*\|suffix=.*?}", outputoptionstr + outputpath + "/" + suffix + " ", cmdline)
+            if outsuffix=="/":
+                outsuffix=""# dir
+            self.newcmdline = re.sub(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}", outputpath + "/" + outsuffix + " ", self.cmdline)
+#         self.newcmdline = re.sub(r"[-\w\d]+[=\s]+\${output=.*\|suffix=.*?}", outputoptionstr + outputpath + "/" + suffix + " ", self.cmdline)
         print("OperatorWithData_mode2 __init__", self.newcmdline)
 #         self.suffix = suffix
     def process(self, curpath, datadepth, curdepth):
@@ -164,7 +184,7 @@ class OperatorWithData_mode2(OperatorWithData):
         option_suffix_obj = re.search(r"([-\w\d]+[=\s]+)\${(.*?)}", newcmdline)  # for example "INPUT=${.bam} -i ${.sam}"
         optionstr = option_suffix_obj.group(1)
         suffixstr = option_suffix_obj.group(2)
-        print(optionstr, suffixstr)
+        print("optionstr",optionstr,"suffixstr",suffixstr)
         self.suffixstr=suffixstr
         datafiles = os.listdir(path=curpath)
         print("OperatorWithData_mode2", datafiles)
@@ -172,7 +192,7 @@ class OperatorWithData_mode2(OperatorWithData):
         for rootStr,dirs,files in lists:
             if len(re.split(r"/",rootStr))==len(re.split(r"/",self.inputdatapath))+datadepth:# reach the depth that datafiles in it
                 for datafilename in files:
-                    if re.search(r".*?" + suffixstr, datafilename) != None:
+                    if re.search(r".*?" + suffixstr+"$", datafilename) != None:
                         newcmdline = re.sub(r"[-\w\d]+[=\s]+\${.*?}", optionstr + " " + curpath + "/" + datafilename + " " + option_suffix_obj.group(0), newcmdline)
 
 

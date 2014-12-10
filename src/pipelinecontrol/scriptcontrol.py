@@ -13,7 +13,7 @@ from src.pipelinecontrol.Util import OperatorWithData_mode1,upTodownTravelDir,Op
 parser = OptionParser()
 
 #"output data name is defined as 'inputdatapath folder name'+'is subfolder name'+'is subfolder name'+..."
-parser.add_option("-c", "--cmdexample", dest="cmdexamplefile",help="oneline scriptexamplefile")
+parser.add_option("-c", "--cmdexample", dest="cmdtemplatefile",help="oneline scriptexamplefile")
 # parser.add_option("-o", "--outputpath", dest="outputpath", help="outputpath")
 parser.add_option("-d", "--datadepth", dest="datadepth", help="it's the depth of the dir from the inputdatapath which the data file that need to be process in it,the depth of the inputdatapath is 0")
 
@@ -33,16 +33,12 @@ datadepth=int(options.datadepth)
 
 # outputpath=options.outputpath
 scriptsstoredir=options.scriptstorepath
+if not os.path.exists(scriptsstoredir):
+    os.makedirs(scriptsstoredir)
 mode=int(options.mode)
 Interceptor_depth=int(options.Interceptor_depth)
 
-scriptcontent=open(options.cmdexamplefile,'r').read()
 
-scriptcontext=re.search(r"([\s\S]*(\n)*)cmdline=.*",scriptcontent).group(1)
-
-inputdatafilesrootpath=re.search(r"(\n)*inputdatafilesrootpath=\s*(.*)",scriptcontext).group(2)
-scriptcmdline=re.search(r"(.*(\n)*)cmdline=\s*(.*)",scriptcontent).group(3)
-print(scriptcontent,scriptcontext,inputdatafilesrootpath,scriptcmdline,sep="\n")
 
 # outputpath=re.search(r"\${output=\s*([^\s^\|]*)\|suffix=(.*)}",scriptcmdline).group(1)
 # outsuffix=re.search(r"\${output=\s*([^\s^\|]*)\|suffix=(.*)}",scriptcmdline).group(2)
@@ -56,19 +52,19 @@ if __name__ == '__main__':
     if mode==1:
 
         #progamma logic
-        operatorwithdata_mode1=OperatorWithData_mode1(scriptcmdline,inputdatafilesrootpath,scriptcontext=scriptcontext,scriptsstoredir=scriptsstoredir,interceptdirs=interceptdirs)
-        upTodownTravelDir(inputdatafilesrootpath,operatorwithdata_mode1,datadepth,Interceptor_depth)
+        operatorwithdata_mode1=OperatorWithData_mode1(options.cmdtemplatefile,scriptsstoredir=scriptsstoredir,interceptdirs=interceptdirs)
+        upTodownTravelDir(operatorwithdata_mode1.inputdatapath,operatorwithdata_mode1,datadepth,Interceptor_depth)
         
     elif mode==2:
             
-        operatorwithdata_mode2=OperatorWithData_mode2(scriptcmdline,inputdatafilesrootpath,scriptcontext,scriptsstoredir,interceptdirs)
-        upTodownTravelDir(inputdatafilesrootpath,operatorwithdata_mode2,datadepth,Interceptor_depth)
+        operatorwithdata_mode2=OperatorWithData_mode2(options.cmdtemplatefile,scriptsstoredir,interceptdirs)
+        upTodownTravelDir(operatorwithdata_mode2.inputdatapath,operatorwithdata_mode2,datadepth,Interceptor_depth)
         #finalcmdline=re.sub(r"\${output}")
         finalcmdline=re.sub(r"[-\w\d]+[=\s]+\${.*?}"," ",operatorwithdata_mode2.newcmdline)
         try:
-            print(scriptcontext+finalcmdline,file=open(operatorwithdata_mode2.scriptsstoredir+"/"+operatorwithdata_mode2.suffixstr+"Script.sh",'a'))
+            print(operatorwithdata_mode2.scriptcontext+finalcmdline,file=open(operatorwithdata_mode2.scriptsstoredir+"/"+operatorwithdata_mode2.cmdtemplatefilename+operatorwithdata_mode2.suffixstr+"Script.sh",'a'))
         except FileNotFoundError:
-            print(scriptcontext+finalcmdline,file=open(operatorwithdata_mode2.scriptsstoredir+"/"+operatorwithdata_mode2.suffixstr+"Script.sh",'w'))
+            print(operatorwithdata_mode2.scriptcontext+finalcmdline,file=open(operatorwithdata_mode2.scriptsstoredir+"/"+operatorwithdata_mode2.cmdtemplatefilename+operatorwithdata_mode2.suffixstr+"Script.sh",'w'))
     print("==============")
 #     cmdline=operatorwithdata_mode1.cmdline
 

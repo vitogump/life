@@ -18,17 +18,18 @@ primaryID = "chrID"
 #    exit(-1)
     
 parser = OptionParser()
-parser.add_option("-d", "--dbname", dest="dbname",# action="callback",type="string",callback=useoptionvalue_previous1,
+parser.add_option("-d", "--chromdbname", dest="chromdbname",# action="callback",type="string",callback=useoptionvalue_previous1,
                   help="write report to FILE")
 parser.add_option("-c", "--chromtable", dest="chromtable",# action="callback",type="string",callback=useoptionvalue_previous2,
                   help="write report to FILE")
-# (options, args) = parser.parse_args()
+parser.add_option("-o","--outputpath",dest="outputpath",help="default infile1_infile2")
 parser.add_option("-C","--Coveragedbin",dest="coveragebin")
 parser.add_option("-I","--howtoIndel",dest="howtoIndel")
 parser.add_option("-w","--winwidth",dest="winwidth",help="default infile1_infile2")#
 parser.add_option("-n", "--speciesname", action="append",dest="specieses",default=[],help="species name")
 parser.add_option("-s","--slidesize",dest="slidesize",help="default infile2_infile1")#
 parser.add_option("-m","--minlength",dest="minlength")
+parser.add_option("-v","--vcffile",dest="vcffile",action="append", default=[],help="default infile1_infile2")
 parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", default=True,
                   help="don't print status messages to stdout")
@@ -37,9 +38,11 @@ parser.add_option("-q", "--quiet",
 howtoIndel=options.howtoIndel.strip()
 windowWidth=int(options.winwidth)
 slideSize=int(options.slidesize)
+outputpath=options.outputpath
 chromtable=options.chromtable
-dbname=options.dbname
+chromdbname=options.chromdbname
 minlength=options.minlength
+vcffileslist=options.vcffile
 sql = "select * from " + chromtable+" where chrlength>="+minlength
 
 class SNPsPerBIN():
@@ -49,18 +52,18 @@ class SNPsPerBIN():
 if __name__ == '__main__':
     
     speicesidxs_inbindepthmap=[]
-    if len(args[:])==1 and len(options.specieses)!=0 and options.coveragebin!=None:
+    if len(vcffileslist[:])==1 and len(options.specieses)!=0 and options.coveragebin!=None:
         bindepth=Util.BinDepth(options.coveragebin)
         for species in options.specieses:
             speicesidxs_inbindepthmap.append(bindepth.speciesname.index("Depth_for_" + species)+2)
         consider_Depth=True
     else:
         consider_Depth=False
-    dbtools = dbm.DBTools("10.2.48.140", "root", "1234567", dbname)
-    print(args[:])
-    for vcf in args[:]:
-        
-        outfile = open(vcf + ".snpperbin"+str(windowWidth)+"_"+str(slideSize), 'w')
+    dbtools = dbm.DBTools("10.2.48.140", "root", "1234567", chromdbname)
+    print(vcffileslist[:])
+    for vcf in vcffileslist[:]:
+        vcfname=re.search(r"[^/]*$",vcf).group(0)
+        outfile = open(outputpath+vcfname + ".snpperbin"+str(windowWidth)+"_"+str(slideSize), 'w')
         print("chrNo\twinNo\tfirstsnppos\tlastsnppos\twinvalue\tzvalue",file=outfile)
         win = Util.Window()
         snpcounter = Caculators.Caculate_SNPsPerBIN(considerINDEL=howtoIndel)
@@ -76,7 +79,7 @@ if __name__ == '__main__':
                 currentchrID=row[0]
                 currentchrLen=int(row[2])
                 if currentchrID in pop.VcfIndexMap:
-                    vcflist_A_chrom = pop.getVcfListByChrom(vcf, currentchrID)
+                    vcflist_A_chrom = pop.getVcfListByChrom(vcfname, currentchrID)
                     win.slidWindowOverlap(vcflist_A_chrom, currentchrLen, windowWidth, slideSize, snpcounter)
                     snpbinmap.SNPsPerBINMap[currentchrID]=copy.deepcopy(win.winValueL)
                 else:
@@ -129,7 +132,7 @@ if __name__ == '__main__':
                                 print(currentchrID + "\t" + str(i) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][0]) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][1]) + "\t" + '%.18f'%(snpbinmap.SNPsPerBINMap[currentchrID][i][2]) + "\t" + '%.12f'%(log2snpsperbin), file=outfile)
                 else:
                     print("not find this chr:",currentchrID)
-        print(vcf+str(windowWidth)+"_"+str(slideSize), str(expectation), str(std0), str(std1), file=open("caculateSNPratePerBinstaticvalue.txt", 'a'))
+        print(vcfname+str(windowWidth)+"_"+str(slideSize), str(expectation), str(std0), str(std1), file=open(outputpath+"caculateSNPratePerBinstaticvalue.txt", 'a'))
         outfile.close()
     dbtools.disconnect()
 

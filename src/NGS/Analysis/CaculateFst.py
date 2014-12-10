@@ -14,15 +14,16 @@ Created on 2013-6-30
 @author: rui
 '''
 parser = OptionParser()
-parser.add_option("-d", "--dbname", dest="dbname",# action="callback",type="string",callback=useoptionvalue_previous1,
+parser.add_option("-d", "--chromdbname", dest="chromdbname",# action="callback",type="string",callback=useoptionvalue_previous1,
                   help="write report to FILE")
 parser.add_option("-c", "--chromtable", dest="chromtable",# action="callback",type="string",callback=useoptionvalue_previous2,
                   help="write report to FILE")
-# (options, args) = parser.parse_args()
+parser.add_option("-v","--vcffile",dest="vcffile",action="append", default=[],help="default infile1_infile2")
 parser.add_option("-t","--fsttype",dest="fsttype",help="R(r)/G(g)")
 parser.add_option("-w","--winwidth",dest="winwidth",help="default infile1_infile2")#
 parser.add_option("-s","--slideSize",dest="slideSize",help="default infile2_infile1")#
 parser.add_option("-m","--minlength",dest="minlength")
+parser.add_option("-o","--outputpath",dest="outputpath")
 parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", default=True,
                   help="don't print status messages to stdout")
@@ -30,13 +31,15 @@ parser.add_option("-q", "--quiet",
 # if len(sys.argv) < 7:
 #     print("python CaculateFst.py [vcf1] [vcf2] [vcf3]....[globe_Fst(G)/reletivepaire_Fsts(R)] [winwidth] [slidesize] [chromtable]")
 #     exit(-1)
+outputpath=options.outputpath.strip()
 minlength=options.minlength
 windowWidth=int(options.winwidth)
 slideSize=int(options.slideSize)
+chromdbname=options.chromdbname
 chromtable = options.chromtable
 fsttype=options.fsttype
 primaryID = "chrID"
-
+vcffileslist=options.vcffile
 sql = "select * from " + chromtable
 
 class Fst():
@@ -141,16 +144,16 @@ class Fst():
             self.FstMapByChrom[currentchrID]=fillNA           
 
 if __name__ == '__main__':
-    dbtools = dbm.DBTools("10.2.48.140", "root", "1234567", "life_pilot")
+    dbtools = dbm.DBTools("10.2.48.140", "root", "1234567", chromdbname)
     if fsttype=='R' or fsttype=='r':
         
         allspeices=[]
         tableindextoarrayindex=[]
         treearrayprename=""
-        for pathtoname in args[:]:
+        for pathtoname in vcffileslist[:]:
             allspeices.append(re.search(r"[^/]*$",pathtoname).group(0).replace('.','_'))
             treearrayprename+=re.search(r"[^/]*$",pathtoname).group(0)[0]
-        phyliparrayinfile=open(treearrayprename+"phylip.arrayin"+str(windowWidth)+"_"+str(slideSize),'w')
+        phyliparrayinfile=open(outputpath+treearrayprename+"phylip.arrayin"+str(windowWidth)+"_"+str(slideSize),'w')
         print("mysqltablename: "+treearrayprename+"treearray")
         arraytitle=""
         for name in allspeices:
@@ -159,7 +162,7 @@ if __name__ == '__main__':
         for namerow in allspeices:
             print(namerow[0:8]+"\n")        
             
-        allkindofpaire = list(combinations(args[:], 2))
+        allkindofpaire = list(combinations(vcffileslist[:], 2))
         alldistMap={}
         tempdbtools = dbm.DBTools("10.2.48.140", "root", "1234567", "temp")
         TABLES = {}
@@ -179,7 +182,7 @@ if __name__ == '__main__':
             fstpaire2name = re.search(r"[^/]*$", fstpaire[1]).group(0).replace('.','_')  # for linux
             tableindextoarrayindex.append((allspeices.index(fstpaire1name),allspeices.index(fstpaire2name)))
             
-            outfile = open(fstpaire1name + fstpaire2name + ".fst"+str(windowWidth)+"_"+str(slideSize), 'w')
+            outfile = open(outputpath+fstpaire1name + fstpaire2name + ".fst"+str(windowWidth)+"_"+str(slideSize), 'w')
             print("chrNo\twinNo\tfirstsnppos\tlastsnppos\twinvalue\tzvalue",file=outfile)
 #             win = Util.Window()
             fst_caculator = Caculators.Caculate_Fst()
@@ -229,7 +232,7 @@ if __name__ == '__main__':
             alldistMap[fstpaire1name+fstpaire2name] = (sum / Number,allspeices.index(fstpaire1name))
             outfile.close()
         for n in alldistMap.keys():
-            print(n + "\t" + str(alldistMap[n]), file=open("testdist.txt", 'a'))
+            print(n + "\t" + str(alldistMap[n]), file=open(outputpath+"testdist.txt", 'a'))
         tatalwins = tempdbtools.operateDB("select", "select count(*) from "+treearrayprename+"treearray")[0][0]
         for j in range(0, tatalwins, 100):
             wins = tempdbtools.operateDB("select","select * from "+treearrayprename+"treearray order by chrID asc,winNo asc limit "+str(j) +",100")
@@ -262,13 +265,13 @@ if __name__ == '__main__':
 
         
 #         fst = Fst() 
-        specisnum=str(len(args[:]))
-        for majorpop in args[:]:
+        specisnum=str(len(vcffileslist[:]))
+        for majorpop in vcffileslist[:]:
 #            pop1 = VCFutil.VCF_Data(majorpop)  # new a class
 #            pop1.getVcfMap(majorpop)
 
             fstlist=[]   
-            for othrpop in args[:]:
+            for othrpop in vcffileslist[:]:
                 if majorpop == othrpop:
                     continue
 #                pop2 = VCFutil.VCF_Data(othrpop)  # new a class 
@@ -276,7 +279,8 @@ if __name__ == '__main__':
                 print("startcaculatefst", majorpop, othrpop)
                 fstlist.append(Fst())
                 fstlist[-1].caculateFstAccordingdb(dbtools, chromtable, majorpop, othrpop, fst_caculator, windowWidth,slideSize,minlength)          
-            outfile=open(majorpop+'.gfst'+str(windowWidth)+"_"+str(slideSize)+"_"+specisnum,'w')
+            vcfname=re.search(r"[^/]*$",majorpop).group(0)
+            outfile=open(outputpath+vcfname+'.gfst'+str(windowWidth)+"_"+str(slideSize)+"_"+specisnum,'w')
             print("chrNo\twinNo\tfirstsnppos\tlastsnppos\twinvalue\tzvalue",file=outfile)
             if len(fstlist) != 0:
                 for chrom in fstlist[0].FstMapByChrom.keys():
@@ -292,7 +296,7 @@ if __name__ == '__main__':
                                     sumFstInAWin+=fstlist[i].FstMapByChrom[chrom][winNo][2]
                             except IndexError:
                                 for j in range(0,len(fstlist)):
-                                    print(str(j),args[j],chrom,str(winNo),str(len(fstlist[j].FstMapByChrom[chrom])))
+                                    print(str(j),vcffileslist[j],chrom,str(winNo),str(len(fstlist[j].FstMapByChrom[chrom])))
                                 continue# always in the last position,and the value is caculate any way,so can't mispostion.
                         try:
                             gfst=sumFstInAWin/Number

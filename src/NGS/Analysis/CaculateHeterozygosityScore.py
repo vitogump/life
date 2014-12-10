@@ -12,12 +12,12 @@ Created on 2013-7-2
 
 primaryID = "chrID"
 parser = OptionParser()
-parser.add_option("-d", "--dbname", dest="dbname",# action="callback",type="string",callback=useoptionvalue_previous1,
+parser.add_option("-d", "--chromdbname", dest="chromdbname",# action="callback",type="string",callback=useoptionvalue_previous1,
                   help="write report to FILE")
 parser.add_option("-c", "--chromtable", dest="chromtable",# action="callback",type="string",callback=useoptionvalue_previous2,
                   help="write report to FILE")
-# (options, args) = parser.parse_args()
-
+parser.add_option("-o","--outputpath",dest="outputpath",help="default infile1_infile2")
+parser.add_option("-v","--vcffile",dest="vcffile",action="append", default=[],help="default infile1_infile2")
 parser.add_option("-w","--winwidth",dest="winwidth",help="default infile1_infile2")#
 parser.add_option("-s","--slideSize",dest="slideSize",help="default infile2_infile1")#
 parser.add_option("-m","--minlength",dest="minlength")
@@ -36,17 +36,21 @@ minlength=options.minlength
 windowWidth=int(options.winwidth)
 slideSize=int(options.slideSize)
 chromtable=options.chromtable
-dbname=options.dbname
+chromdbname=options.chromdbname
+outputpath=options.outputpath.strip()
 sql = "select * from " + chromtable+" where chrlength>="+minlength
+vcffileslist=options.vcffile
+
 
 class HeterozygosityScore():
     def __init__(self):
         self.HeterozyMap = {}
 
 if __name__ == '__main__':
-    dbtools = dbm.DBTools("10.2.48.140", "root", "1234567", dbname)
-    for vcf in args[:]:
-        outfile = open(vcf + ".het"+str(windowWidth)+"_"+str(slideSize), 'w')
+    dbtools = dbm.DBTools("10.2.48.140", "root", "1234567", chromdbname)
+    for vcf in vcffileslist[:]:
+        vcfname=re.search(r"[^/]*$",vcf).group(0)
+        outfile = open(outputpath+vcfname + ".het"+str(windowWidth)+"_"+str(slideSize), 'w')
         print("chrNo\twinNo\tfirstsnppos\tlastsnppos\twinvalue\tzvalue",file=outfile)
         win = Util.Window()
         hp_caculator = Caculators.Caculate_Hp()
@@ -97,7 +101,7 @@ if __name__ == '__main__':
                         else:
                             zHp = "NA"
                             print(currentchrID + "\t" + str(i) + "\t" + str(hscore.HeterozyMap[currentchrID][i][0]) + "\t" + str(hscore.HeterozyMap[currentchrID][i][1]) + "\t" + hscore.HeterozyMap[currentchrID][i][2] + "\t" + zHp, file=outfile)
-        print(vcf, str(expectation), str(std0), str(std1), file=open("staticvalue.txt", 'a'))
+        print(vcf, str(expectation), str(std0), str(std1), file=open(outputpath+"staticvalue.txt", 'a'))
         outfile.close()
     dbtools.disconnect()
 
