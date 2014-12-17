@@ -141,12 +141,59 @@ def getGtfMap(gtfFileName,elementTypes=["CDS","start_codon","stop_codon"]):
     testfile.close()
     gtfFileHandler.close()
     return protein_codingMap
+def getNearestGenegroup(gtfList, pos):
+    """
+    input:for a chrom,contain all transcript of this chrom
+    gtfList    =    [[transcript_id,strand,start,end,(feature, elemStart, elemEnd, frame),(),(),,,,,],
+                        [transcript_id,strand,start,end,(),(),(),,,],[],,,,,,,]
+    return: the first gene that after the pos and the genes contain in or overlap with or contact with this gene indirect
+    geneOverlapList=[[transcript_id,strand,start,end,(feature, elemStart, elemEnd, frame),(),(),,,,,],
+                        [transcript_id,strand,start,end,(),(),(),,,],[],,,,,,,]
+    order by "start"
+    """
+    if gtfList == None:
+        return []
+    for i in range(len(gtfList)):
+        if gtfList[i][2]>pos: 
+            geneOverlapList=[gtfList[i]]
+            break
+    else:
+        if pos > gtfList[-1][3]:
+            return []
+        else:
+            print("getNearestGeneOverlapList error",pos,gtfList)
+            exit(-1)
 
-def getRefSeqBypos(refFastahander, refindex, currentChromNO, startpos, endpos,currentChromNOlen=None,seektuple=()):
+    furthest = gtfList[i][3]
+    i += 1
+    while len(gtfList) > i and furthest >= gtfList[i][2]:
+        if gtfList[i][0] != geneOverlapList[-1][0]:# this judgement maybe not need
+            geneOverlapList.append(gtfList[i])
+        furthest = max(furthest, gtfList[i][3])
+        i += 1
+    return furthest,geneOverlapList
+def getGeneGrouplist(gtfList):
+    """
+        geneGrouplist=[genegroup1,genegroup2,genegroup3,....]
+                     =[[furthest,geneOverlapList1],[furthest,geneOverlapList2],[furthest,geneOverlapList3],.....]
+                     =[[furthest,[],[],[],[],....],[furthest,[],[],[],[],....],[furthest,[],[],[],[],....],.....]
+                     =[[furthest,[transcript_id,strand,start,end,(),(),(),...],[transcript_id,strand,start,end,(),(),(),...],....],[furthest,[transcript_id,strand,start,end,(),(),(),...],[transcript_id,strand,start,end,(),(),(),...],....],[furthest,[],[],...],[],........]
+    """
+    newgtfList=copy.deepcopy(gtfList)
+    geneGrouplist=[]
+    pos=newgtfList[0][2]-1
+    for gene in newgtfList:
+        furthest,geneGroup=getNearestGenegroup(newgtfList,pos)
+        pos=furthest+1
+        geneGrouplist.append(geneGroup.insert(0, furthest))
+    return geneGrouplist
+#     testfile = open(gtffilepath + "protein_codinggeneGroupList.sort.txt", 'w')
+def getRefSeqBypos(refFastahandle, refindex, currentChromNO, startpos, endpos,currentChromNOlen=None,seektuple=()):
     '''
     pos start at 1
     seektuple=(filepos,basesbeforefilepos)
     the refSeqMap has only one chromosome's sequence
+    There is no restriction on refFastahander
     '''    
     refSeqMap = {}
     if startpos <= 0:
@@ -155,18 +202,18 @@ def getRefSeqBypos(refFastahander, refindex, currentChromNO, startpos, endpos,cu
     if currentChromNOlen!=None and endpos>currentChromNOlen:
         endpos=currentChromNOlen
 
-    filehander = refFastahander
+    filehandle = refFastahandle
     if not seektuple or seektuple[1] > startpos:
         refSeqMap[currentChromNO] = [startpos - 1]
-        filehander.seek(refindex[currentChromNO])  # seekmap is empty so go to the first bases of the currentChromNO
-        preseq = filehander.read(startpos - 1)
+        filehandle.seek(refindex[currentChromNO])  # seekmap is empty so go to the first bases of the currentChromNO
+        preseq = filehandle.read(startpos - 1)
         dn = preseq.count('\n')
         while dn != 0:
-            preseq = filehander.read(dn)
+            preseq = filehandle.read(dn)
             dn = preseq.count('\n')
             
         # now filehander is right stay at the startpos
-        myseqline = filehander.read(endpos - startpos + 1)
+        myseqline = filehandle.read(endpos - startpos + 1)
         myseqn = myseqline.count('\n')
 #        if len(myseqline)>200:
 #            print(myseqn)
@@ -174,7 +221,7 @@ def getRefSeqBypos(refFastahander, refindex, currentChromNO, startpos, endpos,cu
 #        print("myseqline=",myseqline,"myseqn", myseqn)
         while myseqn != 0:  # fill the same number of \n with bases
             myseqline = myseqline.replace('\n', '')
-            myseqline += filehander.read(myseqn)
+            myseqline += filehandle.read(myseqn)
             myseqn = myseqline.count('\n')
             
 #            print(currentChromNO,myseqline, myseqn)
@@ -183,19 +230,19 @@ def getRefSeqBypos(refFastahander, refindex, currentChromNO, startpos, endpos,cu
             exit(-1)
         refSeqMap[currentChromNO].extend(list(myseqline))
     else:
-        filehander.seek(seektuple[0])  # seekmap is not empty
+        filehandle.seek(seektuple[0])  # seekmap is not empty
         refSeqMap[currentChromNO] = [startpos - 1]
-        preseq = filehander.read(startpos - seektuple[1] - 1)
+        preseq = filehandle.read(startpos - seektuple[1] - 1)
         dn = preseq.count('\n')
         while dn != 0:
-            preseq = filehander.read(dn)
+            preseq = filehandle.read(dn)
             dn = preseq.count('\n')
         # now filehander is right stay at the startpos
-        myseqline = filehander.read(endpos - startpos + 1)
+        myseqline = filehandle.read(endpos - startpos + 1)
         myseqn = myseqline.count('\n')
         while myseqn != 0:  # fill the same number of \n with bases
             myseqline = myseqline.replace('\n', '')
-            myseqline += filehander.read(myseqn)
+            myseqline += filehandle.read(myseqn)
             myseqn = myseqline.count('\n')
         refSeqMap[currentChromNO].extend(list(myseqline))
     plus = myseqline.count('>')
@@ -740,8 +787,11 @@ class Window():
             currentIdx += 1
         else:
             value = Caculator.getResult()
-            self.winValueL.append((startPos, lastPos, value))
-#             self.winValueL.append((0, 0, value))
+            try :
+                self.winValueL.append((startPos, lastPos, value))
+            except UnboundLocalError:
+                self.winValueL.append((0, 0, value))
+#             
         
         n = int((L_End_Pos - (len(self.winValueL) * slideSize + windowWidth)) / slideSize) + 1
         for i in range(n):

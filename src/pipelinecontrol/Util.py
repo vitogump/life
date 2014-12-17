@@ -210,6 +210,7 @@ class JobTracker():#for one dir
         session=DBA.getSession()
         session.execute("update jobsstate set state='1' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
         session.execute("update jobsstate set startdate='"+time.strftime(ISOTIMEFORMAT, time.localtime()) +"' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
+        session.commit()
         scriptout=re.sub(r".sh$",".out",scriptname)
         a=os.system(self.scriptDir+"/"+scriptname+">>"+self.scriptDir+"/"+scriptout+" 2>&1")
 #         logfile=open(self.scriptDir+"/"+scriptout,'r')
@@ -217,12 +218,15 @@ class JobTracker():#for one dir
 #         logfile.close()
         if a!=0:
             session.execute("update jobsstate set state='-1' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
+            session.commit()
             print("JobTracker "+scriptname+" runshell error")
             exit(-1)#just exit this threads the python programma still go on
         else:
             #session.execute("update jobsstate set outputinfo='"+logtext+"' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
             session.execute("update jobsstate set state='2' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
             session.execute("update jobsstate set finishdate='"+time.strftime(ISOTIMEFORMAT, time.localtime()) +"' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
+            session.commit()
+        return
     def callsh_updateDB(self):
         pool=Pool(self.NumOfThread)
         scriptfiles = os.listdir(path=self.scriptDir)
@@ -232,8 +236,8 @@ class JobTracker():#for one dir
                 scriptfiles.remove(filename)
         DBA.addJobs2jobstate(scriptfiles,self.scriptDir)
         a = os.system("chmod +x " + self.scriptDir + "/*.sh")
-        if a!=0:
-            print("JobTracker chmod error")
-            exit(-1)
+#         if a!=0:
+#             print("JobTracker chmod error")
+#             exit(-1)
         pool.map(self.__runashell,scriptfiles)
         

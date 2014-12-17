@@ -12,7 +12,11 @@ import numpy
 from NGS.BasicUtil import Caculators
 import NGS.BasicUtil.DerivedalleleProcessor as DAP
 import rpy2.robjects as robjects
+# import rpy2.rinterface as ri
 
+
+# ri.set_initoptions((b'rpy2', b'--verbose', b'--no-save'))
+# ri.initr()
 
 class Dstistics_allpop(object):
     def __init__(self, allpopslist):
@@ -226,7 +230,9 @@ class MakeMhtGraph(object):
         print(name, self.pathtoOutFileName, dir)
         
         r("setwd('" + dir + "')")
+        r('.libPaths("/opt/gap/")')
         r("library(gap)")
+        r('.libPaths("/opt/Cairo/")')
         r("library(Cairo)")
          
         r("pdf('" + name + ".pdf',width=10,height=4.5)")
@@ -241,6 +247,7 @@ class MakeMhtGraph(object):
         r("title('" + name + "')")
         r('dev.off()')
 #         print(name,dataType,"tiff('" + name + "histon_" + dataType + ".tiff'")
+        print(r('Cairo.capabilities()'))
         r("CairoPNG('" + name + "histon_" + dataType + ".png')")
 #         if dataType == "Hp":
 #             

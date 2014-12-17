@@ -77,7 +77,7 @@ if __name__ == '__main__':
             result=dbtools.operateDB("select",currentsql)
             for row in result:
                 currentchrID=row[0]
-                currentchrLen=int(row[2])
+                currentchrLen=int(row[1])
                 if currentchrID in pop.VcfIndexMap:
                     vcflist_A_chrom = pop.getVcfListByChrom(vcfname, currentchrID)
                     win.slidWindowOverlap(vcflist_A_chrom, currentchrLen, windowWidth, slideSize, snpcounter)
@@ -105,7 +105,7 @@ if __name__ == '__main__':
             result=dbtools.operateDB("select",currentsql)
             for row in result:
                 currentchrID=row[0].strip()
-                currentchrLen=int(row[2])
+                currentchrLen=int(row[1])
                 
                 if currentchrID in snpbinmap.SNPsPerBINMap:       
         #        for chrom in sorted(hscore.HeterozyMap.keys()):

@@ -111,7 +111,7 @@ class Fst():
 
             for row in result:
                 currentchrID=row[0]
-                currentchrLen=int(row[2])
+                currentchrLen=int(row[1])
                 if currentchrID in pop1.VcfIndexMap:
                     pop1SeqOfAChr={}
                     pop2SeqOfAChr={}
@@ -209,7 +209,7 @@ if __name__ == '__main__':
                 result=dbtools.operateDB("select",currentsql)
                 for row in result:
                     currentchrID=row[0]
-                    currentchrLen=int(row[2])
+                    currentchrLen=int(row[1])
                     if currentchrID in fst.FstMapByChrom:
                         for i in range(len(fst.FstMapByChrom[currentchrID])):
                             if fst.FstMapByChrom[currentchrID][i][2] != "NA":
@@ -322,7 +322,7 @@ if __name__ == '__main__':
                     result=dbtools.operateDB("select",currentsql)
                     for row in result:
                         currentchrID=row[0]
-                        currentchrLen=int(row[2])
+                        currentchrLen=int(row[1])
                         if currentchrID in globalFstMapByChrom:                                
 #                for chrom in sorted(globalFstMapByChrom.keys()):
                             for i in range(len(globalFstMapByChrom[currentchrID])):

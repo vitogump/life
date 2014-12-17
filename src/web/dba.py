@@ -32,7 +32,7 @@ engine = create_engine('mysql+mysqlconnector://%s:%s@%s/%s?charset=%s'%(db_confi
 
 ISOTIMEFORMAT = '%Y-%m-%d %X'
 def getSession():
-    Session = sessionmaker(bind=engine)
+    Session = scoped_session(sessionmaker(autoflush=True,bind=engine))
     session = Session()
     return session
 def addArticle(name,catalogue_id):

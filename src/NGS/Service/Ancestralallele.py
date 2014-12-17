@@ -13,7 +13,7 @@ from NGS.BasicUtil import *
 class AncestralAlleletabletools():
     def __init__(self, database="ninglabvariantdata", ip="10.2.48.140", usrname="root", pw="1234567",dbgenome="genomebasicinfo"):
         super().__init__()
-        self.dbtools = dbm.DBTools(ip, usrname, pw, database)
+        self.dbvariant = dbm.DBTools(ip, usrname, pw, database)
         self.dbgenome=dbm.DBTools(ip, usrname, pw, dbgenome)
         self.dbname=database
 
@@ -34,7 +34,7 @@ class AncestralAlleletabletools():
             " PRIMARY KEY (`chrID`,`snp_pos`) "
             ")ENGINE=InnoDB DEFAULT CHARSET=utf8"
             )
-        signal=self.dbtools.create_table(TABLES)
+        signal=self.dbvariant.create_table(TABLES)
         return tablename
     def filldata(self,vcffilename,tablename):
         """
@@ -57,7 +57,7 @@ class AncestralAlleletabletools():
         colslist=vcfChromIndex["title"][9:]
         for col in colslist:
             print("col name",col,"adding to mysql databases")
-            self.dbtools.operateDB("callproc", "mysql_sp_add_column", data=(self.dbname, tablename, col, "char(128)", "default null"))
+            self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbname, tablename, col, "char(128)", "default null"))
         a=os.system("""awk '$0!~/#/{OFS="\t";for(i=10;i<=NF;i++) printf $1"\t"$2"\t"$3"\t"$4"\t"$5"\t"$i"\t"FS;print ""}' """+vcffilename+">"+vcffilename+"tempstep1")
         if a!=0:
             print("error",""""awk '$0!~/#/{OFS="\t";for(i=10;i<=NF;i++) printf $1"\t"$2"\t"$3"\t"$4"\t"$5"\t"$i"\t"FS;print ""}' """+vcffilename+">"+vcffilename+"tempstep1")
@@ -71,7 +71,7 @@ class AncestralAlleletabletools():
     def getflankseqs(self, chrom,chromlen, snpstartpos, snpendpos, idxedreffilehandler, refindex, flanklen,outfile, tablename="derived_alle_ref"):
 
         testfile=open("testsnpfile.txt",'a')
-        snps = self.dbtools.operateDB("select", "select * from " + tablename + " where chrID='" + chrom + "' and snp_pos>= " + str(snpstartpos) + " and snp_pos<=" + str(snpendpos))
+        snps = self.dbvariant.operateDB("select", "select * from " + tablename + " where chrID='" + chrom + "' and snp_pos>= " + str(snpstartpos) + " and snp_pos<=" + str(snpendpos))
         RefSeqMap = Util.getRefSeqBypos(idxedreffilehandler, refindex, chrom, snpstartpos-flanklen, snpendpos+flanklen,chromlen)
         
         for snp in snps:
@@ -184,15 +184,15 @@ class AncestralAlleletabletools():
                 snpChrom=re.search(r"(.+)_(\d+)",lastsnpID).group(1)
                 onegroup.sort(key=lambda listRec:listRec[1])                           
                 if len(onegroup)==1 or onegroup[0][1]-onegroup[1][1]>=15:#first , only one query id,second longest hit 15 bases greater than the second longest hit
-                    if ancestralsnptable!=None and self.dbtools.operateDB("select","select count(*) from "+ancestralsnptable+" where chrID= '"+chrom+"' and snp_start_pos= "+str(snp_loc_s))[0][0]==0:
+                    if ancestralsnptable!=None and self.dbvariant.operateDB("select","select count(*) from "+ancestralsnptable+" where chrID= '"+chrom+"' and snp_start_pos= "+str(snp_loc_s))[0][0]==0:
                         print("update " + tablename + " set ancestralallel='" + onegroup[0][0] + "' where chrID='" + snpChrom + "'and snp_pos="+snppos)
-                        self.dbtools.operateDB("update", "update " + tablename + " set ancestralallel='" + onegroup[0][0] + "' where chrID='" + snpChrom + "'and snp_pos="+snppos)
+                        self.dbvariant.operateDB("update", "update " + tablename + " set ancestralallel='" + onegroup[0][0] + "' where chrID='" + snpChrom + "'and snp_pos="+snppos)
                     else:
-                        print("select count(*) from "+ancestralsnptable+" where chrID= '"+chrom+"' and snp_start_pos= "+str(snppos),self.dbtools.operateDB("select","select count(*) from "+ancestralsnptable+" where chrID= '"+chrom+"' and snp_start_pos= "+str(snppos)))
-                elif (len(lastbasesAccur.keys()) == 1  and self.dbtools.operateDB("select","select count(*) from "+ancestralsnptable+" where chrID= '"+chrom+"' and snp_start_pos= "+str(snp_loc_s))[0][0]==0):
+                        print("select count(*) from "+ancestralsnptable+" where chrID= '"+chrom+"' and snp_start_pos= "+str(snppos),self.dbvariant.operateDB("select","select count(*) from "+ancestralsnptable+" where chrID= '"+chrom+"' and snp_start_pos= "+str(snppos)))
+                elif (len(lastbasesAccur.keys()) == 1  and self.dbvariant.operateDB("select","select count(*) from "+ancestralsnptable+" where chrID= '"+chrom+"' and snp_start_pos= "+str(snp_loc_s))[0][0]==0):
                     for bases in lastbasesAccur:#only once
                         print("update " + tablename + " set ancestralallel='" + bases + "' where chrID='" + snpChrom + "' and snp_pos="+snppos)
-                        self.dbtools.operateDB("update", "update " + tablename + " set ancestralallel='" + bases + "' where chrID='" + snpChrom + "' and snp_pos="+snppos)
+                        self.dbvariant.operateDB("update", "update " + tablename + " set ancestralallel='" + bases + "' where chrID='" + snpChrom + "' and snp_pos="+snppos)
                 elif len(lastbasesAccur.keys()) == 0:
                     print(" len(lastbasesAccur.keys()) == 0")
                     exit(-1)
@@ -203,7 +203,7 @@ class AncestralAlleletabletools():
                     RefSeqMap[chrom][1:]=Util.complementary(tempStr)
                     revcom=False            
                 print(hitlist[0],RefSeqMap[chrom][snpindex + 1],str(snp_loc_s),"".join(RefSeqMap[chrom][1:]),file=ancestrysnpflank)
-    #            dbtools.operateDB("update", "update " + finaltable + " set chicken='" + RefSeqMap[chrom][snpindex + 1] + "' where snpID='" + hitlist[0] + "'")
+    #            dbvariant.operateDB("update", "update " + finaltable + " set chicken='" + RefSeqMap[chrom][snpindex + 1] + "' where snpID='" + hitlist[0] + "'")
                 lastsnpID = hitlist[0]
                 
                 lastbasesAccur.clear()
@@ -219,7 +219,7 @@ class AncestralAlleletabletools():
         
         archicpop_colname=re.search(r'[^/]*$',archicpopVcfFile).group(0)
         archicpop_colname=re.sub(r"[^\w^\d]","_",archicpop_colname)
-        self.dbtools.operateDB("callproc", "mysql_sp_add_column", data=(self.dbname, toplevelsnptablename, archicpop_colname, "char(128)", "default null"))       
+        self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbname, toplevelsnptablename, archicpop_colname, "char(128)", "default null"))       
         archicpop = VCFutil.VCF_Data(archicpopVcfFile)
         totalChroms = self.dbgenome.operateDB("select","select count(*) from "+chromtable)[0][0]
         for i in range(0,totalChroms,20):
@@ -232,7 +232,7 @@ class AncestralAlleletabletools():
                 currentchrLen=int(row[1])
                 archicpopSeqOfAChr={}
                 archicpopSeqOfAChr[currentchrID]=archicpop.getVcfListByChrom(archicpopVcfFile, currentchrID)
-                allsnpsInAchr=self.dbtools.operateDB("select","select snp_pos,alt_base from "+toplevelsnptablename+" where chrID='"+currentchrID+"'")
+                allsnpsInAchr=self.dbvariant.operateDB("select","select snp_pos,alt_base from "+toplevelsnptablename+" where chrID='"+currentchrID+"'")
                 for snp in allsnpsInAchr:
                     snp_pos=int(snp[0])
                     ALT=snp[1]
@@ -274,12 +274,12 @@ class AncestralAlleletabletools():
                         continue
                     #change to insert if exist skip
                     print("update")
-                    self.dbtools.operateDB("update", "update " + toplevelsnptablename + " set "+archicpop_colname+" = '" + popsdata+"' where chrID="+"'"+currentchrID+"' and snp_pos="+str(snp[0]))
+                    self.dbvariant.operateDB("update", "update " + toplevelsnptablename + " set "+archicpop_colname+" = '" + popsdata+"' where chrID="+"'"+currentchrID+"' and snp_pos="+str(snp[0]))
     def leftjoinSelectedTables(self,chromtable,outtable_file_Name,vcftables=[],toplevelsnptable="ducksnp_toplevel",FORMAT="GT:AD:DP:GQ:PL"):
         outfile=open(outtable_file_Name,'w')
         
         totalChroms = self.dbgenome.operateDB("select","select count(*) from "+chromtable)[0][0]
-        titlelist=[a[0].strip() for a in self.dbtools.operateDB("select","select column_name  from information_schema.columns where table_schema='"+self.dbname+"' and table_name='"+toplevelsnptable+"'")]  
+        titlelist=[a[0].strip() for a in self.dbvariant.operateDB("select","select column_name  from information_schema.columns where table_schema='"+self.dbname+"' and table_name='"+toplevelsnptable+"'")]  
         titlelist=titlelist+vcftables
         print(*titlelist,sep="\t",file=outfile)
         for i in range(0,totalChroms,20):
@@ -293,7 +293,7 @@ class AncestralAlleletabletools():
                 #sql statement produce part1
                 for vcftable in vcftables:
                     
-                    titlelist=[a[0].strip() for a in self.dbtools.operateDB("select","select column_name  from information_schema.columns where table_schema='"+self.dbname+"' and table_name='"+vcftable+"'")]              
+                    titlelist=[a[0].strip() for a in self.dbvariant.operateDB("select","select column_name  from information_schema.columns where table_schema='"+self.dbname+"' and table_name='"+vcftable+"'")]              
                     indvdnameslist=titlelist[5:]
                     print(vcftable,indvdnameslist)
                     sqlselectstatementpart=sqlselectstatementpart+","+vcftable.strip()+".alt_base as "+vcftable+"_alt_base"
@@ -306,15 +306,15 @@ class AncestralAlleletabletools():
                 #sql where statement append
                 sqlstatement=sqlselectstatementpart+sqlfromstatementpart+" where chrID='"+currentchrID+"'"
                 print(sqlstatement)
-                allsnpOfJoinTableinAchr=self.dbtools.operateDB("select",sqlstatement)
+                allsnpOfJoinTableinAchr=self.dbvariant.operateDB("select",sqlstatement)
                 #process value,merge into one col
-                NumOfColOftoplevel_fix=len(self.dbtools.operateDB("select","select column_name  from information_schema.columns where table_schema='"+self.dbname+"' and table_name='"+toplevelsnptable+"'"))
+                NumOfColOftoplevel_fix=len(self.dbvariant.operateDB("select","select column_name  from information_schema.columns where table_schema='"+self.dbname+"' and table_name='"+toplevelsnptable+"'"))
                 for rec in allsnpOfJoinTableinAchr:
                     NumOfColOftoplevel=NumOfColOftoplevel_fix
                     recToPrint=list(rec[0:NumOfColOftoplevel])
                     print("recToPrintpre",recToPrint,"rec",rec)
                     for vcftable in vcftables:
-                        titlelist=[a[0].strip() for a in self.dbtools.operateDB("select","select column_name  from information_schema.columns where table_schema='"+self.dbname+"' and table_name='"+vcftable+"'")]
+                        titlelist=[a[0].strip() for a in self.dbvariant.operateDB("select","select column_name  from information_schema.columns where table_schema='"+self.dbname+"' and table_name='"+vcftable+"'")]
                         indvdnameslist=titlelist[5:]
                         refdep=0;altalleledep=0
                         print("lastpart",rec[NumOfColOftoplevel:NumOfColOftoplevel+1+len(indvdnameslist)])
