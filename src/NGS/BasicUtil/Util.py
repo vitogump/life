@@ -27,6 +27,11 @@ def bedfiletools(bedfilename,withtitle=False):
     f.close()
     return m
 def complementary(seq):
+    """
+    ['tg', 'a', 't', 'g', 'c', 'acacacgatg', 'ctttttcccccccc', 'c', 'c', 'a', 'a', 'aaagagagagacagaaaaaggc', 'atatcgactg', 'catcga']
+    reverse to 
+    ['ac', 't', 'a', 'c', 'g', 'tgtgtgctac', 'gaaaaagggggggg', 'g', 'g', 't', 't', 'tttctctctctgtctttttccg', 'tatagctgac', 'gtagct']
+    """
     newseq = []
     for i in range(0, len(seq)):
         if seq[i].lower() == 'a':
@@ -35,8 +40,12 @@ def complementary(seq):
             newseq.insert(i, 'a')
         elif seq[i].lower() == 'c':
             newseq.insert(i, 'g')
-        else:
+        elif seq[i].lower() == 'g':
             newseq.insert(i, 'c')
+        elif len(seq[i])>1:
+            newseq.insert(i,complementary(seq[i]))
+        else:
+            newseq.insert(i, seq[i])
     if isinstance(seq, str):
         newseq = "".join(newseq)
     return newseq
@@ -62,7 +71,7 @@ def generateIndexByChrom(refFastaFileName, indexFileName,mapname=None):
     pickle.dump(refChromIndex, open(indexFileName, 'wb'))
     refFastaFile.close()
 
-def getGtfMap(gtfFileName,elementTypes=["CDS","start_codon","stop_codon"]):
+def getGtfMap(gtfFileName,elementTypes=["CDS","stop_codon"]):
     """protein_codingMap={chromNo:[[transcript_id,strand,start,end,(feature, elemStart, elemEnd, frame),(),(),,,,,],
                         [transcript_id,strand,start,end,(),(),(),,,],[],,,,,,,],
                chromNo:[],,,,,,,,,,,,,,}
@@ -75,10 +84,19 @@ def getGtfMap(gtfFileName,elementTypes=["CDS","start_codon","stop_codon"]):
 #     gtfline = gtfFileHandler.readline()
     jumpout=False
     for getfirstcds in gtfFileHandler:
+        if re.search(r"^#",getfirstcds)!=None:
+            print(getfirstcds)
+            continue
         gtfColList = re.split(r'\s+', getfirstcds)
         chromNo = gtfColList[0].strip()
         protein_codingMap[chromNo] = []
-        transcript_id = re.search(r'\"(.*)\";',gtfColList[11].strip()).group(1)
+        if "transcript_id" in gtfColList:
+            transcript_id_idx=gtfColList.index("transcript_id")+1
+            gene_id=gtfColList.index("gene_id")
+        else:
+            continue
+        print("transcript_id_idx",transcript_id_idx)
+        transcript_id = re.search(r'\"(.*)\";',gtfColList[transcript_id_idx].strip()).group(1)
         countInChrom = 0        
         for elementType in elementTypes:
             if elementType==gtfColList[2].strip():
@@ -92,18 +110,16 @@ def getGtfMap(gtfFileName,elementTypes=["CDS","start_codon","stop_codon"]):
     chrtranscrpitididxMap[chromNo] = {transcript_id:0}
     for gtfline in gtfFileHandler:
         gtfColList = re.split(r'\s+', gtfline)
-        transcript_id = re.search(r'\"(.*)\";',gtfColList[11].strip()).group(1)
+        transcript_id = re.search(r'\"(.*)\";',gtfColList[transcript_id_idx].strip()).group(1)
         for elementType in elementTypes:
             if elementType==gtfColList[2].strip():
                 break
         else:
-            print(gtfline)
             continue
         chromNo = gtfColList[0].strip()
         if chromNo in protein_codingMap:
             if transcript_id in chrtranscrpitididxMap[chromNo].keys():
                 tanscript_id_idx = chrtranscrpitididxMap[chromNo][transcript_id]
-                print(chromNo,tanscript_id_idx,gtfColList)
                 protein_codingMap[chromNo][tanscript_id_idx].append((gtfColList[2], int(gtfColList[3]), int(gtfColList[4]), gtfColList[7]))
                 protein_codingMap[chromNo][tanscript_id_idx][2] = min(protein_codingMap[chromNo][tanscript_id_idx][2], int(gtfColList[3]))
                 protein_codingMap[chromNo][tanscript_id_idx][3] = max(protein_codingMap[chromNo][tanscript_id_idx][3], int(gtfColList[4]))
@@ -151,6 +167,7 @@ def getNearestGenegroup(gtfList, pos):
                         [transcript_id,strand,start,end,(),(),(),,,],[],,,,,,,]
     order by "start"
     """
+    
     if gtfList == None:
         return []
     for i in range(len(gtfList)):
@@ -159,9 +176,9 @@ def getNearestGenegroup(gtfList, pos):
             break
     else:
         if pos > gtfList[-1][3]:
+            print("what's wrong")
             return []
         else:
-            print("getNearestGeneOverlapList error",pos,gtfList)
             exit(-1)
 
     furthest = gtfList[i][3]
@@ -172,22 +189,44 @@ def getNearestGenegroup(gtfList, pos):
         furthest = max(furthest, gtfList[i][3])
         i += 1
     return furthest,geneOverlapList
+def getSNPrecInCDS(codon_idx_in_tscptSeqAllCds,lenOftscpt,codon,codon_m,cds_frame_ONETRSCPT,gtftrscpt_list):
+    for i in range(3):
+        if codon[i]!=codon_m[i]:
+            snp_idx_in_tscptALLCds=i+codon_idx_in_tscptSeqAllCds
+            ref_base=codon[i].upper()
+            alt_base=codon_m[i].upper()
+    if gtftrscpt_list[1]=="+":
+        for cds_idx in sorted(cds_frame_ONETRSCPT.keys()):
+            if cds_frame_ONETRSCPT[cds_idx][1]>snp_idx_in_tscptALLCds:
+                cds_idx-=1
+                break
+        snp_pos=snp_idx_in_tscptALLCds-cds_frame_ONETRSCPT[cds_idx][1]+gtftrscpt_list[cds_idx][1]
+    elif gtftrscpt_list[1]=="-":
+        for cds_idx in sorted(cds_frame_ONETRSCPT.keys()):
+            if cds_frame_ONETRSCPT[cds_idx][1]>lenOftscpt-snp_idx_in_tscptALLCds-1:
+                cds_idx-=1
+                break
+        snp_pos=lenOftscpt-snp_idx_in_tscptALLCds-1-cds_frame_ONETRSCPT[cds_idx][1]+gtftrscpt_list[cds_idx][1]
+        ref_base=complementary(ref_base).upper()
+        alt_base=complementary(alt_base).upper()
+    return snp_pos,ref_base,alt_base
 def getGeneGrouplist(gtfList):
     """
         geneGrouplist=[genegroup1,genegroup2,genegroup3,....]
-                     =[[furthest,geneOverlapList1],[furthest,geneOverlapList2],[furthest,geneOverlapList3],.....]
+                     =[[furthest,geneOverlapLists1],[furthest,geneOverlapLists2],[furthest,geneOverlapLists3],.....]
                      =[[furthest,[],[],[],[],....],[furthest,[],[],[],[],....],[furthest,[],[],[],[],....],.....]
                      =[[furthest,[transcript_id,strand,start,end,(),(),(),...],[transcript_id,strand,start,end,(),(),(),...],....],[furthest,[transcript_id,strand,start,end,(),(),(),...],[transcript_id,strand,start,end,(),(),(),...],....],[furthest,[],[],...],[],........]
     """
     newgtfList=copy.deepcopy(gtfList)
     geneGrouplist=[]
-    pos=newgtfList[0][2]-1
-    for gene in newgtfList:
-        furthest,geneGroup=getNearestGenegroup(newgtfList,pos)
-        pos=furthest+1
-        geneGrouplist.append(geneGroup.insert(0, furthest))
+    curpos=newgtfList[0][2]-1
+    while curpos <newgtfList[-1][2]:
+        furthest,geneGroup=getNearestGenegroup(newgtfList,curpos)
+        curpos=furthest+1
+        geneGroup.insert(0, furthest)
+        geneGrouplist.append(geneGroup)
+        
     return geneGrouplist
-#     testfile = open(gtffilepath + "protein_codinggeneGroupList.sort.txt", 'w')
 def getRefSeqBypos(refFastahandle, refindex, currentChromNO, startpos, endpos,currentChromNOlen=None,seektuple=()):
     '''
     pos start at 1

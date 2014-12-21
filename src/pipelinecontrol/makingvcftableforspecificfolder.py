@@ -16,6 +16,7 @@ parser = OptionParser()
 
 #"output data name is defined as 'inputdatapath folder name'+'is subfolder name'+'is subfolder name'+..."
 parser.add_option("-i", "--vcffiledir", dest="vcffiledir",help="oneline scriptexamplefile")
+parser.add_option("-s","--suffix",dest="vcfsuffix",help="suffix")
 # parser.add_option("-o", "--outputpath", dest="outputpath", help="outputpath")
 parser.add_option("-d", "--datadepth", dest="datadepth", help="it's the depth of the dir from the inputdatapath which the data file that need to be process in it,the depth of the inputdatapath is 0")
 
@@ -30,8 +31,9 @@ Interceptor_depth=int(options.Interceptor_depth)
 datadepth=int(options.datadepth)
 inputdatafilesrootpath=options.vcffiledir
 interceptdirs=options.interceptdirs
+vcfsuffix=options.vcfsuffix
 if __name__ == '__main__':
     ancestralalleletabletools=AncestralAlleletabletools(database="ninglabvariantdata", ip="10.2.48.140", usrname="root", pw="1234567")
-    operatorWithData_loadintodatabase=OperatorWithData_loadintodatabase(inputdatafilesrootpath,ancestralalleletabletools, interceptdirs)
+    operatorWithData_loadintodatabase=OperatorWithData_loadintodatabase(inputdatafilesrootpath,ancestralalleletabletools, interceptdirs,vcfsuffix)
     upTodownTravelDir(inputdatafilesrootpath,operatorWithData_loadintodatabase,datadepth,Interceptor_depth)
     print("finish")
