@@ -15,7 +15,13 @@ class AncestralAlleletabletools():
         super().__init__()
         self.dbvariant = dbm.DBTools(ip, usrname, pw, database)
         self.dbgenome=dbm.DBTools(ip, usrname, pw, dbgenome)
-        self.dbname=database
+        
+        #dbtmp means never use the table in the software,you can delete the table anytime without check dependency
+        self.dbtmp=dbm.DBTools(ip, usrname, pw, "ninglabvariantdata_tmp")
+        self.dbtmpname="ninglabvariantdata_tmp"#
+        
+        self.dbvariant_name=database
+        self.dbgenomename=dbgenome
 
     def createtable(self, vcffilename="derived_alle_ref"):
 
@@ -57,12 +63,12 @@ class AncestralAlleletabletools():
         colslist=vcfChromIndex["title"][9:]
         for col in colslist:
             print("col name",col,"adding to mysql databases")
-            self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbname, tablename, col, "char(128)", "default null"))
-        a=os.system("""awk '$0!~/#/{OFS="\t";for(i=10;i<=NF;i++) printf $1"\t"$2"\t"$3"\t"$4"\t"$5"\t"$i"\t"FS;print ""}' """+vcffilename+">"+vcffilename+"tempstep1")
+            self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, tablename, col, "char(128)", "default null"))
+        a=os.system("""awk '$0!~/#/{OFS="\t";printf $1"\t"$2"\t"$3"\t"$4"\t"$5"\t";for(i=10;i<=NF;i++) printf $i"\t"FS;print ""}' """+vcffilename+">"+vcffilename+"tempstep1")
         if a!=0:
-            print("error",""""awk '$0!~/#/{OFS="\t";for(i=10;i<=NF;i++) printf $1"\t"$2"\t"$3"\t"$4"\t"$5"\t"$i"\t"FS;print ""}' """+vcffilename+">"+vcffilename+"tempstep1")
+            print("error",""""awk '$0!~/#/{OFS="\t";printf $1"\t"$2"\t"$3"\t"$4"\t"$5"\t";for(i=10;i<=NF;i++) printf $i"\t"FS;print ""}'"""+vcffilename+">"+vcffilename+"tempstep1")
         loaddatasql = "load data local infile '"+vcffilename+"tempstep1"+"' into table " + tablename + " fields terminated by '\\t'"
-        shellstatment = "mysql -uroot -p1234567 -D" + self.dbname.strip() + ' -e "' + loaddatasql + '"'
+        shellstatment = "mysql -uroot -p1234567 -D" + self.dbvariant_name.strip() + ' -e "' + loaddatasql + '"'
         
         a = os.system(shellstatment)
         if a!=0:
@@ -111,13 +117,14 @@ class AncestralAlleletabletools():
         print(shellstatment)
         a = os.system(shellstatment)
         if a != 0:
-            print("DerivedalleleProcessor : callblast func os.system return not 0")
+            print("Ancestralallele.py : callblast func os.system return not 0")
             exit(-1)
         print(shellstatment,a,"OK")
-    def extarctAncestryAlleleFromBlastOut(self,BlastOutFile,ancestryrefFile,ancestryrefidx,tablename="derived_alle_ref",ancestralsnptable=None):
+    def extarctAncestryAlleleFromBlastOut(self,BlastOutFile,ancestryrefFile,ancestralgenomename,ancestryrefidx,tablename="derived_alle_ref",ancestralsnptable=None):
         ancestryreffile=open(ancestryrefFile,'r')
         ancestrysnpflank=open(tablename+"ancestrysnpflank.fa",'w')
-        a = os.popen("awk '$1!~/^#/ && $5==1 && $4>26 && $6==0 {print $0}' " + BlastOutFile)
+        print(" query id, subject id, % identity, alignment length, mismatches, gap opens, q. start, q. end, s. start, s. end, evalue, bit score")
+        a = os.popen("awk '$1!~/^#/ && $5==1 && $4>40 && $6==0 {print $0}' " + BlastOutFile)
     #    hits=a.readlines()
     
         lastbasesAccur = {}
@@ -185,14 +192,14 @@ class AncestralAlleletabletools():
                 onegroup.sort(key=lambda listRec:listRec[1])                           
                 if len(onegroup)==1 or onegroup[0][1]-onegroup[1][1]>=15:#first , only one query id,second longest hit 15 bases greater than the second longest hit
                     if ancestralsnptable!=None and self.dbvariant.operateDB("select","select count(*) from "+ancestralsnptable+" where chrID= '"+chrom+"' and snp_start_pos= "+str(snp_loc_s))[0][0]==0:
-                        print("update " + tablename + " set ancestralallel='" + onegroup[0][0] + "' where chrID='" + snpChrom + "'and snp_pos="+snppos)
-                        self.dbvariant.operateDB("update", "update " + tablename + " set ancestralallel='" + onegroup[0][0] + "' where chrID='" + snpChrom + "'and snp_pos="+snppos)
+                        print("update " + tablename + " set "+ancestralgenomename+" ='" + onegroup[0][0] + "' where chrID='" + snpChrom + "'and snp_pos="+snppos)
+                        self.dbvariant.operateDB("update", "update " + tablename + " set "+ancestralgenomename+" ='" + onegroup[0][0] + "' where chrID='" + snpChrom + "'and snp_pos="+snppos)
                     else:
                         print("select count(*) from "+ancestralsnptable+" where chrID= '"+chrom+"' and snp_start_pos= "+str(snppos),self.dbvariant.operateDB("select","select count(*) from "+ancestralsnptable+" where chrID= '"+chrom+"' and snp_start_pos= "+str(snppos)))
                 elif (len(lastbasesAccur.keys()) == 1  and self.dbvariant.operateDB("select","select count(*) from "+ancestralsnptable+" where chrID= '"+chrom+"' and snp_start_pos= "+str(snp_loc_s))[0][0]==0):
                     for bases in lastbasesAccur:#only once
-                        print("update " + tablename + " set ancestralallel='" + bases + "' where chrID='" + snpChrom + "' and snp_pos="+snppos)
-                        self.dbvariant.operateDB("update", "update " + tablename + " set ancestralallel='" + bases + "' where chrID='" + snpChrom + "' and snp_pos="+snppos)
+                        print("update " + tablename + " set "+ancestralgenomename+" ='" + bases + "' where chrID='" + snpChrom + "' and snp_pos="+snppos)
+                        self.dbvariant.operateDB("update", "update " + tablename + " set "+ancestralgenomename+" ='" + bases + "' where chrID='" + snpChrom + "' and snp_pos="+snppos)
                 elif len(lastbasesAccur.keys()) == 0:
                     print(" len(lastbasesAccur.keys()) == 0")
                     exit(-1)
@@ -219,7 +226,7 @@ class AncestralAlleletabletools():
         
         archicpop_colname=re.search(r'[^/]*$',archicpopVcfFile).group(0)
         archicpop_colname=re.sub(r"[^\w^\d]","_",archicpop_colname)
-        self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbname, toplevelsnptablename, archicpop_colname, "char(128)", "default null"))       
+        self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, toplevelsnptablename, archicpop_colname, "char(128)", "default null"))       
         archicpop = VCFutil.VCF_Data(archicpopVcfFile)
         totalChroms = self.dbgenome.operateDB("select","select count(*) from "+chromtable)[0][0]
         for i in range(0,totalChroms,20):
@@ -270,18 +277,18 @@ class AncestralAlleletabletools():
                             popsdata="no covered"
                         else:
                             popsdata=ALT+":"+depth_linelist[species_idx] + ",0"
-                        print("no find snp   :",snp," in archicpopVcfFile,here should check the depth")
-                        continue
                     #change to insert if exist skip
-                    print("update")
+                    print("update",popsdata)
                     self.dbvariant.operateDB("update", "update " + toplevelsnptablename + " set "+archicpop_colname+" = '" + popsdata+"' where chrID="+"'"+currentchrID+"' and snp_pos="+str(snp[0]))
     def leftjoinSelectedTables(self,chromtable,outtable_file_Name,vcftables=[],toplevelsnptable="ducksnp_toplevel",FORMAT="GT:AD:DP:GQ:PL"):
         outfile=open(outtable_file_Name,'w')
-        
+        outtable_Name=re.search(r'[^/]*$', outtable_file_Name).group(0)
+        outtable_Name=re.sub(r"[^\w^\d]","_",outtable_Name)
         totalChroms = self.dbgenome.operateDB("select","select count(*) from "+chromtable)[0][0]
-        titlelist=[a[0].strip() for a in self.dbvariant.operateDB("select","select column_name  from information_schema.columns where table_schema='"+self.dbname+"' and table_name='"+toplevelsnptable+"'")]  
-        titlelist=titlelist+vcftables
-        print(*titlelist,sep="\t",file=outfile)
+        outtable_titlelist=[a[0].strip() for a in self.dbvariant.operateDB("select","select column_name  from information_schema.columns where table_schema='"+self.dbvariant_name+"' and table_name='"+toplevelsnptable+"'")]  
+        toplevellen=len(outtable_titlelist)
+        outtable_titlelist=outtable_titlelist+vcftables
+        print(*outtable_titlelist,sep="\t",file=outfile)
         for i in range(0,totalChroms,20):
             currentsql="select * from " + chromtable+" order by chrlength desc limit "+str(i)+",20"
             result=self.dbgenome.operateDB("select",currentsql)
@@ -293,7 +300,7 @@ class AncestralAlleletabletools():
                 #sql statement produce part1
                 for vcftable in vcftables:
                     
-                    titlelist=[a[0].strip() for a in self.dbvariant.operateDB("select","select column_name  from information_schema.columns where table_schema='"+self.dbname+"' and table_name='"+vcftable+"'")]              
+                    titlelist=[a[0].strip() for a in self.dbvariant.operateDB("select","select column_name  from information_schema.columns where table_schema='"+self.dbvariant_name+"' and table_name='"+vcftable+"'")]              
                     indvdnameslist=titlelist[5:]
                     print(vcftable,indvdnameslist)
                     sqlselectstatementpart=sqlselectstatementpart+","+vcftable.strip()+".alt_base as "+vcftable+"_alt_base"
@@ -308,13 +315,13 @@ class AncestralAlleletabletools():
                 print(sqlstatement)
                 allsnpOfJoinTableinAchr=self.dbvariant.operateDB("select",sqlstatement)
                 #process value,merge into one col
-                NumOfColOftoplevel_fix=len(self.dbvariant.operateDB("select","select column_name  from information_schema.columns where table_schema='"+self.dbname+"' and table_name='"+toplevelsnptable+"'"))
+                NumOfColOftoplevel_fix=len(self.dbvariant.operateDB("select","select column_name  from information_schema.columns where table_schema='"+self.dbvariant_name+"' and table_name='"+toplevelsnptable+"'"))
                 for rec in allsnpOfJoinTableinAchr:
                     NumOfColOftoplevel=NumOfColOftoplevel_fix
                     recToPrint=list(rec[0:NumOfColOftoplevel])
                     print("recToPrintpre",recToPrint,"rec",rec)
                     for vcftable in vcftables:
-                        titlelist=[a[0].strip() for a in self.dbvariant.operateDB("select","select column_name  from information_schema.columns where table_schema='"+self.dbname+"' and table_name='"+vcftable+"'")]
+                        titlelist=[a[0].strip() for a in self.dbvariant.operateDB("select","select column_name  from information_schema.columns where table_schema='"+self.dbvariant_name+"' and table_name='"+vcftable+"'")]
                         indvdnameslist=titlelist[5:]
                         refdep=0;altalleledep=0
                         print("lastpart",rec[NumOfColOftoplevel:NumOfColOftoplevel+1+len(indvdnameslist)])
@@ -338,6 +345,15 @@ class AncestralAlleletabletools():
                             recToPrint=recToPrint+[popsdata]
                             NumOfColOftoplevel=NumOfColOftoplevel+1+len(indvdnameslist)
                     print(*recToPrint,sep="\t",file=outfile)
+        self.dbtmp.operateDB("copytableschema","create table "+outtable_Name+" like "+self.dbvariant_name.strip()+"."+toplevelsnptable.strip())
+        for colname in outtable_titlelist[toplevellen-1:]:
+            self.dbtmp.operateDB("callproc", "mysql_sp_add_column",data=(self.dbvariant_name, outtable_Name, colname, "char(128)", "default null"))
+        loaddatasql="load data local infile '"+outtable_file_Name+"' into table "+outtable_Name+" fields terminated by '\\t'"
+        a=os.system("mysql -uroot -p1234567 -D" + self.dbtmpname.strip() + ' -e "' + loaddatasql + '"')
+        if a!=0:
+            print(a,"maybe error")
+        else:
+            print("finish")
 
                         
                 

@@ -230,9 +230,8 @@ class MakeMhtGraph(object):
         print(name, self.pathtoOutFileName, dir)
         
         r("setwd('" + dir + "')")
-        r('.libPaths("/opt/gap/")')
+        r('.libPaths("/opt/Rpackages/")')
         r("library(gap)")
-        r('.libPaths("/opt/Cairo/")')
         r("library(Cairo)")
          
         r("pdf('" + name + ".pdf',width=10,height=4.5)")
@@ -248,7 +247,7 @@ class MakeMhtGraph(object):
         r('dev.off()')
 #         print(name,dataType,"tiff('" + name + "histon_" + dataType + ".tiff'")
         print(r('Cairo.capabilities()'))
-        r("CairoPNG('" + name + "histon_" + dataType + ".png')")
+        r("CairoPNG('" + name + "histon_" + dataType + ".png')")#need yum groupinstall "X Window System"
 #         if dataType == "Hp":
 #             
 #             r("bins=seq(0,0.6,by=0.001)")

@@ -23,6 +23,8 @@ parser.add_option("-m", "--mode", dest="mode",
                   help="1 :means produce cmdline scripts for every terminal folder,the input data should be all the data files under the terminal folder. 2:use all selected data files as the input parameters in the only one cmdline script")
 parser.add_option("-I","--Interceptor_depth",dest="Interceptor_depth",default="0",help="depth of the folder to output")
 parser.add_option("-l", "--interceptdirs", dest="interceptdirs",action="append", default=[], help="winvalue or zvalue")
+
+parser.add_option("-1","--collection_depth",dest="collection_depth",default="-1",help="depth of the folder to output")
 parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", default=True,
                   help="don't print status messages to stdout")
@@ -50,15 +52,22 @@ print(interceptdirs)
 
 if __name__ == '__main__':
     if mode==1:
-
+        if options.collection_depth!="-1":
+            collection_depth=int(options.collection_depth)
+            if collection_depth<Interceptor_depth:
+                print("collection_depth<Interceptor_depth error")
+                exit(-1)
+        else:
+            print("need -1 collection_depth")
+            
         #progamma logic
-        operatorwithdata_mode1=OperatorWithData_mode1(options.cmdtemplatefile,scriptsstoredir=scriptsstoredir,interceptdirs=interceptdirs)
-        upTodownTravelDir(operatorwithdata_mode1.inputdatapath,operatorwithdata_mode1,datadepth,Interceptor_depth)
+        operatorwithdata_mode1=OperatorWithData_mode1(options.cmdtemplatefile,scriptsstoredir=scriptsstoredir)
+        upTodownTravelDir(operatorwithdata_mode1.inputdatapath,operatorwithdata_mode1,datadepth,Interceptor_depth,collection_depth=collection_depth,interceptdirs=interceptdirs)
         
     elif mode==2:
             
-        operatorwithdata_mode2=OperatorWithData_mode2(options.cmdtemplatefile,scriptsstoredir,interceptdirs)
-        upTodownTravelDir(operatorwithdata_mode2.inputdatapath,operatorwithdata_mode2,datadepth,Interceptor_depth)
+        operatorwithdata_mode2=OperatorWithData_mode2(options.cmdtemplatefile,scriptsstoredir)
+        upTodownTravelDir(operatorwithdata_mode2.inputdatapath,operatorwithdata_mode2,datadepth,Interceptor_depth,Interceptor_depth,interceptdirs)
         #finalcmdline=re.sub(r"\${output}")
         finalcmdline=re.sub(r"[-\w\d]+[=\s]+\${.*?}"," ",operatorwithdata_mode2.newcmdline)
         try:

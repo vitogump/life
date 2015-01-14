@@ -53,7 +53,7 @@ class DBTools():
                 cursor.execute(sqls[0])
                 result=cursor.fetchall()
                 return result
-            elif sqltype=='update' or sqltype=='insert':
+            elif sqltype=='update' or sqltype=='insert' or sqltype=='copytableschema':
                 for sql in sqls:
                     if data==None:
                         cursor.execute(sql)
@@ -63,12 +63,17 @@ class DBTools():
             elif sqltype=="callproc":
                 cursor.callproc(sqls[0],data)
         except mysql.connector.Error as e:
+            time.sleep(SLEEP_FOR_NEXT_TRY)
+            a=self.operateDB(sqltype,sqls,data)
+            if a==0:
+                return 0
             print('query error!{}'.format(e))
             print("DBManager operateDB","may be the file name is wrong")
             print(sqls,data)
             exit(-1)
         finally:
             cursor.close()
+        return 0
     
     def create_table(self,table):
         """  创建表

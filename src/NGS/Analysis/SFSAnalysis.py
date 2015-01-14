@@ -18,16 +18,19 @@ parser = OptionParser()
 
 parser.add_option("-d", "--dbname", dest="dbname",default="life_pilot",
                   help="write report to FILE")
-parser.add_option("-c", "--derived_alletable", dest="derived_alletable",# action="callback",type="string",callback=useoptionvalue_previous2,
+parser.add_option("-c", "--topleveltable", dest="topleveltable",# action="callback",type="string",callback=useoptionvalue_previous2,
                   help="write report to FILE")
-# (options, args) = parser.parse_args()
+parser.add_option("-f", "--farsurebutfew", dest="farsurebutfew",help="far sure but with few locs")
 parser.add_option("-o","--outfileprename",dest="outfilepreName",help="outfilepreName with path")
+parser.add_option("-a","--ancestralspeciescolname",dest="ancestralspeciescolname",help="ancestralspecisname")
 parser.add_option("-m","--mindepth",dest="mindepth",help="mindepth for both archicpop and ancestralallel")#
 # parser.add_option("-e", "--bedfile", action="append",dest="bedfile",default=[],help="measure region of bedfile")
 parser.add_option("-s","--speciesesName",action="append",dest="speciesesName",default=[],help="speciesName in table")#
                                                                                                                                                           
 (options, args) = parser.parse_args()
-allpop_with_derived_alletable=options.derived_alletable
+allpop_with_derived_alletable=options.topleveltable
+ancestralspeciescolname=options.ancestralspeciesname.strip()
+farsurebutfew=options.farsurebutfew.strip()
 mindepth=int(options.mindepth)
 if __name__ == '__main__':
     dbtools = dbm.DBTools("10.2.48.140", "root", "1234567", options.dbname)
@@ -49,7 +52,9 @@ if __name__ == '__main__':
     
     tempdbtools=dbm.DBTools("10.2.48.140","root","1234567",tempdbname)
     tempdbtools.create_table(TABLES)
-    titlelist=[a[0].strip() for a in dbtools.operateDB("select","select column_name  from information_schema.columns where table_schema='"+options.dbname+"' and table_name='"+options.derived_alletable+"'")]
+    titlelist=[a[0].strip() for a in dbtools.operateDB("select","select column_name  from information_schema.columns where table_schema='"+options.dbname+"' and table_name='"+options.topleveltable+"'")]
+    ancestralspeciesidx=titlelist.index(ancestralspeciescolname)
+    farsurebutfewidx=titlelist.index(farsurebutfew)
     print(titlelist)
     for speciesName in options.speciesesName:
         outfile=open(options.outfilepreName+speciesName,'w')
@@ -70,19 +75,19 @@ if __name__ == '__main__':
                     if selectedsnps==None:
                         continue
                     for snp in selectedsnps:
-                        if snp[6]==None or snp[speciesidx].strip()=="no covered" or snp[6]=="no covered" or re.search(r'[\w\W]+[,][\w\W]+:\d+,\d+',snp[4])!=None:
+                        if snp[speciesidx]==None or snp[speciesidx].strip()=="no covered" or snp[speciesidx]=="no covered" or re.search(r'[\w\W]+[,][\w\W]+:\d+,\d+',snp[4])!=None:
                             continue
                         snpid=snp[0].strip()+"_"+str(snp[1])
-                        archicpop=re.search(r'([ATCGatcg]+):(\d+),(\d+)',snp[6])
+                        archicpop=re.search(r'([ATCGatcg]+):(\d+),(\d+)',snp[speciesidx])
                         archic_base=archicpop.group(1).strip().upper()
-#                         archicsnp = re.search(r"(\w*):(\d*),(\d*)", snp[6])
+#                         archicsnp = re.search(r"(\w*):(\d*),(\d*)", snp[speciesidx])
 #                         archicaltalle=archicsnp.group(1).strip().upper()
                         archicrefcount=int(archicpop.group(2).strip())
                         archicaltcount=int(archicpop.group(3).strip())
-#                         ancestralallel=snp[5].strip().upper()
+#                         ancestralallel=snp[farsurebutfewidx].strip().upper()
                         ref_base=snp[3].strip().upper()
-#                         if snp[5]!=None:
-#                             if snp[5].strip().upper()!=archicaltalle:
+#                         if snp[farsurebutfewidx]!=None:
+#                             if snp[farsurebutfewidx].strip().upper()!=archicaltalle:
 #                                 print("skip:",snp)
 #                                 continue
                         if (archicrefcount!=0 and archicaltcount!=0) or (archicrefcount+archicaltcount)<mindepth:
@@ -92,11 +97,11 @@ if __name__ == '__main__':
                         if int(popsnpcount[0].strip())+int(popsnpcount[1].strip())<mindepth:
                             continue
                         if archicpop.group(2).strip()=='0':
-                            if snp[5]!=None and archic_base!= snp[5].strip().upper():
+                            if snp[farsurebutfewidx]!=None and archic_base!= snp[farsurebutfewidx].strip().upper():
                                 continue
                             DAF=int(popsnpcount[1])/(int(popsnpcount[0])+int(popsnpcount[1]))#alt_allele is the ancestral allele
                         elif archicpop.group(3).strip()=='0':
-                            if snp[5]!=None and snp[5].strip().upper()!=ref_base:
+                            if snp[farsurebutfewidx]!=None and snp[farsurebutfewidx].strip().upper()!=ref_base:
                                 continue
                             DAF=int(popsnpcount[0])/(int(popsnpcount[0])+int(popsnpcount[1]))#ref_allele is the ancestral allele
 #                         if archicaltalle==snp[3].strip().upper():#ancestral allel is the same with ref allele type

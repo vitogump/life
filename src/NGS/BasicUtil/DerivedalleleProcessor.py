@@ -251,7 +251,7 @@ class MakeDerivedAlleletable():
         #                    print("update "+finaltable+" set fafilepos="+str(filepos)+" where snpID='"+currentsnpID+"'")
     def callblast(self,pathtoblastn,pathtorefdb,queryfaFile,BlastOutFile):
         #outfmt chose 6 suggest by zhaoyiqiang
-        shellstatment=pathtoblastn+" -query "+queryfaFile+" -task blastn -db "+pathtorefdb+" -out "+BlastOutFile +" -outfmt 7 -num_threads 4"
+        shellstatment=pathtoblastn+" -query "+queryfaFile+" -task blastn -db "+pathtorefdb+" -out "+BlastOutFile +" -outfmt 7 -num_threads 6"
         print(shellstatment)
         a = os.system(shellstatment)
         if a != 0:

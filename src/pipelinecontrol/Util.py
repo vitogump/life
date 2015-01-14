@@ -12,31 +12,46 @@ import src.web.DBA as DBA
 
 
 ISOTIMEFORMAT = '%Y-%m-%d %X'
-def upTodownTravelDir(rootDir, OperatorWithData, datadepth=9999, Interceptor_depth=0, curdepth=0):
+def upTodownTravelDir(rootDir, OperatorWithData, datadepth=9999, Interceptor_depth=0, curdepth=0,collection_depth=0,interceptdirs=[]):
     """
         
     """
     print(rootDir)
-    if Interceptor_depth == 0:
+    if collection_depth == 0:
         # data files are under the curdepth
+        print("righht")
         newcmdline = OperatorWithData.process(rootDir, datadepth, curdepth)#curdepth== the beginning value of the Interceptor_depth
         print('rootDir', rootDir, newcmdline)
         return
     # now go into a deeper dir
     curdepth = curdepth + 1
     Interceptor_depth = Interceptor_depth - 1
-    for elem in os.listdir(path=rootDir):
-        path = rootDir + "/" + elem
-        if not os.path.isdir(path):
-            # this is a data file
-            pass
-            # print("data",path)
-        else:
-            # this is a folder
-#             if len(mode2_Interceptor) > 1 and curdepth == mode2_Interceptor[0] and elem not in mode2_Interceptor[1:]:
-#                 continue  # this is for mode 2 only
-#             print("go into folder", path)
-            upTodownTravelDir(path, OperatorWithData, datadepth, Interceptor_depth, curdepth)
+    collection_depth=collection_depth-1
+    if Interceptor_depth==0:
+        for elem in os.listdir(path=rootDir):
+            path = rootDir + "/" + elem
+            if not os.path.isdir(path):
+                # this is a data file
+                pass
+                # print("data",path)
+            else:
+                if interceptdirs!=[] and re.search(r".*/([^/]+)$",path).group(1).strip() not in interceptdirs:
+                    
+                    continue
+                # this is a folder
+    #             if len(mode2_Interceptor) > 1 and curdepth == mode2_Interceptor[0] and elem not in mode2_Interceptor[1:]:
+    #                 continue  # this is for mode 2 only
+    #             print("go into folder", path)
+                print("here",path,collection_depth)
+                upTodownTravelDir(path, OperatorWithData, datadepth, Interceptor_depth, curdepth,collection_depth,interceptdirs=[])
+    elif Interceptor_depth<0:
+        for elem in os.listdir(path=rootDir):
+            path = rootDir + "/" + elem
+            if not os.path.isdir(path):
+                pass
+            else:
+                upTodownTravelDir(path, OperatorWithData, datadepth, Interceptor_depth, curdepth,collection_depth,interceptdirs=[])
+        
 
 
 class OperatorWithData():
@@ -63,7 +78,7 @@ class OperatorWithData_loadintodatabase(OperatorWithData):
                         self.ancestralalleletabletools.filldata(rootStr + "/" +datafilename,tablename=tablename)
         return "OperatorWithData_loadintodatabase return"
 class OperatorWithData_mode1(OperatorWithData):
-    def __init__(self, cmdtemplatefile, scriptsstoredir,interceptdirs=[]):
+    def __init__(self, cmdtemplatefile, scriptsstoredir):
         super().__init__(scriptsstoredir)
         self.cmdtemplatefilename=re.search(r"[^/]*$",cmdtemplatefile).group(0)
         scriptcontent=open(cmdtemplatefile,'r').read()
@@ -75,12 +90,12 @@ class OperatorWithData_mode1(OperatorWithData):
         print(scriptcontent,self.scriptcontext,self.inputdatapath,self.cmdline,sep="\n")
         self.outputlist=re.findall(r"\${output=\s*([^\s^\|]*)\|suffix=(.*?)}",self.cmdline)
 
-        self.interceptdirs=interceptdirs
+#         self.interceptdirs=interceptdirs
 
     def process(self, curpath, datadepth, curdepth):
         print("mode1 process")
-        if self.interceptdirs!=[] and re.search(r".*/([^/]+)$",curpath).group(1).strip() not in self.interceptdirs:
-            return
+#         if self.interceptdirs!=[] and re.search(r".*/([^/]+)$",curpath).group(1).strip() not in self.interceptdirs:
+#             return
         interceptdepth=curdepth
         newcmdline = self.cmdline
         subtargets = re.findall(r"\${.*?}", newcmdline)
@@ -143,7 +158,7 @@ class OperatorWithData_mode1(OperatorWithData):
 
 
 class OperatorWithData_mode2(OperatorWithData):
-    def __init__(self, cmdtemplatefile, scriptsstoredir,interceptdirs=[]):
+    def __init__(self, cmdtemplatefile, scriptsstoredir):
         """
         interceptdirs=([subdir names list expected in the assigned depth])
         """
@@ -159,11 +174,11 @@ class OperatorWithData_mode2(OperatorWithData):
         self.outputlist=re.findall(r"\${output=\s*([^\s^\|]*)\|suffix=(.*?)}",self.cmdline)
 
         
-        self.interceptdirs=interceptdirs
+#         self.interceptdirs=interceptdirs
 
         self.suffixstr=""
         self.outputlist=re.findall(r"\${output=\s*([^\s^\|]*)\|suffix=(.*?)}",self.cmdline)
-        outputoptionstr = re.search(r"(-[\w\d]+[=\s]+)\${output=.*\|suffix=.*?}", self.cmdline).group(1)  # for example "OUTPUT=${output} -o ${output}"
+#         outputoptionstr = re.search(r"(-[\w\d]+[=\s]+)\${output=.*\|suffix=.*?}", self.cmdline).group(1)  # for example "OUTPUT=${output} -o ${output}"
         
         for outputtuple in self.outputlist:
             outputpath=re.search(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}",self.cmdline).group(1)
@@ -178,13 +193,16 @@ class OperatorWithData_mode2(OperatorWithData):
 #         self.suffix = suffix
     def process(self, curpath, datadepth, curdepth):
         print("mode2 process")
-        if self.interceptdirs!=[] and re.search(r".*/([^/]+)$",curpath).group(1).strip() not in self.interceptdirs:
-            return
+#         if self.interceptdirs!=[] and re.search(r".*/([^/]+)$",curpath).group(1).strip() not in self.interceptdirs:
+#             return
         newcmdline = self.newcmdline
 
-        option_suffix_obj = re.search(r"([-\w\d]+[=\s]+)\${(.*?)}", newcmdline)  # for example "INPUT=${.bam} -i ${.sam}"
+        option_suffix_obj = re.search(r"(\s[-\w\d]+[=\s]+)\${(.*?)}", newcmdline)  # for example "INPUT=${.bam} -i ${.sam}"
         optionstr = option_suffix_obj.group(1)
         suffixstr = option_suffix_obj.group(2)
+        print(optionstr)
+        if re.search(r"(\s[-]+[\w\d]+[\s]+)", optionstr)==None and re.search(r"(\s[\w\d]+\s+[=]+\s+)", optionstr)==None:
+            optionstr=""
         print("optionstr",optionstr,"suffixstr",suffixstr)
         self.suffixstr=suffixstr
         datafiles = os.listdir(path=curpath)
