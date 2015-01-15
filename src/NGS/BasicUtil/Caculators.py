@@ -10,8 +10,9 @@ class Caculator():
     def getResult(self):
         pass
 class Caculate_SNPsPerBIN(Caculator):
-    def __init__(self,considerINDEL="no"):
+    def __init__(self,winwidth,considerINDEL="no"):
         self.considerINDEL=considerINDEL.lower()
+        self.winwidth=winwidth
         self.COUNTED=0
     def process(self, T,seqerrorrate=0.01):
         if self.considerINDEL=="no" and (len(T[1])!=1 or len(T[2])!=1):
@@ -44,8 +45,9 @@ class Caculate_SNPsPerBIN(Caculator):
         self.COUNTED+=1
     def getResult(self):
         snpsinthiswin=self.COUNTED
+        snpsdensity=snpsinthiswin/self.winwidth
         self.COUNTED=0
-        return snpsinthiswin
+        return snpsinthiswin,snpsdensity
 class Caculate_phastConsValue(Caculator):
     def __init__(self):
         super().__init__()
@@ -78,6 +80,7 @@ class Caculate_Dstatistics(Caculator):
         self.numerator_snp=0
         self.denominator_snp=0
         self.considerFixed=considerFixed
+        self.COUNTEDforSNP_notonlyfixed=0
     def process(self,T,seqerrorrate=0.01):
         """T:(pos,"a,b","c,d","e,f",A_base_idx)     1 - A_base_idx= B_base_idx ie. T[4] is the A idx . 1-T[4] is the B idx
         """
@@ -102,6 +105,7 @@ class Caculate_Dstatistics(Caculator):
         try:
             self.numerator_snp+=p3B/(p3B+p3A) * ((p1A/(p1A+p1B))*(p2B/(p2A+p2B)) - (p1B/(p1A+p1B))*(p2A/(p2A+p2B)))
             self.denominator_snp+=p3B/(p3B+p3A) * ((p1A/(p1A+p1B))*(p2B/(p2A+p2B)) + (p1B/(p1A+p1B))*(p2A/(p2A+p2B)))
+            self.COUNTEDforSNP_notonlyfixed+=1
         except ZeroDivisionError:
             print(self.denominator_snp,self.numerator_snp,T)
     def getResult(self):
@@ -114,8 +118,8 @@ class Caculate_Dstatistics(Caculator):
             D_fixed='NA'
             D_snp='NA'
         self.numerator_fixed=0;self.denominator_fixed=0;self.ABBA=0;self.BABA=0
-        self.numerator_snp=0;self.denominator_snp=0
-        return ABBAcount,BABAcount,D_fixed,D_snp
+        self.numerator_snp=0;self.denominator_snp=0;noofsnps=copy.deepcopy(self.COUNTEDforSNP_notonlyfixed);self.COUNTEDforSNP_notonlyfixed=0
+        return ABBAcount,BABAcount,D_fixed,D_snp,noofsnps
         
         
         
@@ -166,12 +170,16 @@ class Caculate_Hp(Caculator):
         except ZeroDivisionError:
             #print("the Heterozigosity value of currentwindow is dividsion by zero,so set it to be NA")
             HETEROZY = 'NA'
-        if self.COUNTED<=self.minsnps:
-            HETEROZY= 'NA'
+        
+        noofsnpcount=self.COUNTED
+        print(noofsnpcount)
+#         if self.COUNTED<=self.minsnps:
+#             HETEROZY= 'NA'
         self.CNMA = 0
         self.CNMI = 0
         self.COUNTED=0
-        return HETEROZY
+        print(noofsnpcount)
+        return noofsnpcount,HETEROZY
 class Caculate_depth_judge(Caculator):
     def __init__(self,sampleNo,winsize,mindepth):
         self.mindepth=int(mindepth)
@@ -197,7 +205,7 @@ class Caculate_depth_judge(Caculator):
         del self.COVERED_COUNT[:]
         self.COVERED_COUNT=[0]*self.sampleNo
         self.AVERAGE_DEPTH=[0]*self.sampleNo
-        return ([a/self.winsize for a in countlist],[a/self.winsize for a in average])
+        return "empty",([a/self.winsize for a in countlist],[a/self.winsize for a in average])
 class Caculate_Fst(Caculator):
     def __init__(self,minsnps=3,considerFixed=False):
         super().__init__()
@@ -259,9 +267,10 @@ class Caculate_Fst(Caculator):
         except ZeroDivisionError:
             #print("the Fst value of currentwindow is dividsion by zero,so set it to be NA")
             Fst = 'NA'
-        if self.COUNTED<=self.minsnps:
-            Fst='NA'
+#         if self.COUNTED<=self.minsnps:
+#             Fst='NA'
         self.CDk = 0
         self.CNk = 0
+        noofsnp=self.COUNTED
         self.COUNTED=0
-        return Fst
+        return noofsnp,Fst

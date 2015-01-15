@@ -64,9 +64,9 @@ if __name__ == '__main__':
     for vcf in vcffileslist[:]:
         vcfname=re.search(r"[^/]*$",vcf).group(0)
         outfile = open(outputpath+vcfname + ".snpperbin"+str(windowWidth)+"_"+str(slideSize), 'w')
-        print("chrNo\twinNo\tfirstsnppos\tlastsnppos\twinvalue\tzvalue",file=outfile)
+        print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnps\twinvalue\tzvalue",file=outfile)
         win = Util.Window()
-        snpcounter = Caculators.Caculate_SNPsPerBIN(considerINDEL=howtoIndel)
+        snpcounter = Caculators.Caculate_SNPsPerBIN(windowWidth,considerINDEL=howtoIndel)
         pop = VCFutil.VCF_Data(vcf)  # new a class
         snpbinmap = SNPsPerBIN()
 #        pop.getVcfMap(vcf)
@@ -83,17 +83,17 @@ if __name__ == '__main__':
                     win.slidWindowOverlap(vcflist_A_chrom, currentchrLen, windowWidth, slideSize, snpcounter)
                     snpbinmap.SNPsPerBINMap[currentchrID]=copy.deepcopy(win.winValueL)
                 else:
-                    fillNA=[(0,0,0)]
+                    fillNA=[(0,0,0,0)]
                     for i in range(int((currentchrLen-windowWidth)/slideSize)):
-                        fillNA.append((0,0,0))
+                        fillNA.append((0,0,0,0))
                     snpbinmap.SNPsPerBINMap[currentchrID]=fillNA
         
         winCrossGenome = []
         for chrom in snpbinmap.SNPsPerBINMap.keys():
             for i in range(len(snpbinmap.SNPsPerBINMap[chrom])):
-                if snpbinmap.SNPsPerBINMap[chrom][i][2]=='NA':
-                    snpbinmap.SNPsPerBINMap[chrom][i]=(0,0,0)# replace NA to 0
-                winCrossGenome.append(snpbinmap.SNPsPerBINMap[chrom][i][2])
+                if snpbinmap.SNPsPerBINMap[chrom][i][3]=='NA':
+                    snpbinmap.SNPsPerBINMap[chrom][i]=(0,0,0,0)# replace NA to 0
+                winCrossGenome.append(snpbinmap.SNPsPerBINMap[chrom][i][3])
         expectation = numpy.mean(winCrossGenome)
         std0 = numpy.std(winCrossGenome)
         std1 = numpy.std(winCrossGenome, ddof=1)
@@ -112,24 +112,24 @@ if __name__ == '__main__':
                     for i in range(len(snpbinmap.SNPsPerBINMap[currentchrID])):
                             if consider_Depth and len(speicesidxs_inbindepthmap)==1:
                                 if bindepth.depthbinmap[currentchrID][i][speicesidxs_inbindepthmap[0]]=="filtered":
-                                    print(currentchrID + "\t" + str(i) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][0]) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][1]) + "\t" + "NA" + "\t" + 'NA', file=outfile)
+                                    print(currentchrID + "\t" + str(i) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][0]) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][1]) + "\t"+"NA"+"\t" + "NA" + "\t" + 'NA', file=outfile)
                                 elif bindepth.depthbinmap[currentchrID][i][speicesidxs_inbindepthmap[0]]=="passed":
 #                                 snpsperkb = snpbinmap.SNPsPerBINMap[currentchrID][i][2]/(windowWidth/1000)
-                                    log2snpsperbin = numpy.log2(snpbinmap.SNPsPerBINMap[currentchrID][i][2])
-                                    print(currentchrID + "\t" + str(i) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][0]) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][1]) + "\t" + '%.18f'%(snpbinmap.SNPsPerBINMap[currentchrID][i][2]) + "\t" + '%.12f'%(log2snpsperbin), file=outfile)
+                                    log2snpsperbin = numpy.log2(snpbinmap.SNPsPerBINMap[currentchrID][i][3])
+                                    print(currentchrID + "\t" + str(i) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][0]) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][1]) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][2]) + "\t" +'%.18f'%(snpbinmap.SNPsPerBINMap[currentchrID][i][3])+"\t"+ '%.12f'%(log2snpsperbin), file=outfile)
                                 else:
                                     print(currentchrID,str(i),snpbinmap.SNPsPerBINMap[currentchrID],"doesnot exist in snpbinmap")
                             elif consider_Depth and len(speicesidxs_inbindepthmap)>1:# 
                                 for idx in speicesidxs_inbindepthmap:# pass if any speicese is "passed"
                                     if bindepth.depthbinmap[currentchrID][i][idx]=="passed":
-                                        log2snpsperbin = numpy.log2(snpbinmap.SNPsPerBINMap[currentchrID][i][2])
-                                        print(currentchrID + "\t" + str(i) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][0]) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][1]) + "\t" + '%.18f'%(snpbinmap.SNPsPerBINMap[currentchrID][i][2]) + "\t" + '%.12f'%(log2snpsperbin), file=outfile)
+                                        log2snpsperbin = numpy.log2(snpbinmap.SNPsPerBINMap[currentchrID][i][3])
+                                        print(currentchrID + "\t" + str(i) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][0]) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][1]) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][2]) + "\t"+'%.18f'%(snpbinmap.SNPsPerBINMap[currentchrID][i][3])+'\t' + '%.12f'%(log2snpsperbin), file=outfile)
                                         break
                                 else:
-                                    print(currentchrID + "\t" + str(i) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][0]) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][1]) + "\t" + "NA" + "\t" + 'NA', file=outfile)
+                                    print(currentchrID + "\t" + str(i) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][0]) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][1]) + "\t" +"NA"+"\t"+ "NA" + "\t" + 'NA', file=outfile)
                             elif not consider_Depth:
-                                log2snpsperbin = numpy.log2(snpbinmap.SNPsPerBINMap[currentchrID][i][2])
-                                print(currentchrID + "\t" + str(i) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][0]) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][1]) + "\t" + '%.18f'%(snpbinmap.SNPsPerBINMap[currentchrID][i][2]) + "\t" + '%.12f'%(log2snpsperbin), file=outfile)
+                                log2snpsperbin = numpy.log2(snpbinmap.SNPsPerBINMap[currentchrID][i][3])
+                                print(currentchrID + "\t" + str(i) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][0]) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][1]) +"\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][2]) +"\t" + '%.18f'%(snpbinmap.SNPsPerBINMap[currentchrID][i][2]) + "\t" + '%.12f'%(log2snpsperbin), file=outfile)
                 else:
                     print("not find this chr:",currentchrID)
         print(vcfname+str(windowWidth)+"_"+str(slideSize), str(expectation), str(std0), str(std1), file=open(outputpath+"caculateSNPratePerBinstaticvalue.txt", 'a'))

@@ -79,9 +79,9 @@ if __name__ == '__main__':
                 mywin.slidWindowOverlap(alllist_a_chrom, currentchrLen, windowWidth, slideSize, caculator)
                 depthbinmap[currentchrID] = copy.deepcopy(mywin.winValueL)
             else:
-                fillNA = [(0, 0, ([0]*(len(depthfile.title)-3),[0]*(len(depthfile.title)-3)))]
+                fillNA = [(0, 0, 0,([0]*(len(depthfile.title)-3),[0]*(len(depthfile.title)-3)))]
                 for i in range(int((currentchrLen - windowWidth) / slideSize)):
-                    fillNA.append((0, 0, ([0]*(len(depthfile.title)-3),[0]*(len(depthfile.title)-3))))
+                    fillNA.append((0, 0, 0,([0]*(len(depthfile.title)-3),[0]*(len(depthfile.title)-3))))
                 depthbinmap[currentchrID] = fillNA
             #print all wins of a chrom into file
             """
@@ -90,9 +90,9 @@ if __name__ == '__main__':
             for winNo in range(len(depthbinmap[currentchrID])):
                 judgelist=[]
                 valuelist=[]
-                for i in range(len(depthbinmap[currentchrID][winNo][2][0])):
-                    valuelist.append((str(depthbinmap[currentchrID][winNo][2][0][i]),str(depthbinmap[currentchrID][winNo][2][1][i])))
-                    if depthbinmap[currentchrID][winNo][2][0][i]>=percentage and int(depthbinmap[currentchrID][winNo][2][1][i]) >=averagedepth:
+                for i in range(len(depthbinmap[currentchrID][winNo][3][0])):
+                    valuelist.append((str(depthbinmap[currentchrID][winNo][3][0][i]),str(depthbinmap[currentchrID][winNo][3][1][i])))
+                    if depthbinmap[currentchrID][winNo][3][0][i]>=percentage and int(depthbinmap[currentchrID][winNo][3][1][i]) >=averagedepth:
                         judgelist.append("passed")
                     else:
                         judgelist.append("filtered")

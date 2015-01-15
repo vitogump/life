@@ -788,12 +788,13 @@ class Window():
                     nextIdx = currentIdx
                     FoundNextIdx = True
             else:
-                value = Caculator.getResult()
+                noofsnps,value = Caculator.getResult()
+                print("Caculator.getResult()",value,noofsnps)
                 try:
-                    self.winValueL.append((startPos, lastPos, value))
+                    self.winValueL.append((startPos, lastPos,noofsnps, value))
                 except:
                     print("no snp in first win",len(L),currentIdx,value,L[currentIdx])
-                    self.winValueL.append((0,0,value))
+                    self.winValueL.append((0,0,0,value))
                     winStart+=slideSize
                     continue
 #                 self.winValueL.append((0, 0, value))
@@ -806,14 +807,16 @@ class Window():
                         while not (L[currentIdx][0] > winStart and  L[currentIdx][0] <= (winStart + windowWidth)) and L[currentIdx][0]> winStart+windowWidth:
                             
                             winStart+=slideSize
-                            self.winValueL.append((0, 0, Caculator.getResult()))
+                            noofsnps,value = Caculator.getResult()
+                            self.winValueL.append((0, 0,noofsnps,value))
                         if L[currentIdx][0]<winStart:
                             while currentIdx != len(L):
                                 if L[currentIdx][0] > winStart and L[currentIdx][0] <= (winStart + windowWidth):
                                     break
                                 elif L[currentIdx][0] < winStart:
                                     winStart+=slideSize
-                                    self.winValueL.append((0, 0, Caculator.getResult()))
+                                    noofsnps,value = Caculator.getResult()
+                                    self.winValueL.append((0, 0,noofsnps,value))
                                 currentIdx += 1
 #                             self.winValueL.append((0,0,'NA'))
 #                             winStart += slideSize
@@ -825,16 +828,17 @@ class Window():
                 
             currentIdx += 1
         else:
-            value = Caculator.getResult()
+            noofsnps,value = Caculator.getResult()
             try :
-                self.winValueL.append((startPos, lastPos, value))
+                self.winValueL.append((startPos, lastPos,noofsnps, value))
             except UnboundLocalError:
-                self.winValueL.append((0, 0, value))
+                self.winValueL.append((0, 0,noofsnps, value))
 #             
         
         n = int((L_End_Pos - (len(self.winValueL) * slideSize + windowWidth)) / slideSize) + 1
         for i in range(n):
-            self.winValueL.append((0, 0, Caculator.getResult()))
+            noofsnps,value = Caculator.getResult()
+            self.winValueL.append((0, 0,noofsnps,value))
         
 class WinInGenome():           
     def __init__(self, dbname, winFileName6Field, tableName=None):
@@ -854,6 +858,7 @@ class WinInGenome():
             " `winNo` varchar(128) NOT NULL,"
             " `bp_start` varchar(128) NOT NULL,"
             " `bp_end` varchar(128) NOT NULL,"
+            " `snpcount` varchar(64) NOT NULL,"
             " `winvalue` double NOT NULL,"#########why?
             " `zvalue` double NOT NULL,"##########
             " PRIMARY KEY (`chrID`,`winNo`)"
@@ -865,6 +870,7 @@ class WinInGenome():
             " `winNo` varchar(128) NOT NULL,"
             " `bp_start` varchar(128) NOT NULL,"
             " `bp_end` varchar(128) NOT NULL,"
+            " `snpcount` varchar(64) NOT NULL,"
             " `winvalue` text NOT NULL,"##############why?
             " `zvalue` text NOT NULL,"###############
             " PRIMARY KEY (`chrID`,`winNo`)"

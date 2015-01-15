@@ -51,7 +51,7 @@ if __name__ == '__main__':
     for vcf in vcffileslist[:]:
         vcfname=re.search(r"[^/]*$",vcf).group(0)
         outfile = open(outputpath+vcfname + ".het"+str(windowWidth)+"_"+str(slideSize), 'w')
-        print("chrNo\twinNo\tfirstsnppos\tlastsnppos\twinvalue\tzvalue",file=outfile)
+        print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnp\twinvalue\tzvalue",file=outfile)
         win = Util.Window()
         hp_caculator = Caculators.Caculate_Hp()
         pop = VCFutil.VCF_Data(vcf)  # new a class
@@ -70,16 +70,16 @@ if __name__ == '__main__':
                     win.slidWindowOverlap(vcflist_A_chrom, currentchrLen, windowWidth, slideSize, hp_caculator)
                     hscore.HeterozyMap[currentchrID]=copy.deepcopy(win.winValueL)
                 else:
-                    fillNA=[(0,0,'NA')]
+                    fillNA=[(0,0,0,'NA')]
                     for i in range(int((currentchrLen-windowWidth)/slideSize)):
-                        fillNA.append((0,0,'NA'))
+                        fillNA.append((0,0,0,'NA'))
                     hscore.HeterozyMap[currentchrID]=fillNA
         
         winCrossGenome = []
         for chrom in hscore.HeterozyMap.keys():
             for i in range(len(hscore.HeterozyMap[chrom])):
-                if hscore.HeterozyMap[chrom][i][2] != 'NA':
-                    winCrossGenome.append(hscore.HeterozyMap[chrom][i][2])
+                if hscore.HeterozyMap[chrom][i][3] != 'NA':
+                    winCrossGenome.append(hscore.HeterozyMap[chrom][i][3])
         expectation = numpy.mean(winCrossGenome)
         std0 = numpy.std(winCrossGenome)
         std1 = numpy.std(winCrossGenome, ddof=1)
@@ -95,12 +95,12 @@ if __name__ == '__main__':
                 if currentchrID in hscore.HeterozyMap:       
         #        for chrom in sorted(hscore.HeterozyMap.keys()):
                     for i in range(len(hscore.HeterozyMap[currentchrID])):
-                        if hscore.HeterozyMap[currentchrID][i][2] != "NA":
-                            zHp = (hscore.HeterozyMap[currentchrID][i][2] - expectation) / std1
-                            print(currentchrID + "\t" + str(i) + "\t" + str(hscore.HeterozyMap[currentchrID][i][0]) + "\t" + str(hscore.HeterozyMap[currentchrID][i][1]) + "\t" + '%.18f'%(hscore.HeterozyMap[currentchrID][i][2]) + "\t" + '%.12f'%(zHp), file=outfile)
+                        if hscore.HeterozyMap[currentchrID][i][3] != "NA":
+                            zHp = (hscore.HeterozyMap[currentchrID][i][3] - expectation) / std1
+                            print(currentchrID + "\t" + str(i) + "\t" + str(hscore.HeterozyMap[currentchrID][i][0]) + "\t" + str(hscore.HeterozyMap[currentchrID][i][1]) + "\t" +str(hscore.HeterozyMap[currentchrID][i][2])+"\t"+ '%.18f'%(hscore.HeterozyMap[currentchrID][i][3]) + "\t" + '%.12f'%(zHp), file=outfile)
                         else:
                             zHp = "NA"
-                            print(currentchrID + "\t" + str(i) + "\t" + str(hscore.HeterozyMap[currentchrID][i][0]) + "\t" + str(hscore.HeterozyMap[currentchrID][i][1]) + "\t" + hscore.HeterozyMap[currentchrID][i][2] + "\t" + zHp, file=outfile)
+                            print(currentchrID + "\t" + str(i) + "\t" + str(hscore.HeterozyMap[currentchrID][i][0]) + "\t" + str(hscore.HeterozyMap[currentchrID][i][1]) + "\t"+str(hscore.HeterozyMap[currentchrID][i][2])+"\t" + hscore.HeterozyMap[currentchrID][i][3] + "\t" + zHp, file=outfile)
         print(vcf, str(expectation), str(std0), str(std1), file=open(outputpath+"staticvalue.txt", 'a'))
         outfile.close()
     dbtools.disconnect()

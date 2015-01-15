@@ -27,7 +27,7 @@ class Dstatistics():
                 snpsInAChr=self.dbtools.operateDB("select","select snp_pos,ref_base,alt_base,ancestralallel,archicpop,"+p1name+","+p2name+","+p3name+" from "+self.allpopssnptable+" where chrID='"+currentchrID+"'")
                 all4popallposInAChr=[]
                 if len(snpsInAChr)==0:
-                    self.DMapByChrom[currentchrID]=[(0,0,'NA','NA')]
+                    self.DMapByChrom[currentchrID]=[(0,0,'NA',0,'NA')]
                     continue
                 for snp in snpsInAChr:
                     if snp[4]==None or snp[4].strip() == "no covered" or snp[5].strip()=="no covered" or snp[6].strip()=="no covered" or snp[7].strip()=="no covered":
@@ -63,8 +63,8 @@ class Dstatistics():
                     for site in all4popallposInAChr:
                         caculator.process(site)
                     else:
-                        ABBAcount,BABAcount,D_fixed,D_snp=caculator.getResult()
-                    self.DMapByChrom[currentchrID]=[(ABBAcount,BABAcount,D_fixed,D_snp)]
+                        ABBAcount,BABAcount,D_fixed,D_snp,noofsnps=caculator.getResult()
+                    self.DMapByChrom[currentchrID]=[(ABBAcount,BABAcount,D_fixed,noofsnps,D_snp)]
                 else:
                     print("ing....")#call self.caculateDstatistics() to caculate D in every windows
                     pass
