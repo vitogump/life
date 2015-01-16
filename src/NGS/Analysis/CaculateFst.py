@@ -164,7 +164,7 @@ if __name__ == '__main__':
             
         allkindofpaire = list(combinations(vcffileslist[:], 2))
         alldistMap={}
-        tempdbtools = dbm.DBTools("10.2.48.140", "root", "1234567", "temp")
+        tempdbtools = dbm.DBTools("10.2.48.140", "root", "1234567", "ninglabvariantdata_tmp")
         TABLES = {}
         TABLES[treearrayprename+"treearray"] = (
             "CREATE TABLE "+treearrayprename+"treearray ("
@@ -188,7 +188,7 @@ if __name__ == '__main__':
             fst_caculator = Caculators.Caculate_Fst()
 
             fst = Fst() 
-            tempdbtools.operateDB("callproc", "mysql_sp_add_column", data=("temp", treearrayprename+"treearray", (fstpaire1name[0:5]+fstpaire2name[0:5]), "text", "default null"))
+            tempdbtools.operateDB("callproc", "mysql_sp_add_column", data=("ninglabvariantdata_tmp", treearrayprename+"treearray", (fstpaire1name[0:5]+fstpaire2name[0:5]), "text", "default null"))
                 
             print("startcaculatefst:\n", fstpaire1name,fstpaire[0],'\n', fstpaire2name,fstpaire[1])
             fst.caculateFstAccordingdb(dbtools, chromtable, fstpaire[0], fstpaire[1], fst_caculator, windowWidth,slideSize,minlength)
@@ -288,11 +288,13 @@ if __name__ == '__main__':
                     for winNo in range(0,len(fstlist[0].FstMapByChrom[chrom])):
                         sumFstInAWin=0
                         Number=0
+                        minNumberOfsnp=10000000000000000000000000000000000000000000
                         for i in range(0,len(fstlist)):
                             try:
 
                                 if fstlist[i].FstMapByChrom[chrom][winNo][3]!= 'NA':
                                     Number+=1
+                                    minNumberOfsnp=min(minNumberOfsnp,fstlist[i].FstMapByChrom[chrom][winNo][2])
                                     sumFstInAWin+=fstlist[i].FstMapByChrom[chrom][winNo][3]
                             except IndexError:
                                 for j in range(0,len(fstlist)):
@@ -302,15 +304,15 @@ if __name__ == '__main__':
                             gfst=sumFstInAWin/Number
                         except ZeroDivisionError:
                             gfst="NA"
-                        globalFstMapByChrom[chrom].append((fstlist[0].FstMapByChrom[chrom][winNo][0],fstlist[0].FstMapByChrom[chrom][winNo][1],gfst))
+                        globalFstMapByChrom[chrom].append((fstlist[0].FstMapByChrom[chrom][winNo][0],fstlist[0].FstMapByChrom[chrom][winNo][1],minNumberOfsnp,gfst))
 #                         print(chrom + "\t" + str(winNo) + "\t" + str(fstlist[0].FstMapByChrom[chrom][winNo][0]) + "\t" + str(fstlist[0].FstMapByChrom[chrom][winNo][1]) + "\t" + str(gfst), file=outfile)
 
 
                 winCrossGenome = []
                 for chrom in globalFstMapByChrom.keys():
                     for i in range(len(globalFstMapByChrom[chrom])):
-                        if globalFstMapByChrom[chrom][i][2] != "NA":
-                            winCrossGenome.append(globalFstMapByChrom[chrom][i][2])
+                        if globalFstMapByChrom[chrom][i][3] != "NA":
+                            winCrossGenome.append(globalFstMapByChrom[chrom][i][3])
                 exception = numpy.mean(winCrossGenome)
                 std0 = numpy.std(winCrossGenome, ddof=0)
                 std1 = numpy.std(winCrossGenome, ddof=1)
@@ -328,9 +330,9 @@ if __name__ == '__main__':
                             for i in range(len(globalFstMapByChrom[currentchrID])):
                                 if globalFstMapByChrom[currentchrID][i][2] != "NA":
                                     zgFst = (globalFstMapByChrom[currentchrID][i][2] - exception) / std1
-                                    print(currentchrID + "\t" + str(i) + "\t" + str(globalFstMapByChrom[currentchrID][i][0]) + "\t" + str(globalFstMapByChrom[currentchrID][i][1]) +"\t" + str(fst.FstMapByChrom[currentchrID][i][2]) + "\t" + '%.18f'%(globalFstMapByChrom[currentchrID][i][2]) + "\t" + '%.12f'%(zgFst), file=outfile)
+                                    print(currentchrID + "\t" + str(i) + "\t" + str(globalFstMapByChrom[currentchrID][i][0]) + "\t" + str(globalFstMapByChrom[currentchrID][i][1]) +"\t" + str(globalFstMapByChrom[currentchrID][i][2]) + "\t" + '%.18f'%(globalFstMapByChrom[currentchrID][i][3]) + "\t" + '%.12f'%(zgFst), file=outfile)
                                 else:
                                     zgFst = "NA"
-                                    print(currentchrID + "\t" + str(i) + "\t" + str(globalFstMapByChrom[currentchrID][i][0]) + "\t" + str(globalFstMapByChrom[currentchrID][i][1]) +"\t" + str(fst.FstMapByChrom[currentchrID][i][2]) + "\t" + globalFstMapByChrom[currentchrID][i][2] + "\t" + zgFst, file=outfile)
+                                    print(currentchrID + "\t" + str(i) + "\t" + str(globalFstMapByChrom[currentchrID][i][0]) + "\t" + str(globalFstMapByChrom[currentchrID][i][1]) +"\t" + str(globalFstMapByChrom[currentchrID][i][2]) + "\t" + globalFstMapByChrom[currentchrID][i][3] + "\t" + zgFst, file=outfile)
             outfile.close()                    
     dbtools.disconnect()

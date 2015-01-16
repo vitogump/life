@@ -71,7 +71,7 @@ if __name__ == '__main__':
                     hscore.HeterozyMap[currentchrID]=copy.deepcopy(win.winValueL)
                 else:
                     fillNA=[(0,0,0,'NA')]
-                    for i in range(int((currentchrLen-windowWidth)/slideSize)):
+                    for i in range(int(currentchrLen/slideSize)):
                         fillNA.append((0,0,0,'NA'))
                     hscore.HeterozyMap[currentchrID]=fillNA
         
