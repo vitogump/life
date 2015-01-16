@@ -172,13 +172,11 @@ class Caculate_Hp(Caculator):
             HETEROZY = 'NA'
         
         noofsnpcount=self.COUNTED
-        print(noofsnpcount)
 #         if self.COUNTED<=self.minsnps:
 #             HETEROZY= 'NA'
         self.CNMA = 0
         self.CNMI = 0
         self.COUNTED=0
-        print(noofsnpcount)
         return noofsnpcount,HETEROZY
 class Caculate_depth_judge(Caculator):
     def __init__(self,sampleNo,winsize,mindepth):

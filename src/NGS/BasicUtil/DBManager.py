@@ -104,9 +104,9 @@ class DBTools():
                 else:
                     print(err.errmsg)
                     return -1
-            else:
-                print('OK')
-                return 'OK'
+        else:
+            print('OK')
+            return 'OK'
         cursor.close()
 #    def load_file(self,sql):
 #        print(sql)

@@ -789,7 +789,6 @@ class Window():
                     FoundNextIdx = True
             else:
                 noofsnps,value = Caculator.getResult()
-                print("Caculator.getResult()",value,noofsnps)
                 try:
                     self.winValueL.append((startPos, lastPos,noofsnps, value))
                 except:
@@ -876,7 +875,7 @@ class WinInGenome():
             " PRIMARY KEY (`chrID`,`winNo`)"
             ")"
             )        
-        
+        print(TABLES)
         tempdbtools.create_table(TABLES)
         
         a=os.system("awk '$0!~/NA/ && NR!=1{print $0}' "+winFileName6Field+">"+winFileName6Field+"_tmpfile")
