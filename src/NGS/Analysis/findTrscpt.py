@@ -11,11 +11,12 @@ Created on 2013-9-3
 parser = OptionParser()
 parser.add_option("-i", "--winfile", dest="winfileName",
                   help="reference.fa", metavar="FILE")
-parser.add_option("-D", "--tempDBname", dest="tempdbname", help="dbname")
+parser.add_option("-1", "--tempDBname", dest="tempdbname", help="dbname")
 parser.add_option("-t", "--threshold", dest="threshold", help="conflict with -p")
 parser.add_option("-p", "--percentage", dest="percentage",default=None, help="conflict with -t")
 parser.add_option("-o", "--outfileprename", dest="outfileprename", help="outfileprename")
-parser.add_option("-x", "--morethan_lessthan", dest="morethan_lessthan", help="morethan or lessthan")
+parser.add_option("-x", "--morethan_lessthan", dest="morethan_lessthan", help="m:morethan or l:lessthan")
+parser.add_option("-2", "--trscptableDatabases", dest="trscptableDatabases", help="trscptableDatabases")
 parser.add_option("-T", "--trscptable", dest="trscptable", help="trscptable")
 parser.add_option("-u", "--upextend", dest="upextend", help="upextend")
 parser.add_option("-d", "--downextend", dest="downextend", help="downextend")
@@ -48,7 +49,7 @@ vcftable=None
 outfile=open(outfilename,'w')
 outfileNameWINwithGENE=winFileName6Field+".wincopywithgene"
 if __name__ == '__main__':
-    dbtools = dbm.DBTools("10.2.48.140", "root", "1234567", "life_pilot")
+    dbtools = dbm.DBTools("10.2.48.140", "root", "1234567", options.trscptableDatabases.strip())
 #    dbtools.operateDB("alter","alter table "+gene_sample_venn+" add "+outfilename+" smallint(3) default 0") 
     winGenome = Util.WinInGenome(tempwinDBName, winFileName6Field)
     time.sleep(SLEEP_FOR_NEXT_TRY)
@@ -140,17 +141,28 @@ if __name__ == '__main__':
             selectedRegion[chrom].append((chrom,Region_start,Region_end,Nwin,extremeValue))
 #    get final table
     final_table={}
+
     for chrom in selectedRegion:
         for region in selectedRegion[chrom]:
             final_table[region]=winGenome.collectTrscptInWin(dbtools,TranscriptGenetable,vcftable,region)
 #    for win in selectedWins:
 #        winRegion=(win,upextend,downextend)
 #        winGenome.collectTrscptInWin(dbtools, TranscriptGenetable, vcftable, winRegion)
-    for region in sorted(final_table.keys()):
-        tcpts=""
-        for tcpt in final_table[region]:
-            tcpts+=(tcpt[0]+"\t")
-        print("\t".join(map(str,region)),tcpts,sep="\t",file=outfile)
+    for chrom in winGenome.chromOrder:
+        for region in final_table.keys(): 
+            if chrom.strip()==region[0].strip():
+                tcpts=""
+                gnames=""
+                for tcpt in final_table[region]:
+                    tcpts+=(tcpt[0]+",")
+                    if tcpt[2].strip()!="":
+                        gnames+=(tcpt[2]+",")
+                print("\t".join(map(str,region)),tcpts,gnames,sep="\t",file=outfile)                  
+#     for region in sorted(final_table.keys()):
+#         tcpts=""
+#         for tcpt in final_table[region]:
+#             tcpts+=(tcpt[0]+"\t")
+#         print("\t".join(map(str,region)),tcpts,sep="\t",file=outfile)
     winGenome.appendGeneName(TranscriptGenetable, dbtools, winWidth, slideSize, outfileNameWINwithGENE)   
     winGenome.windbtools.drop_table(winGenome.wintabletextvalueallwin)
     winGenome.windbtools.drop_table(winGenome.wintablewithoutNA)     

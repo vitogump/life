@@ -1,0 +1,29 @@
+CREATE TABLE `snp_toplevel_pekingduckref` (             
+                    `chrID` char(128) NOT NULL DEFAULT '',      
+                    `snp_pos` bigint(20) NOT NULL DEFAULT '0',  
+                    `snpID` char(128) NOT NULL,                 
+                    `ref_base` varchar(1000) DEFAULT NULL,      
+                    `alt_base` varchar(1000) DEFAULT NULL,      
+                    PRIMARY KEY (`chrID`,`snp_pos`)             
+                  ) ENGINE=InnoDB DEFAULT CHARSET=utf8
+
+CREATE TABLE pekingduckchrominfo(
+	chrID char(128),
+	chrlength bigint(20)
+	)ENGINE=MyISAM DEFAULT CHARSET=utf8
+
+create table pekinduckchromTranscript(
+	transcript_ID varchar(128) NOT NULL,
+	chrID varchar(128) not null ,
+	start_pos bigint(20),
+	end_pos bigint(20),
+	geneID varchar(128),
+	strand char(1),
+	primary key (transcript_ID),
+	#foreign key(geneID)references gene(geneID),
+	foreign key(chrID)references chromsomee(chrID))ENGINE=MyISAM DEFAULT CHARSET=utf8
+
+awk '$1~/^[^(]/{print $0}' protein_codingMap.sort.txt >1.txt
+awk '/transcrpit: /{b=$1}/ENSAPLT/{OFS="\t";a=$0;for(i=1;i<=3;i++){getline;a=a"\t"$0}print b,a}' 1.txt >2.txt
+awk '{OFS="\t";print $2,$1,$4,$5,"unknow",$3}' 2.txt >3.txt
+将3.txt导入到 pekinduckchromTranscript 表

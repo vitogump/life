@@ -843,9 +843,10 @@ class WinInGenome():
     def __init__(self, dbname, winFileName6Field, tableName=None):
         super().__init__()
         self.dbname=dbname
-        self.windbtools, self.wintablewithoutNA,self.wintabletextvalueallwin = self.loadWinDataIntoDB(dbname, winFileName6Field, tableName)
+        self.chromOrder,self.windbtools, self.wintablewithoutNA,self.wintabletextvalueallwin = self.loadWinDataIntoDB(dbname, winFileName6Field, tableName)
         self.winContainTrscptMap = {}
     def loadWinDataIntoDB(self, dbname, winFileName6Field, tableNamewithNA=None):
+        chromOrder=[]
         if tableNamewithNA == None:
             tableNamewithNA = random_str()
         tableNametextValueForappendGeneName=tableNamewithNA+"textField"
@@ -877,7 +878,10 @@ class WinInGenome():
             )        
         print(TABLES)
         tempdbtools.create_table(TABLES)
-        
+        a = os.popen("awk '{print $1}' "+winFileName6Field+"|uniq")
+        for chromNo in a:
+            chromOrder.append(chromNo.strip())
+        a.close()
         a=os.system("awk '$0!~/NA/ && NR!=1{print $0}' "+winFileName6Field+">"+winFileName6Field+"_tmpfile")
         if a != 0:
             print("awk '$0!~/NA/ && NR!=1{print $0}' "+winFileName6Field+">"+winFileName6Field+"_tmpfile"+": failed")
@@ -905,10 +909,10 @@ class WinInGenome():
         print(shellstatment+":ok")        
 #        tempdbtools.load_file(tableName,"chrID","winNo","bp_start","bp_end","value","zvalue",fileName=winFileName6Field)
 
-        return tempdbtools, tableNamewithNA,tableNametextValueForappendGeneName 
+        return chromOrder,tempdbtools, tableNamewithNA,tableNametextValueForappendGeneName 
     def appendGeneName(self,TranscriptGenetable,dbtools,winwidth,slideSize,outfileName):
         outfile=open(outfileName,'w')
-        print("chrNo\twinNo\tfirstsnppos\tlastsnppos\twinvalue\tzvalue\tgeneName\ttrscptID",file=outfile)
+        print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnps\twinvalue\tzvalue\tgeneName\ttrscptID",file=outfile)
         totalWins=self.windbtools.operateDB("select","select count(*) from "+self.wintabletextvalueallwin)[0][0]
         allwins = self.windbtools.operateDB("select", "select * from " + self.wintabletextvalueallwin+" limit 1,"+str(totalWins))
         self.windbtools.operateDB("callproc", "mysql_sp_add_column", data=(self.dbname, self.wintabletextvalueallwin, "geneName", "varchar(128)", "default null"))
@@ -918,6 +922,7 @@ class WinInGenome():
             geneNames=""
             trscptIDs=""
             for rec in self.collectTrscptInWin(dbtools, TranscriptGenetable, None, region):
+                print("rec",rec)
                 trscptIDs+=rec[0].strip()+";"
                 if rec[2].strip()!="":
                     geneNames+=(rec[2].strip()+";")
@@ -932,19 +937,7 @@ class WinInGenome():
             else:
                 print(*win,sep="\t",file=outfile)
         outfile.close()
-#        exportdatasql = "select * into outfile '/home/liurui/temp/tempsql.txt' from "+self.wintable.strip()
-#        shellstatment = "mysql -uroot -p1234567 -D" + self.dbname.strip() + ' -e "' + exportdatasql + '"'
-#        print(shellstatment)
-#        a = os.system(shellstatment)
-#        if a != 0:
-#            print("Util : loadWinDataIntaDB func os.system return not 0")
-#            exit(-1)
-#        print(a)
-#        os.system("mv /home/liurui/temp/tempsql.txt "+outfileName)
-#        if a != 0:
-#            print("Util : mv command failed")
-#            exit(-1)
-#        print(a)
+
     def collectTrscptInWin(self, dbtools, trscptableName, vcftable, region):
         """select region overlaped with the trscpt
         reture a list of trscpts [tp_generecord1,tp_generecord2,,,]
