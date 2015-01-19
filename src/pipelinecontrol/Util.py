@@ -78,8 +78,9 @@ class OperatorWithData_loadintodatabase(OperatorWithData):
                         self.ancestralalleletabletools.filldata(rootStr + "/" +datafilename,tablename=tablename)
         return "OperatorWithData_loadintodatabase return"
 class OperatorWithData_mode1(OperatorWithData):
-    def __init__(self, cmdtemplatefile, scriptsstoredir):
+    def __init__(self, cmdtemplatefile, scriptsstoredir,taglen=1):
         super().__init__(scriptsstoredir)
+        self.taglen=int(taglen)
         self.cmdtemplatefilename=re.search(r"[^/]*$",cmdtemplatefile).group(0)
         scriptcontent=open(cmdtemplatefile,'r').read()
         
@@ -107,8 +108,12 @@ class OperatorWithData_mode1(OperatorWithData):
                 subtargets.remove(target)
                 continue
             targetdatasuffix.append(c)
+        tagname=""
+        for i in range(self.taglen):
+            tagname="/"+re.search(r".*/([^/]+)"+tagname+"$", curpath).group(1)+tagname
+        tagname=re.sub(r"/","_",tagname[1:])
         updirname = re.search(r".*/([^/]+)$", curpath).group(1)
-        newcmdline=re.sub(r"\${tag}",updirname,newcmdline)
+        newcmdline=re.sub(r"\${tag}",tagname,newcmdline)
 
         pathToOutputdata_createdir = ""
 

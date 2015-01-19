@@ -69,7 +69,7 @@ if __name__ == '__main__':
 #             tempdbtools.operateDB("callproc", "mysql_sp_add_column", data=(options.dbname, tablename, regionName+"MAF", "double", "default 100"))
 
             for chrom in regionmap:
-                for startpos,endpos in regionmap[chrom]:
+                for startpos,endpos,optionalfields in regionmap[chrom]:
                     print("select * from "+allpop_with_derived_alletable + " where chrID='"+chrom+"' and  snp_pos>="+str(startpos)+" and snp_pos<="+str(endpos))
                     selectedsnps = dbtools.operateDB("select","select * from "+allpop_with_derived_alletable + " where chrID='"+chrom+"' and snp_pos>="+str(startpos)+" and snp_pos<="+str(endpos))
                     if selectedsnps==None:

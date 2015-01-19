@@ -183,7 +183,7 @@ if __name__ == '__main__':
             tableindextoarrayindex.append((allspeices.index(fstpaire1name),allspeices.index(fstpaire2name)))
             
             outfile = open(outputpath+fstpaire1name + fstpaire2name + ".fst"+str(windowWidth)+"_"+str(slideSize), 'w')
-            print("chrNo\twinNo\tfirstsnppos\tlastsnppos\twinvalue\tzvalue",file=outfile)
+            print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnp\twinvalue\tzvalue",file=outfile)
 #             win = Util.Window()
             fst_caculator = Caculators.Caculate_Fst()
 
@@ -298,7 +298,7 @@ if __name__ == '__main__':
                                     sumFstInAWin+=fstlist[i].FstMapByChrom[chrom][winNo][3]
                             except IndexError:
                                 for j in range(0,len(fstlist)):
-                                    print(str(j),vcffileslist[j],chrom,str(winNo),str(len(fstlist[j].FstMapByChrom[chrom])))
+                                    print(str(i),str(j),vcffileslist[j],chrom,str(winNo),str(len(fstlist[j].FstMapByChrom[chrom])),fstlist[i].FstMapByChrom[chrom][winNo-1])
                                 continue# always in the last position,and the value is caculate any way,so can't mispostion.
                         try:
                             gfst=sumFstInAWin/Number
@@ -328,8 +328,9 @@ if __name__ == '__main__':
                         if currentchrID in globalFstMapByChrom:                                
 #                for chrom in sorted(globalFstMapByChrom.keys()):
                             for i in range(len(globalFstMapByChrom[currentchrID])):
-                                if globalFstMapByChrom[currentchrID][i][2] != "NA":
-                                    zgFst = (globalFstMapByChrom[currentchrID][i][2] - exception) / std1
+                                if globalFstMapByChrom[currentchrID][i][3] != "NA":
+                                    zgFst = (globalFstMapByChrom[currentchrID][i][3] - exception) / std1
+#                                     print(globalFstMapByChrom[currentchrID][i][3])
                                     print(currentchrID + "\t" + str(i) + "\t" + str(globalFstMapByChrom[currentchrID][i][0]) + "\t" + str(globalFstMapByChrom[currentchrID][i][1]) +"\t" + str(globalFstMapByChrom[currentchrID][i][2]) + "\t" + '%.18f'%(globalFstMapByChrom[currentchrID][i][3]) + "\t" + '%.12f'%(zgFst), file=outfile)
                                 else:
                                     zgFst = "NA"

@@ -23,7 +23,7 @@ parser.add_option("-m", "--mode", dest="mode",
                   help="1 :means produce cmdline scripts for every terminal folder,the input data should be all the data files under the terminal folder. 2:use all selected data files as the input parameters in the only one cmdline script")
 parser.add_option("-I","--Interceptor_depth",dest="Interceptor_depth",default="0",help="depth of the folder to output")
 parser.add_option("-l", "--interceptdirs", dest="interceptdirs",action="append", default=[], help="winvalue or zvalue")
-
+parser.add_option("-t","--dirsubtotaglen",dest="dirsubtotaglen",default=1)
 parser.add_option("-1","--collection_depth",dest="collection_depth",default="-1",help="depth of the folder to output")
 parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", default=True,
@@ -48,7 +48,8 @@ Interceptor_depth=int(options.Interceptor_depth)
 
 
 interceptdirs=options.interceptdirs
-print(interceptdirs)
+dirsubtotaglen=int(options.dirsubtotaglen)
+print(interceptdirs,"dirsubtotaglen:",str(dirsubtotaglen))
 
 if __name__ == '__main__':
     if mode==1:
@@ -61,7 +62,7 @@ if __name__ == '__main__':
             print("need -1 collection_depth")
             
         #progamma logic
-        operatorwithdata_mode1=OperatorWithData_mode1(options.cmdtemplatefile,scriptsstoredir=scriptsstoredir)
+        operatorwithdata_mode1=OperatorWithData_mode1(options.cmdtemplatefile,scriptsstoredir=scriptsstoredir,taglen=dirsubtotaglen)
         upTodownTravelDir(operatorwithdata_mode1.inputdatapath,operatorwithdata_mode1,datadepth,Interceptor_depth,collection_depth=collection_depth,interceptdirs=interceptdirs)
         
     elif mode==2:
