@@ -68,7 +68,8 @@ if __name__ == '__main__':
     elif mode==2:
             
         operatorwithdata_mode2=OperatorWithData_mode2(options.cmdtemplatefile,scriptsstoredir)
-        upTodownTravelDir(operatorwithdata_mode2.inputdatapath,operatorwithdata_mode2,datadepth,Interceptor_depth,Interceptor_depth,interceptdirs)
+        collection_depth=datadepth
+        upTodownTravelDir(operatorwithdata_mode2.inputdatapath,operatorwithdata_mode2,datadepth,Interceptor_depth,collection_depth=collection_depth,interceptdirs=interceptdirs)
         #finalcmdline=re.sub(r"\${output}")
         finalcmdline=re.sub(r"[-\w\d]+[=\s]+\${.*?}"," ",operatorwithdata_mode2.newcmdline)
         try:
