@@ -12,9 +12,6 @@ from src.NGS.BasicUtil import Util
 import src.NGS.BasicUtil.DBManager as dbm
 
 # testfile
-mutaa = open("luowen.mutaa", 'w')
-testmutcds = open("luowen.mutcds", 'w')
-testrefaa = open("luowen.refaa", "w")
 
 
 parser = OptionParser()
@@ -38,6 +35,7 @@ refFastaName = options.reffa
 reffastaidxName = refFastaName + ".myindex"
 reffahandler = open(options.reffa, "r")
 
+
 minlength = options.minlength
 chromtable = options.chromtablename
 dbchromtools = dbm.DBTools("10.2.48.140", "root", "1234567", options.chromdbname)
@@ -49,11 +47,15 @@ gtfMap = Util.getGtfMap(options.gtffile)
 bedfileNames = options.bedfiles
 
 outputpath = options.outputpath.strip()
+
+
 TSSregionlen = int(options.TSSregion)
 utr3_region = int(options.utr3_region)
 if outputpath[-1] != "/":
     outputpath = outputpath + "/"
-
+mutaa = open(outputpath+variantstablename+".mutaa", 'w')
+testmutcds = open(outputpath+variantstablename+".mutcds", 'w')
+testrefaa = open(outputpath+variantstablename+".refaa", "w")
 sql = "select * from " + chromtable + " where chrlength>=" + minlength
 primaryID = "chrID"
 
@@ -308,6 +310,7 @@ if __name__ == '__main__':
                                     else:
                                         print(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds,i,"should in the linetoCDSMap:",linetoCDSMap,tscptID,codon, codon_m,cds_frame[tscptID],"\n",linetoCDSMap,file=open("wrong.txt",'a'))
                             try:
+                                mutat_amino_seq[tscptID].append(CodonTable[codon_m])
                                 ref_amino_seq[tscptID].append(CodonTable["".join(tscptSeqAllCds_Revr_Cmplm[i:i + 3]).lower()])
                             except KeyError:
                                 ref_amino_seq[tscptID].append("X")

@@ -75,11 +75,22 @@ def interval_setOperation(bedlikefile1,bedlikefile2):
                         high=mid-1
                     else:
                         if intervals2[chrom][mid][1]<q3:
-                            intersectionRegions=collectRegion(intersectionRegions,chrom,(q5,intervals2[chrom][mid][1]))
-                            diffRegions=collectRegion(diffRegions,chrom,(intervals2[chrom][mid][1],q3))
-                            unionRegions=collectRegion(unionRegions,chrom,(q5,q3))
+                            while mid<len(intervals2[chrom]) and intervals2[chrom][mid][0]<=intervals1[chrom][q_idx][1]:
+                                
+                                if intervals1[chrom][q_idx][1]>=intervals2[chrom][mid][1]:
+#                                     unionRegions=collectRegion(unionRegions,chrom,(q5,intervals1[chrom][q_idx][1]))
+                                    diffRegions=collectRegion(diffRegions,chrom,(intervals2[chrom][mid][1],intervals1[chrom][q_idx][1]))
+                                    intersectionRegions=collectRegion(intersectionRegions,chrom,(intervals2[chrom][mid][0],intervals2[chrom][mid][1]))
+                                    mid+=1
+                                    continue
+                                else:
+                                    intersectionRegions=collectRegion(intersectionRegions,chrom,(intervals2[chrom][mid][0],intervals1[chrom][q_idx][1]))
+                                    unionRegions=collectRegion(unionRegions,chrom,(intervals1[chrom][q_idx][0],intervals2[chrom][mid][1]))
+                                    break
+                            else:
+                                unionRegions=collectRegion(unionRegions,chrom,(intervals1[chrom][q_idx][0],intervals1[chrom][q_idx][1]))
                         else:#intervals2[chrom][mid][1]>=q3
-                            while q_idx<len(intervals1[chrom]):
+                            while q_idx<len(intervals1[chrom]) and intervals1[chrom][q_idx][0]<=intervals2[chrom][mid][1]:
                                 if intervals1[chrom][q_idx][1]>=intervals2[chrom][mid][1]:
                                     unionRegions=collectRegion(unionRegions,chrom,(q5,intervals1[chrom][q_idx][1]))
                                     diffRegions=collectRegion(diffRegions,chrom,(intervals2[chrom][mid][1],intervals1[chrom][q_idx][1]))
@@ -88,11 +99,17 @@ def interval_setOperation(bedlikefile1,bedlikefile2):
                                 else:
                                     intersectionRegions=collectRegion(intersectionRegions,chrom,(intervals1[chrom][q_idx][0],intervals1[chrom][q_idx][1]))
                                     q_idx+=1
+#                                     print("continue",str(q_idx),str(intervals1[chrom][q_idx][0]),str(intervals1[chrom][q_idx][1]))
+                            else:
+                                unionRegions=collectRegion(unionRegions,chrom,(intervals2[chrom][mid][0],intervals2[chrom][mid][1]))
+                                q_idx-=1
                             
                         break
                 else:
                     print("high:",str(high),"should < low:",str(low),file=open("testout.txt",'a'))
                     high3=intervals2[chrom][high][1];high5=intervals2[chrom][high][0]
+                    if high<0:
+                        high3=-1;high5=-2
                     lowcount=0
                     if low>=len(intervals2[chrom]):
                         if intervals1[chrom][q_idx][0]<high3:
@@ -106,13 +123,14 @@ def interval_setOperation(bedlikefile1,bedlikefile2):
                             diffRegions=collectRegion(diffRegions,chrom,(intervals1[chrom][q_idx][1],intervals1[chrom][q_idx][1]))
                     else:    
 #                         while q_idx <len(intervals1[chrom]):
-                        print(str(q_idx),str(len(intervals1[chrom])),str(len(intervals2[chrom])),file=open("testout.txt",'a'))
+                        print(str(q_idx),str(low),str(high3),str(len(intervals1[chrom])),str(len(intervals2[chrom])),file=open("testout.txt",'a'))
                         q5=intervals1[chrom][q_idx][0]
                         q3=intervals1[chrom][q_idx][1]
                         low5=intervals2[chrom][low][0];low3=intervals2[chrom][low][1]
-                        if q5>high3:
+                        if q5>=high3:
                             while low<len(intervals2[chrom]):
                                 low5=intervals2[chrom][low][0];low3=intervals2[chrom][low][1]
+                                print(low3,low5)
                                 if q3>low5:
                                     if q3>low3:
                                         intersectionRegions=collectRegion(intersectionRegions,chrom,(low5,low3))
