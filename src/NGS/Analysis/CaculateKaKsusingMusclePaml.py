@@ -17,11 +17,12 @@ parser.add_option("-m", "--homologousgene", dest="homologousgene",
 parser.add_option("-p", "--proteincdspair", dest="proteincdspairfile", help="proteincdspairfile")
 #parser.add_option("-o", "--outfileprename", dest="outfileprename", help="outfileprename")
 parser.add_option("-c", "--configure", dest="configure")
-
+parser.add_option("-l", "--minlen", dest="minlen")
 parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", default=True,
                   help="don't print status messages to stdout")
 (options, args) = parser.parse_args()
+minlen=int(options.minlen)
 homogenefile = open(options.homologousgene, 'r')
 aa_cds_pair_file = open(options.proteincdspairfile, 'r')
 configure = open(options.configure, 'r')
@@ -132,7 +133,7 @@ if __name__ == '__main__':
         if skipthishomotrscptline:
             skipthishomotrscptline=False
             continue
-        if max(lenofhomeAA)/min(lenofhomeAA)>=2:
+        if max(lenofhomeAA)/min(lenofhomeAA)>=2 or min(lenofhomeAA)<minlen:
             skipthishomotrscptline=True
         if skipthishomotrscptline:
             skipthishomotrscptline=False

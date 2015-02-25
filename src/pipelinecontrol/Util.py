@@ -264,4 +264,5 @@ class JobTracker():#for one dir
 #             print("JobTracker chmod error")
 #             exit(-1)
         pool.map(self.__runashell,scriptfiles)
+        pool.close()
         
