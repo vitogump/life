@@ -17,6 +17,8 @@ parser.add_option("-v", "--vcffile", dest="vcffilename",# action="callback",type
                   help="write report to FILE")
 parser.add_option("-c", "--configure", dest="configure")
 parser.add_option("-s","--software",dest="software",help="GATK or samtools ")
+parser.add_option("-1", "--ld-window-kb", dest="ldwinkb")
+parser.add_option("-2", "--ld-window", dest="ldwin")
 
 parser.add_option("-o","--outputpre",dest="outputpre")
 parser.add_option("-q", "--quiet",
@@ -35,13 +37,13 @@ print(chromlisttosub)
 
 software=options.software.strip()
 outputprefix=options.outputpre.strip()
-tempvcffile=open(outputprefix+".vcf","w")
+tempvcffile=open(outputprefix+".vcf","w");tempvcffile.close()
 if __name__ == '__main__':
     vcfdata=VCFutil.VCF_Data(options.vcffilename.strip())
     if not os.path.exists(temppath):
         os.makedirs(temppath)
     os.chdir(temppath)
-    i=0;outputfilepart=1
+    i=0;outputfilepart=0
     for chrom in vcfdata.chromOrder:
         vcfRecOfAChrom=vcfdata.getVcfListByChrom(options.vcffilename.strip(), chrom)
         chrom_sub=chromlisttosub[i%len(chromlisttosub)].strip()
@@ -50,7 +52,7 @@ if __name__ == '__main__':
             if i>0:#just for skipping the first time
                 tempvcffile.close()
                 VCFutil.VCF_Data.Vcf2Ped(outputprefix+".vcf",outputprefix,software,vcfdata.VcfIndexMap)
-                os.system(pathtoplink+" --file "+outputprefix +" --r2 --ld-window-kb 200 --ld-window 10")
+                os.system(pathtoplink+" --file "+outputprefix +" --r2 --ld-window-kb "+options.ldwinkb+" --ld-window "+options.ldwin)
                 os.system("mv plink.ld plink_part"+str(outputfilepart)+".ld")
             tempvcffile=open(outputprefix+".vcf","w")
             outputfilepart+=1

@@ -298,7 +298,7 @@ class AncestralAlleletabletools():
                     if sum_depth <= 2:
                         popsdata="no covered"
                     else:
-                        popsdata=ALT+":"+depth_linelist[species_idx] + ",0"
+                        popsdata="N:"+depth_linelist[species_idx] + ",0"
                 #change to insert if exist skip
                 print(str(snp_pos),popsdata)
                 self.dbvariant.operateDB("update", "update " + toplevelsnptablename + " set "+archicpop_colname+" = '" + popsdata+"' where chrID="+"'"+currentchrID+"' and snp_pos="+str(snp[0]))
