@@ -91,9 +91,8 @@ class AncestralAlleletabletools():
         if a!=0:
             print("error",shellstatment)
         os.system("rm "+vcffilename+"tempstep1")
-    def getflankseqs(self, chrom,chromlen, startpostocollecteSNP, endpostocollectSNP, idxedreffilehandler, refindex, flanklen,outfile, tablename="derived_alle_ref"):
-
-        testfile=open("testsnpfile.txt",'a')
+    def getflankseqs(self, chrom,chromlen, startpostocollecteSNP, endpostocollectSNP, idxedreffilehandler,ancestralgenomenameaddtotable, refindex, flanklen,outfile, tablename="derived_alle_ref"):
+#         testfile=open("testsnpfile.txt",'a')
         self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, tablename, "context", "char(3)", "default null"))
         snps = self.dbvariant.operateDB("select", "select * from " + tablename + " where chrID='" + chrom + "' and snp_pos>= " + str(startpostocollecteSNP) + " and snp_pos<=" + str(endpostocollectSNP))
         RefSeqMap = Util.getRefSeqBypos(idxedreffilehandler, refindex, chrom, startpostocollecteSNP-flanklen, endpostocollectSNP+flanklen,chromlen)
@@ -106,18 +105,17 @@ class AncestralAlleletabletools():
             currentsnpID=chrom+"_"+str(snp[1])
             if currentsnpPos + flanklen <= RefSeqMap[chrom][0] + len(RefSeqMap[chrom]) - 1 and currentsnpPos - flanklen > RefSeqMap[chrom][0] :
                 snpflankseq = ''.join(RefSeqMap[chrom][(currentsnpPos - flanklen - RefSeqMap[chrom][0]):(currentsnpPos + flanklen - RefSeqMap[chrom][0] + 1)])
-                print(currentsnpID,snpflankseq[flanklen],file=testfile)
-                self.dbvariant.operateDB("update","update "+tablename+" set context='"+snpflankseq[flanklen-1,flanklen+2]+"' where chrID='"+ chrom + "' and snp_pos= "+currentsnpPos)
+                self.dbvariant.operateDB("update","update "+tablename+" set context='"+snpflankseq[flanklen-1:flanklen+2]+"' where chrID='"+ chrom + "' and snp_pos= "+str(currentsnpPos))
                 snpflankseq=snpflankseq[0:flanklen]+'N'+snpflankseq[flanklen+1:]
             elif currentsnpPos <= RefSeqMap[chrom][0] + len(RefSeqMap[chrom]) - 1 and currentsnpPos + flanklen > RefSeqMap[chrom][0] + len(RefSeqMap[chrom]) - 1:
                 snpflankseq = ''.join(RefSeqMap[chrom][(currentsnpPos - flanklen - RefSeqMap[chrom][0]):(currentsnpPos - RefSeqMap[chrom][0] + 1)])
-                print(currentsnpID,snpflankseq[flanklen],file=testfile)
-                self.dbvariant.operateDB("update","update "+tablename+" set context='"+snpflankseq[flanklen-1:flanklen+1]+"N' where chrID='"+ chrom + "' and snp_pos= "+currentsnpPos)
+#                 print(currentsnpID,snpflankseq[flanklen],file=testfile)
+                self.dbvariant.operateDB("update","update "+tablename+" set context='"+snpflankseq[flanklen-1:flanklen+1]+"N' where chrID='"+ chrom + "' and snp_pos= "+str(currentsnpPos))
                 snpflankseq=snpflankseq[0:flanklen]+'N'
             elif currentsnpPos - flanklen <= RefSeqMap[chrom][0]:
                 snpflankseq = ''.join(RefSeqMap[chrom][(currentsnpPos - RefSeqMap[chrom][0]):(currentsnpPos + flanklen - RefSeqMap[chrom][0] + 1)])
-                print(currentsnpID,snpflankseq[0],file=testfile)
-                self.dbvariant.operateDB("update","update "+tablename+" set context='N"+snpflankseq[0:2]+"' where chrID='"+ chrom + "' and snp_pos= "+currentsnpPos)
+#                 print(currentsnpID,snpflankseq[0],file=testfile)
+                self.dbvariant.operateDB("update","update "+tablename+" set context='N"+snpflankseq[0:2]+"' where chrID='"+ chrom + "' and snp_pos= "+str(currentsnpPos))
                 snpflankseq = 'N'+snpflankseq[1:flanklen+1]
                 
             else:
@@ -128,7 +126,7 @@ class AncestralAlleletabletools():
 #            print(currentsnpID, snpflankseq[25], file=testfile)
 #             snpflankseq = snpflankseq[0:25] + 'N' + snpflankseq[26:]
             print(">" + currentsnpID + "\n" + snpflankseq, end='\n', file=outfile)
-        testfile.close()
+#         testfile.close()
         #                    print("update "+finaltable+" set fafilepos="+str(filepos)+" where snpID='"+currentsnpID+"'")
     def callblast(self,pathtoblastn,pathtorefdb,queryfaFile,BlastOutFile):
         #outfmt chose 6 suggest by zhaoyiqiang

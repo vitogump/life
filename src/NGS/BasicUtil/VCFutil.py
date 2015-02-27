@@ -8,11 +8,6 @@ Created on 2013-6-30
 
 import re, pickle, copy
 
-
-
-
-
-     
 class VCF_Data():
     def __init__(self, vcffileName):
         super().__init__()
@@ -46,17 +41,21 @@ class VCF_Data():
             exit(-1)        
         currentChrom = "temptodele"
         lastPosition = vcffile.tell()
-        vcfChromIndex[currentChrom]=(lastPosition,0)
+        lastChromend_currentChromstartPostion=lastPosition
+#         vcfChromIndex[currentChrom]=(lastPosition,0)
         print(line)
         line = vcffile.readline()
         print(line)
         while line:      
             linelist = re.split(r"\s+", line)
             if currentChrom != linelist[0]:
-                vcfChromIndex[currentChrom][1]=lastPosition
+                
+                vcfChromIndex[currentChrom]=(lastChromend_currentChromstartPostion,lastPosition)
+                lastChromend_currentChromstartPostion=lastPosition
                 currentChrom = linelist[0]
                 chromOrder.append(currentChrom)
-                vcfChromIndex[currentChrom] = (lastPosition,0)
+#                 vcfChromIndex[currentChrom] = (lastPosition,0)
+            
             lastPosition = vcffile.tell()
             
     
@@ -72,8 +71,8 @@ class VCF_Data():
 #             return
 #         for chrom in chromlist:
 #             vcfFile.seek(self.VcfIndexMap[chrom][0])
-            
-    def Vcf2Ped(self,vcfFileName,outputfileprefix,software,withheader=False):
+    @staticmethod        
+    def Vcf2Ped(vcfFileName,outputfileprefix,software,VcfIndexMap=None,withheader=False):
         vcffile = open(vcfFileName, "r")
         mapfile = open(outputfileprefix+".map", "w")
         pedfile = open(outputfileprefix+".ped", "w")
@@ -89,9 +88,10 @@ class VCF_Data():
             for outName in title[len(title)-total_individ:]:
                 pedmap[outName]=[]
         else:
-            total_individ=len(self.VcfIndexMap["title"])-9
-            print(self.VcfIndexMap["title"],len(self.VcfIndexMap["title"]),total_individ)
-            for outName in self.VcfIndexMap["title"][len(self.VcfIndexMap["title"])-total_individ:]:
+            title=VcfIndexMap["title"]
+            total_individ=len(VcfIndexMap["title"])-9
+            print(VcfIndexMap["title"],len(VcfIndexMap["title"]),total_individ)
+            for outName in VcfIndexMap["title"][len(VcfIndexMap["title"])-total_individ:]:
                 pedmap[outName]=[]
 
         currentChromSome=None
@@ -159,7 +159,7 @@ class VCF_Data():
             print(chrom + "didn't find in " + vcfFileName)
             return []
         while line and (re.split(r'\s+', line))[0] == chrom:
-            linelist = re.split(r'\s+', line)
+            linelist = re.split(r'\s+', line.strip())
             samples=linelist[9:len(linelist)]
             chrom = linelist[0].strip()
             pos = int(linelist[1].strip())

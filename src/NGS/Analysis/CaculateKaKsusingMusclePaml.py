@@ -206,6 +206,7 @@ if __name__ == '__main__':
     for t in finalkakslist:
         print("\t".join(t),file=outfile)
     outfile.close()
+    configure.close()
         
         
     
