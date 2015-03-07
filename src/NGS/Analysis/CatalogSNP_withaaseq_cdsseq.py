@@ -41,7 +41,7 @@ chromtable = options.chromtablename
 dbchromtools = dbm.DBTools("10.2.48.140", "root", "1234567", options.chromdbname)
 
 variantstablename = options.variantstable.strip()
-dbvariantstools = dbm.DBTools("10.2.48.140", "root", "1234567", "ninglabvariantdata_tmp")
+dbvariantstools = dbm.DBTools("10.2.48.140", "root", "1234567", "ninglabvariantdata")
 
 gtfMap = Util.getGtfMap(options.gtffile)
 bedfileNames = options.bedfiles
@@ -63,7 +63,7 @@ intergenicVF = open(outputpath + "intergenic.Variantfile", 'w')
 cdsVF = open(outputpath + "cds.Variantfile", 'w')
 intronVF = open(outputpath + "intron.Variantfile", 'w')
 utrVF = open(outputpath + "utr.Variantfile", 'w')
-titlelist = [a[0].strip() for a in dbvariantstools.operateDB("select", "select column_name  from information_schema.columns where table_schema='" + "ninglabvariantdata_tmp" + "' and table_name='" + variantstablename + "'")]
+titlelist = [a[0].strip() for a in dbvariantstools.operateDB("select", "select column_name  from information_schema.columns where table_schema='" + "ninglabvariantdata" + "' and table_name='" + variantstablename + "'")]
 print(*(titlelist + ["trscptID", "geneID", "strand", "cdsidx", "refcodon", "refaa", "altcodon", "altaa"]), sep="\t", file=cdsVF)
 print(*(titlelist + ["trscptID", "geneID", "strand", "intronidx"]), sep="\t", file=intronVF)
 print(*(titlelist + ["trscptID", "geneID", "strand", "5'/3'"]), sep="\t", file=utrVF)

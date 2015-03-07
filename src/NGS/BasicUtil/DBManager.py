@@ -62,6 +62,12 @@ class DBTools():
                     self.conn.commit()
             elif sqltype=="callproc":
                 cursor.callproc(sqls[0],data)
+            elif sqltype=="delete":
+                if re.search(r'where',sqls[0])!=None or re.search(r"where",sqls[0].lower())!=None:
+                    cursor.execute(sqls[0])
+                else:
+                    print("caution! there is no where in the sql statment,it will delete all record")
+                    exit(-1)
         except mysql.connector.Error as e:
             time.sleep(SLEEP_FOR_NEXT_TRY)
             a=self.operateDB(sqltype,sqls,data)

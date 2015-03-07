@@ -16,7 +16,7 @@ parser.add_option("-t", "--threshold", dest="threshold", help="conflict with -p"
 parser.add_option("-p", "--percentage", dest="percentage",default=None, help="conflict with -t")
 parser.add_option("-o", "--outfileprename", dest="outfileprename", help="outfileprename")
 parser.add_option("-x", "--morethan_lessthan", dest="morethan_lessthan", help="m:morethan or l:lessthan")
-parser.add_option("-2", "--trscptableDatabases", dest="trscptableDatabases", help="trscptableDatabases")
+parser.add_option("-2", "--genomebasiscinfoDatabases", dest="genomebasiscinfoDatabases", help="trscptableDatabases")
 parser.add_option("-T", "--trscptable", dest="trscptable", help="trscptable")
 parser.add_option("-u", "--upextend", dest="upextend", help="upextend")
 parser.add_option("-d", "--downextend", dest="downextend", help="downextend")
@@ -49,7 +49,7 @@ vcftable=None
 outfile=open(outfilename,'w')
 outfileNameWINwithGENE=winFileName6Field+".wincopywithgene"
 if __name__ == '__main__':
-    dbtools = dbm.DBTools("10.2.48.140", "root", "1234567", options.trscptableDatabases.strip())
+    genomedbtools = dbm.DBTools("10.2.48.140", "root", "1234567", options.genomebasiscinfoDatabases.strip())
 #    dbtools.operateDB("alter","alter table "+gene_sample_venn+" add "+outfilename+" smallint(3) default 0") 
     winGenome = Util.WinInGenome(tempwinDBName, winFileName6Field)
     time.sleep(SLEEP_FOR_NEXT_TRY)
@@ -144,7 +144,7 @@ if __name__ == '__main__':
 
     for chrom in selectedRegion:
         for region in selectedRegion[chrom]:
-            final_table[region]=winGenome.collectTrscptInWin(dbtools,TranscriptGenetable,vcftable,region)
+            final_table[region]=winGenome.collectTrscptInWin(genomedbtools,TranscriptGenetable,vcftable,region)
 #    for win in selectedWins:
 #        winRegion=(win,upextend,downextend)
 #        winGenome.collectTrscptInWin(dbtools, TranscriptGenetable, vcftable, winRegion)
@@ -163,7 +163,7 @@ if __name__ == '__main__':
 #         for tcpt in final_table[region]:
 #             tcpts+=(tcpt[0]+"\t")
 #         print("\t".join(map(str,region)),tcpts,sep="\t",file=outfile)
-    winGenome.appendGeneName(TranscriptGenetable, dbtools, winWidth, slideSize, outfileNameWINwithGENE)   
+    winGenome.appendGeneName(TranscriptGenetable, genomedbtools, winWidth, slideSize, outfileNameWINwithGENE)   
     winGenome.windbtools.drop_table(winGenome.wintabletextvalueallwin)
     winGenome.windbtools.drop_table(winGenome.wintablewithoutNA)     
 #        for gene in winGenome.winContainTrscptMap[win]:

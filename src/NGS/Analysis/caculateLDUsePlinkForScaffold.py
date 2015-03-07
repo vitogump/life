@@ -19,7 +19,7 @@ parser.add_option("-c", "--configure", dest="configure")
 parser.add_option("-s","--software",dest="software",help="GATK or samtools ")
 parser.add_option("-1", "--ld-window-kb", dest="ldwinkb")
 parser.add_option("-2", "--ld-window", dest="ldwin")
-
+parser.add_option("-d","--dilute",dest="dilute",default="1")
 parser.add_option("-o","--outputpre",dest="outputpre")
 parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", default=True,
@@ -38,24 +38,36 @@ print(chromlisttosub)
 software=options.software.strip()
 outputprefix=options.outputpre.strip()
 tempvcffile=open(outputprefix+".vcf","w");tempvcffile.close()
+dilute =float(options.dilute.strip())
+if dilute >1 or dilute <0:
+    dilute =1
 if __name__ == '__main__':
     vcfdata=VCFutil.VCF_Data(options.vcffilename.strip())
     if not os.path.exists(temppath):
         os.makedirs(temppath)
     os.chdir(temppath)
-    i=0;outputfilepart=0
+    i=0;outputfilepart=0;sumRecOfVCF=0
     for chrom in vcfdata.chromOrder:
-        vcfRecOfAChrom=vcfdata.getVcfListByChrom(options.vcffilename.strip(), chrom)
+        vcfRecOfAChrom=vcfdata.getVcfListByChrom(options.vcffilename.strip(), chrom,dilute)
+        if len(vcfRecOfAChrom)<100:
+            continue
+        else:
+            sumRecOfVCF+=len(vcfRecOfAChrom)
         chrom_sub=chromlisttosub[i%len(chromlisttosub)].strip()
         if(i%len(chromlisttosub))==0:
-            
-            if i>0:#just for skipping the first time
+            if sumRecOfVCF<100*len(chromlisttosub):
+                tempvcffile.close()
+                tempvcffile=open(outputprefix+".vcf","w")
+                i+=1;continue
+            else:
                 tempvcffile.close()
                 VCFutil.VCF_Data.Vcf2Ped(outputprefix+".vcf",outputprefix,software,vcfdata.VcfIndexMap)
+                print("plink",i)
                 os.system(pathtoplink+" --file "+outputprefix +" --r2 --ld-window-kb "+options.ldwinkb+" --ld-window "+options.ldwin)
                 os.system("mv plink.ld plink_part"+str(outputfilepart)+".ld")
-            tempvcffile=open(outputprefix+".vcf","w")
-            outputfilepart+=1
+                os.system("rm "+outputprefix+"*")
+                tempvcffile=open(outputprefix+".vcf","w")
+                outputfilepart+=1
         for pos, REF, ALT, INFO,FORMAT,samples in vcfRecOfAChrom:
             print(chrom_sub,pos,".", REF, ALT,"100",".", INFO,FORMAT,*samples,sep="\t",end="\n",file=tempvcffile)
         i+=1

@@ -76,7 +76,6 @@ class Fst():
 #                 print(dp4.group(0))
                 
                 while low <= high:
-                    
                     mid = (low + high)>>1
                     if vcfMap2[currentChrom][mid][0]<posInPop1:
                         low=mid+1

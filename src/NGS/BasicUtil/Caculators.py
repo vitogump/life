@@ -45,7 +45,7 @@ class Caculate_SNPsPerBIN(Caculator):
         self.COUNTED+=1
     def getResult(self):
         snpsinthiswin=self.COUNTED
-        snpsdensity=snpsinthiswin/self.winwidth
+        snpsdensity=1000*snpsinthiswin/self.winwidth
         self.COUNTED=0
         return snpsinthiswin,snpsdensity
 class Caculate_phastConsValue(Caculator):

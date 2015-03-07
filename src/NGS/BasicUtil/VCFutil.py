@@ -6,7 +6,9 @@ Created on 2013-6-30
 '''
 
 
+import random
 import re, pickle, copy
+
 
 class VCF_Data():
     def __init__(self, vcffileName):
@@ -14,12 +16,14 @@ class VCF_Data():
         self.VcfMap_AllChrom = {}
         self.VcfIndexMap = {}
         self.chromOrder=[]
+        self.NumOfRecbychromOrder=[]
         try:
             self.VcfIndexMap = pickle.load(open(vcffileName + ".myindex", 'rb'))
         except:
             VCF_Data.indexVCF(VCFName=vcffileName, indexFileName=(vcffileName + ".myindex"))
             self.VcfIndexMap = pickle.load(open(vcffileName + ".myindex", 'rb'))
         self.chromOrder=self.VcfIndexMap["chromOrder"]
+        self.NumOfRecbychromOrder=self.VcfIndexMap["NumOfRecbychromOrder"]
     @staticmethod
     def indexVCF(VCFName, indexFileName):
         """
@@ -28,6 +32,7 @@ class VCF_Data():
         vcffile = open(VCFName, 'r')
         vcfChromIndex = {}
         chromOrder=[]
+        NumOfRecbychromOrder=[]
         line = vcffile.readline()
         vcfChromIndex["header"]=[line]
         while re.search(r'^##', line) != None:
@@ -46,22 +51,38 @@ class VCF_Data():
         print(line)
         line = vcffile.readline()
         print(line)
+        i=0
         while line:      
             linelist = re.split(r"\s+", line)
             if currentChrom != linelist[0]:
-                
+                chromOrder.append(currentChrom)
+                NumOfRecbychromOrder.append(i);i=0
                 vcfChromIndex[currentChrom]=(lastChromend_currentChromstartPostion,lastPosition)
                 lastChromend_currentChromstartPostion=lastPosition
                 currentChrom = linelist[0]
-                chromOrder.append(currentChrom)
+                
 #                 vcfChromIndex[currentChrom] = (lastPosition,0)
             
             lastPosition = vcffile.tell()
-            
-    
+
             line = vcffile.readline()
+            i+=1
+        else:
+            chromOrder.append(currentChrom)
+            NumOfRecbychromOrder.append(i-1)
+            vcfChromIndex[currentChrom]=(lastChromend_currentChromstartPostion,lastPosition)
+
         vcfChromIndex.pop("temptodele")
+        i=chromOrder.index("temptodele")
+        if i!=0:
+            print("wrong indexVCF")
+            exit(-1)
+        b=chromOrder.pop(i)
+        a=NumOfRecbychromOrder.pop(i)
+        print(i,a,b)
         vcfChromIndex["chromOrder"]=chromOrder
+        
+        vcfChromIndex["NumOfRecbychromOrder"]=NumOfRecbychromOrder
         pickle.dump(vcfChromIndex, open(indexFileName, 'wb'))
         vcffile.close()
 #     def extractVcfRecByChroms(self,vcfFileName,chromlist,replacechromlist,outfile):
@@ -145,20 +166,37 @@ class VCF_Data():
         mapfile.close()
         pedfile.close()   
         vcffile.close()
-    def getVcfListByChrom(self, vcfFileName, chrom,posUniq=True,considerINDEL=False):
+    def getVcfListByChrom(self, vcfFileName, chrom,dilute=1,posUniq=True,considerINDEL=False):
         """
             return a list that contain all vcf record of a chrom
         """
+        print(chrom)
         VcfList_A_Chrom = []
+        i=self.chromOrder.index(chrom.strip())
+        if dilute!=1:
+            VcfRecRandomSelectIdxlist=random.sample([j for j in range(self.NumOfRecbychromOrder[i])],int(dilute*self.NumOfRecbychromOrder[i]))
+            VcfRecRandomSelectIdxlist.sort()
+        elif self.NumOfRecbychromOrder[i]<1000:
+            dilute=1
         vcfFile = open(vcfFileName, 'r')
         try:
-            print("getVcfListByChrom", self.VcfIndexMap[chrom], chrom)            
+            print("getVcfListByChrom", self.VcfIndexMap[chrom], chrom,int(dilute*self.NumOfRecbychromOrder[i]),self.NumOfRecbychromOrder[i])            
             vcfFile.seek(self.VcfIndexMap[chrom][0])
             line = vcfFile.readline().strip()
+            i = 1
         except KeyError:
             print(chrom + "didn't find in " + vcfFileName)
             return []
         while line and (re.split(r'\s+', line))[0] == chrom:
+            if dilute!=1 and len(VcfRecRandomSelectIdxlist)==0:
+                break
+            elif dilute!=1 and i != VcfRecRandomSelectIdxlist[0]:
+                line = vcfFile.readline();i+=1
+                continue
+            elif dilute!=1 and i == VcfRecRandomSelectIdxlist[0]:
+                VcfRecRandomSelectIdxlist.pop(0)
+                
+                    
             linelist = re.split(r'\s+', line.strip())
             samples=linelist[9:len(linelist)]
             chrom = linelist[0].strip()
@@ -169,7 +207,7 @@ class VCF_Data():
                 continue
             INFO = linelist[7]
             FORMAT=linelist[8]
-            line = vcfFile.readline()
+            line = vcfFile.readline();i+=1
             if posUniq and VcfList_A_Chrom and pos==VcfList_A_Chrom[0]:
                 print("VCFutil unique the vcf pos",line,VcfList_A_Chrom[-1])
                 continue
