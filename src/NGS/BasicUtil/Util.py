@@ -1058,39 +1058,49 @@ class Window():
         for i in range(n):
             noofsnps, value = Caculator.getResult()
             self.winValueL.append((0, 0, noofsnps, value))
-def distributionfuncdraft(intervalFileName,dataFileName,col_to_bined1,col_to_bined2=0,col_to_mean=None):
+def distributionfuncdraft(intervalFileName,dataFileNames,col_to_bined1,col_to_bined2=0,col_to_mean=None):
     col_to_bined1-=1;col_to_bined2-=1;col_to_mean-=1
     intervalfile=open(intervalFileName,'r')
     intervalMap_count={}
     intervalMap_mean={}
+    intervalMap_sum={}
     for line in intervalfile:
         linelist=re.split(r'\s+',line.strip())
+        intervalMap_sum[float(linelist[0]),float(linelist[1])]=0
         intervalMap_mean[float(linelist[0]),float(linelist[1])]=[]
         intervalMap_count[float(linelist[0]),float(linelist[1])]=0
     intervalfile.close()
-    datafile=open(dataFileName,'r')
-    print(datafile.readline())
-    for line in datafile:
-        linelist=re.split(r'\s+',line.strip())
-        if col_to_bined2!=0:
-            value_to_bin=float(linelist[col_to_bined2])-float(linelist[col_to_bined1])
-        else:
-            value_to_bin=float(linelist[col_to_bined1])
-        if col_to_mean!=None:
-            value_to_mean=float(linelist[col_to_mean])
-            
-        for a,b in sorted(intervalMap_count.keys()):
-            if value_to_bin>=a and value_to_bin<b:
-                if col_to_mean!=None:
-                    intervalMap_mean[a,b].append(value_to_mean)
-                intervalMap_count[a,b]+=1
+    for df in dataFileNames:
+        print(df)
+        datafile=open(df,'r')
+        print(datafile.readline())
+        for line in datafile:
+            linelist=re.split(r'\s+',line.strip())
+            if col_to_bined2!=0:
+                value_to_bin=float(linelist[col_to_bined2])-float(linelist[col_to_bined1])
+            else:
+                value_to_bin=float(linelist[col_to_bined1])
+            if col_to_mean!=None:
+                value_to_mean=float(linelist[col_to_mean])
+                
+            for a,b in sorted(intervalMap_count.keys()):
+                if value_to_bin>=a and value_to_bin<b:
+                    if col_to_mean!=None:
+                        intervalMap_mean[a,b].append(value_to_mean)
+                    intervalMap_count[a,b]+=1
+        #intervalMap_mean has two use one record value list one record mean value
+        if col_to_mean!= None:
+            for a,b in intervalMap_mean.keys():
+                if len(intervalMap_mean[a,b])!=0:
+                    intervalMap_sum[a,b]+=sum(intervalMap_mean[a,b])
+                    intervalMap_mean[a,b]=[]
+        datafile.close()
     if col_to_mean!= None:
-        for a,b in intervalMap_mean.keys():
-            print(str(a),str(b),intervalMap_mean[a,b],file=open("test.txt",'a'))
+        for a,b in intervalMap_count.keys():
             if intervalMap_count[a,b]==0:
                 intervalMap_mean[a,b]="NA"
             else:
-                intervalMap_mean[a,b]=numpy.mean(intervalMap_mean[a,b])
+                intervalMap_mean[a,b]=intervalMap_sum[a,b]/intervalMap_count[a,b]
     return copy.deepcopy(intervalMap_count),copy.deepcopy(intervalMap_mean)
 class WinInGenome():           
     def __init__(self, dbname, winFileName6Field, tableName=None):
