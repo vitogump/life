@@ -45,7 +45,8 @@ if __name__ == '__main__':
     mywin = Util.Window()
     dbtools = dbm.DBTools("10.2.48.140", "root", "1234567", dbname)
     depthfile = Util.GATK_depthfile(options.genomedepth, options.genomedepth + ".index")
-    depthfile.title.remove("")
+    if "" in depthfile.title:
+        depthfile.title.remove("")
     print(depthfile.title,len(depthfile.title)-3)
     print("chrom","start_pos","end_pos",*depthfile.title[3:],sep="\t",file=outfile)
     print("chrom","start_pos","end_pos",*depthfile.title[3:],sep="\t",file=outfilewithvalue)
@@ -63,7 +64,7 @@ if __name__ == '__main__':
         result = dbtools.operateDB("select", currentsql)
         for row in result:
             currentchrID = row[0]
-            currentchrLen = int(row[2])
+            currentchrLen = int(row[1])
             if currentchrID in depthfile.covfileidx:
                 depthfile.depthfilefp.seek(depthfile.covfileidx[currentchrID])
                 if chrmapListOrderByDepthfilepos[-1][0]==currentchrID:
@@ -91,7 +92,7 @@ if __name__ == '__main__':
                 judgelist=[]
                 valuelist=[]
                 for i in range(len(depthbinmap[currentchrID][winNo][3][0])):
-                    valuelist.append((str(depthbinmap[currentchrID][winNo][3][0][i]),str(depthbinmap[currentchrID][winNo][3][1][i])))
+                    valuelist.append(str(depthbinmap[currentchrID][winNo][3][0][i])+","+str(depthbinmap[currentchrID][winNo][3][1][i]))
                     if depthbinmap[currentchrID][winNo][3][0][i]>=percentage and int(depthbinmap[currentchrID][winNo][3][1][i]) >=averagedepth:
                         judgelist.append("passed")
                     else:

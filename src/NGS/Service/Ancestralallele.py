@@ -240,7 +240,7 @@ class AncestralAlleletabletools():
         """
         depthfile = Util.GATK_depthfile(depthFile, depthFile + ".index")
         species_idx_list=[]
-        species_idx = depthfile.title.index("Depth_for_" + archicpopNameindepthFile)
+#         species_idx = depthfile.title.index("Depth_for_" + archicpopNameindepthFile)
         for i in range(0,len(depthfile.title)):
             if re.search(r""+archicpopNameindepthFile,depthfile.title[i])!=None:
                 species_idx_list.append(i)
@@ -295,75 +295,101 @@ class AncestralAlleletabletools():
                     sum_depth=0
                     for species_idx in species_idx_list:
                         sum_depth+=int(depth_linelist[species_idx])
-                    if sum_depth <= 2:
+                    if sum_depth < 4:
                         popsdata="no covered"
                     else:
-                        popsdata="N:"+depth_linelist[species_idx] + ",0"
+                        popsdata=ALT+":"+sum_depth + ",0"
                 #change to insert if exist skip
                 print(str(snp_pos),popsdata)
                 self.dbvariant.operateDB("update", "update " + toplevelsnptablename + " set "+archicpop_colname+" = '" + popsdata+"' where chrID="+"'"+currentchrID+"' and snp_pos="+str(snp[0]))
-    def leftjoinSelectedTables(self,chromtable,outtable_file_Name,vcftables=[],toplevelsnptable="ducksnp_toplevel",FORMAT="GT:AD:DP:GQ:PL"):
+    def leftjoinSelectedTables(self,chromlist,outtable_file_Name,vcftables=[],toplevelsnptable="ducksnp_toplevel",depthfilenames=None):
+        depthfilehandlerlist=[]
+        if depthfilenames !=None:
+            for depthfileName in depthfilenames:
+                depthfilehandlerlist.append(Util.GATK_depthfile(depthfileName, depthfileName + ".index"))
+        species_idx_map={}
+        
+        for vcftable in vcftables:
+            popnamesubStringInDepthTitle=re.search(r"^([^_]+)_.*",vcftable).group(1)
+            species_idx_map[popnamesubStringInDepthTitle]=[]
+            for depthfilehanlder in depthfilehandlerlist:
+                for i in range(0,len(depthfilehanlder.title)):
+                    if re.search(r""+popnamesubStringInDepthTitle,depthfilehanlder.title[i])!=None:
+                        species_idx_map[popnamesubStringInDepthTitle].append(i)   
+        
         outfile=open(outtable_file_Name,'w')
         outtable_Name=re.search(r'[^/]*$', outtable_file_Name).group(0)
         outtable_Name=re.sub(r"[^\w^\d]","_",outtable_Name)
-        totalChroms = self.dbgenome.operateDB("select","select count(*) from "+chromtable)[0][0]
         outtable_titlelist=[a[0].strip() for a in self.dbvariant.operateDB("select","select column_name  from information_schema.columns where table_schema='"+self.dbvariant_name+"' and table_name='"+toplevelsnptable+"'")]  
         toplevellen=len(outtable_titlelist)
         outtable_titlelist=outtable_titlelist+vcftables
         print(*outtable_titlelist,sep="\t",file=outfile)
-        for i in range(0,totalChroms,20):
-            currentsql="select * from " + chromtable+" order by chrlength desc limit "+str(i)+",20"
-            result=self.dbgenome.operateDB("select",currentsql)
-            for row in result:
-                sqlselectstatementpart="select t.*"
-                sqlfromstatementpart=" from "+toplevelsnptable+" as t "
-                currentchrID=row[0]
-                print(currentchrID+":",end="")
-                #sql statement produce part1
+        for currentchrID in chromlist: 
+            sqlselectstatementpart="select t.*"
+            sqlfromstatementpart=" from "+toplevelsnptable+" as t "
+            #sql statement produce part1
+            for vcftable in vcftables:
+                sqlselectstatementpart=sqlselectstatementpart+","+vcftable.strip()+".alt_base as "+vcftable+"_alt_base,"+vcftable.strip()+".AF as "+vcftable+"_AF"
+            
+            #sql statement produce part2
+            for vcftable in vcftables:
+                sqlfromstatementpart=sqlfromstatementpart+" left join "+vcftable.strip()+" using(chrID,snp_pos)"
+            #sql where statement append
+            sqlstatement=sqlselectstatementpart+sqlfromstatementpart+" where chrID='"+currentchrID+"'"
+            print(sqlstatement)
+            allsnpOfJoinTableinAchr=self.dbvariant.operateDB("select",sqlstatement)
+            #process value,merge into one col
+            NumOfColOftoplevel_fix=len(self.dbvariant.operateDB("select","select column_name  from information_schema.columns where table_schema='"+self.dbvariant_name+"' and table_name='"+toplevelsnptable+"'"))
+            #               print to outfile and then  fix the depth to None value
+            for rec in allsnpOfJoinTableinAchr:
+                snp_pos=rec[1]
+                NumOfColOftoplevel=NumOfColOftoplevel_fix
+                recToPrint=list(rec[0:NumOfColOftoplevel])
                 for vcftable in vcftables:
-                    
-                    print(vcftable)
-                    sqlselectstatementpart=sqlselectstatementpart+","+vcftable.strip()+".alt_base as "+vcftable+"_alt_base,"+vcftable.strip()+".AF as "++vcftable+"_AF"
-
-                print(sqlselectstatementpart)
-                #sql statement produce part2
-                for vcftable in vcftables:
-                    sqlfromstatementpart=sqlfromstatementpart+" left join "+vcftable.strip()+" using(chrID,snp_pos)"
-                #sql where statement append
-                sqlstatement=sqlselectstatementpart+sqlfromstatementpart+" where chrID='"+currentchrID+"'"
-                print(sqlstatement)
-                allsnpOfJoinTableinAchr=self.dbvariant.operateDB("select",sqlstatement)
-                #process value,merge into one col
-                NumOfColOftoplevel_fix=len(self.dbvariant.operateDB("select","select column_name  from information_schema.columns where table_schema='"+self.dbvariant_name+"' and table_name='"+toplevelsnptable+"'"))
-                for rec in allsnpOfJoinTableinAchr:
-                    NumOfColOftoplevel=NumOfColOftoplevel_fix
-                    recToPrint=list(rec[0:NumOfColOftoplevel])
-                    print("recToPrintpre",recToPrint,"rec",rec)
-                    for vcftable in vcftables:
-                        titlelist=[a[0].strip() for a in self.dbvariant.operateDB("select","select column_name  from information_schema.columns where table_schema='"+self.dbvariant_name+"' and table_name='"+vcftable+"'")]
-#                         indvdnameslist=titlelist[5:]#suppose to be 3 for indvd  or 1 for pool
-#                         refdep=0;altalleledep=0
-#                         print("lastpart",rec[NumOfColOftoplevel:NumOfColOftoplevel+1+len(indvdnameslist)])
-                        if rec[NumOfColOftoplevel]==None:
-                            recToPrint=recToPrint+["unknow"]#may be fixed as ref ,check the depth file ..... need to be done
-                            NumOfColOftoplevel=NumOfColOftoplevel+2
-#                             continue
+            #                         titlelist=[a[0].strip() for a in self.dbvariant.operateDB("select","select column_name  from information_schema.columns where table_schema='"+self.dbvariant_name+"' and table_name='"+vcftable+"'")]
+            #                         indvdnameslist=titlelist[5:]#suppose to be 3 for indvd  or 1 for pool
+            #                         refdep=0;altalleledep=0
+            #                         print("lastpart",rec[NumOfColOftoplevel:NumOfColOftoplevel+1+len(indvdnameslist)])
+                    if rec[NumOfColOftoplevel]==None:
+                        if depthfilenames==None:
+                            popsdata="unknow" #may be fixed as ref ,check the depth file ..... need to be done
                         else:
-                            ALT=rec[NumOfColOftoplevel]
-                            AF=rec[NumOfColOftoplevel+1]
-                            popsdata=ALT+":"+str(AF)
-                            recToPrint=recToPrint+[popsdata]
-                            NumOfColOftoplevel=NumOfColOftoplevel+2
-                    print(*recToPrint,sep="\t",file=outfile)
+                            sum_depth=0
+                            popnamesubStringInDepthTitle=re.search(r"^([^_]+)_.*",vcftable).group(1).strip()
+                            #find the depth file which the title contain the popnamesubStringInDepthTitle
+                            for dfh in depthfilehandlerlist:
+                                for title in dfh.title:
+                                    if re.search(r""+popnamesubStringInDepthTitle,title)!=None:
+                                        depthfilehanlder=dfh
+                                        depth_linelist = dfh.getdepthByPos(currentchrID, snp_pos)
+                                        break
+                            # accumulate  the depth
+                            for idx in species_idx_map[popnamesubStringInDepthTitle]:
+                                sum_depth+=int(depth_linelist[idx])
+                            if sum_depth<20:
+                                popsdata="no covered"
+                            else:
+                                ALT=rec[4]
+                                popsdata=ALT+":0"
+                    else:
+                        ALT=rec[NumOfColOftoplevel]
+                        AF=rec[NumOfColOftoplevel+1]
+                        popsdata=ALT+":"+str(AF)
+            
+                    recToPrint=recToPrint+[popsdata]
+                    NumOfColOftoplevel=NumOfColOftoplevel+2   #alt_base and AF col
+                print(*recToPrint,sep="\t",file=outfile)
         self.dbtmp.operateDB("copytableschema","create table "+outtable_Name+" like "+self.dbvariant_name.strip()+"."+toplevelsnptable.strip())
         for colname in outtable_titlelist[toplevellen-1:]:
             self.dbtmp.operateDB("callproc", "mysql_sp_add_column",data=(self.dbvariant_name, outtable_Name, colname, "char(128)", "default null"))
         loaddatasql="load data local infile '"+outtable_file_Name+"' into table "+outtable_Name+" fields terminated by '\\t'"
-        a=os.system("mysql -uroot -p1234567 -D" + self.dbtmpname.strip() + ' -e "' + loaddatasql + '"')
-        if a!=0:
-            print(a,"maybe error")
-        else:
-            print("finish")
+        print(loaddatasql)
+        outfile.close()
+#         a=os.system("mysql -uroot -p1234567 -D" + self.dbtmpname.strip() + ' -e "' + loaddatasql + '"')
+#         if a!=0:
+#             print(a,"maybe error")
+#         else:
+#             print("finish")
 
                         
                 

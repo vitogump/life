@@ -4,29 +4,35 @@ Created on 2014-12-1
 @author: liurui
 '''
 from optparse import OptionParser
+import re
+
 from NGS.Service.Ancestralallele import AncestralAlleletabletools
+
 
 parser = OptionParser()
 
 #"output data name is defined as 'inputdatapath folder name'+'is subfolder name'+'is subfolder name'+..."
 parser.add_option("-v", "--vcftablelist", dest="vcftablelist",action="append",default=[],help="")
 # parser.add_option("-o", "--outputpath", dest="outputpath", help="outputpath")
-parser.add_option("-c", "--chromtable", dest="chromtable", help="it's the depth of the dir from the inputdatapath which the data file that need to be process in it,the depth of the inputdatapath is 0")
+parser.add_option("-c", "--chromlistfilename", dest="chromlistfilename", help="it's the depth of the dir from the inputdatapath which the data file that need to be process in it,the depth of the inputdatapath is 0")
 
 parser.add_option("-t","--toplevelsnptable",dest="toplevelsnptable",default="ducksnp_toplevel",help="depth of the folder to output")
 parser.add_option("-o","--outputtablename",dest="outputtablename",default="duckout",help="depth of the folder to output")
 
-parser.add_option("-q", "--quiet",
-                  action="store_false", dest="verbose", default=True,
-                  help="don't print status messages to stdout")
+parser.add_option("-d", "--quiet",action="append", dest="depthfilenames",default=None)
                                                                                                                                                           
 (options, args) = parser.parse_args()
 vcftablenames=options.vcftablelist
 print(vcftablenames)
-chromtable=options.chromtable
 toplevelsnptable=options.toplevelsnptable
 outtable_filename=options.outputtablename
-print(chromtable,outtable_filename,toplevelsnptable)
+depthfilenames=options.depthfilenames
+chromlist=[]
+chromlistfile=open(options.chromlistfilename,"r")
+for chrrow in chromlistfile:
+    chrrowlist=re.split(r'\s+',chrrow.strip())
+    chromlist.append(chrrowlist[0].strip())
+print(chromlistfile,outtable_filename,toplevelsnptable,depthfilenames)
 if __name__ == '__main__':
     atools=AncestralAlleletabletools(database="ninglabvariantdata", ip="10.2.48.140", usrname="root", pw="1234567",dbgenome="genomebasicinfo")
-    atools.leftjoinSelectedTables(chromtable,outtable_filename,vcftablenames,toplevelsnptable)
+    atools.leftjoinSelectedTables(chromlist,outtable_filename,vcftablenames,toplevelsnptable,depthfilenames=depthfilenames)

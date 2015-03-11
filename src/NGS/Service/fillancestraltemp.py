@@ -83,4 +83,4 @@ if __name__ == '__main__':
             ancestralalleletabletools.getflankseqs(currentchrID,currentchrLen, flanklen, currentchrLen, idxedreffilehandler=duckrefhandler,ancestralgenomenameaddtotable=colname, refindex=duckrefindex, flanklen=flanklen,outfile=outfile, tablename=toplevelsnptablename)
         outfile.close()
         duckrefhandler.close()
-        chromlistfile.close()
+    chromlistfile.close()
