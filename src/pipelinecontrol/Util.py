@@ -140,7 +140,7 @@ class OperatorWithData_mode1(OperatorWithData):
                     os.makedirs(outputpath + pathToOutputdata_createdir  + outsuffix)
             else:
                 newcmdline = re.sub(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}", outputpath + pathToOutputdata_createdir + updirname + "." + outsuffix, newcmdline)
-        
+        targetdata_count=0
         for i in range(0, len(targetdatasuffix)):
             lists =os.walk(curpath)    
             for rootStr,dirs,files in lists:
@@ -148,6 +148,7 @@ class OperatorWithData_mode1(OperatorWithData):
                     print(rootStr+"/",files)
                     for datafilename in files:
                         if re.search(r".*?" + targetdatasuffix[i]+"$", datafilename) != None:
+                            targetdata_count+=1
                             option_suffix_obj = re.search(r"([-\w\d]+[=\s]+)\${(\s*" + targetdatasuffix[i] + "\s*)}", newcmdline)  # for example "INPUT=${.bam} -i ${.sam}"
                             optionstr = option_suffix_obj.group(1)
                             suffixstr = option_suffix_obj.group(2)
@@ -155,6 +156,8 @@ class OperatorWithData_mode1(OperatorWithData):
         newcmdline = re.sub(r"[-\w\d]+[=\s]+\${.*?}", " ", newcmdline)                
                     # sub was acted from the first to the rear most
         print("pathToOutputdata_createdir", pathToOutputdata_createdir)
+        if len(targetdatasuffix)!=0 and targetdata_count==0:
+            return newcmdline
         try:
             print(self.scriptcontext + newcmdline, file=open(self.scriptsstoredir + self.cmdtemplatefilename + "." + updirname + "Script.sh", "a"))
         except FileNotFoundError:
@@ -163,7 +166,7 @@ class OperatorWithData_mode1(OperatorWithData):
 
 
 class OperatorWithData_mode2(OperatorWithData):
-    def __init__(self, cmdtemplatefile, scriptsstoredir):
+    def __init__(self, cmdtemplatefile, scriptsstoredir,outfilepre):
         """
         interceptdirs=([subdir names list expected in the assigned depth])
         """
@@ -192,7 +195,7 @@ class OperatorWithData_mode2(OperatorWithData):
                 os.makedirs(outputpath)
             if outsuffix=="/":
                 outsuffix=""# dir
-            self.newcmdline = re.sub(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}", outputpath + "/" + outsuffix + " ", self.cmdline)
+            self.newcmdline = re.sub(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}", outputpath + "/" +outfilepre+ outsuffix + " ", self.cmdline)
 #         self.newcmdline = re.sub(r"[-\w\d]+[=\s]+\${output=.*\|suffix=.*?}", outputoptionstr + outputpath + "/" + suffix + " ", self.cmdline)
         print("OperatorWithData_mode2 __init__", self.newcmdline)
 #         self.suffix = suffix

@@ -25,6 +25,7 @@ parser.add_option("-I","--Interceptor_depth",dest="Interceptor_depth",default="0
 parser.add_option("-l", "--interceptdirs", dest="interceptdirs",action="append", default=[], help="winvalue or zvalue")
 parser.add_option("-t","--dirsubtotaglen",dest="dirsubtotaglen",default=1)
 parser.add_option("-1","--collection_depth",dest="collection_depth",default="-1",help="depth of the folder to output")
+parser.add_option("-2","--outfilepre",dest="outfilepre",default="mode2prename",help="depth of the folder to output")
 parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", default=True,
                   help="don't print status messages to stdout")
@@ -66,8 +67,8 @@ if __name__ == '__main__':
         upTodownTravelDir(operatorwithdata_mode1.inputdatapath,operatorwithdata_mode1,datadepth,Interceptor_depth,collection_depth=collection_depth,interceptdirs=interceptdirs)
         
     elif mode==2:
-            
-        operatorwithdata_mode2=OperatorWithData_mode2(options.cmdtemplatefile,scriptsstoredir)
+        outfilepre=options.outfilepre.strip() 
+        operatorwithdata_mode2=OperatorWithData_mode2(options.cmdtemplatefile,scriptsstoredir,outfilepre)
         collection_depth=datadepth
         upTodownTravelDir(operatorwithdata_mode2.inputdatapath,operatorwithdata_mode2,datadepth,Interceptor_depth,collection_depth=collection_depth,interceptdirs=interceptdirs)
         #finalcmdline=re.sub(r"\${output}")

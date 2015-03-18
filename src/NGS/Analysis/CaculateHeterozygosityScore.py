@@ -53,7 +53,10 @@ if __name__ == '__main__':
         outfile = open(outputpath+vcfname + ".het"+str(windowWidth)+"_"+str(slideSize), 'w')
         print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnp\twinvalue\tzvalue",file=outfile)
         win = Util.Window()
-        hp_caculator = Caculators.Caculate_Hp()
+        if re.search(r"indvd[^/]+",vcf)!=None:
+            hp_caculator = Caculators.Caculate_Hp(MethodToSeq="indvd")
+        elif re.search(r"pool[^/]+",vcf)!=None:
+            hp_caculator = Caculators.Caculate_Hp(MethodToSeq="pool")
         pop = VCFutil.VCF_Data(vcf)  # new a class
         hscore = HeterozygosityScore()
 #        pop.getVcfMap(vcf)

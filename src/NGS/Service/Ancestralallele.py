@@ -61,17 +61,17 @@ class AncestralAlleletabletools():
             exit(-1) 
         vcffile.close()
         colslist=vcfChromIndex["title"][9:]
-        if re.search(r"indvd",vcffilename)!=None:
+        if re.search(r"indvd[^/]+",vcffilename)!=None:
             print("indvd")
             colslist=["AC","AF","AN"]
             for col in colslist:
                 print("col name",col,"adding to mysql databases")
                 self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, tablename, col, "char(128)", "default null"))
-            a=os.system(""" awk '$0!~/#/&&length($5)==1{OFS="\t";print $1,$2,$3,$4,$5,$8}' """+vcffilename+""" |awk '{OFS="\t";split($6,myarr,";");print $1,$2,$3,$4,$5,myarr[1],myarr[2],myarr[3]}' |sed 's/AC=//g'|sed 's/AF=//g'|sed 's/AN=//g' > """+vcffilename+"tempstep1")
+            a=os.system(""" awk '$0!~/#/&&length($5)==1{OFS="\t";print $1,$2,$3,$4,$5,$8}' """+vcffilename+""" |awk '{OFS="\t";split($6,myarr,";");print $1,$2,$3,$4,$5,myarr[1],myarr[2],myarr[3]}' |sed 's/AC=//g'|sed 's/AF=//g'|sed 's/AN=//g'|awk '{OFS="\t";if($7==1){$7=1};print $0}' > """+vcffilename+"tempstep1")
             if a!=0:
-                print("error",""" awk '$0!~/#/&&length($5)==1 {OFS="\t";print $1,$2,$3,$4,$5,$8}' """+vcffilename+""" |awk '{OFS="\t";split($6,myarr,";");print $1,$2,$3,$4,$5,myarr[1],myarr[2],myarr[3]}' |sed 's/AC=//g'|sed 's/AF=//g'|sed 's/AN=//g' > """+vcffilename+"tempstep1")
+                print("error",""" awk '$0!~/#/&&length($5)==1 {OFS="\t";print $1,$2,$3,$4,$5,$8}' """+vcffilename+""" |awk '{OFS="\t";split($6,myarr,";");print $1,$2,$3,$4,$5,myarr[1],myarr[2],myarr[3]}' |sed 's/AC=//g'|sed 's/AF=//g'|sed 's/AN=//g'|awk '{OFS="\t";if($7==1){$7=1};print $0}' > """+vcffilename+"tempstep1")
         
-        elif re.search(r"pool",vcffilename)!=None:
+        elif re.search(r"pool[^/]+",vcffilename)!=None:
             print("pool")
 #             colslist=vcfChromIndex["title"][9:]
             colslist=["AF"]
@@ -247,7 +247,8 @@ class AncestralAlleletabletools():
         
         archicpop_colname=re.search(r'[^/]*$',archicpopVcfFile).group(0)
         archicpop_colname=re.sub(r"[^\w^\d]","_",archicpop_colname)
-        self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, toplevelsnptablename, archicpop_colname, "char(128)", "default null"))       
+        self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, toplevelsnptablename, archicpop_colname+"_alt", "char(128)", "default null"))
+        self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, toplevelsnptablename, archicpop_colname+"_dep", "char(128)", "default null"))  
         archicpop = VCFutil.VCF_Data(archicpopVcfFile)
 #         totalChroms = self.dbgenome.operateDB("select","select count(*) from "+chromtable)[0][0]
 #         for i in range(0,totalChroms,20):
@@ -271,7 +272,7 @@ class AncestralAlleletabletools():
                     elif archicpopSeqOfAChr[currentchrID][mid][0]> snp_pos:
                         high=mid-1
                     else:#find the pos
-                        pos, REF, ALT, INFO,FORMAT,samples = archicpopSeqOfAChr[currentchrID][mid]
+                        pos, REF, archicpop_ALT, INFO,FORMAT,samples = archicpopSeqOfAChr[currentchrID][mid]
                         dp4 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", INFO)
                         refdep=0;altalleledep=0
                         if dp4!=None:#vcf from samtools 
@@ -288,7 +289,8 @@ class AncestralAlleletabletools():
                                     altalleledep+=int(AD_depth[1])
                                 except ValueError:
                                     print("Ancestralallele.fillAncestral except ValueError",sample,end="")
-                        popsdata=ALT+":"+str(refdep)+","+str(altalleledep)
+                        popsdata_alt=archicpop_ALT
+                        popsdata_dep=str(refdep)+","+str(altalleledep)
                         break
                 else:
                     depth_linelist = depthfile.getdepthByPos(currentchrID, snp_pos)
@@ -296,12 +298,14 @@ class AncestralAlleletabletools():
                     for species_idx in species_idx_list:
                         sum_depth+=int(depth_linelist[species_idx])
                     if sum_depth < 4:
-                        popsdata="no covered"
+                        popsdata_alt=ALT
+                        popsdata_dep="no covered"
                     else:
-                        popsdata=ALT+":"+sum_depth + ",0"
+                        popsdata_alt=ALT 
+                        popsdata_dep=sum_depth + ",0"
                 #change to insert if exist skip
-                print(str(snp_pos),popsdata)
-                self.dbvariant.operateDB("update", "update " + toplevelsnptablename + " set "+archicpop_colname+" = '" + popsdata+"' where chrID="+"'"+currentchrID+"' and snp_pos="+str(snp[0]))
+                print(str(snp_pos),popsdata_alt,popsdata_dep)
+                self.dbvariant.operateDB("update", "update " + toplevelsnptablename + " set "+archicpop_colname+"_alt = '" + popsdata_alt+"',"+archicpop_colname+"_dep= '"+popsdata_dep+"' where chrID="+"'"+currentchrID+"' and snp_pos="+str(snp[0]))
     def leftjoinSelectedTables(self,chromlist,outtable_file_Name,vcftables=[],toplevelsnptable="ducksnp_toplevel",depthfilenames=None):
         depthfilehandlerlist=[]
         if depthfilenames !=None:

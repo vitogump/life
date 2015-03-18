@@ -144,6 +144,7 @@ class Fst():
 
 if __name__ == '__main__':
     dbtools = dbm.DBTools("10.2.48.140", "root", "1234567", chromdbname)
+
     if fsttype=='R' or fsttype=='r':
         
         allspeices=[]
@@ -183,8 +184,15 @@ if __name__ == '__main__':
             
             outfile = open(outputpath+fstpaire1name + fstpaire2name + ".fst"+str(windowWidth)+"_"+str(slideSize), 'w')
             print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnp\twinvalue\tzvalue",file=outfile)
-#             win = Util.Window()
-            fst_caculator = Caculators.Caculate_Fst()
+            if re.search(r"indvd[^/]*$",fstpaire[0])!=None:
+                MethodToSeqpop1="indvd"
+            elif re.search(r"pool[^/]+",fstpaire[0])!=None:
+                MethodToSeqpop1="pool"
+            if re.search(r"indvd[^/]+",fstpaire[1])!=None:
+                MethodToSeqpop2="indvd"
+            elif re.search(r"pool[^/]+",fstpaire[1])!=None:
+                MethodToSeqpop2="pool"
+            fst_caculator = Caculators.Caculate_Fst(MethodToSeqpop1=MethodToSeqpop1, MethodToSeqpop2=MethodToSeqpop2)
 
             fst = Fst() 
             tempdbtools.operateDB("callproc", "mysql_sp_add_column", data=("ninglabvariantdata_tmp", treearrayprename+"treearray", (fstpaire1name[0:5]+fstpaire2name[0:5]), "text", "default null"))
@@ -260,25 +268,37 @@ if __name__ == '__main__':
         phyliparrayinfile.close()
     elif fsttype == 'G' or fsttype == 'g':
         globalFstMapByChrom={}
-        fst_caculator = Caculators.Caculate_Fst()
+        
 
         
 #         fst = Fst() 
         specisnum=str(len(vcffileslist[:]))
         for majorpop in vcffileslist[:]:
+            MethodToSeqpop1=None
 #            pop1 = VCFutil.VCF_Data(majorpop)  # new a class
 #            pop1.getVcfMap(majorpop)
 
-            fstlist=[]   
+            fstlist=[]
+            vcfname=re.search(r"[^/]*$",majorpop).group(0)
             for othrpop in vcffileslist[:]:
+                MethodToSeqpop2=None
                 if majorpop == othrpop:
                     continue
 #                pop2 = VCFutil.VCF_Data(othrpop)  # new a class 
 #                pop2.getVcfMap(othrpop)
                 print("startcaculatefst", majorpop, othrpop)
                 fstlist.append(Fst())
+                if re.search(r"indvd[^/]+",majorpop)!=None:
+                    MethodToSeqpop1="indvd"
+                elif re.search(r"pool[^/]+",majorpop)!=None:
+                    MethodToSeqpop1="pool"
+                if re.search(r"indvd[^/]+",othrpop)!=None:
+                    MethodToSeqpop2="indvd"
+                elif re.search(r"pool[^/]+",othrpop)!=None:
+                    MethodToSeqpop2="pool"
+                fst_caculator = Caculators.Caculate_Fst(MethodToSeqpop1=MethodToSeqpop1, MethodToSeqpop2=MethodToSeqpop2)
                 fstlist[-1].caculateFstAccordingdb(dbtools, chromtable, majorpop, othrpop, fst_caculator, windowWidth,slideSize,minlength)          
-            vcfname=re.search(r"[^/]*$",majorpop).group(0)
+                vcfname+=("VS"+re.search(r"[^/]*$",othrpop).group(0)[0])
             outfile=open(outputpath+vcfname+'.gfst'+str(windowWidth)+"_"+str(slideSize)+"_"+specisnum,'w')
             print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnp\twinvalue\tzvalue",file=outfile)
             if len(fstlist) != 0:
@@ -334,5 +354,7 @@ if __name__ == '__main__':
                                 else:
                                     zgFst = "NA"
                                     print(currentchrID + "\t" + str(i) + "\t" + str(globalFstMapByChrom[currentchrID][i][0]) + "\t" + str(globalFstMapByChrom[currentchrID][i][1]) +"\t" + str(globalFstMapByChrom[currentchrID][i][2]) + "\t" + globalFstMapByChrom[currentchrID][i][3] + "\t" + zgFst, file=outfile)
-            outfile.close()                    
+            outfile.close()
+            if len(vcffileslist)==2:
+                break
     dbtools.disconnect()
