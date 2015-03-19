@@ -156,7 +156,7 @@ class OperatorWithData_mode1(OperatorWithData):
         newcmdline = re.sub(r"[-\w\d]+[=\s]+\${.*?}", " ", newcmdline)                
                     # sub was acted from the first to the rear most
         print("pathToOutputdata_createdir", pathToOutputdata_createdir)
-        if len(targetdatasuffix)!=0 and targetdata_count==0:
+        if len(targetdatasuffix)!=0 and targetdata_count!=len(targetdatasuffix):
             return newcmdline
         try:
             print(self.scriptcontext + newcmdline, file=open(self.scriptsstoredir + self.cmdtemplatefilename + "." + updirname + "Script.sh", "a"))

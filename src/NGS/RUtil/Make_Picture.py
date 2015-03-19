@@ -146,8 +146,16 @@ class MakeMhtGraph(object):
         outfile.close()
         return re.search(r"[^/]*$", self.pathtoOutFileName).group(0)  # for linux
 
-
-    def prepareMhtFile(self, inputfileName, dataType, chromPrefix="", positive_negtive=None, fillvalue=0):
+    def prepareMhtFile(self,inputfileName,dataType, positive_negtive=None, fillvalue=0):
+        self.pathtoOutFileName = inputfileName + "_" + positive_negtive + ".z" + dataType
+        os.system("""cp """+inputfileName+" "+self.pathtoOutFileName+"forhist")
+        fillvalue=str(fillvalue)
+        if positive_negtive=="positive":
+            os.system(""" awk '{OFS="\t";if($6=="NA" || $7<0){$6="""+fillvalue+""";$7="""+fillvalue+"""};print $0}' """+inputfileName+">"+self.pathtoOutFileName)
+        elif positive_negtive == "negtive":
+            os.system(""" awk '{OFS="\t";if($6=="NA" || $7>0){$6="""+fillvalue+""";$7="""+fillvalue+"""};print $0}' """+inputfileName+">"+self.pathtoOutFileName)
+        return re.search(r"[^/]*$", self.pathtoOutFileName).group(0)  # for linux
+    def prepareMhtFile_old(self, inputfileName, dataType, chromPrefix="", positive_negtive=None, fillvalue=0):
         """fill all NA value window with fillvalue,and fill all window that zvalue<=0 with fillvalue when positive_negtive= positive....
         """
         originalfile = open(inputfileName, 'r')
@@ -219,14 +227,19 @@ class MakeMhtGraph(object):
                 print(chromNo, *self.dataForGraphe[chromNo][i], sep="\t", file=outfile)
         outfile.close()
         return re.search(r"[^/]*$", self.pathtoOutFileName).group(0)  # for linux
-    def makeMhtPicture_HistonPicture(self, inputfileName, dataType, chromPrefix="", positive_negtive=None, fillvalue=0):
+    def makeMhtPicture_HistonPicture(self, inputfileName, dataType, positive_negtive=None, fillvalue=0):
         line = open(inputfileName, 'r').readline().strip()
         open(inputfileName, 'r').close()
-        if 8 == len(re.split(r'\s+', line)):
-            name = self.prepareMhtFileWithgeneName(inputfileName, dataType, chromPrefix, positive_negtive, fillvalue)
-        elif 6 == len(re.split(r'\s+', line)):
-            name = self.prepareMhtFile(inputfileName, dataType, chromPrefix, positive_negtive, fillvalue)
-        dir = re.search(r"^.*/", self.pathtoOutFileName).group(0)
+#         if 8 == len(re.split(r'\s+', line)):
+#             name = self.prepareMhtFileWithgeneName(inputfileName, dataType, chromPrefix, positive_negtive, fillvalue)
+#         elif 6 == len(re.split(r'\s+', line)):
+        name = self.prepareMhtFile(inputfileName, dataType, positive_negtive, fillvalue)
+        if re.search(r"^.*/", self.pathtoOutFileName)!=None:
+            dir = re.search(r"^.*/", self.pathtoOutFileName).group(0)
+        else:
+            a=os.popen("pwd")
+            dir=a.readline().strip()
+            a.close()
         r = robjects.r
         print(name, self.pathtoOutFileName, dir)
         
@@ -239,7 +252,7 @@ class MakeMhtGraph(object):
         print('x=read.table("' + self.pathtoOutFileName + '",header=T)') 
         r('x=read.table("' + self.pathtoOutFileName + '",header=T)')
         
-        r("data=with(x,cbind(" + chromPrefix + ",bp_start,z" + dataType + "))")
+        r("data=with(x,cbind(chrNo,winNo,zvalue))")
         r('colors <- rep(c("green2","firebrick1"),38000)')
         r('par(las=1, xpd=TRUE, cex.axis=1.0, cex=0.5)')
         r('mhtplot(data,control=mht.control(logscale=FALSE,colors=colors,cex=0.5),pch=20,ylab="z' + dataType + '")')
@@ -248,13 +261,14 @@ class MakeMhtGraph(object):
         r('dev.off()')
 #         print(name,dataType,"tiff('" + name + "histon_" + dataType + ".tiff'")
         print(r('Cairo.capabilities()'))
+        r('x=read.table("' + self.pathtoOutFileName + 'forhist",header=T)')
         r("CairoPNG('" + name + "histon_" + dataType + ".png')")#need yum groupinstall "X Window System"
 #         if dataType == "Hp":
 #             
 #             r("bins=seq(0,0.6,by=0.001)")
 #         elif dataType =="Fst":
 #             r("bins=seq(-6,6,by=0.001)")
-        r("hist(x$" + dataType + ",breaks=1000,main='" + name + "')")
+        r("hist(x$winvalue,breaks=1000,main='" + name + "')")
         r('dev.off()')
         
         r("CairoPNG('" + name + "histon_z" + dataType + ".png')")
@@ -263,7 +277,8 @@ class MakeMhtGraph(object):
 #         elif dataType == "Fst":
 #             r("zbins=seq(-3.5,6,by=0.02)")
         
-        r("hist(x$z" + dataType + ",breaks=1000,main='" + name + "')")
+        r("hist(x$zvalue,breaks=1000,main='" + name + "')")
         r('dev.off()')
+        os.system("rm "+self.pathtoOutFileName+ "forhist")
 
         
