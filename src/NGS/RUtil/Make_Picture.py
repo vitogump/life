@@ -22,17 +22,17 @@ class Dstistics_allpop(object):
     def __init__(self, allpopslist):
         super().__init__()
         self.allpossiblecombination = list(itertools.permutations(allpopslist, 3))
-    def caculateDofAllpossibleCombination(self,database,ip,usrname,pw,allpopssnptable, chromstable, winwidth, minlengthOfchrom, filenamepre):
+    def caculateDofAllpossibleCombination(self, database, ip, usrname, pw, allpopssnptable, chromstable, winwidth, minlengthOfchrom, filenamepre):
         listtofinalfile = []
-        D_sum_file=open(filenamepre+"D_SUM.txt","w")
-        print("p1,p2,p3\tABBA\tBABA\tD-fixed\tSE-fixed\tD-SNP\tSE-SNP",file=D_sum_file)
+        D_sum_file = open(filenamepre + "D_SUM.txt", "w")
+        print("p1,p2,p3\tABBA\tBABA\tD-fixed\tSE-fixed\tD-SNP\tSE-SNP", file=D_sum_file)
         tempfiletomakebox = open(filenamepre + "test.box", 'w')
         
-        print("D","group","chrom",sep='\t',file=tempfiletomakebox)
+        print("D", "group", "chrom", sep='\t', file=tempfiletomakebox)
         for p1name, p2name, p3name in self.allpossiblecombination:
-            allABBAcount = 0;allBABAcount = 0;noofsnp=0
+            allABBAcount = 0;allBABAcount = 0;noofsnp = 0
             
-            D = DAP.Dstatistics(database=database,ip=ip,usrname=usrname,pw=pw,allpopssnptable=allpopssnptable)
+            D = DAP.Dstatistics(database=database, ip=ip, usrname=usrname, pw=pw, allpopssnptable=allpopssnptable)
             D_caculator = Caculators.Caculate_Dstatistics()
             D.caculateFstAccordingdb(chromstable, p1name, p2name, p3name, D_caculator, winwidth, minlengthOfchrom)
             winCrossGenome_fix = []
@@ -44,13 +44,13 @@ class Dstistics_allpop(object):
                     winCrossGenome_fix.append(D.DMapByChrom[chrom][0][2])
                 allABBAcount += D.DMapByChrom[chrom][0][0]
                 allBABAcount += D.DMapByChrom[chrom][0][1]
-                noofsnp+=D.DMapByChrom[chrom][0][3]
-                print(str(D.DMapByChrom[chrom][0][3]),str(D.DMapByChrom[chrom][0][4]),p1name+","+p2name+","+p3name,chrom,sep='\t',file=tempfiletomakebox)
+                noofsnp += D.DMapByChrom[chrom][0][3]
+                print(str(D.DMapByChrom[chrom][0][3]), str(D.DMapByChrom[chrom][0][4]), p1name + "," + p2name + "," + p3name, chrom, sep='\t', file=tempfiletomakebox)
             exception_fix = numpy.mean(winCrossGenome_fix);exception_snp = numpy.mean(winCrossGenome_snp)
             variance_fix = numpy.var(winCrossGenome_fix);variance_snp = numpy.var(winCrossGenome_snp)
             stderr_fix = math.sqrt(variance_fix * len(winCrossGenome_fix));stderr_snp = math.sqrt(variance_snp * len(winCrossGenome_snp))
-            print(p1name +","+ p2name+"," + p3name,str(allABBAcount), str(allBABAcount), str(exception_fix), str(stderr_fix), str(noofsnp),str(exception_snp), str(stderr_snp),sep="\t",file=D_sum_file)
-            listtofinalfile.append((p1name +","+ p2name+"," + p3name, str(allABBAcount), str(allBABAcount), str(exception_fix), str(stderr_fix), str(noofsnp),str(exception_snp), str(stderr_snp)))
+            print(p1name + "," + p2name + "," + p3name, str(allABBAcount), str(allBABAcount), str(exception_fix), str(stderr_fix), str(noofsnp), str(exception_snp), str(stderr_snp), sep="\t", file=D_sum_file)
+            listtofinalfile.append((p1name + "," + p2name + "," + p3name, str(allABBAcount), str(allBABAcount), str(exception_fix), str(stderr_fix), str(noofsnp), str(exception_snp), str(stderr_snp)))
             D.dbtools.disconnect()
         tempfiletomakebox.close()
 #         for rec in listtofinalfile:
@@ -64,11 +64,12 @@ class MakeMhtGraph(object):
     '''
 
     
-    def __init__(self):
+    def __init__(self,inputfileName, dataType, positive_negtive, fillvalue):
         super().__init__()
         self.originaldata = {}
         self.dataForGraphe = {}
-        self.pathtoOutFileName = ""
+        self.pathtoOutFileNametemp = ""
+        self.namewithoutpathtemp=""
         '''
         Constructor
         '''
@@ -145,110 +146,44 @@ class MakeMhtGraph(object):
                 print(chromNo, *self.dataForGraphe[chromNo][i], sep="\t", file=outfile)
         outfile.close()
         return re.search(r"[^/]*$", self.pathtoOutFileName).group(0)  # for linux
-
-    def prepareMhtFile(self,inputfileName,dataType, positive_negtive=None, fillvalue=0):
-        self.pathtoOutFileName = inputfileName + "_" + positive_negtive + ".z" + dataType
-        os.system("""cp """+inputfileName+" "+self.pathtoOutFileName+"forhist")
-        fillvalue=str(fillvalue)
-        if positive_negtive=="positive":
-            os.system(""" awk '{OFS="\t";if($6=="NA" || $7<0){$6="""+fillvalue+""";$7="""+fillvalue+"""};print $0}' """+inputfileName+">"+self.pathtoOutFileName)
+    def prepareMhtFile(self,inputfileName, dataType, positive_negtive=None, fillvalue=0):
+        pathtoOutFileName_new = inputfileName + "_" + positive_negtive + ".z" + dataType
+        fillvalue = str(fillvalue)
+        if positive_negtive == "positive":
+            os.system(""" awk '{OFS="\t";if(NR!=1 && ($6=="NA" || $7<0)){$6=""" + fillvalue + """;$7=""" + fillvalue + """};print $0}' """ + inputfileName + ">" + pathtoOutFileName_new)
         elif positive_negtive == "negtive":
-            os.system(""" awk '{OFS="\t";if($6=="NA" || $7>0){$6="""+fillvalue+""";$7="""+fillvalue+"""};print $0}' """+inputfileName+">"+self.pathtoOutFileName)
-        return re.search(r"[^/]*$", self.pathtoOutFileName).group(0)  # for linux
-    def prepareMhtFile_old(self, inputfileName, dataType, chromPrefix="", positive_negtive=None, fillvalue=0):
-        """fill all NA value window with fillvalue,and fill all window that zvalue<=0 with fillvalue when positive_negtive= positive....
-        """
-        originalfile = open(inputfileName, 'r')
-        print("title", originalfile.readline())
-        if positive_negtive == None:
-            print(inputfileName, dataType)
-            self.pathtoOutFileName = inputfileName + ".z" + dataType
+            os.system(""" awk '{OFS="\t";if(NR!=1 && ($6=="NA" || $7>0)){$6=""" + fillvalue + """;$7=""" + fillvalue + """};print $0}' """ + inputfileName + ">" + pathtoOutFileName_new)
+        return re.search(r"[^/]*$", pathtoOutFileName_new).group(0),pathtoOutFileName_new  # for linux
+    
+    def makeHistonPicture(self,inputfileName, dataType,columnnames=("winvalue","zvalue")):
+        r = robjects.r
+        if re.search(r"^.*/", self.pathtoOutFileName) != None:
+            dir = re.search(r"^.*/", self.pathtoOutFileName).group(0)
         else:
-            self.pathtoOutFileName = inputfileName + "_" + positive_negtive + ".z" + dataType
-        for line in originalfile:
-            linelist = re.split(r'\s+', line.strip())
-            currentChrom = linelist[0].strip()
-            try:
-                ChromNo = re.search(r"([\d]+)", currentChrom).group(1)
-            except AttributeError:
-                ChromString = re.search(r"" + chromPrefix + "([\d\D]+)$", currentChrom).group(1)
-                ChromNo = 0
-                for e in ChromString:
-                    if e.isalpha():
-                        ChromNo += ord(e)
-                    elif e.isdigit():
-                        ChromNo += int(e) 
-                print(ChromNo)
-            if re.search(r"^" + chromPrefix, currentChrom):
-                if linelist[4].strip() != "NA" or linelist[5].strip() != "NA" or True:
-                    if positive_negtive == None:
-                        if ChromNo in self.dataForGraphe.keys():
-                            if linelist[5].strip() != "NA":
-                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:6]))
-                            else:
-                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:4] + [fillvalue, fillvalue]))
-                        else:
-                            self.dataForGraphe[ChromNo] = [tuple(linelist[1:4] + [fillvalue, fillvalue])]
-                    elif positive_negtive == "positive":
-                        if ChromNo in self.dataForGraphe.keys():
-                            if linelist[5].strip() == 'NA' or float(linelist[5].strip()) <= 0:
-                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:4] + [fillvalue, fillvalue]))
-                            else:
-                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:6]))
-                        else:
-                            if linelist[5].strip() == 'NA' or float(linelist[5].strip()) <= 0:
-                                self.dataForGraphe[ChromNo] = [tuple(linelist[1:4] + [fillvalue, fillvalue])]
-                            else:
-                                self.dataForGraphe[ChromNo] = [tuple(linelist[1:6])]
-                    elif positive_negtive == "negtive":
-                        if ChromNo in self.dataForGraphe.keys():
-                            if linelist[5].strip() == 'NA' or float(linelist[5].strip()) >= 0:
-                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:4] + [fillvalue, fillvalue]))
-                            else:
-                                self.dataForGraphe[ChromNo].append(tuple(linelist[1:6]))
-                        else:
-                            if linelist[5].strip() == 'NA' or float(linelist[5].strip()) >= 0:
-                                self.dataForGraphe[ChromNo] = [tuple(linelist[1:4] + [fillvalue, fillvalue])]
-                            else:
-                                self.dataForGraphe[ChromNo] = [tuple(linelist[1:6])]                           
-                    else:
-                        return "error"
-                else:
-                    if ChromNo in self.dataForGraphe.keys():
-                        self.dataForGraphe[ChromNo].append(tuple(linelist[1:4] + [fillvalue, fillvalue]))
-                    
-#         if len(linelist)==6:
-#             print(chromPrefix, "winNo", "bp_start", "bp_end", dataType, "z" + dataType, sep="\t", file=open(self.pathtoOutFileName, "w"))
-        print(chromPrefix, "winNo", "bp_start", "bp_end", dataType, "z" + dataType, sep="\t", file=open(self.pathtoOutFileName, "w"))
-#         print(chromPrefix,"bp_start",dataType)
-        outfile = open(self.pathtoOutFileName, 'a')
-        for chromNo in sorted(self.dataForGraphe.keys(), key=lambda t:int(t)):
-            for i in range(len(self.dataForGraphe[chromNo])):
-                print(chromNo, *self.dataForGraphe[chromNo][i], sep="\t", file=outfile)
-        outfile.close()
-        return re.search(r"[^/]*$", self.pathtoOutFileName).group(0)  # for linux
-    def makeMhtPicture_HistonPicture(self, inputfileName, dataType, positive_negtive=None, fillvalue=0):
-        line = open(inputfileName, 'r').readline().strip()
-        open(inputfileName, 'r').close()
+            a = os.popen("pwd")
+            dir = a.readline().strip()
+            a.close()        
+        r("setwd('" + dir + "')")
+        r('.libPaths("/opt/Rpackages/")')
+        r("library(Cairo)")
+        r('x=read.table("' + inputfileName + '",header=T)')
+        for columnname in columnnames:
+            r("CairoPNG('" + self.namewithoutpath + "histon_"+columnname+"_" + dataType + ".png')")
+            r("hist("+columnname+",breaks=1000,main='" + self.namewithoutpath + "')")
+            r('dev.off()')
+    def makeMhtplots_compareInOnePicture(self, outputpath, dataType, positive_negtive=None,positive_winfiles,negtive_winfiles,fillvalue=0):
 #         if 8 == len(re.split(r'\s+', line)):
 #             name = self.prepareMhtFileWithgeneName(inputfileName, dataType, chromPrefix, positive_negtive, fillvalue)
 #         elif 6 == len(re.split(r'\s+', line)):
-        name = self.prepareMhtFile(inputfileName, dataType, positive_negtive, fillvalue)
-        if re.search(r"^.*/", self.pathtoOutFileName)!=None:
-            dir = re.search(r"^.*/", self.pathtoOutFileName).group(0)
-        else:
-            a=os.popen("pwd")
-            dir=a.readline().strip()
-            a.close()
         r = robjects.r
-        print(name, self.pathtoOutFileName, dir)
+        print(self.namewithoutpath, self.pathtoOutFileName, dir)
         
-        r("setwd('" + dir + "')")
+        r("setwd('" + outputpath + "')")
         r('.libPaths("/opt/Rpackages/")')
         r("library(gap)")
         r("library(Cairo)")
-         
-        r("pdf('" + name + ".pdf',width=10,height=4.5)")
+        namewithoutpath,pathtoOutFileName
+        r("pdf('" + self.namewithoutpath + ".pdf',width=10,height=4.5)")
         print('x=read.table("' + self.pathtoOutFileName + '",header=T)') 
         r('x=read.table("' + self.pathtoOutFileName + '",header=T)')
         
@@ -257,28 +192,28 @@ class MakeMhtGraph(object):
         r('par(las=1, xpd=TRUE, cex.axis=1.0, cex=0.5)')
         r('mhtplot(data,control=mht.control(logscale=FALSE,colors=colors,cex=0.5),pch=20,ylab="z' + dataType + '")')
         r('axis(2)')
-        r("title('" + name + "')")
+        r("title('" + self.namewithoutpath + "')")
         r('dev.off()')
 #         print(name,dataType,"tiff('" + name + "histon_" + dataType + ".tiff'")
         print(r('Cairo.capabilities()'))
         r('x=read.table("' + self.pathtoOutFileName + 'forhist",header=T)')
-        r("CairoPNG('" + name + "histon_" + dataType + ".png')")#need yum groupinstall "X Window System"
+        r("CairoPNG('" + self.namewithoutpath + "histon_" + dataType + ".png' width=1360,height=650)")  # need yum groupinstall "X Window System"
 #         if dataType == "Hp":
 #             
 #             r("bins=seq(0,0.6,by=0.001)")
 #         elif dataType =="Fst":
 #             r("bins=seq(-6,6,by=0.001)")
-        r("hist(x$winvalue,breaks=1000,main='" + name + "')")
+        r("hist(x$winvalue,breaks=1000,main='" + self.namewithoutpath + "')")
         r('dev.off()')
         
-        r("CairoPNG('" + name + "histon_z" + dataType + ".png')")
+        r("CairoPNG('" + self.namewithoutpath + "histon_z" + dataType + ".png')")
 #         if dataType == "Hp":
 #             r("zbins=seq(-6,3.5,by=0.02)")
 #         elif dataType == "Fst":
 #             r("zbins=seq(-3.5,6,by=0.02)")
         
-        r("hist(x$zvalue,breaks=1000,main='" + name + "')")
+        r("hist(x$zvalue,breaks=1000,main='" + self.namewithoutpath + "')")
         r('dev.off()')
-        os.system("rm "+self.pathtoOutFileName+ "forhist")
+        os.system("rm " + self.pathtoOutFileName + "forhist")
 
         

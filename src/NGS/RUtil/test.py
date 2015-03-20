@@ -18,6 +18,8 @@ parser.add_option("-f","--fillvalue",dest="fillvalue",default=0,help="default in
 parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", default=True,
                   help="don't print status messages to stdout")
+parser.add_option("-p","--positive",dest="multiple_positive_winfiles",action="append",help="on top")#
+parser.add_option("-n","--negtive",dest="multiple_negtive_winfiles",action="append",help="at bottom")#
 (options, args) = parser.parse_args()
 #if len(sys.argv) < 5:
 #    print("python test.py [inputfile1] [inputfile2] [inputfile3]....-p [chromPrefix] -s [positive_negtive(or a)] -T [dataType] -c column_num")

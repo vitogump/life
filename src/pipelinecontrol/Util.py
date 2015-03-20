@@ -12,47 +12,39 @@ import src.web.DBA as DBA
 
 
 ISOTIMEFORMAT = '%Y-%m-%d %X'
-def upTodownTravelDir(rootDir, OperatorWithData, datadepth=9999, Interceptor_depth=0, curdepth=0,collection_depth=0,interceptdirs=[]):
+def upTodownTravelDir(rootDir, OperatorWithData, datadepth=9999, Interceptor_depth=0,curdepth=0,collection_depth=0,interceptdirs=[],rootDirnotchange="",Interceptor_depth_notchange=0):
     """
         
     """
-    print(rootDir)
-    if collection_depth == 0:
-        # data files are under the curdepth
-        print("righht")
-        newcmdline = OperatorWithData.process(rootDir, datadepth, curdepth)#curdepth== the beginning value of the Interceptor_depth
-        print('rootDir', rootDir, newcmdline)
-        return
-    # now go into a deeper dir
-    curdepth = curdepth + 1
-    Interceptor_depth = Interceptor_depth - 1
-    collection_depth=collection_depth-1
-    if Interceptor_depth==0:
-        for elem in os.listdir(path=rootDir):
-            path = rootDir + "/" + elem
-            if not os.path.isdir(path):
-                # this is a data file
-                pass
-                # print("data",path)
-            else:
-                if interceptdirs!=[] and re.search(r".*/([^/]+)$",path).group(1).strip() not in interceptdirs:
-                    
-                    continue
-                # this is a folder
-    #             if len(mode2_Interceptor) > 1 and curdepth == mode2_Interceptor[0] and elem not in mode2_Interceptor[1:]:
-    #                 continue  # this is for mode 2 only
-    #             print("go into folder", path)
-                print("here",path,collection_depth)
-                upTodownTravelDir(path, OperatorWithData, datadepth, Interceptor_depth, curdepth,collection_depth,interceptdirs=[])
-    elif Interceptor_depth<0:
-        for elem in os.listdir(path=rootDir):
-            path = rootDir + "/" + elem
-            if not os.path.isdir(path):
-                pass
-            else:
-                upTodownTravelDir(path, OperatorWithData, datadepth, Interceptor_depth, curdepth,collection_depth,interceptdirs=[])
-        
 
+    if Interceptor_depth==0:
+        print(rootDirnotchange,"++++++++++++  =0   +++++++++++++++++++++++++")
+        if re.search(r"" + rootDirnotchange + "(/.*?){" + str(Interceptor_depth_notchange-1) + "}[/]([^/]+)", rootDir)==None:
+            print(rootDir,"is not the path a")
+            return
+        elif interceptdirs!=[] and  re.search(r"" + rootDirnotchange + "(/.*?){" + str(Interceptor_depth_notchange-1) + "}[/]([^/]+)", rootDir).group(2) not in interceptdirs:
+            print(rootDir,interceptdirs,"is not the path b")
+            return
+        print("rootDir",rootDir,"datadepth",datadepth,"Interceptor_depth", Interceptor_depth,"curdepth", curdepth,"collection_depth",collection_depth)    
+        if collection_depth == 0:
+            print("OperatorWithData")
+            newcmdline=OperatorWithData.process(rootDir, datadepth, curdepth)
+        elif collection_depth > 0:
+            for elem in os.listdir(path=rootDir):
+                path = rootDir + "/" + elem
+                if (not os.path.isdir(path)):
+                    print(path,"is not the file")
+                else:
+                    upTodownTravelDir(path, OperatorWithData, datadepth, Interceptor_depth, curdepth+1,collection_depth-1,interceptdirs,rootDirnotchange,Interceptor_depth_notchange)
+    elif Interceptor_depth>0:
+        print("++++++++++  >0   ++++++++++")
+        print("rootDir",rootDir,"datadepth",datadepth,"Interceptor_depth", Interceptor_depth,"curdepth", curdepth,"collection_depth",collection_depth)        
+        for elem in os.listdir(path=rootDir):
+            path = rootDir + "/" + elem
+            if not os.path.isdir(path):
+                pass
+            else:
+                upTodownTravelDir(path, OperatorWithData, datadepth, Interceptor_depth-1, curdepth+1,collection_depth-1,interceptdirs,rootDirnotchange,Interceptor_depth_notchange)
 
 class OperatorWithData():
     def __init__(self, scriptsstoredir="F:/work/pipelinecontrol/scripts"):
@@ -113,7 +105,7 @@ class OperatorWithData_mode1(OperatorWithData):
             tagname="/"+re.search(r".*/([^/]+)"+tagname+"$", curpath).group(1)+tagname
         tagname=re.sub(r"/","_",tagname[1:])
         updirname = re.search(r".*/([^/]+)$", curpath).group(1)
-        newcmdline=re.sub(r"\${tag}",tagname,newcmdline)
+        newcmdline,no_of_tags=re.subn(r"\${tag}",tagname,newcmdline)
 
         pathToOutputdata_createdir = ""
 
@@ -156,7 +148,8 @@ class OperatorWithData_mode1(OperatorWithData):
         newcmdline = re.sub(r"[-\w\d]+[=\s]+\${.*?}", " ", newcmdline)                
                     # sub was acted from the first to the rear most
         print("pathToOutputdata_createdir", pathToOutputdata_createdir)
-        if len(targetdatasuffix)!=0 and targetdata_count!=len(targetdatasuffix):
+        if len(targetdatasuffix)!=0 and targetdata_count!=len(targetdatasuffix)-no_of_tags:
+            print("targetdata_count!=len(targetdatasuffix)")
             return newcmdline
         try:
             print(self.scriptcontext + newcmdline, file=open(self.scriptsstoredir + self.cmdtemplatefilename + "." + updirname + "Script.sh", "a"))
@@ -171,6 +164,7 @@ class OperatorWithData_mode2(OperatorWithData):
         interceptdirs=([subdir names list expected in the assigned depth])
         """
         super().__init__(scriptsstoredir)
+        self.count=0
         self.cmdtemplatefilename=re.search(r"[^/]*$",cmdtemplatefile).group(0)
         scriptcontent=open(cmdtemplatefile,'r').read()
         
@@ -185,7 +179,6 @@ class OperatorWithData_mode2(OperatorWithData):
 #         self.interceptdirs=interceptdirs
 
         self.suffixstr=""
-        self.outputlist=re.findall(r"\${output=\s*([^\s^\|]*)\|suffix=(.*?)}",self.cmdline)
 #         outputoptionstr = re.search(r"(-[\w\d]+[=\s]+)\${output=.*\|suffix=.*?}", self.cmdline).group(1)  # for example "OUTPUT=${output} -o ${output}"
         
         for outputtuple in self.outputlist:
@@ -195,12 +188,14 @@ class OperatorWithData_mode2(OperatorWithData):
                 os.makedirs(outputpath)
             if outsuffix=="/":
                 outsuffix=""# dir
-            self.newcmdline = re.sub(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}", outputpath + "/" +outfilepre+ outsuffix + " ", self.cmdline)
+            self.outputfilenamewithoutoupfilesuffix=outputpath + "/" +outfilepre
+            self.newcmdline = re.sub(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}", outputpath + "/" +outfilepre+"."+ outsuffix + " ", self.cmdline)
 #         self.newcmdline = re.sub(r"[-\w\d]+[=\s]+\${output=.*\|suffix=.*?}", outputoptionstr + outputpath + "/" + suffix + " ", self.cmdline)
         print("OperatorWithData_mode2 __init__", self.newcmdline)
 #         self.suffix = suffix
     def process(self, curpath, datadepth, curdepth):
         print("mode2 process")
+        print(curpath, datadepth, curdepth)
 #         if self.interceptdirs!=[] and re.search(r".*/([^/]+)$",curpath).group(1).strip() not in self.interceptdirs:
 #             return
         newcmdline = self.newcmdline
@@ -220,6 +215,7 @@ class OperatorWithData_mode2(OperatorWithData):
             if len(re.split(r"/",rootStr))==len(re.split(r"/",self.inputdatapath))+datadepth:# reach the depth that datafiles in it
                 for datafilename in files:
                     if re.search(r".*?" + suffixstr+"$", datafilename) != None:
+                        self.count+=1
                         newcmdline = re.sub(r"[-\w\d]+[=\s]+\${.*?}", optionstr + " " + curpath + "/" + datafilename + " " + option_suffix_obj.group(0), newcmdline)
 
 

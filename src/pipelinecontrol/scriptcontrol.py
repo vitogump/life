@@ -64,19 +64,20 @@ if __name__ == '__main__':
             
         #progamma logic
         operatorwithdata_mode1=OperatorWithData_mode1(options.cmdtemplatefile,scriptsstoredir=scriptsstoredir,taglen=dirsubtotaglen)
-        upTodownTravelDir(operatorwithdata_mode1.inputdatapath,operatorwithdata_mode1,datadepth,Interceptor_depth,collection_depth=collection_depth,interceptdirs=interceptdirs)
+        upTodownTravelDir(operatorwithdata_mode1.inputdatapath,operatorwithdata_mode1,datadepth,Interceptor_depth,collection_depth=collection_depth,interceptdirs=interceptdirs,rootDirnotchange=operatorwithdata_mode1.inputdatapath,Interceptor_depth_notchange=Interceptor_depth)
         
     elif mode==2:
         outfilepre=options.outfilepre.strip() 
         operatorwithdata_mode2=OperatorWithData_mode2(options.cmdtemplatefile,scriptsstoredir,outfilepre)
         collection_depth=datadepth
-        upTodownTravelDir(operatorwithdata_mode2.inputdatapath,operatorwithdata_mode2,datadepth,Interceptor_depth,collection_depth=collection_depth,interceptdirs=interceptdirs)
+        upTodownTravelDir(operatorwithdata_mode2.inputdatapath,operatorwithdata_mode2,datadepth,Interceptor_depth,collection_depth=collection_depth,interceptdirs=interceptdirs,rootDirnotchange=operatorwithdata_mode2.inputdatapath,Interceptor_depth_notchange=Interceptor_depth)
         #finalcmdline=re.sub(r"\${output}")
-        finalcmdline=re.sub(r"[-\w\d]+[=\s]+\${.*?}"," ",operatorwithdata_mode2.newcmdline)
+        finalcmdline=re.sub(operatorwithdata_mode2.outputfilenamewithoutoupfilesuffix,operatorwithdata_mode2.outputfilenamewithoutoupfilesuffix+str(operatorwithdata_mode2.count),operatorwithdata_mode2.newcmdline)
+        finalcmdline=re.sub(r"[-\w\d]+[=\s]+\${.*?}"," ",finalcmdline)
         try:
-            print(operatorwithdata_mode2.scriptcontext+finalcmdline,file=open(operatorwithdata_mode2.scriptsstoredir+"/"+operatorwithdata_mode2.cmdtemplatefilename+operatorwithdata_mode2.suffixstr+"Script.sh",'a'))
+            print(operatorwithdata_mode2.scriptcontext+finalcmdline,file=open(operatorwithdata_mode2.scriptsstoredir+"/"+re.search(r"[^/]*$",outfilepre).group(0)+str(operatorwithdata_mode2.count)+"_"+operatorwithdata_mode2.cmdtemplatefilename+"_"+operatorwithdata_mode2.suffixstr+"Script.sh",'a'))
         except FileNotFoundError:
-            print(operatorwithdata_mode2.scriptcontext+finalcmdline,file=open(operatorwithdata_mode2.scriptsstoredir+"/"+operatorwithdata_mode2.cmdtemplatefilename+operatorwithdata_mode2.suffixstr+"Script.sh",'w'))
+            print(operatorwithdata_mode2.scriptcontext+finalcmdline,file=open(operatorwithdata_mode2.scriptsstoredir+"/"+re.search(r"[^/]*$",outfilepre).group(0)+str(operatorwithdata_mode2.count)+"_"+operatorwithdata_mode2.cmdtemplatefilename+"_"+operatorwithdata_mode2.suffixstr+"Script.sh",'w'))
     print("==============")
 #     cmdline=operatorwithdata_mode1.cmdline
 
