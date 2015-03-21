@@ -19,7 +19,7 @@ def upTodownTravelDir(rootDir, OperatorWithData, datadepth=9999, Interceptor_dep
 
     if Interceptor_depth==0:
         print(rootDirnotchange,"++++++++++++  =0   +++++++++++++++++++++++++")
-        if re.search(r"" + rootDirnotchange + "(/.*?){" + str(Interceptor_depth_notchange-1) + "}[/]([^/]+)", rootDir)==None:
+        if interceptdirs!=[] and re.search(r"" + rootDirnotchange + "(/.*?){" + str(Interceptor_depth_notchange-1) + "}[/]([^/]+)", rootDir)==None:
             print(rootDir,"is not the path a")
             return
         elif interceptdirs!=[] and  re.search(r"" + rootDirnotchange + "(/.*?){" + str(Interceptor_depth_notchange-1) + "}[/]([^/]+)", rootDir).group(2) not in interceptdirs:
@@ -204,7 +204,7 @@ class OperatorWithData_mode2(OperatorWithData):
         optionstr = option_suffix_obj.group(1)
         suffixstr = option_suffix_obj.group(2)
         print(optionstr)
-        if re.search(r"(\s[-]+[\w\d]+[\s]+)", optionstr)==None and re.search(r"(\s[\w\d]+\s+[=]+\s+)", optionstr)==None:
+        if re.search(r"(\s[-]+[\w\d]+[\s]+)", optionstr)==None and re.search(r"([\w\d]+\s*[=])", optionstr)==None:
             optionstr=""
         print("optionstr",optionstr,"suffixstr",suffixstr)
         self.suffixstr=suffixstr
