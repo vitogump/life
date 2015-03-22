@@ -64,12 +64,15 @@ class MakeMhtGraph(object):
     '''
 
     
-    def __init__(self,inputfileName, dataType, positive_negtive, fillvalue):
+    def __init__(self):
         super().__init__()
+        a = os.popen("pwd")
+        self.olddir = a.readline().strip()
+        a.close()
         self.originaldata = {}
         self.dataForGraphe = {}
-        self.pathtoOutFileNametemp = ""
-        self.namewithoutpathtemp=""
+        self.pathtoOutFileName = ""
+        self.namewithoutpath=""
         '''
         Constructor
         '''
@@ -157,63 +160,60 @@ class MakeMhtGraph(object):
     
     def makeHistonPicture(self,inputfileName, dataType,columnnames=("winvalue","zvalue")):
         r = robjects.r
-        if re.search(r"^.*/", self.pathtoOutFileName) != None:
-            dir = re.search(r"^.*/", self.pathtoOutFileName).group(0)
+        if re.search(r"^.*/", inputfileName) != None:
+            dir = re.search(r"^.*/", inputfileName).group(0)
         else:
-            a = os.popen("pwd")
-            dir = a.readline().strip()
-            a.close()        
+            dir = self.olddir
+            
+        namewithoutpath=re.search(r"[^/]*$", inputfileName).group(0)
         r("setwd('" + dir + "')")
         r('.libPaths("/opt/Rpackages/")')
         r("library(Cairo)")
-        r('x=read.table("' + inputfileName + '",header=T)')
-        for columnname in columnnames:
-            r("CairoPNG('" + self.namewithoutpath + "histon_"+columnname+"_" + dataType + ".png')")
-            r("hist("+columnname+",breaks=1000,main='" + self.namewithoutpath + "')")
-            r('dev.off()')
-    def makeMhtplots_compareInOnePicture(self, outputpath, dataType, positive_negtive=None,positive_winfiles,negtive_winfiles,fillvalue=0):
-#         if 8 == len(re.split(r'\s+', line)):
-#             name = self.prepareMhtFileWithgeneName(inputfileName, dataType, chromPrefix, positive_negtive, fillvalue)
-#         elif 6 == len(re.split(r'\s+', line)):
-        r = robjects.r
-        print(self.namewithoutpath, self.pathtoOutFileName, dir)
+        r('x=read.table("' + namewithoutpath + '",header=T)')
         
-        r("setwd('" + outputpath + "')")
+        
+        for columnname in columnnames:
+            r("CairoPNG('" + namewithoutpath + "histon_"+columnname+"_" + dataType + ".png')")
+            r("hist(x$"+columnname+",breaks=1000,main='" + namewithoutpath + "')")
+            r('dev.off()')
+        os.system("cd "+self.olddir)     
+    def makeMhtplots_compareInOnePicture(self, outputnamewithpath,positive_winfiles,negtive_winfiles,fillvalue=0):
+        print(positive_winfiles,negtive_winfiles)
+        if re.search(r"^.*/", outputnamewithpath)!=None:
+            dir = re.search(r"^.*/", outputnamewithpath).group(0)
+        else:
+            dir=self.olddir
+        outname=re.search(r"[^/]*$", outputnamewithpath).group(0)
+        r = robjects.r
+        positive_filenames=[""]*len(positive_winfiles);positive_filenameWithPaths=[""]*len(positive_winfiles)
+        negtive_filenames=[""]*len(negtive_winfiles);negtive_filenameWithPaths=[""]*len(negtive_winfiles)
+        r("setwd('" + dir + "')")
         r('.libPaths("/opt/Rpackages/")')
         r("library(gap)")
         r("library(Cairo)")
-        namewithoutpath,pathtoOutFileName
-        r("pdf('" + self.namewithoutpath + ".pdf',width=10,height=4.5)")
-        print('x=read.table("' + self.pathtoOutFileName + '",header=T)') 
-        r('x=read.table("' + self.pathtoOutFileName + '",header=T)')
-        
-        r("data=with(x,cbind(chrNo,winNo,zvalue))")
-        r('colors <- rep(c("green2","firebrick1"),38000)')
-        r('par(las=1, xpd=TRUE, cex.axis=1.0, cex=0.5)')
-        r('mhtplot(data,control=mht.control(logscale=FALSE,colors=colors,cex=0.5),pch=20,ylab="z' + dataType + '")')
-        r('axis(2)')
-        r("title('" + self.namewithoutpath + "')")
+#         r('CairoPNG("'+outname+'.png",width='+str(((len(positive_winfiles)+len(negtive_winfiles))*221.5+35)*2)+',height='+str((len(positive_winfiles)+len(negtive_winfiles))*221.5+35)+')')
+        r('CairoPNG("'+outname+'.png",width=1500,height=750)')
+        for i in range(0,len(positive_winfiles)):
+            positive_filenames[i],positive_filenameWithPaths[i]=self.prepareMhtFile(positive_winfiles[i], "Fst", "positive", fillvalue)
+            r('p_dataframe'+str(i)+'=read.table("' + positive_filenameWithPaths[i] + '",header=T)')
+            r('p_data'+str(i)+' <- with(p_dataframe'+str(i)+',cbind(chrNo,winNo,zvalue))')
+        for i in range(0,len(negtive_winfiles)):
+            negtive_filenames[i],negtive_filenameWithPaths[i]=self.prepareMhtFile(negtive_winfiles[i], "Hp", "negtive", fillvalue)
+            r('n_dataframe'+str(i)+'=read.table("' + negtive_filenameWithPaths[i] + '",header=T)')
+            r('n_data'+str(i)+' <- with(n_dataframe'+str(i)+',cbind(chrNo,winNo,zvalue))')
+        r('colors <- rep(c("red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red"),300)')
+        r('par(las=1, cex.axis=1.5, cex=0.8,mfrow=c('+str(len(positive_winfiles)+len(negtive_winfiles)) +',1),mar=c(2, 4, 1.5, 2))')
+        for i in range(0,len(positive_winfiles)):
+            r('mhtplot(p_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=16,ylab="z' + "Fst" + '",xlab="")')
+            r("title(main='" + positive_filenames[i] + "',cex.main=2)")
+            r('axis(2)')
+        for i in range(0,len(negtive_winfiles)):
+            r('mhtplot(n_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=16,ylab="zHp",xlab="")')
+            r("title(main='" + negtive_filenames[i] + "',cex.main=2)")
+            r('axis(2)')
+        r('axis(1)')
         r('dev.off()')
-#         print(name,dataType,"tiff('" + name + "histon_" + dataType + ".tiff'")
         print(r('Cairo.capabilities()'))
-        r('x=read.table("' + self.pathtoOutFileName + 'forhist",header=T)')
-        r("CairoPNG('" + self.namewithoutpath + "histon_" + dataType + ".png' width=1360,height=650)")  # need yum groupinstall "X Window System"
-#         if dataType == "Hp":
-#             
-#             r("bins=seq(0,0.6,by=0.001)")
-#         elif dataType =="Fst":
-#             r("bins=seq(-6,6,by=0.001)")
-        r("hist(x$winvalue,breaks=1000,main='" + self.namewithoutpath + "')")
-        r('dev.off()')
-        
-        r("CairoPNG('" + self.namewithoutpath + "histon_z" + dataType + ".png')")
-#         if dataType == "Hp":
-#             r("zbins=seq(-6,3.5,by=0.02)")
-#         elif dataType == "Fst":
-#             r("zbins=seq(-3.5,6,by=0.02)")
-        
-        r("hist(x$zvalue,breaks=1000,main='" + self.namewithoutpath + "')")
-        r('dev.off()')
-        os.system("rm " + self.pathtoOutFileName + "forhist")
+
 
         

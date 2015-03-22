@@ -9,35 +9,27 @@ Created on 2013-8-11
 @author: rui
 '''
 parser = OptionParser()
-parser.add_option("-s", "--positive_negtive_a", dest="positive_negtive_a",# action="callback",type="string",callback=useoptionvalue_previous2,
-                  help="write report to FILE")
-# (options, args) = parser.parse_args()
-parser.add_option("-T","--dataType",dest="dataType",help="can be arbitrary words ,use for ylab")#
-parser.add_option("-c","--column",dest="column",default=6,help="default infile2_infile1")#
-parser.add_option("-f","--fillvalue",dest="fillvalue",default=0,help="default infile2_infile1")#
-parser.add_option("-q", "--quiet",
-                  action="store_false", dest="verbose", default=True,
-                  help="don't print status messages to stdout")
-parser.add_option("-p","--positive",dest="multiple_positive_winfiles",action="append",help="on top")#
-parser.add_option("-n","--negtive",dest="multiple_negtive_winfiles",action="append",help="at bottom")#
+
+parser.add_option("-o","--pathoutputfilename",dest="pathoutputfilename",help="default infile2_infile1")#
+
+parser.add_option("-p","--positive",dest="multiple_positive_winfiles",action="append",default=[],help="on top")#
+parser.add_option("-n","--negtive",dest="multiple_negtive_winfiles",action="append",default=[],help="at bottom")#
 (options, args) = parser.parse_args()
 #if len(sys.argv) < 5:
 #    print("python test.py [inputfile1] [inputfile2] [inputfile3]....-p [chromPrefix] -s [positive_negtive(or a)] -T [dataType] -c column_num")
 #    exit(-1)
-dataType=options.dataType
-if options.positive_negtive_a!= "a":
-    
-    positive_negtive=options.positive_negtive_a
-    print(positive_negtive)
-else:
-    positive_negtive=None
-if options.fillvalue=="0":
-    options.fillvalue=0
+
 
 if __name__ == '__main__':
-    for inputfileName in args[:]:
-        makeMhtGraph = Make_Picture.MakeMhtGraph()
-        if options.positive_negtive_a!= "a":
-            makeMhtGraph.makeMhtPicture_HistonPicture(inputfileName,dataType,positive_negtive,fillvalue=options.fillvalue)
-        else:
-            makeMhtGraph.makeMhtPicture_HistonPicture(inputfileName,dataType,positive_negtive=None,fillvalue=options.fillvalue)
+    makeMhtGraph = Make_Picture.MakeMhtGraph()
+    if options.multiple_positive_winfiles!=[]:
+        for p_inputfileName in options.multiple_positive_winfiles[:]:
+            makeMhtGraph.makeHistonPicture(p_inputfileName, "Fst")
+    if options.multiple_negtive_winfiles!=[]:
+        for n_inputfileName in options.multiple_negtive_winfiles[:]:
+            makeMhtGraph.makeHistonPicture(n_inputfileName, "Hp")
+    makeMhtGraph.makeMhtplots_compareInOnePicture(options.pathoutputfilename, options.multiple_positive_winfiles, options.multiple_negtive_winfiles, 0)
+#         if options.positive_negtive_a!= "a":
+#             makeMhtGraph.makeMhtPicture_HistonPicture(inputfileName,dataType,positive_negtive,fillvalue=options.fillvalue)
+#         else:
+#             makeMhtGraph.makeMhtPicture_HistonPicture(inputfileName,dataType,positive_negtive=None,fillvalue=options.fillvalue)
