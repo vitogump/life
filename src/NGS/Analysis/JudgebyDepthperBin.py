@@ -27,6 +27,7 @@ parser.add_option("-w","--winwidth",dest="winwidth",help="default infile1_infile
 parser.add_option("-s","--slidesize",dest="slidesize",help="default infile2_infile1")#
 parser.add_option("-o","--outfile",dest="outfile",help="outfile")#
 parser.add_option("-m","--mindepth",dest="mindepth",help="outfile")#
+parser.add_option("-n","--speciesnames",dest="speciesnames",action="append",default=[],help="folder name ")#
 (options, args) = parser.parse_args()
 
 outfile=open(options.outfile,'w')
@@ -48,9 +49,23 @@ if __name__ == '__main__':
     if "" in depthfile.title:
         depthfile.title.remove("")
     print(depthfile.title,len(depthfile.title)-3)
-    print("chrom","start_pos","end_pos",*depthfile.title[3:],sep="\t",file=outfile)
-    print("chrom","start_pos","end_pos",*depthfile.title[3:],sep="\t",file=outfilewithvalue)
-    caculator=Caculators.Caculate_depth_judge(len(depthfile.title)-3,windowWidth,mindepth)
+    if options.speciesnames==[]:
+        print("chrom","start_pos","end_pos",*depthfile.title[3:],sep="\t",file=outfile)
+        print("chrom","start_pos","end_pos",*depthfile.title[3:],sep="\t",file=outfilewithvalue)
+        caculator=Caculators.Caculate_depth_judge(len(depthfile.title)-3,windowWidth,mindepth)
+    else:
+        outtitle=[]
+        sampleidxlisttocount={}
+        for speciesname in options.speciesnames:
+            sampleidxlisttocount[speciesname]=[]
+            outtitle.append("Depth_for_"+speciesname.strip())
+            for title in depthfile.title:
+                if re.search(r""+speciesname,title)!=None:
+                    sampleidxlisttocount[speciesname].append(depthfile.title.index(title.strip())-2)
+        print("chrom","start_pos","end_pos",*outtitle[:],sep="\t",file=outfile)
+        print("chrom","start_pos","end_pos",*outtitle[:],sep="\t",file=outfilewithvalue)
+        caculator=Caculators.Caculate_depth_judge(len(depthfile.title)-3,windowWidth,mindepth,options.speciesnames,sampleidxlisttocount)
+    
     
     totalChroms = dbtools.operateDB("select", "select count(*) from " + chromtable)[0][0]
     m = depthfile.covfileidx
@@ -87,6 +102,8 @@ if __name__ == '__main__':
             #print all wins of a chrom into file
             """
             win=[startpos,endpos,([sample1_percentage_cover,sample2_percentage_cover,,,],[sample1_average_depth,sample2_average_depth,,,])]
+            or 
+            win=[startpos,endpos,([species1_percentage_cover,species2_percentage_cover,,,,,],[species1_average_depth,species2_average_depth,,,,])]
             """
             for winNo in range(len(depthbinmap[currentchrID])):
                 judgelist=[]

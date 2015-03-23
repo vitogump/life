@@ -183,21 +183,39 @@ class Caculate_Hp(Caculator):
         self.COUNTED=0
         return noofsnpcount,HETEROZY
 class Caculate_depth_judge(Caculator):
-    def __init__(self,sampleNo,winsize,mindepth):
+    def __init__(self,total_samples,winsize,mindepth,speciesorder=[],sampleidxlisttocount={}):
         self.mindepth=int(mindepth)
-        self.sampleNo=sampleNo
+        self.total_samples=total_samples
         self.winsize=winsize
-        self.COVERED_COUNT=[0]*sampleNo
-        self.AVERAGE_DEPTH=[0]*sampleNo
+        if speciesorder==[] and (not sampleidxlisttocount):
+            self.COVERED_COUNT=[0]*total_samples
+            self.AVERAGE_DEPTH=[0]*total_samples
+            self.speciesorder=None;
+            self.sampleidxlisttocount=None
+        elif len(speciesorder)!=0 and len(sampleidxlisttocount.keys())!=0:
+            self.COVERED_COUNT=[0]*len(speciesorder)
+            self.AVERAGE_DEPTH=[0]*len(speciesorder)
+            self.speciesorder=speciesorder
+            self.sampleidxlisttocount=sampleidxlisttocount
     def process(self,T,seqerrorrate=0.01):
         """
         T=(pos,sample1dp,sample2dp,,,,,,)
         """
 #         print(T,"\n",self.AVERAGE_DEPTH)
-        for sampleNo in range(1,len(T)):
-            self.AVERAGE_DEPTH[sampleNo-1]+=int(T[sampleNo])
-            if int(T[sampleNo])>=self.mindepth:
-                self.COVERED_COUNT[sampleNo-1]+=1
+        if self.speciesorder==[] and (not self.sampleidxlisttocount):
+            for sampleidx in range(1,len(T)):
+                self.AVERAGE_DEPTH[sampleidx-1]+=int(T[sampleidx])
+                if int(T[sampleidx])>=self.mindepth:
+                    self.COVERED_COUNT[sampleidx-1]+=1
+        elif len(self.speciesorder)!=0 and len(self.sampleidxlisttocount.keys())!=0:
+            for species in self.speciesorder:
+                totaldepth=0
+                for sampleidx in self.sampleidxlisttocount[species]:
+                    totaldepth+=int(T[sampleidx])
+                self.AVERAGE_DEPTH[self.speciesorder.index(species)]+=totaldepth
+                if totaldepth>=self.mindepth:
+                    self.COVERED_COUNT[self.speciesorder.index(species)]+=1
+                
             
     def getResult(self):
         """pecentage of cover,average depth
@@ -205,8 +223,12 @@ class Caculate_depth_judge(Caculator):
         countlist=copy.deepcopy(self.COVERED_COUNT);average =  copy.deepcopy(self.AVERAGE_DEPTH)
         del self.AVERAGE_DEPTH[:]
         del self.COVERED_COUNT[:]
-        self.COVERED_COUNT=[0]*self.sampleNo
-        self.AVERAGE_DEPTH=[0]*self.sampleNo
+        if self.speciesorder==[] and (not self.sampleidxlisttocount):
+            self.COVERED_COUNT=[0]*self.total_samples
+            self.AVERAGE_DEPTH=[0]*self.total_samples
+        elif len(self.speciesorder)!=0 and len(self.sampleidxlisttocount.keys())!=0:
+            self.COVERED_COUNT=[0]*len(self.speciesorder)
+            self.AVERAGE_DEPTH=[0]*len(self.speciesorder)
         return "empty",([a/self.winsize for a in countlist],[a/self.winsize for a in average])
 class Caculate_Fst(Caculator):
     def __init__(self,MethodToSeqpop1="pool",MethodToSeqpop2="indvd",minsnps=3,considerFixed=False):
