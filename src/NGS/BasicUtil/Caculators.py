@@ -139,7 +139,7 @@ class Caculate_Hp(Caculator):
         self.considerFixed=considerFixed
         self.SeqMethodlist=SeqMethodlist
     def process(self, T,seqerrorrate=0.01):
-        
+        print(self.SeqMethodlist,T)
         dp4 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", T[3])
         count_2pq=0
         sum_2pq=0

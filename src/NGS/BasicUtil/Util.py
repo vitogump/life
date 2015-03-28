@@ -33,6 +33,7 @@ def alin2PopSnpPos(vcfMaplist,innerjoin_outjoin="i"):
             skipthisrec=False
             elementToAppend=[posInPop1,RefInPop1,AltInPop1,SNPrec[3:]]
             if len(vcfMaplist)==1:
+                multipleVcfMap[currentChrom].append(elementToAppend)
                 continue
             for vcfMap_obj_idx in range(1,len(vcfMaplist[:])):
                 vcfMap_obj=vcfMaplist[vcfMap_obj_idx]
@@ -70,7 +71,7 @@ def alin2PopSnpPos(vcfMaplist,innerjoin_outjoin="i"):
                                 multipleVcfMap[currentChrom].append(elementToAppend)
                         elif innerjoin_outjoin=="i":
                             skipthisrec=True
-                            print(currentChrom,posInPop1,AltInPop1,vcfMap_obj[currentChrom][mid][2],"different alt allele,should skip this rec,but i have no time to improve this now")
+#                             print(currentChrom,posInPop1,AltInPop1,vcfMap_obj[currentChrom][mid][2],"different alt allele,should skip this rec,but i have no time to improve this now")
                         elif innerjoin_outjoin=="o":
                             if vcfMap_obj_idx!=len(vcfMaplist)-1:
                                 elementToAppend.append(None)
@@ -91,8 +92,6 @@ def alin2PopSnpPos(vcfMaplist,innerjoin_outjoin="i"):
                             multipleVcfMap[currentChrom].append(elementToAppend)                              
 #                     print("snp not found in vcfMap2",SNPrec)
 #                     self.doubleVcfMap[currentChrom].append(SNPrec+)
-    print(multipleVcfMap,file=open("test.txt",'a'))
-    exit(-1)
     return multipleVcfMap
 def bedfiletools(bedfilename, withtitle=False):
     """
