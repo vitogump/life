@@ -24,7 +24,7 @@ parser.add_option("-c", "--chromtable", dest="chromtable",# action="callback",ty
                   help="write report to FILE")
 parser.add_option("-o","--outputpath",dest="outputpath",help="default infile1_infile2")
 parser.add_option("-C","--Coveragedbin",dest="coveragebin")
-parser.add_option("-I","--howtoIndel",dest="howtoIndel")
+parser.add_option("-I","--howtoIndel",dest="howtoIndel",default="no",help="no just")
 parser.add_option("-w","--winwidth",dest="winwidth",help="default infile1_infile2")#
 parser.add_option("-n", "--speciesname", action="append",dest="specieses",default=[],help="species name")
 parser.add_option("-s","--slidesize",dest="slidesize",help="default infile2_infile1")#
@@ -63,10 +63,14 @@ if __name__ == '__main__':
     print(vcffileslist[:])
     for vcf in vcffileslist[:]:
         vcfname=re.search(r"[^/]*$",vcf).group(0)
+        if re.search(r"indvd[^/]+",vcf)!=None:
+            snpcounter = Caculators.Caculate_SNPsPerBIN(windowWidth,considerINDEL=howtoIndel,MethodToSeq="indvd")
+        elif re.search(r"pool[^/]+",vcf)!=None:
+            snpcounter = Caculators.Caculate_SNPsPerBIN(windowWidth,considerINDEL=howtoIndel,MethodToSeq="pool")
         outfile = open(outputpath+vcfname + ".snpperbin"+str(windowWidth)+"_"+str(slideSize), 'w')
         print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnps\twinvalue\tzvalue",file=outfile)
         win = Util.Window()
-        snpcounter = Caculators.Caculate_SNPsPerBIN(windowWidth,considerINDEL=howtoIndel)
+        
         pop = VCFutil.VCF_Data(vcf)  # new a class
         snpbinmap = SNPsPerBIN()
 #        pop.getVcfMap(vcf)
@@ -79,7 +83,7 @@ if __name__ == '__main__':
                 currentchrID=row[0]
                 currentchrLen=int(row[1])
                 if currentchrID in pop.VcfIndexMap:
-                    vcflist_A_chrom = pop.getVcfListByChrom(vcfname, currentchrID)
+                    vcflist_A_chrom = pop.getVcfListByChrom(vcf, currentchrID)
                     win.slidWindowOverlap(vcflist_A_chrom, currentchrLen, windowWidth, slideSize, snpcounter)
                     snpbinmap.SNPsPerBINMap[currentchrID]=copy.deepcopy(win.winValueL)
                 else:

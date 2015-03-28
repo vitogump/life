@@ -10,10 +10,11 @@ class Caculator():
     def getResult(self):
         pass
 class Caculate_SNPsPerBIN(Caculator):
-    def __init__(self,winwidth,considerINDEL="no"):
+    def __init__(self,winwidth,considerINDEL="no",MethodToSeq="pool"):
         self.considerINDEL=considerINDEL.lower()
         self.winwidth=winwidth
         self.COUNTED=0
+        self.MethodToSeq=MethodToSeq
     def process(self, T,seqerrorrate=0.01):
         if self.considerINDEL=="no" and (len(T[1])!=1 or len(T[2])!=1):
             return
@@ -25,21 +26,27 @@ class Caculate_SNPsPerBIN(Caculator):
             refdep = int(dp4.group(1)) + int(dp4.group(2))
             altalleledep = int(dp4.group(3)) + int(dp4.group(4))    
         else:
-#             if len(T[1])!=1 or len(T[2])!=1:
-#                 return
-            AD_idx=(re.split(":",T[4])).index("AD")#gatk GT:AD:DP:GQ:PL
-            for sample in T[5]:
-                if len(re.split(":",sample))==1:# ./.
-                    continue
-                AD_depth=re.split(",",re.split(":",sample)[AD_idx])
-                try :
-                    refdep+=int(AD_depth[0])
-                    altalleledep+=int(AD_depth[1])
-                except ValueError:
-                    print(sample,end="|")
+            if self.MethodToSeq=="pool":
+                AD_idx=(re.split(":",T[4])).index("AD")#gatk GT:AD:DP:GQ:PL
+                for sample in T[5]:
+                    if len(re.split(":",sample))==1:# ./.
+                        continue
+                    AD_depth=re.split(",",re.split(":",sample)[AD_idx])
+                    try :
+                        refdep+=int(AD_depth[0])
+                        altalleledep+=int(AD_depth[1])
+                    except ValueError:
+                        print(sample,end="|")
 
-        if refdep<=seqerrorrate*(refdep+altalleledep):#not fixed
-            return
+                if refdep<=seqerrorrate*(refdep+altalleledep):#not fixed
+                    return
+            elif self.MethodToSeq=="indvd":
+                AN=int(re.search(r"AN=(\d+);",T[3]).group(1))
+                AF=int(float(re.search(r"AF=([\d\.]+);",T[3]).group(1)))
+                if AF==1:
+                    return
+#                 refdep=AN-AC
+#                 altalleledep=AC                
 #        if refdep+altalleledep<10:
 #            return
         self.COUNTED+=1
@@ -124,63 +131,72 @@ class Caculate_Dstatistics(Caculator):
         
         
 class Caculate_Hp(Caculator):
-    def __init__(self,MethodToSeq="pool",minsnps=3,considerFixed=False):
+    def __init__(self,SeqMethodlist=["pool"],minsnps=3,considerFixed=False):
         super().__init__()
         self.minsnps=minsnps
         self.COUNTED=0
-        self.CNMI = 0
-        self.CNMA = 0
+        self.sum_mean_2pq=0
         self.considerFixed=considerFixed
-        self.MethodToSeq=MethodToSeq
+        self.SeqMethodlist=SeqMethodlist
     def process(self, T,seqerrorrate=0.01):
         
         dp4 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", T[3])
-        refdep=0;altalleledep=0
+        count_2pq=0
+        sum_2pq=0
         if dp4!=None:#vcf from samtools 
             refdep = int(dp4.group(1)) + int(dp4.group(2))
             altalleledep = int(dp4.group(3)) + int(dp4.group(4))    
         else:
-            if self.MethodToSeq=="pool":
-                AD_idx=(re.split(":",T[4])).index("AD")#gatk GT:AD:DP:GQ:PL
-                for sample in T[5]:
-                    if len(re.split(":",sample))==1:# ./.
+            for MethofToSeq_idx in range(len(self.SeqMethodlist)):
+                MethofToSeq=self.SeqMethodlist[MethofToSeq_idx]
+                if T[3+MethofToSeq_idx]==None:
+                    continue
+                if MethofToSeq=="pool":
+                    refdep=0;altalleledep=0
+                    print(T)
+                    AD_idx=(re.split(":",T[3+MethofToSeq_idx][1])).index("AD")#gatk GT:AD:DP:GQ:PL
+                    for sample in T[3+MethofToSeq_idx][2]:
+                        if len(re.split(":",sample))==1:# ./.
+                            continue
+                        AD_depth=re.split(",",re.split(":",sample)[AD_idx])
+                        try :
+                            refdep+=int(AD_depth[0])
+                            altalleledep+=int(AD_depth[1])
+                        except ValueError:
+                            print(sample,end="|")
+                    if (not self.considerFixed) and refdep<=seqerrorrate*(refdep+altalleledep):#not fixed
                         continue
-                    AD_depth=re.split(",",re.split(":",sample)[AD_idx])
-                    try :
-                        refdep+=int(AD_depth[0])
-                        altalleledep+=int(AD_depth[1])
-                    except ValueError:
-                        print(sample,end="|")
-            elif self.MethodToSeq=="indvd":
-                AN=int(re.search(r"AN=(\d+);",T[3]).group(1))
-                AC=int(re.search(r"AC=(\d+);",T[3]).group(1))
-                refdep=AN-AC
-                altalleledep=AC
-        if (not self.considerFixed) and refdep<=seqerrorrate*(refdep+altalleledep):#not fixed
-            return
-        if refdep+altalleledep<10:
-            return
-        self.COUNTED+=1
-        if refdep < altalleledep:
-            self.CNMI += refdep
-            self.CNMA += altalleledep
-        else:
-            self.CNMA += refdep
-            self.CNMI += altalleledep
+                    if refdep+altalleledep<10:
+                        continue
+                    sum_2pq+=2*(refdep/(refdep+altalleledep))*(altalleledep/(refdep+altalleledep))
+                    count_2pq+=1
+                elif MethofToSeq=="indvd":
+                    AF=float(re.search(r"AF=([\d\.]+);",T[3]).group(1))
+                    AN=int(re.search(r"AN=(\d+);",T[3]).group(1))
+                    AC=int(re.search(r"AC=(\d+);",T[3]).group(1))
+                    refdep=AN-AC
+                    altalleledep=AC
+                    if (not self.considerFixed) and refdep<=seqerrorrate*(refdep+altalleledep):#not fixed
+                        continue
+                    if refdep+altalleledep<10:
+                        continue
+                    sum_2pq+=2*AF*(1-AF)
+                    count_2pq+=1
+        if sum_2pq!=0 and count_2pq!=0:
+            self.sum_mean_2pq=sum_2pq/count_2pq
+            self.COUNTED+=1
     def getResult(self):
-        HETEROZY = 'NA'
-        try:
-            HETEROZY = self.CNMA * self.CNMI * 2 / ((self.CNMA + self.CNMI) ** 2)
-        except ZeroDivisionError:
-            #print("the Heterozigosity value of currentwindow is dividsion by zero,so set it to be NA")
-            HETEROZY = 'NA'
         
+        if self.COUNTED==0:
+            HETEROZY = 'NA'
+        else:
+            HETEROZY = self.sum_mean_2pq/self.COUNTED
+
         noofsnpcount=self.COUNTED
 #         if self.COUNTED<=self.minsnps:
 #             HETEROZY= 'NA'
-        self.CNMA = 0
-        self.CNMI = 0
         self.COUNTED=0
+        self.sum_mean_2pq=0
         return noofsnpcount,HETEROZY
 class Caculate_depth_judge(Caculator):
     def __init__(self,total_samples,winsize,mindepth,speciesorder=[],sampleidxlisttocount={}):
@@ -256,9 +272,9 @@ class Caculate_Fst(Caculator):
             refdep_2 = int(dp4_2.group(1)) + int(dp4_2.group(2))
             altalleledep_2 = int(dp4_2.group(3)) + int(dp4_2.group(4))
         else:#vcf from gatk
-            AD_idx_1=(re.split(":",pop1[1])).index("AD")#gatk GT:AD:DP:GQ:PL
-            AD_idx_2=(re.split(":",pop2[1])).index("AD")
             if self.MethodToSeqpop1=="pool":
+                AD_idx_1=(re.split(":",pop1[1])).index("AD")#gatk GT:AD:DP:GQ:PL
+                
                 for sample in pop1[2][:]:
                     if len(re.split(":",sample))==1:# ./.
                         continue
@@ -274,6 +290,7 @@ class Caculate_Fst(Caculator):
                 refdep_1=AN-AC
                 altalleledep_1=AC
             if self.MethodToSeqpop2=="pool":
+                AD_idx_2=(re.split(":",pop2[1])).index("AD")
                 for sample in pop2[2][:]:
                     if len(re.split(":",sample))==1:# ./.
                         continue

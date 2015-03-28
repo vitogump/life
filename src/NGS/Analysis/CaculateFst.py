@@ -48,56 +48,76 @@ class Fst():
 #        self.doubleVcfMap = {}
         self.FstMapByChrom = {}  # {chr:[(first_snp_pos,last_snp_pos,fst),(),()],chr:[],chr:[]}
         self.distMap = {}
-    def alin2PopSnpPos(self, vcfMap1, vcfMap2):
-        """input:
-        two map fomart like this {chrNo:[(pos,REF,ALT,INFO,FORMAT,sample,...),(pos,REF,ALT,INFO,FORMAT,sample,...),,,,,],chrNo:[],,,,,,}
-        output:
-        one map like this {chrNo:[(pos,REF,ALT,(INFO,FORMAT,sample,...),(INFO,FORMAT,sample,...)),(,,,(),()),,,,,],chrNo:[],,,}
-                                                from pop1                        from pop2
-        """
-        doubleVcfMap={}
-        for currentChrom in vcfMap1.keys():
-#             self.FstMapByChrom[currentChrom] = []
-            doubleVcfMap[currentChrom] = []
-
-            for SNPrec in vcfMap1[currentChrom]:
-                low = 0
-                if currentChrom not in vcfMap2:
-                    print("alin2PopSnpPos",currentChrom,"didn't find in vcfMap2")
-                    break
-                high = len(vcfMap2[currentChrom]) - 1
-                
-                posInPop1 = SNPrec[0]
-                RefInPop1 = SNPrec[1]
-                AltInPop1 = SNPrec[2]
-                if re.search(r"[A-Za-z]+,[A-Za-z]+", AltInPop1) != None:  # multiple allels
-                    continue
-#                dp4 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", SNPrec[3])
-#                 print(dp4.group(0))
-                
-                while low <= high:
-                    mid = (low + high)>>1
-                    if vcfMap2[currentChrom][mid][0]<posInPop1:
-                        low=mid+1
-                    elif vcfMap2[currentChrom][mid][0]>posInPop1:
-                        high=mid-1
-                    else:
-                        if AltInPop1 == vcfMap2[currentChrom][mid][2]:#same alt alle
-                            doubleVcfMap[currentChrom].append((posInPop1,RefInPop1,AltInPop1,SNPrec[3:] , vcfMap2[currentChrom][mid][3:]))
-                        break
-#                     if posInPop1 == vcfMap2[currentChrom][mid][0]:
-#                         if AltInPop1 == vcfMap2[currentChrom][mid][2]:#same alt alle
-#                             doubleVcfMap[currentChrom].append((posInPop1,RefInPop1,AltInPop1,SNPrec[3:] , vcfMap2[currentChrom][mid][3:]))
-#                         break
-#                     elif posInPop1 < vcfMap2[currentChrom][mid][0]:
-#                         high = mid - 1
+#     def alin2PopSnpPos(self,innerjoin_outjoin="i", *vcfMap):
+#         """input:
+#         two map fomart like this {chrNo:[(pos,REF,ALT,INFO,FORMAT,sample,...),(pos,REF,ALT,INFO,FORMAT,sample,...),,,,,],chrNo:[],,,,,,}
+#         output:
+#         one map like this {chrNo:[(pos,REF,ALT,(INFO,FORMAT,sample,...),(INFO,FORMAT,sample,...)),(,,,(),()),,,,,],chrNo:[],,,}
+#                                                 from pop1                        from pop2
+#         """
+#         doubleVcfMap={}
+#         multipleVcfMap={}
+#         for currentChrom in vcfMap[0].keys():
+# #             self.FstMapByChrom[currentChrom] = []
+#             doubleVcfMap[currentChrom] = []
+#             multipleVcfMap[currentChrom]=[]
+#             for SNPrec in vcfMap[0][currentChrom]:
+#                 posInPop1 = SNPrec[0]
+#                 RefInPop1 = SNPrec[1]
+#                 AltInPop1 = SNPrec[2]
+#                 skipthisrec=False
+#                 elementToAppend=[posInPop1,RefInPop1,AltInPop1,SNPrec[3:]]
+#                 for vcfMap_obj_idx in range(1,len(vcfMap[:])):
+#                     vcfMap_obj=vcfMap[vcfMap_obj_idx]
+#                     if currentChrom not in vcfMap_obj:
+#                         print("alin2PopSnpPos",currentChrom,"didn't find in vcfMap2")
+#                         if innerjoin_outjoin=="i":
+#                             skipthisrec=True
+#                             break
+#                         elif innerjoin_outjoin=="o":
+#                             elementToAppend.append(None)
+#                     low = 0
+#                     high = len(vcfMap_obj[currentChrom]) - 1
+#                     
+#                     if re.search(r"[A-Za-z]+,[A-Za-z]+", AltInPop1) != None:  # multiple allels
+#                         continue
+#     #                dp4 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", SNPrec[3])
+#     #                 print(dp4.group(0))
+#                     
+#                     while low <= high:
+#                         mid = (low + high)>>1
+#                         if vcfMap_obj[currentChrom][mid][0]<posInPop1:
+#                             low=mid+1
+#                         elif vcfMap_obj[currentChrom][mid][0]>posInPop1:
+#                             high=mid-1
+#                         else:
+#                             if AltInPop1 == vcfMap_obj[currentChrom][mid][2]:#same alt alle
+#                                 if vcfMap_obj_idx!=len(vcfMap):
+#                                     elementToAppend.append(vcfMap_obj[currentChrom][mid][3:])
+#                                 elif vcfMap_obj_idx==len(vcfMap):
+#                                     multipleVcfMap[currentChrom].append(elementToAppend)
+#                             elif innerjoin_outjoin=="i":
+#                                 skipthisrec=True
+#                                 print(currentChrom,posInPop1,AltInPop1,vcfMap_obj[currentChrom][mid][2],"different alt allele,should skip this rec,but i have no time to improve this now")
+#                             elif innerjoin_outjoin=="o":
+#                                 if vcfMap_obj_idx!=len(vcfMap):
+#                                     elementToAppend.append(None)
+#                                 elif vcfMap_obj_idx==len(vcfMap):
+#                                     multipleVcfMap[currentChrom].append(elementToAppend)                                
+#                                 
+#                             break
 #                     else:
-#                         low = mid + 1
-                else:
-                    pass
-#                     print("snp not found in vcfMap2",SNPrec)
-#                     self.doubleVcfMap[currentChrom].append(SNPrec+)
-        return doubleVcfMap
+#                         if innerjoin_outjoin=="i" and skipthisrec:
+#                             #ignore the rec
+#                             break
+#                         elif innerjoin_outjoin=="o":
+#                             if vcfMap_obj_idx!=len(vcfMap):
+#                                 elementToAppend.append(None)
+#                             elif vcfMap_obj_idx==len(vcfMap):
+#                                 multipleVcfMap[currentChrom].append(elementToAppend)                              
+# #                     print("snp not found in vcfMap2",SNPrec)
+# #                     self.doubleVcfMap[currentChrom].append(SNPrec+)
+#         return multipleVcfMap
 
     def caculateFstAccordingdb(self,dbtools,chromstable,vcfNAME_POP1,vcfNAME_POP2,caculator,winwidth,slideSize,minlengthOfchrom):
         pop1 = VCFutil.VCF_Data(vcfNAME_POP1)  # new a class
@@ -127,7 +147,7 @@ class Fst():
         win = Util.Window()
         try:
 #            self.doubleVcfMap={}
-            doubleVcfMap = self.alin2PopSnpPos(vcfMap1_ref, vcfMap2)#produce self.doubleVcfMap{}
+            doubleVcfMap = Util.alin2PopSnpPos([vcfMap1_ref, vcfMap2],"i")#produce self.doubleVcfMap{}
 #            for currentChrom in self.doubleVcfMap.keys():
     #             self.FstMapByChrom[currentChrom]=[]
             win.winValueL = []
@@ -225,9 +245,7 @@ if __name__ == '__main__':
                             else:
                                 zFst = "NA"
                                 print(currentchrID + "\t" + str(i) + "\t" + str(fst.FstMapByChrom[currentchrID][i][0]) + "\t" + str(fst.FstMapByChrom[currentchrID][i][1])+ "\t" + str(fst.FstMapByChrom[currentchrID][i][2]) + "\t" + str(fst.FstMapByChrom[currentchrID][i][3]) + "\t" + str(zFst), file=outfile)                    
-#            for chrom in sorted(fst.FstMapByChrom.keys()):
-
-            
+#            for chrom in sorted(fst.FstMapByChrom.keys()):        
             sum = 0
             Number = 0
             for chrom in sorted(fst.FstMapByChrom.keys()):
@@ -267,25 +285,17 @@ if __name__ == '__main__':
         tempdbtools.disconnect()
         phyliparrayinfile.close()
     elif fsttype == 'G' or fsttype == 'g':
-        globalFstMapByChrom={}
-        
-
-        
-#         fst = Fst() 
+        globalFstMapByChrom={}        
         specisnum=str(len(vcffileslist[:]))
         for majorpop in vcffileslist[:]:
             MethodToSeqpop1=None
-#            pop1 = VCFutil.VCF_Data(majorpop)  # new a class
-#            pop1.getVcfMap(majorpop)
-
             fstlist=[]
             vcfname=re.search(r"[^/]*$",majorpop).group(0)
             for othrpop in vcffileslist[:]:
                 MethodToSeqpop2=None
                 if majorpop == othrpop:
                     continue
-#                pop2 = VCFutil.VCF_Data(othrpop)  # new a class 
-#                pop2.getVcfMap(othrpop)
+
                 print("startcaculatefst", majorpop, othrpop)
                 fstlist.append(Fst())
                 if re.search(r"indvd[^/]+",majorpop)!=None:
@@ -324,8 +334,6 @@ if __name__ == '__main__':
                         except ZeroDivisionError:
                             gfst="NA"
                         globalFstMapByChrom[chrom].append((fstlist[0].FstMapByChrom[chrom][winNo][0],fstlist[0].FstMapByChrom[chrom][winNo][1],minNumberOfsnp,gfst))
-#                         print(chrom + "\t" + str(winNo) + "\t" + str(fstlist[0].FstMapByChrom[chrom][winNo][0]) + "\t" + str(fstlist[0].FstMapByChrom[chrom][winNo][1]) + "\t" + str(gfst), file=outfile)
-
 
                 winCrossGenome = []
                 for chrom in globalFstMapByChrom.keys():

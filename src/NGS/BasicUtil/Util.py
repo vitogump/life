@@ -13,6 +13,87 @@ Created on 2013-6-30
 
 @author: rui
 '''
+def alin2PopSnpPos(vcfMaplist,innerjoin_outjoin="i"):
+    """input:
+    two map fomart like this {chrNo:[(pos,REF,ALT,INFO,FORMAT,sample,...),(pos,REF,ALT,INFO,FORMAT,sample,...),,,,,],chrNo:[],,,,,,}
+    output:
+    one map like this {chrNo:[(pos,REF,ALT,(INFO,FORMAT,sample,...),(INFO,FORMAT,sample,...)),(,,,(),()),,,,,],chrNo:[],,,}
+                                            from pop1                        from pop2
+    """
+    doubleVcfMap={}
+    multipleVcfMap={}
+    for currentChrom in vcfMaplist[0].keys():
+#             self.FstMapByChrom[currentChrom] = []
+        doubleVcfMap[currentChrom] = []
+        multipleVcfMap[currentChrom]=[]
+        for SNPrec in vcfMaplist[0][currentChrom]:
+            posInPop1 = SNPrec[0]
+            RefInPop1 = SNPrec[1]
+            AltInPop1 = SNPrec[2]
+            skipthisrec=False
+            elementToAppend=[posInPop1,RefInPop1,AltInPop1,SNPrec[3:]]
+            if len(vcfMaplist)==1:
+                continue
+            for vcfMap_obj_idx in range(1,len(vcfMaplist[:])):
+                vcfMap_obj=vcfMaplist[vcfMap_obj_idx]
+                if currentChrom not in vcfMap_obj:
+                    print("alin2PopSnpPos",currentChrom,"didn't find in vcfMap2")
+                    if innerjoin_outjoin=="i":
+                        skipthisrec=True
+                        break
+                    elif innerjoin_outjoin=="o":
+                        if vcfMap_obj_idx!=len(vcfMaplist)-1:
+                            elementToAppend.append(None)
+                        else:
+                            elementToAppend.append(None)
+                            multipleVcfMap[currentChrom].append(elementToAppend)
+                low = 0
+                high = len(vcfMap_obj[currentChrom]) - 1
+                
+                if re.search(r"[A-Za-z]+,[A-Za-z]+", AltInPop1) != None:  # multiple allels
+                    continue
+#                dp4 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", SNPrec[3])
+#                 print(dp4.group(0))
+                
+                while low <= high:
+                    mid = (low + high)>>1
+                    if vcfMap_obj[currentChrom][mid][0]<posInPop1:
+                        low=mid+1
+                    elif vcfMap_obj[currentChrom][mid][0]>posInPop1:
+                        high=mid-1
+                    else:
+                        if AltInPop1 == vcfMap_obj[currentChrom][mid][2]:#same alt alle
+                            if vcfMap_obj_idx!=len(vcfMaplist)-1:
+                                elementToAppend.append(vcfMap_obj[currentChrom][mid][3:])
+                            elif vcfMap_obj_idx==len(vcfMaplist)-1:
+                                elementToAppend.append(vcfMap_obj[currentChrom][mid][3:])
+                                multipleVcfMap[currentChrom].append(elementToAppend)
+                        elif innerjoin_outjoin=="i":
+                            skipthisrec=True
+                            print(currentChrom,posInPop1,AltInPop1,vcfMap_obj[currentChrom][mid][2],"different alt allele,should skip this rec,but i have no time to improve this now")
+                        elif innerjoin_outjoin=="o":
+                            if vcfMap_obj_idx!=len(vcfMaplist)-1:
+                                elementToAppend.append(None)
+                            elif vcfMap_obj_idx==len(vcfMaplist)-1:
+                                elementToAppend.append(None)
+                                multipleVcfMap[currentChrom].append(elementToAppend)                                
+                            
+                        break
+                else:
+                    if innerjoin_outjoin=="i" and skipthisrec:
+                        #ignore the rec
+                        break
+                    elif innerjoin_outjoin=="o":
+                        if vcfMap_obj_idx!=len(vcfMaplist)-1:
+                            elementToAppend.append(None)
+                        elif vcfMap_obj_idx==len(vcfMaplist)-1:
+                            elementToAppend.append(None)
+                            multipleVcfMap[currentChrom].append(elementToAppend)                              
+#                     print("snp not found in vcfMap2",SNPrec)
+#                     self.doubleVcfMap[currentChrom].append(SNPrec+)
+    print(multipleVcfMap,file=open("test.txt",'a'))
+    exit(-1)
+    return multipleVcfMap
 def bedfiletools(bedfilename, withtitle=False):
     """
         return m={chr1:[(startpos,endpos,[optional_fields]),(),,,],chr2:[],,,,,}
@@ -980,9 +1061,9 @@ class Window():
         """
         L = [(pos,p1,p2,p3,A_base_idx),(pos,"a,b","c,d","e,f",0),(pos,"a,b","c,d","e,f",1),....] for D-statistics wihtout "no covered"
         or 
-        L = [(pos, REF, ALT, INFO,FORMAT,sampleslist),(pos, REF, ALT, INFO,FORMAT,sampleslist),(),...........] for any score need one vcf,eg.  het
+        L = [(pos, REF, ALT, INFO,FORMAT,sampleslist),(pos, REF, ALT, INFO,FORMAT,sampleslist),(),...........] for any score need one vcf,
         or 
-        L = [(pos,REF,ALT,(INFO,FORMAT,sampleslist),(INFO,FORMAT,sampleslist)),(pos,REF,ALT,(INFO,FORMAT,sampleslist),(INFO,FORMAT,sampleslist)),(),...........] for any score need two vcf's compare,eg. fst
+        L = [(pos,REF,ALT,(INFO,FORMAT,sampleslist),(INFO,FORMAT,sampleslist)),(pos,REF,ALT,(INFO,FORMAT,sampleslist),(INFO,FORMAT,sampleslist)),(),...........] for any score need one or multiple vcf,for example two vcf's compare,eg. fst, one or multiple vcf caculate hp
         like the two situation upside,return a value
         or
         L = [(pos,samples1dp,samples2dp,samples3dp,,,),(pos,samples1dp,samples2dp,samples3dp,,,),(),(),......]#in this situation ,value formation like this ([sample1_pecentage,sample2_pecentage,,,],[sample1_average_depth,sample2_average_depth,,,])
@@ -1228,32 +1309,32 @@ class WinInGenome():
         #1
         result = genomedbtools.operateDB("select", selectType1OverlapGenesql)
         for row in result:
-            row += [1]
+            row += tuple([1])
             trscptlist.append(row)
         #2
         result = genomedbtools.operateDB("select", selectType2OverlapGenesql)
         for row in result:
-            row += [2]
+            row += tuple([2])
             trscptlist.append(row)
         #3
         result = genomedbtools.operateDB("select", selectType3OverlapGenesql)
         for row in result:
-            row += [3]
+            row += tuple([3])
             trscptlist.append(row)
         #4
         result = genomedbtools.operateDB("select", selectType4OverlapGenesql)
         for row in result:
-            row += [4]
+            row += tuple([4])
             trscptlist.append(row)
         #5
         result = genomedbtools.operateDB("select", selectType5OverlapGenesql)
         for row in result:
-            row += [5]
+            row += tuple([5])
             trscptlist.append(row)
         #6
         result = genomedbtools.operateDB("select", selectType6OverlapGenesql)
         for row in result:
-            row += [6]
+            row += tuple([6])
             trscptlist.append(row)
         
         return trscptlist

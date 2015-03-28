@@ -158,7 +158,7 @@ class MakeMhtGraph(object):
             os.system(""" awk '{OFS="\t";if(NR!=1 && ($6=="NA" || $7>0)){$6=""" + fillvalue + """;$7=""" + fillvalue + """};print $0}' """ + inputfileName + ">" + pathtoOutFileName_new)
         return re.search(r"[^/]*$", pathtoOutFileName_new).group(0),pathtoOutFileName_new  # for linux
     
-    def makeHistonPicture(self,inputfileName, dataType,columnnames=("winvalue","zvalue")):
+    def makeHistonPicture(self,inputfileName, dataType,ylim=None,xlim=None,columnnames=("winvalue","zvalue")):
         r = robjects.r
         if re.search(r"^.*/", inputfileName) != None:
             dir = re.search(r"^.*/", inputfileName).group(0)
@@ -171,12 +171,18 @@ class MakeMhtGraph(object):
         r("library(Cairo)")
         r('x=read.table("' + namewithoutpath + '",header=T)')
         
-        
-        for columnname in columnnames:
-            r("CairoPNG('" + namewithoutpath + "histon_"+columnname+"_" + dataType + ".png')")
-            r("hist(x$"+columnname+",breaks=1000,main='" + namewithoutpath + "')")
-            r('dev.off()')
-        os.system("cd "+self.olddir)     
+        if ylim!=None and xlim!=None:
+            for columnname in columnnames:
+                r("CairoPNG('" + namewithoutpath + "histon_"+columnname+"_" + dataType + ".png',width=1600,height=800)")
+                r("hist(x$"+columnname+",breaks=500,ylim=c(0,2000),xlim=c(0,45),main='"+ namewithoutpath +"',ylab='No.bins',xlab='SNPs per Kb')")
+                r('dev.off()')
+        else:
+            for columnname in columnnames:
+                r("CairoPNG('" + namewithoutpath + "histon_"+columnname+"_" + dataType + ".png',width=1600,height=800)")
+                r("hist(x$"+columnname+",breaks=1000,main='" + namewithoutpath + "')")
+                r('dev.off()')
+        os.system("cd "+self.olddir)
+        print(ylim,xlim)     
     def makeMhtplots_compareInOnePicture(self, outputnamewithpath,positive_winfiles,negtive_winfiles,fillvalue=0):
         print(positive_winfiles,negtive_winfiles)
         if re.search(r"^.*/", outputnamewithpath)!=None:
@@ -192,7 +198,7 @@ class MakeMhtGraph(object):
         r("library(gap)")
         r("library(Cairo)")
 #         r('CairoPNG("'+outname+'.png",width='+str(((len(positive_winfiles)+len(negtive_winfiles))*221.5+35)*2)+',height='+str((len(positive_winfiles)+len(negtive_winfiles))*221.5+35)+')')
-        r('CairoPNG("'+outname+'.png",width=1500,height=750)')
+        r('CairoPNG("'+outname+'.png",width=1600,height=800)')
         for i in range(0,len(positive_winfiles)):
             positive_filenames[i],positive_filenameWithPaths[i]=self.prepareMhtFile(positive_winfiles[i], "Fst", "positive", fillvalue)
             r('p_dataframe'+str(i)+'=read.table("' + positive_filenameWithPaths[i] + '",header=T)')

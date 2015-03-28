@@ -24,10 +24,10 @@ if __name__ == '__main__':
     makeMhtGraph = Make_Picture.MakeMhtGraph()
     if options.multiple_positive_winfiles!=[]:
         for p_inputfileName in options.multiple_positive_winfiles[:]:
-            makeMhtGraph.makeHistonPicture(p_inputfileName, "Fst")
+            makeMhtGraph.makeHistonPicture(p_inputfileName, "Fst","c(0,2000)","c(0,45)")
     if options.multiple_negtive_winfiles!=[]:
         for n_inputfileName in options.multiple_negtive_winfiles[:]:
-            makeMhtGraph.makeHistonPicture(n_inputfileName, "Hp")
+            makeMhtGraph.makeHistonPicture(n_inputfileName, "Hp","c(0,2000)","c(0,45)")
     makeMhtGraph.makeMhtplots_compareInOnePicture(options.pathoutputfilename, options.multiple_positive_winfiles, options.multiple_negtive_winfiles, 0)
 #         if options.positive_negtive_a!= "a":
 #             makeMhtGraph.makeMhtPicture_HistonPicture(inputfileName,dataType,positive_negtive,fillvalue=options.fillvalue)

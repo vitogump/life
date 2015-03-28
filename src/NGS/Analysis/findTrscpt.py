@@ -10,7 +10,7 @@ Created on 2013-9-3
 '''
 parser = OptionParser()
 parser.add_option("-i", "--winfile", dest="winfileName",
-                  help="reference.fa", metavar="FILE")
+                  help="winfileName", metavar="FILE")
 parser.add_option("-1", "--tempDBname", dest="tempdbname", help="dbname")
 parser.add_option("-t", "--threshold", dest="threshold", help="conflict with -p")
 parser.add_option("-p", "--percentage", dest="percentage",default=None, help="conflict with -t")
