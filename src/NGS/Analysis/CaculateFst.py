@@ -241,7 +241,7 @@ if __name__ == '__main__':
                         for i in range(len(fst.FstMapByChrom[currentchrID])):
                             if fst.FstMapByChrom[currentchrID][i][3] != "NA":
                                 zFst = (fst.FstMapByChrom[currentchrID][i][3] - exception) / std1
-                                print(currentchrID + "\t" + str(i) + "\t" + str(fst.FstMapByChrom[currentchrID][i][0]) + "\t" + str(fst.FstMapByChrom[currentchrID][i][1])+ "\t" + str(fst.FstMapByChrom[currentchrID][i][2]) + "\t" + '%.18f'%(fst.FstMapByChrom[currentchrID][i][3]) + "\t" + '%.12f'%(zFst), file=outfile) 
+                                print(currentchrID + "\t" + str(i) + "\t" + str(fst.FstMapByChrom[currentchrID][i][0]) + "\t" + str(fst.FstMapByChrom[currentchrID][i][1])+ "\t" + str(fst.FstMapByChrom[currentchrID][i][2]) + "\t" + '%.15f'%(fst.FstMapByChrom[currentchrID][i][3]) + "\t" + '%.12f'%(zFst), file=outfile) 
                             else:
                                 zFst = "NA"
                                 print(currentchrID + "\t" + str(i) + "\t" + str(fst.FstMapByChrom[currentchrID][i][0]) + "\t" + str(fst.FstMapByChrom[currentchrID][i][1])+ "\t" + str(fst.FstMapByChrom[currentchrID][i][2]) + "\t" + str(fst.FstMapByChrom[currentchrID][i][3]) + "\t" + str(zFst), file=outfile)                    
@@ -358,7 +358,7 @@ if __name__ == '__main__':
                                 if globalFstMapByChrom[currentchrID][i][3] != "NA":
                                     zgFst = (globalFstMapByChrom[currentchrID][i][3] - exception) / std1
 #                                     print(globalFstMapByChrom[currentchrID][i][3])
-                                    print(currentchrID + "\t" + str(i) + "\t" + str(globalFstMapByChrom[currentchrID][i][0]) + "\t" + str(globalFstMapByChrom[currentchrID][i][1]) +"\t" + str(globalFstMapByChrom[currentchrID][i][2]) + "\t" + '%.18f'%(globalFstMapByChrom[currentchrID][i][3]) + "\t" + '%.12f'%(zgFst), file=outfile)
+                                    print(currentchrID + "\t" + str(i) + "\t" + str(globalFstMapByChrom[currentchrID][i][0]) + "\t" + str(globalFstMapByChrom[currentchrID][i][1]) +"\t" + str(globalFstMapByChrom[currentchrID][i][2]) + "\t" + '%.15f'%(globalFstMapByChrom[currentchrID][i][3]) + "\t" + '%.12f'%(zgFst), file=outfile)
                                 else:
                                     zgFst = "NA"
                                     print(currentchrID + "\t" + str(i) + "\t" + str(globalFstMapByChrom[currentchrID][i][0]) + "\t" + str(globalFstMapByChrom[currentchrID][i][1]) +"\t" + str(globalFstMapByChrom[currentchrID][i][2]) + "\t" + globalFstMapByChrom[currentchrID][i][3] + "\t" + zgFst, file=outfile)

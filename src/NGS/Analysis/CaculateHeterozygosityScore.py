@@ -111,11 +111,11 @@ if __name__ == '__main__':
                 for i in range(len(hscore.HeterozyMap[currentchrID])):
                     if hscore.HeterozyMap[currentchrID][i][3] != "NA":
                         zHp = (hscore.HeterozyMap[currentchrID][i][3] - expectation) / std1
-                        print(currentchrID + "\t" + str(i) + "\t" + str(hscore.HeterozyMap[currentchrID][i][0]) + "\t" + str(hscore.HeterozyMap[currentchrID][i][1]) + "\t" +str(hscore.HeterozyMap[currentchrID][i][2])+"\t"+ '%.18f'%(hscore.HeterozyMap[currentchrID][i][3]) + "\t" + '%.12f'%(zHp), file=outfile)
+                        print(currentchrID + "\t" + str(i) + "\t" + str(hscore.HeterozyMap[currentchrID][i][0]) + "\t" + str(hscore.HeterozyMap[currentchrID][i][1]) + "\t" +str(hscore.HeterozyMap[currentchrID][i][2])+"\t"+ '%.15f'%(hscore.HeterozyMap[currentchrID][i][3]) + "\t" + '%.12f'%(zHp), file=outfile)
                     else:
                         zHp = "NA"
                         print(currentchrID + "\t" + str(i) + "\t" + str(hscore.HeterozyMap[currentchrID][i][0]) + "\t" + str(hscore.HeterozyMap[currentchrID][i][1]) + "\t"+str(hscore.HeterozyMap[currentchrID][i][2])+"\t" + hscore.HeterozyMap[currentchrID][i][3] + "\t" + zHp, file=outfile)
-    print(vcf, str(expectation), str(std0), str(std1), file=open(outputpath+"staticvalue.txt", 'a'))
+    print(outname, str(expectation), str(std0), str(std1), file=open(outputpath+"staticvalue.txt", 'a'))
     outfile.close()
     dbtools.disconnect()
 

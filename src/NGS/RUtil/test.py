@@ -24,7 +24,7 @@ if __name__ == '__main__':
     makeMhtGraph = Make_Picture.MakeMhtGraph()
     if options.multiple_positive_winfiles!=[]:
         for p_inputfileName in options.multiple_positive_winfiles[:]:
-            makeMhtGraph.makeHistonPicture(p_inputfileName, "Fst","c(0,2000)","c(0,45)")
+            makeMhtGraph.makeHistonPicture(p_inputfileName, "Fst")#,"c(0,2000)","c(0,45)"
     if options.multiple_negtive_winfiles!=[]:
         for n_inputfileName in options.multiple_negtive_winfiles[:]:
             makeMhtGraph.makeHistonPicture(n_inputfileName, "Hp","c(0,2000)","c(0,45)")

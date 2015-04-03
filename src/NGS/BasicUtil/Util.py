@@ -37,7 +37,7 @@ def alin2PopSnpPos(vcfMaplist,innerjoin_outjoin="i"):
                 continue
             for vcfMap_obj_idx in range(1,len(vcfMaplist[:])):
                 vcfMap_obj=vcfMaplist[vcfMap_obj_idx]
-                if currentChrom not in vcfMap_obj:
+                if currentChrom not in vcfMap_obj or len(vcfMap_obj[currentChrom])==0:
                     print("alin2PopSnpPos",currentChrom,"didn't find in vcfMap2")
                     if innerjoin_outjoin=="i":
                         skipthisrec=True
@@ -80,6 +80,7 @@ def alin2PopSnpPos(vcfMaplist,innerjoin_outjoin="i"):
                                 multipleVcfMap[currentChrom].append(elementToAppend)                                
                             
                         break
+                
                 else:
                     if innerjoin_outjoin=="i" and skipthisrec:
                         #ignore the rec
@@ -92,6 +93,8 @@ def alin2PopSnpPos(vcfMaplist,innerjoin_outjoin="i"):
                             multipleVcfMap[currentChrom].append(elementToAppend)                              
 #                     print("snp not found in vcfMap2",SNPrec)
 #                     self.doubleVcfMap[currentChrom].append(SNPrec+)
+            if skipthisrec==True:
+                break
     return multipleVcfMap
 def bedfiletools(bedfilename, withtitle=False):
     """
@@ -1188,7 +1191,7 @@ class WinInGenome():
         self.dbname = dbname
         self.chromOrder, self.windbtools, self.wintablewithoutNA, self.wintabletextvalueallwin = self.loadWinDataIntoDB(dbname, winFileName6Field, tableName)
         self.winContainTrscptMap = {}
-    def loadWinDataIntoDB(self, dbname, winFileName6Field, tableNamewithoutNA=None):
+    def loadWinDataIntoDB(self, dbname, winFileName7Field, tableNamewithoutNA=None):
         chromOrder = []
         if tableNamewithoutNA == None:
             tableNamewithoutNA = random_str()
@@ -1221,16 +1224,16 @@ class WinInGenome():
             )        
         print(TABLES)
         tempdbtools.create_table(TABLES)
-        a = os.popen("awk '{print $1}' " + winFileName6Field + "|uniq")
+        a = os.popen("awk '{print $1}' " + winFileName7Field + "|uniq")
         for chromNo in a:
             chromOrder.append(chromNo.strip())
         a.close()
-        a = os.system("awk '$0!~/NA/ && NR!=1{print $0}' " + winFileName6Field + ">" + winFileName6Field + "_tmpfile")
+        a = os.system("awk '$0!~/NA/ && NR!=1{print $0}' " + winFileName7Field + ">" + winFileName7Field + "_tmpfile")
         if a != 0:
-            print("awk '$0!~/NA/ && NR!=1{print $0}' " + winFileName6Field + ">" + winFileName6Field + "_tmpfile" + ": failed")
+            print("awk '$0!~/NA/ && NR!=1{print $0}' " + winFileName7Field + ">" + winFileName7Field + "_tmpfile" + ": failed")
             exit(-1)
-        print("awk '$0!~/NA/ && NR!=1{print $0}' " + winFileName6Field + ">" + winFileName6Field + "_tmpfile" + ": ok")
-        loaddatasql = "load data local infile '" + winFileName6Field + "_tmpfile' into table " + tableNamewithoutNA + " fields terminated by '\\t'"
+        print("awk '$0!~/NA/ && NR!=1{print $0}' " + winFileName7Field + ">" + winFileName7Field + "_tmpfile" + ": ok")
+        loaddatasql = "load data local infile '" + winFileName7Field + "_tmpfile' into table " + tableNamewithoutNA + " fields terminated by '\\t'"
         
         shellstatment = "mysql -uroot -p1234567 -D" + dbname.strip() + ' -e "' + loaddatasql + '"'
         
@@ -1239,9 +1242,9 @@ class WinInGenome():
             print("Util : loadWinDataIntoDB func os.system return not 0")
             exit(-1)
         print(shellstatment + ":ok")
-        os.system("rm " + winFileName6Field + "_tmpfile")
+        os.system("rm " + winFileName7Field + "_tmpfile")
         
-        loaddatasql = "load data local infile '" + winFileName6Field + "' into table " + tableNametextValueForappendGeneName + " fields terminated by '\\t'"
+        loaddatasql = "load data local infile '" + winFileName7Field + "' into table " + tableNametextValueForappendGeneName + " fields terminated by '\\t'"
         
         shellstatment = "mysql -uroot -p1234567 -D" + dbname.strip() + ' -e "' + loaddatasql + '"'
         
@@ -1265,8 +1268,8 @@ class WinInGenome():
             region = (win[0], int(win[1]) * slideSize, int(win[1]) * slideSize + winwidth, win[1], win[5])
             geneNames = ""
             trscptIDs = ""
-            for rec in self.collectTrscptInWin(genomedbtools, TranscriptGenetable, None, region):
-                print("rec", rec)
+            recs=self.collectTrscptInWin(genomedbtools, TranscriptGenetable, region)
+            for rec in recs:
                 trscptIDs += rec[0].strip() + ";"
                 if rec[2].strip() != "":
                     geneNames += (rec[2].strip() + ";")
@@ -1283,7 +1286,7 @@ class WinInGenome():
                 print(*win, sep="\t", file=outfile)
         outfile.close()
 
-    def collectTrscptInWin(self, genomedbtools, trscptableName, vcftable, region, upextend=0, downextend=0):
+    def collectTrscptInWin(self, genomedbtools, trscptableName, region, upextend=0, downextend=0):
         """select region overlaped with the trscpt
         reture a list of trscpts [tp_generecord1,tp_generecord2,,,]
         """
@@ -1303,8 +1306,8 @@ class WinInGenome():
         selectType2OverlapGenesql = "select * from " + transcripttable + " where chrID='" + chrID + "' and trscpt_start_pos < " + str(Region_start) + " and trscpt_end_pos > " + str(Region_end)
         selectType3OverlapGenesql = "select * from " + transcripttable + " where chrID='" + chrID + "' and trscpt_start_pos < " + str(Region_start) + " and trscpt_end_pos > " + str(Region_start) + " and trscpt_end_pos < " + str(Region_end)
         selectType4OverlapGenesql = "select * from " + transcripttable + " where chrID='" + chrID + "' and trscpt_start_pos > " + str(Region_start) + " and trscpt_start_pos < " + str(Region_end) + " and trscpt_end_pos > " + str(Region_end)
-        selectType5OverlapGenesql = "select * from " + transcripttable + " where chrID='" + chrID + "' and trscpt_start_pos < " + str(Region_start - upextend) + " and trscpt_end_pos > " + str(Region_start - upextend) + " and trscpt_end_pos < " + str(Region_end + downextend)
-        selectType6OverlapGenesql = "select * from " + transcripttable + " where chrID='" + chrID + "' and trscpt_start_pos > " + str(Region_start - upextend) + " and trscpt_start_pos < " + str(Region_end + downextend) + " and trscpt_end_pos > " + str(Region_end + downextend)
+        selectType5OverlapGenesql = "select * from " + transcripttable + " where chrID='" + chrID + "' and trscpt_end_pos > " + str(Region_start - upextend) + " and trscpt_end_pos < " + str(Region_start)
+        selectType6OverlapGenesql = "select * from " + transcripttable + " where chrID='" + chrID + "' and trscpt_start_pos < " + str(Region_end + downextend) + " and trscpt_start_pos > " + str(Region_end)
         #1
         result = genomedbtools.operateDB("select", selectType1OverlapGenesql)
         for row in result:

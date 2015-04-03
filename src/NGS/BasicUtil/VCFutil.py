@@ -172,6 +172,9 @@ class VCF_Data():
         """
         print(chrom)
         VcfList_A_Chrom = []
+        if chrom not in self.chromOrder:
+            return []
+            print(chrom + "didn't find in " + vcfFileName)
         i=self.chromOrder.index(chrom.strip())
         if dilute!=1:
             VcfRecRandomSelectIdxlist=random.sample([j for j in range(self.NumOfRecbychromOrder[i])],int(dilute*self.NumOfRecbychromOrder[i]))
@@ -179,14 +182,11 @@ class VCF_Data():
         elif self.NumOfRecbychromOrder[i]<1000:
             dilute=1
         vcfFile = open(vcfFileName, 'r')
-        try:
-            print("getVcfListByChrom", self.VcfIndexMap[chrom], chrom,int(dilute*self.NumOfRecbychromOrder[i]),self.NumOfRecbychromOrder[i])            
-            vcfFile.seek(self.VcfIndexMap[chrom][0])
-            line = vcfFile.readline().strip()
-            i = 1
-        except KeyError:
-            print(chrom + "didn't find in " + vcfFileName)
-            return []
+        print("getVcfListByChrom", self.VcfIndexMap[chrom], chrom,int(dilute*self.NumOfRecbychromOrder[i]),self.NumOfRecbychromOrder[i])            
+        vcfFile.seek(self.VcfIndexMap[chrom][0])
+        line = vcfFile.readline().strip()
+        i = 1
+
         while line and (re.split(r'\s+', line))[0] == chrom:
             if dilute!=1 and len(VcfRecRandomSelectIdxlist)==0:
                 break
@@ -212,9 +212,10 @@ class VCF_Data():
                 print("VCFutil unique the vcf pos",line,VcfList_A_Chrom[-1])
                 continue
             VcfList_A_Chrom.append((pos, REF, ALT, INFO,FORMAT,samples))
-            
-        return copy.deepcopy(VcfList_A_Chrom)
         vcfFile.close()
+        print(chrom,len(VcfList_A_Chrom))    
+        return copy.deepcopy(VcfList_A_Chrom)
+        
 
     def getVcfMap(self, vcfFileName):
         """

@@ -172,9 +172,10 @@ class MakeMhtGraph(object):
         r('x=read.table("' + namewithoutpath + '",header=T)')
         
         if ylim!=None and xlim!=None:
+            print("=========================================================================================================================================")
             for columnname in columnnames:
                 r("CairoPNG('" + namewithoutpath + "histon_"+columnname+"_" + dataType + ".png',width=1600,height=800)")
-                r("hist(x$"+columnname+",breaks=500,ylim=c(0,2000),xlim=c(0,45),main='"+ namewithoutpath +"',ylab='No.bins',xlab='SNPs per Kb')")
+                r("hist(x$"+columnname+",breaks=500,ylim=c(0,16000),xlim=c(0,0.1),main='"+ namewithoutpath +"',ylab='No.bins',xlab='SNPs per Kb')")
                 r('dev.off()')
         else:
             for columnname in columnnames:
