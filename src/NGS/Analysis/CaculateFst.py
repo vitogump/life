@@ -151,7 +151,7 @@ class Fst():
 #            for currentChrom in self.doubleVcfMap.keys():
     #             self.FstMapByChrom[currentChrom]=[]
             win.winValueL = []
-            print("caculateFst value in "+currentchrID)
+            print("after alin2PopSnpPos ,caculateFst value in "+currentchrID)
             
             win.slidWindowOverlap(doubleVcfMap[currentchrID], currentchrLen,winwidth, slideSize, caculator)
             self.FstMapByChrom[currentchrID] = copy.deepcopy(win.winValueL)
@@ -163,7 +163,7 @@ class Fst():
             self.FstMapByChrom[currentchrID]=fillNA           
 
 if __name__ == '__main__':
-    dbtools = dbm.DBTools("10.2.48.140", "root", "1234567", chromdbname)
+    dbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname)
 
     if fsttype=='R' or fsttype=='r':
         
@@ -184,7 +184,7 @@ if __name__ == '__main__':
             
         allkindofpaire = list(combinations(vcffileslist[:], 2))
         alldistMap={}
-        tempdbtools = dbm.DBTools("10.2.48.140", "root", "1234567", "ninglabvariantdata_tmp")
+        tempdbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.ghostdbname)
         TABLES = {}
         TABLES[treearrayprename+"treearray"] = (
             "CREATE TABLE "+treearrayprename+"treearray ("

@@ -11,14 +11,14 @@ from NGS.BasicUtil import *
 
 mindepthforJudgefixref=10
 class AncestralAlleletabletools():
-    def __init__(self, database="ninglabvariantdata", ip="10.2.48.140", usrname="root", pw="1234567",dbgenome="genomebasicinfo"):
+    def __init__(self, database=Util.vcfdbname, ip=Util.ip, usrname=Util.username, pw=Util.password,dbgenome=Util.genomeinfodbname):
         super().__init__()
         self.dbvariant = dbm.DBTools(ip, usrname, pw, database)
         self.dbgenome=dbm.DBTools(ip, usrname, pw, dbgenome)
         
         #dbtmp means never use the table in the software,you can delete the table anytime without check dependency
-        self.dbtmp=dbm.DBTools(ip, usrname, pw, "ninglabvariantdata_tmp")
-        self.dbtmpname="ninglabvariantdata_tmp"#
+        self.dbtmp=dbm.DBTools(ip, usrname, pw, Util.ghostdbname)
+        self.dbtmpname=Util.ghostdbname#
         
         self.dbvariant_name=database
         self.dbgenomename=dbgenome

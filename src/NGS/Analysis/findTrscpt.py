@@ -20,7 +20,6 @@ parser.add_option("-t", "--threshold", dest="threshold", help="conflict with -p"
 parser.add_option("-p", "--percentage", dest="percentage",default=None, help="conflict with -t")
 parser.add_option("-o", "--outfileprename", dest="outfileprename", help="outfileprename")
 parser.add_option("-x", "--morethan_lessthan", dest="morethan_lessthan", help="m:morethan or l:lessthan")
-parser.add_option("-2", "--genomebasiscinfoDatabases", dest="genomebasiscinfoDatabases", help="trscptableDatabases")
 parser.add_option("-T", "--trscptable", dest="trscptable", help="trscptable")
 parser.add_option("-u", "--upextend", dest="upextend", help="upextend")
 parser.add_option("-d", "--downextend", dest="downextend", help="downextend")
@@ -63,7 +62,7 @@ outfile=open(outfilename,'w')
 print("chrNo\tRegion_start\tRegion_end\tNoofWin\textram"+options.winType+"\ttranscpt\tgeneID",file=outfile)
 outfileNameWINwithGENE=winFileName7Field+".wincopywithgene"
 if __name__ == '__main__':
-    genomedbtools = dbm.DBTools("10.2.48.140", "root", "1234567", options.genomebasiscinfoDatabases.strip())
+    genomedbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname)
 #    dbtools.operateDB("alter","alter table "+gene_sample_venn+" add "+outfilename+" smallint(3) default 0") 
     winGenome = Util.WinInGenome(tempwinDBName, winFileName7Field)
     time.sleep(SLEEP_FOR_NEXT_TRY)
@@ -158,7 +157,7 @@ if __name__ == '__main__':
             idxlist_to_pop=[]
             while i <len(selectedRegion[chrom]):
                 winNo_end=str(int(selectedRegion[chrom][i][1]/slideSize))
-                winNo_start=str(int(selectedRegion[chrom][i-1][2]-winWidth/slideSize))
+                winNo_start=str(int((selectedRegion[chrom][i-1][2]-winWidth)/slideSize))
                 print("select * from "+ winGenome.wintablewithoutNA + " where "+" chrID='"+chrom+"' and winNo>"+winNo_start+" and  winNo<"+winNo_end)
                 wincount_to_determine=winGenome.windbtools.operateDB("select","select * from "+ winGenome.wintablewithoutNA + " where "+" chrID='"+chrom+"' and winNo>"+winNo_start+" and winNo<"+winNo_end)
                 wincount_to_add=winGenome.windbtools.operateDB("select","select * from "+ winGenome.wintabletextvalueallwin + " where "+" chrID='"+chrom+"' and winNo>"+winNo_start+" and winNo<"+winNo_end)

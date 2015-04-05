@@ -61,7 +61,7 @@ if __name__ == '__main__':
         OUTFILENAME="ducksnpflankseq.fa"
         outfile=open(options.chromlistfilename+"snpflankseq.fa",'w')
         duckrefhandler=open(options.ref,'r')
-        dbtoolsforchrom = dbm.DBTools("10.2.48.140", "root", "1234567", "genomebasicinfo")
+        dbtoolsforchrom = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname)
         try:
             duckrefindex = pickle.load(open(options.ref + ".myindex", 'rb'))
 #             originalspeciesindex = pickle.load(open(originalspeciesref + ".myindex", 'rb'))

@@ -38,10 +38,10 @@ reffahandler = open(options.reffa, "r")
 
 minlength = options.minlength
 chromtable = options.chromtablename
-dbchromtools = dbm.DBTools("10.2.48.140", "root", "1234567", options.chromdbname)
+dbchromtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname)
 
 variantstablename = options.variantstable.strip()
-dbvariantstools = dbm.DBTools("10.2.48.140", "root", "1234567", "ninglabvariantdata")
+dbvariantstools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.vcfdbname)
 
 gtfMap = Util.getGtfMap(options.gtffile)
 bedfileNames = options.bedfiles

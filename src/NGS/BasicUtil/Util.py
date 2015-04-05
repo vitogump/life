@@ -3,8 +3,7 @@ import copy
 import random
 import string,numpy
 import re
-import pickle
-import os
+import pickle,os,configparser
 import src.NGS.BasicUtil.DBManager as dbm
 # from src.NGS.BasicUtil import *
 
@@ -13,6 +12,18 @@ Created on 2013-6-30
 
 @author: rui
 '''
+currentpath=os.path.realpath(__file__)
+currentpath[:currentpath.find("life/src")]+"life/com/config.properties"
+cfparser = configparser.ConfigParser()
+cfparser.read(currentpath[:currentpath.find("life/src")]+"life/com/config.properties")
+print(currentpath)#currentpath[:currentpath.find("life/src")]+"life/com/config.properties")
+ip=cfparser.get("mysqldatabase","ip")
+username=cfparser.get("mysqldatabase","username")
+password=cfparser.get("mysqldatabase","password")
+webdbname=cfparser.get("mysqldatabase","webdbname")
+genomeinfodbname=cfparser.get("mysqldatabase","genomeinfodbname")
+ghostdbname=cfparser.get("mysqldatabase","ghostdbname")
+vcfdbname=cfparser.get("mysqldatabase","vcfdbname")
 def alin2PopSnpPos(vcfMaplist,innerjoin_outjoin="i"):
     """input:
     two map fomart like this {chrNo:[(pos,REF,ALT,INFO,FORMAT,sample,...),(pos,REF,ALT,INFO,FORMAT,sample,...),,,,,],chrNo:[],,,,,,}
@@ -30,7 +41,6 @@ def alin2PopSnpPos(vcfMaplist,innerjoin_outjoin="i"):
             posInPop1 = SNPrec[0]
             RefInPop1 = SNPrec[1]
             AltInPop1 = SNPrec[2]
-            skipthisrec=False
             elementToAppend=[posInPop1,RefInPop1,AltInPop1,SNPrec[3:]]
             if len(vcfMaplist)==1:
                 multipleVcfMap[currentChrom].append(elementToAppend)
@@ -40,7 +50,6 @@ def alin2PopSnpPos(vcfMaplist,innerjoin_outjoin="i"):
                 if currentChrom not in vcfMap_obj or len(vcfMap_obj[currentChrom])==0:
                     print("alin2PopSnpPos",currentChrom,"didn't find in vcfMap2")
                     if innerjoin_outjoin=="i":
-                        skipthisrec=True
                         break
                     elif innerjoin_outjoin=="o":
                         if vcfMap_obj_idx!=len(vcfMaplist)-1:
@@ -70,7 +79,7 @@ def alin2PopSnpPos(vcfMaplist,innerjoin_outjoin="i"):
                                 elementToAppend.append(vcfMap_obj[currentChrom][mid][3:])
                                 multipleVcfMap[currentChrom].append(elementToAppend)
                         elif innerjoin_outjoin=="i":
-                            skipthisrec=True
+                            print("skip the different allele rec",currentChrom,posInPop1,AltInPop1,vcfMap_obj[currentChrom][mid][2])
 #                             print(currentChrom,posInPop1,AltInPop1,vcfMap_obj[currentChrom][mid][2],"different alt allele,should skip this rec,but i have no time to improve this now")
                         elif innerjoin_outjoin=="o":
                             if vcfMap_obj_idx!=len(vcfMaplist)-1:
@@ -82,7 +91,7 @@ def alin2PopSnpPos(vcfMaplist,innerjoin_outjoin="i"):
                         break
                 
                 else:
-                    if innerjoin_outjoin=="i" and skipthisrec:
+                    if innerjoin_outjoin=="i":
                         #ignore the rec
                         break
                     elif innerjoin_outjoin=="o":
@@ -93,8 +102,6 @@ def alin2PopSnpPos(vcfMaplist,innerjoin_outjoin="i"):
                             multipleVcfMap[currentChrom].append(elementToAppend)                              
 #                     print("snp not found in vcfMap2",SNPrec)
 #                     self.doubleVcfMap[currentChrom].append(SNPrec+)
-            if skipthisrec==True:
-                break
     return multipleVcfMap
 def bedfiletools(bedfilename, withtitle=False):
     """
@@ -1107,7 +1114,6 @@ class Window():
                 if nextIdx == -1:
                     if slideSize >= windowWidth:
                         while not (L[currentIdx][0] > winStart and  L[currentIdx][0] <= (winStart + windowWidth)) and L[currentIdx][0] > winStart + windowWidth:
-                            
                             winStart += slideSize
                             noofsnps, value = Caculator.getResult()
                             self.winValueL.append((0, 0, noofsnps, value))

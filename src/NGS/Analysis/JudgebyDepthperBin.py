@@ -44,7 +44,7 @@ if __name__ == '__main__':
     
     depthbinmap={}
     mywin = Util.Window()
-    dbtools = dbm.DBTools("10.2.48.140", "root", "1234567", dbname)
+    dbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname)
     depthfile = Util.GATK_depthfile(options.genomedepth, options.genomedepth + ".index")
     if "" in depthfile.title:
         depthfile.title.remove("")

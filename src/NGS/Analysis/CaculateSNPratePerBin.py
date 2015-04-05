@@ -59,7 +59,7 @@ if __name__ == '__main__':
         consider_Depth=True
     else:
         consider_Depth=False
-    dbtools = dbm.DBTools("10.2.48.140", "root", "1234567", chromdbname)
+    dbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname)
     print(vcffileslist[:])
     for vcf in vcffileslist[:]:
         vcfname=re.search(r"[^/]*$",vcf).group(0)

@@ -317,6 +317,7 @@ class Caculate_Fst(Caculator):
         Nk = ((refdep_1 / (refdep_1 + altalleledep_1) - refdep_2 / (refdep_2 + altalleledep_2)) ** 2 - h_1 / (refdep_1 + altalleledep_1) - h_2 / (refdep_2 + altalleledep_2))
         self.CNk += Nk
         self.CDk += (Nk + h_1 + h_2)
+#         print("self.CNk",self.CNk,"NK",Nk,"self.CDk",self.CDk)
     def getResult(self):
         Fst = 'NA'
         try:
@@ -330,4 +331,5 @@ class Caculate_Fst(Caculator):
         self.CNk = 0
         noofsnp = self.COUNTED
         self.COUNTED = 0
+        
         return noofsnp, Fst

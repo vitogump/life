@@ -55,7 +55,7 @@ outfile=open(outfilename,'w')
 dndscolidx = int(options.dndsfile[1]) - 1
 dndstitle = dndsfile.readline()
 if __name__ == '__main__':
-    dbtools = dbm.DBTools("10.2.48.140", "root", "1234567", "life_pilot")
+    dbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname)
     winGenome = Util.WinInGenome(tempwinDBName, winFileName6Field)
     while minvalue <= maxvalue - dincrease:
         intervalmap[minvalue,minvalue + dincrease]=[]

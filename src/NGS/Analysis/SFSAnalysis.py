@@ -33,7 +33,7 @@ ancestralspeciescolname=options.ancestralspeciesname.strip()
 farsurebutfew=options.farsurebutfew.strip()
 mindepth=int(options.mindepth)
 if __name__ == '__main__':
-    dbtools = dbm.DBTools("10.2.48.140", "root", "1234567", options.dbname)
+    dbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname)
     tableprename=""
     TABLES = {}
     for bedfileName in args[:]:
@@ -50,7 +50,7 @@ if __name__ == '__main__':
         ")"
         )
     
-    tempdbtools=dbm.DBTools("10.2.48.140","root","1234567",tempdbname)
+    tempdbtools=dbm.DBTools(Util.ip, Util.username, Util.password, Util.ghostdbname)
     tempdbtools.create_table(TABLES)
     titlelist=[a[0].strip() for a in dbtools.operateDB("select","select column_name  from information_schema.columns where table_schema='"+options.dbname+"' and table_name='"+options.topleveltable+"'")]
     ancestralspeciesidx=titlelist.index(ancestralspeciescolname)

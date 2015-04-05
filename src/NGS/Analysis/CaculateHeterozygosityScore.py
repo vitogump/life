@@ -47,7 +47,7 @@ class HeterozygosityScore():
         self.HeterozyMap = {}
 
 if __name__ == '__main__':
-    dbtools = dbm.DBTools("10.2.48.140", "root", "1234567", chromdbname)
+    dbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname)
     win = Util.Window()
     hscore = HeterozygosityScore()
     poplist=[];methodlist=[]

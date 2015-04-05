@@ -170,7 +170,6 @@ class VCF_Data():
         """
             return a list that contain all vcf record of a chrom
         """
-        print(chrom)
         VcfList_A_Chrom = []
         if chrom not in self.chromOrder:
             return []
@@ -182,7 +181,7 @@ class VCF_Data():
         elif self.NumOfRecbychromOrder[i]<1000:
             dilute=1
         vcfFile = open(vcfFileName, 'r')
-        print("getVcfListByChrom", self.VcfIndexMap[chrom], chrom,int(dilute*self.NumOfRecbychromOrder[i]),self.NumOfRecbychromOrder[i])            
+        print("getVcfListByChrom", self.VcfIndexMap[chrom], chrom,int(dilute*self.NumOfRecbychromOrder[i]),"total recs in this vcf belong to this chrom",self.NumOfRecbychromOrder[i])            
         vcfFile.seek(self.VcfIndexMap[chrom][0])
         line = vcfFile.readline().strip()
         i = 1
@@ -213,7 +212,7 @@ class VCF_Data():
                 continue
             VcfList_A_Chrom.append((pos, REF, ALT, INFO,FORMAT,samples))
         vcfFile.close()
-        print(chrom,len(VcfList_A_Chrom))    
+        print("getVcfListByChrom",chrom,"len(VcfList_A_Chrom)",len(VcfList_A_Chrom))    
         return copy.deepcopy(VcfList_A_Chrom)
         
 
@@ -257,5 +256,3 @@ class VCF_Data():
             currentLine += 1
         vcfFile.close()
         self.VcfMap_AllChrom = vcfMap
-#         for line in self.VcfMap["scaffold8"]:
-#             print(line,file =open("vcfMapdata.txt",'a'))
