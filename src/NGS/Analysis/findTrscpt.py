@@ -26,7 +26,7 @@ parser.add_option("-d", "--downextend", dest="downextend", help="downextend")
 parser.add_option("-s","--slideSize",dest="slideSize",default="20000",help="win slide size")
 parser.add_option("-w","--winWidth",dest="winWidth",default="40000",help="win width ")
 parser.add_option("-X","--winType",dest="winType",default="zvalue",help="winvalue or zvalue")
-parser.add_option("-N","--mergeNAorNOT",dest="mergeNAorNOT",action="store_true",default=False,help="winvalue or zvalue")
+parser.add_option("-N","--mergeNA",dest="mergeNA",default=False,help="winvalue or zvalue")
 parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", default=True,
                   help="don't print status messages to stdout")
@@ -51,8 +51,8 @@ percentage = options.percentage
 outfilename=path+options.outfileprename
 morethan_lessthan=options.morethan_lessthan
 TranscriptGenetable=options.trscptable.strip()
-mergeNAorNOT=options.mergeNAorNOT
-print(mergeNAorNOT)
+mergeNA=options.mergeNA
+print(mergeNA)
 if percentage!=None and threshold!=None:
     print("-t conflict with -p")
     exit(-1)
@@ -72,17 +72,17 @@ if __name__ == '__main__':
         totalWin = winGenome.windbtools.operateDB("select", "select count(*) from " + winGenome.wintablewithoutNA)[0][0]
         selectWinNos = int(float(percentage) * totalWin)
         if morethan_lessthan == "m" or morethan_lessthan == "M":
-            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintablewithoutNA + " where "+options.winType+" != 'NA' order by "+options.winType+" desc limit 0," + str(selectWinNos))
-            print("select * from "+winGenome.wintablewithoutNA + " where zvalue != 'NA' order by zvalue desc limit 0," + str(selectWinNos))
+            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintablewithoutNA + " where 1 order by "+options.winType+" desc limit 0," + str(selectWinNos))
+            print("select * from "+winGenome.wintablewithoutNA + " where 1 order by zvalue desc limit 0," + str(selectWinNos))
         elif morethan_lessthan == "l" or morethan_lessthan == "L":
-            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintablewithoutNA + " where "+options.winType+" != 'NA' order by "+options.winType+" asc limit 0," + str(selectWinNos))
-            print("select * from " + winGenome.wintablewithoutNA + " where "+options.winType+" != 'NA' order by "+options.winType+" asc limit 0," + str(selectWinNos))
+            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintablewithoutNA + " where 1 order by "+options.winType+" asc limit 0," + str(selectWinNos))
+            print("select * from " + winGenome.wintablewithoutNA + " where 1 order by "+options.winType+" asc limit 0," + str(selectWinNos))
     elif threshold!=None:
         if morethan_lessthan=="m" or morethan_lessthan=="M":
-            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintablewithoutNA + " where "+options.winType+"!= 'NA' and "+options.winType+">=" + threshold)
+            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintablewithoutNA + " where 1 and "+options.winType+">=" + threshold)
         elif morethan_lessthan=="l" or morethan_lessthan=="L":
             print("select", "select * from " + winGenome.wintablewithoutNA + " where "+options.winType+"!= 'NA' and "+options.winType+"<=" + threshold)
-            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintablewithoutNA + " where "+options.winType+"!= 'NA' and "+options.winType+"<=" + threshold)
+            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintablewithoutNA + " where 1 and "+options.winType+"<=" + threshold)
         selectWinNos=len(selectedWins)
     selectedWins.sort(key=lambda listRec:float(listRec[5]))
     if selectWinNos==0:
@@ -96,13 +96,9 @@ if __name__ == '__main__':
             selectedWinMap[win[0]].append(win)
         else:
             selectedWinMap[win[0]]=[win]
-    #selectedWins is a list :[('KB743038.1', '9', '181586', '219606', '0.3816832053195056', '-0.00013080719016'),(),(),(),(),()]
-    #selectedWinMap {chrom1:[(chrom1, '9', '181586', '219606', '0.3816832053195056', '-0.00013080719016'),(),(),()],chrom2:[],}
-    #mergedRegion [(chrom1, '9', '181586', '219606', '0.3816832053195056', '-0.00013080719016'),(),(),()] continues
+
     selectedRegion={}
-    #fill selectedRegion map
-    #selectedRegion {chrom:[chrom,Region_start,Region_end,Nwin,extremeValue],chrom:[],,,,}
-    #merge continues win into a region
+
     for chrom in selectedWinMap:
         selectedWinMap[chrom].sort(key=lambda listRec: int(listRec[1]))
         selectedRegion[chrom]=[]
@@ -125,9 +121,9 @@ if __name__ == '__main__':
                     elif options.winType=="zvalue": 
                         extremeValues.append(float(e[6]))
                 if morethan_lessthan == "m" or morethan_lessthan == "M":
-                    extremeValue=max(extremeValues)
-                elif morethan_lessthan == "l" or morethan_lessthan == "L":
                     extremeValue=min(extremeValues)
+                elif morethan_lessthan == "l" or morethan_lessthan == "L":
+                    extremeValue=max(extremeValues)
                 selectedRegion[chrom].append((chrom,Region_start,Region_end,Nwin,extremeValue))
                 #process this win
                 mergedRegion=[selectedWinMap[chrom][i]]
@@ -146,11 +142,11 @@ if __name__ == '__main__':
                 elif options.winType=="zvalue": 
                     extremeValues.append(float(e[6]))
             if morethan_lessthan == "m" or morethan_lessthan == "M":
-                extremeValue=max(extremeValues)
+                extremeValue=min(extremeValues)
             elif morethan_lessthan == "l" or morethan_lessthan == "L":
-                extremeValue=min(extremeValues)            
+                extremeValue=max(extremeValues)            
             selectedRegion[chrom].append((chrom,Region_start,Region_end,Nwin,extremeValue))
-    if mergeNAorNOT:
+    if mergeNA!=False and int(mergeNA)>0:
         for chrom in selectedRegion:
             selectedRegion[chrom].sort(key=lambda listRec: int(listRec[1]))
             i=1
@@ -161,12 +157,12 @@ if __name__ == '__main__':
                 print("select * from "+ winGenome.wintablewithoutNA + " where "+" chrID='"+chrom+"' and winNo>"+winNo_start+" and  winNo<"+winNo_end)
                 wincount_to_determine=winGenome.windbtools.operateDB("select","select * from "+ winGenome.wintablewithoutNA + " where "+" chrID='"+chrom+"' and winNo>"+winNo_start+" and winNo<"+winNo_end)
                 wincount_to_add=winGenome.windbtools.operateDB("select","select * from "+ winGenome.wintabletextvalueallwin + " where "+" chrID='"+chrom+"' and winNo>"+winNo_start+" and winNo<"+winNo_end)
-                if len(wincount_to_determine)==0:
+                if len(wincount_to_determine)==0 and len(wincount_to_add)<= int(mergeNA):
                     if morethan_lessthan == "m" or morethan_lessthan == "M":
-                        extremeValue=max(selectedRegion[chrom][i][4],selectedRegion[chrom][i-1][4])
-                    elif morethan_lessthan == "l" or morethan_lessthan == "L":
                         extremeValue=min(selectedRegion[chrom][i][4],selectedRegion[chrom][i-1][4])
-                    selectedRegion[chrom][i]=(chrom,selectedRegion[chrom][i-1][1],selectedRegion[chrom][i][2],selectedRegion[chrom][i][3]+len(wincount_to_add),extremeValue)
+                    elif morethan_lessthan == "l" or morethan_lessthan == "L":
+                        extremeValue=max(selectedRegion[chrom][i][4],selectedRegion[chrom][i-1][4])
+                    selectedRegion[chrom][i]=(chrom,selectedRegion[chrom][i-1][1],selectedRegion[chrom][i][2],selectedRegion[chrom][i-1][3]+selectedRegion[chrom][i][3]+len(wincount_to_add),extremeValue)
                     idxlist_to_pop.append(i-1)
                 i+=1
             else:
@@ -196,18 +192,7 @@ if __name__ == '__main__':
                     if tcpt[2].strip()!="":
                         gnames+=(tcpt[2]+",")
                 print("\t".join(map(str,region)),tcpts[:-1],gnames[:-1],sep="\t",file=outfile)                  
-#     for region in sorted(final_table.keys()):
-#         tcpts=""
-#         for tcpt in final_table[region]:
-#             tcpts+=(tcpt[0]+"\t")
-#         print("\t".join(map(str,region)),tcpts,sep="\t",file=outfile)
-       
+
     winGenome.windbtools.drop_table(winGenome.wintabletextvalueallwin)
     winGenome.windbtools.drop_table(winGenome.wintablewithoutNA)
-#        for gene in winGenome.winContainTrscptMap[win]:
-#            print(gene)
-#            print("update "+gene_sample_venn+" set "+outfilename+"=1 where geneID='"+gene[0]+"'")
-#            dbtools.operateDB("update","update "+gene_sample_venn+" set "+outfilename+"=1 where geneID='"+gene[0]+"'")
     outfile.close()
-#    winGenome.windbtools.drop_table(winGenome.wintable)
-#    winGenome.windbtools.disconnect()

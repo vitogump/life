@@ -14,8 +14,6 @@ Created on 2013-6-30
 @author: rui
 '''
 parser = OptionParser()
-parser.add_option("-d", "--chromdbname", dest="chromdbname",# action="callback",type="string",callback=useoptionvalue_previous1,
-                  help="write report to FILE")
 parser.add_option("-c", "--chromtable", dest="chromtable",# action="callback",type="string",callback=useoptionvalue_previous2,
                   help="write report to FILE")
 parser.add_option("-v","--vcffile",dest="vcffile",action="append", default=[],help="default infile1_infile2")
@@ -35,7 +33,7 @@ outputpath=options.outputpath.strip()
 minlength=options.minlength
 windowWidth=int(options.winwidth)
 slideSize=int(options.slideSize)
-chromdbname=options.chromdbname
+
 chromtable = options.chromtable
 fsttype=options.fsttype
 primaryID = "chrID"
@@ -48,77 +46,6 @@ class Fst():
 #        self.doubleVcfMap = {}
         self.FstMapByChrom = {}  # {chr:[(first_snp_pos,last_snp_pos,fst),(),()],chr:[],chr:[]}
         self.distMap = {}
-#     def alin2PopSnpPos(self,innerjoin_outjoin="i", *vcfMap):
-#         """input:
-#         two map fomart like this {chrNo:[(pos,REF,ALT,INFO,FORMAT,sample,...),(pos,REF,ALT,INFO,FORMAT,sample,...),,,,,],chrNo:[],,,,,,}
-#         output:
-#         one map like this {chrNo:[(pos,REF,ALT,(INFO,FORMAT,sample,...),(INFO,FORMAT,sample,...)),(,,,(),()),,,,,],chrNo:[],,,}
-#                                                 from pop1                        from pop2
-#         """
-#         doubleVcfMap={}
-#         multipleVcfMap={}
-#         for currentChrom in vcfMap[0].keys():
-# #             self.FstMapByChrom[currentChrom] = []
-#             doubleVcfMap[currentChrom] = []
-#             multipleVcfMap[currentChrom]=[]
-#             for SNPrec in vcfMap[0][currentChrom]:
-#                 posInPop1 = SNPrec[0]
-#                 RefInPop1 = SNPrec[1]
-#                 AltInPop1 = SNPrec[2]
-#                 skipthisrec=False
-#                 elementToAppend=[posInPop1,RefInPop1,AltInPop1,SNPrec[3:]]
-#                 for vcfMap_obj_idx in range(1,len(vcfMap[:])):
-#                     vcfMap_obj=vcfMap[vcfMap_obj_idx]
-#                     if currentChrom not in vcfMap_obj:
-#                         print("alin2PopSnpPos",currentChrom,"didn't find in vcfMap2")
-#                         if innerjoin_outjoin=="i":
-#                             skipthisrec=True
-#                             break
-#                         elif innerjoin_outjoin=="o":
-#                             elementToAppend.append(None)
-#                     low = 0
-#                     high = len(vcfMap_obj[currentChrom]) - 1
-#                     
-#                     if re.search(r"[A-Za-z]+,[A-Za-z]+", AltInPop1) != None:  # multiple allels
-#                         continue
-#     #                dp4 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", SNPrec[3])
-#     #                 print(dp4.group(0))
-#                     
-#                     while low <= high:
-#                         mid = (low + high)>>1
-#                         if vcfMap_obj[currentChrom][mid][0]<posInPop1:
-#                             low=mid+1
-#                         elif vcfMap_obj[currentChrom][mid][0]>posInPop1:
-#                             high=mid-1
-#                         else:
-#                             if AltInPop1 == vcfMap_obj[currentChrom][mid][2]:#same alt alle
-#                                 if vcfMap_obj_idx!=len(vcfMap):
-#                                     elementToAppend.append(vcfMap_obj[currentChrom][mid][3:])
-#                                 elif vcfMap_obj_idx==len(vcfMap):
-#                                     multipleVcfMap[currentChrom].append(elementToAppend)
-#                             elif innerjoin_outjoin=="i":
-#                                 skipthisrec=True
-#                                 print(currentChrom,posInPop1,AltInPop1,vcfMap_obj[currentChrom][mid][2],"different alt allele,should skip this rec,but i have no time to improve this now")
-#                             elif innerjoin_outjoin=="o":
-#                                 if vcfMap_obj_idx!=len(vcfMap):
-#                                     elementToAppend.append(None)
-#                                 elif vcfMap_obj_idx==len(vcfMap):
-#                                     multipleVcfMap[currentChrom].append(elementToAppend)                                
-#                                 
-#                             break
-#                     else:
-#                         if innerjoin_outjoin=="i" and skipthisrec:
-#                             #ignore the rec
-#                             break
-#                         elif innerjoin_outjoin=="o":
-#                             if vcfMap_obj_idx!=len(vcfMap):
-#                                 elementToAppend.append(None)
-#                             elif vcfMap_obj_idx==len(vcfMap):
-#                                 multipleVcfMap[currentChrom].append(elementToAppend)                              
-# #                     print("snp not found in vcfMap2",SNPrec)
-# #                     self.doubleVcfMap[currentChrom].append(SNPrec+)
-#         return multipleVcfMap
-
     def caculateFstAccordingdb(self,dbtools,chromstable,vcfNAME_POP1,vcfNAME_POP2,caculator,winwidth,slideSize,minlengthOfchrom):
         pop1 = VCFutil.VCF_Data(vcfNAME_POP1)  # new a class
         pop2 = VCFutil.VCF_Data(vcfNAME_POP2)  # new a class

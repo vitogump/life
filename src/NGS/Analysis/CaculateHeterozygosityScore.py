@@ -12,8 +12,6 @@ Created on 2013-7-2
 
 primaryID = "chrID"
 parser = OptionParser()
-parser.add_option("-d", "--chromdbname", dest="chromdbname",# action="callback",type="string",callback=useoptionvalue_previous1,
-                  help="write report to FILE")
 parser.add_option("-c", "--chromtable", dest="chromtable",# action="callback",type="string",callback=useoptionvalue_previous2,
                   help="write report to FILE")
 parser.add_option("-o","--outputpath",dest="outputpath",help="default infile1_infile2")
@@ -36,7 +34,6 @@ minlength=options.minlength
 windowWidth=int(options.winwidth)
 slideSize=int(options.slideSize)
 chromtable=options.chromtable
-chromdbname=options.chromdbname
 outputpath=options.outputpath.strip()
 sql = "select * from " + chromtable+" where chrlength>="+minlength
 vcffileslist=options.vcffile

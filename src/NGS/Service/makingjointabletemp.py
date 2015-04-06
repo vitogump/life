@@ -5,7 +5,7 @@ Created on 2014-12-1
 '''
 from optparse import OptionParser
 import re
-
+from NGS.BasicUtil import Util
 from NGS.Service.Ancestralallele import AncestralAlleletabletools
 
 
@@ -34,5 +34,5 @@ for chrrow in chromlistfile:
     chromlist.append(chrrowlist[0].strip())
 print(chromlistfile,outtable_filename,toplevelsnptable,depthfilenames)
 if __name__ == '__main__':
-    atools=AncestralAlleletabletools(database="ninglabvariantdata", ip="10.2.48.140", usrname="root", pw="1234567",dbgenome="genomebasicinfo")
+    atools=AncestralAlleletabletools(database=Util.vcfdbname, ip=Util.ip, usrname=Util.username, pw=Util.password,dbgenome=Util.genomeinfodbname)
     atools.leftjoinSelectedTables(chromlist,outtable_filename,vcftablenames,toplevelsnptable,depthfilenames=depthfilenames)

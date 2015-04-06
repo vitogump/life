@@ -11,7 +11,7 @@ from NGS.BasicUtil import *
 
 mindepthforJudgefixref=10
 class AncestralAlleletabletools():
-    def __init__(self, database=Util.vcfdbname, ip=Util.ip, usrname=Util.username, pw=Util.password,dbgenome=Util.genomeinfodbname):
+    def __init__(self, database="ninglabvariantdata", ip="10.2.48.140", usrname="root", pw="1234567",dbgenome="genomebasicinfo"):
         super().__init__()
         self.dbvariant = dbm.DBTools(ip, usrname, pw, database)
         self.dbgenome=dbm.DBTools(ip, usrname, pw, dbgenome)

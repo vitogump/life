@@ -18,8 +18,6 @@ primaryID = "chrID"
 #    exit(-1)
     
 parser = OptionParser()
-parser.add_option("-d", "--chromdbname", dest="chromdbname",# action="callback",type="string",callback=useoptionvalue_previous1,
-                  help="write report to FILE")
 parser.add_option("-c", "--chromtable", dest="chromtable",# action="callback",type="string",callback=useoptionvalue_previous2,
                   help="write report to FILE")
 parser.add_option("-o","--outputpath",dest="outputpath",help="default infile1_infile2")
@@ -40,7 +38,6 @@ windowWidth=int(options.winwidth)
 slideSize=int(options.slidesize)
 outputpath=options.outputpath
 chromtable=options.chromtable
-chromdbname=options.chromdbname
 minlength=options.minlength
 vcffileslist=options.vcffile
 sql = "select * from " + chromtable+" where chrlength>="+minlength
@@ -118,21 +115,29 @@ if __name__ == '__main__':
                                 if bindepth.depthbinmap[currentchrID][i][speicesidxs_inbindepthmap[0]]=="filtered":
                                     print(currentchrID + "\t" + str(i) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][0]) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][1]) + "\t"+"NA"+"\t" + "NA" + "\t" + 'NA', file=outfile)
                                 elif bindepth.depthbinmap[currentchrID][i][speicesidxs_inbindepthmap[0]]=="passed":
-#                                 snpsperkb = snpbinmap.SNPsPerBINMap[currentchrID][i][2]/(windowWidth/1000)
-                                    log2snpsperbin = numpy.log2(snpbinmap.SNPsPerBINMap[currentchrID][i][2])
+                                    try:
+                                        log2snpsperbin = numpy.log2(snpbinmap.SNPsPerBINMap[currentchrID][i][2])
+                                    except AttributeError:
+                                        log2snpsperbin=-99999999999999999
                                     print(currentchrID + "\t" + str(i) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][0]) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][1]) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][2]) + "\t" +'%.15f'%(snpbinmap.SNPsPerBINMap[currentchrID][i][3])+"\t"+ '%.12f'%(log2snpsperbin), file=outfile)
                                 else:
                                     print(currentchrID,str(i),snpbinmap.SNPsPerBINMap[currentchrID],"doesnot exist in snpbinmap")
                             elif consider_Depth and len(speicesidxs_inbindepthmap)>1:# 
                                 for idx in speicesidxs_inbindepthmap:# pass if any speicese is "passed"
                                     if bindepth.depthbinmap[currentchrID][i][idx]=="passed":
-                                        log2snpsperbin = numpy.log2(snpbinmap.SNPsPerBINMap[currentchrID][i][2])
+                                        try:
+                                            log2snpsperbin = numpy.log2(snpbinmap.SNPsPerBINMap[currentchrID][i][2])
+                                        except AttributeError:
+                                            log2snpsperbin=-99999999999999999
                                         print(currentchrID + "\t" + str(i) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][0]) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][1]) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][2]) + "\t"+'%.15f'%(snpbinmap.SNPsPerBINMap[currentchrID][i][3])+'\t' + '%.12f'%(log2snpsperbin), file=outfile)
                                         break
                                 else:
                                     print(currentchrID + "\t" + str(i) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][0]) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][1]) + "\t" +"NA"+"\t"+ "NA" + "\t" + 'NA', file=outfile)
                             elif not consider_Depth:
-                                log2snpsperbin = numpy.log2(snpbinmap.SNPsPerBINMap[currentchrID][i][2])
+                                try:
+                                    log2snpsperbin = numpy.log2(snpbinmap.SNPsPerBINMap[currentchrID][i][2])
+                                except AttributeError:
+                                    log2snpsperbin=-99999999999999999
                                 print(currentchrID + "\t" + str(i) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][0]) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][1]) +"\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][2]) +"\t" + '%.15f'%(snpbinmap.SNPsPerBINMap[currentchrID][i][2]) + "\t" + '%.12f'%(log2snpsperbin), file=outfile)
                 else:
                     print("not find this chr:",currentchrID)

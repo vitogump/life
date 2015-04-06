@@ -50,7 +50,8 @@ if __name__ == '__main__':
                 endPos=linelist[2]
                 extremeValue=linelist[4]
                 tableRegion=chrom+":"+startPos+"-"+endPos
-                for tpID in linelist[5:]:
+                tpIDlist=re.search(r",",linelist[5].strip())
+                for tpID in tpIDlist:
                     if tpID not in trsptMap:
                         trsptMap[tpID]=[(tableRegion,extremeValue)]
                     else:
