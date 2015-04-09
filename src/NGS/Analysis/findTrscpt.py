@@ -15,21 +15,19 @@ Created on 2013-9-3
 parser = OptionParser()
 parser.add_option("-i", "--winfile", dest="winfileName",
                   help="winfileName", metavar="FILE")
-parser.add_option("-1", "--tempDBname", dest="tempdbname", help="dbname")
+
 parser.add_option("-t", "--threshold", dest="threshold", help="conflict with -p")
 parser.add_option("-p", "--percentage", dest="percentage",default=None, help="conflict with -t")
 parser.add_option("-o", "--outfileprename", dest="outfileprename", help="outfileprename")
 parser.add_option("-x", "--morethan_lessthan", dest="morethan_lessthan", help="m:morethan or l:lessthan")
-parser.add_option("-T", "--trscptable", dest="trscptable", help="trscptable")
 parser.add_option("-u", "--upextend", dest="upextend", help="upextend")
 parser.add_option("-d", "--downextend", dest="downextend", help="downextend")
 parser.add_option("-s","--slideSize",dest="slideSize",default="20000",help="win slide size")
 parser.add_option("-w","--winWidth",dest="winWidth",default="40000",help="win width ")
 parser.add_option("-X","--winType",dest="winType",default="zvalue",help="winvalue or zvalue")
 parser.add_option("-N","--mergeNA",dest="mergeNA",default=False,help="winvalue or zvalue")
-parser.add_option("-q", "--quiet",
-                  action="store_false", dest="verbose", default=True,
-                  help="don't print status messages to stdout")
+parser.add_option("-F","--findNearestGene",dest="findNearestGene",default=False,action="store_true",help="winvalue or zvalue")
+
                                                                                                                                                           
 (options, args) = parser.parse_args()
 #if len(sys.argv) != 6:
@@ -45,18 +43,17 @@ else:
     path=a.readline().strip()+"/"
     a.close()
 
-tempwinDBName = options.tempdbname
+
 threshold = options.threshold
 percentage = options.percentage
 outfilename=path+options.outfileprename
-morethan_lessthan=options.morethan_lessthan
-TranscriptGenetable=options.trscptable.strip()
+morethan_lessthan=options.morethan_lessthan.lower()
 mergeNA=options.mergeNA
 print(mergeNA)
 if percentage!=None and threshold!=None:
     print("-t conflict with -p")
     exit(-1)
-#gene_sample_venn="gene_sample_venn"
+#gene_sample_venn="gene_sample_venn"ninglabvariantdata_tmp
 vcftable=None
 outfile=open(outfilename,'w')
 print("chrNo\tRegion_start\tRegion_end\tNoofWin\textram"+options.winType+"\ttranscpt\tgeneID",file=outfile)
@@ -64,9 +61,9 @@ outfileNameWINwithGENE=winFileName7Field+".wincopywithgene"
 if __name__ == '__main__':
     genomedbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname)
 #    dbtools.operateDB("alter","alter table "+gene_sample_venn+" add "+outfilename+" smallint(3) default 0") 
-    winGenome = Util.WinInGenome(tempwinDBName, winFileName7Field)
+    winGenome = Util.WinInGenome(Util.ghostdbname, winFileName7Field)
     time.sleep(SLEEP_FOR_NEXT_TRY)
-    winGenome.appendGeneName(TranscriptGenetable, genomedbtools, winWidth, slideSize, outfileNameWINwithGENE)
+    winGenome.appendGeneName(Util.TranscriptGenetable, genomedbtools, winWidth, slideSize, outfileNameWINwithGENE,upextend,downextend,(options.findNearestGene,morethan_lessthan))
     selectWinNos="threshold method"
     if percentage!=None:
         totalWin = winGenome.windbtools.operateDB("select", "select count(*) from " + winGenome.wintablewithoutNA)[0][0]
@@ -176,7 +173,7 @@ if __name__ == '__main__':
     final_table={}
     for chrom in selectedRegion:
         for region in selectedRegion[chrom]:
-            final_table[region]=winGenome.collectTrscptInWin(genomedbtools,TranscriptGenetable,region,upextend,downextend)
+            final_table[region]=winGenome.collectTrscptInWin(genomedbtools,Util.TranscriptGenetable,region,upextend,downextend,options.findNearestGene)
 #    for win in selectedWins:
 #        winRegion=(win,upextend,downextend)
 #        winGenome.collectTrscptInWin(dbtools, TranscriptGenetable, vcftable, winRegion)

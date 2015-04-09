@@ -24,6 +24,7 @@ webdbname=cfparser.get("mysqldatabase","webdbname")
 genomeinfodbname=cfparser.get("mysqldatabase","genomeinfodbname")
 ghostdbname=cfparser.get("mysqldatabase","ghostdbname")
 vcfdbname=cfparser.get("mysqldatabase","vcfdbname")
+TranscriptGenetable=cfparser.get("mysqldatabase","TranscriptGenetable")
 def alin2PopSnpPos(vcfMaplist,innerjoin_outjoin="i"):
     """input:
     two map fomart like this {chrNo:[(pos,REF,ALT,INFO,FORMAT,sample,...),(pos,REF,ALT,INFO,FORMAT,sample,...),,,,,],chrNo:[],,,,,,}
@@ -1263,18 +1264,18 @@ class WinInGenome():
         tempdbtools.operateDB("delete", "delete from " + tableNametextValueForappendGeneName + " where chrID='chrNo' and winNo='winNo' and winvalue='winvalue' ")    
 
         return chromOrder, tempdbtools, tableNamewithoutNA, tableNametextValueForappendGeneName 
-    def appendGeneName(self, TranscriptGenetable, genomedbtools, winwidth, slideSize, outfileName):
+    def appendGeneName(self, TranscriptGenetable, genomedbtools, winwidth, slideSize, outfileName,upextend=0, downextend=0,findNearestGenee=(False,"a")):
         outfile = open(outfileName, 'w')
         print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnps\twinvalue\tzvalue\tgeneName\ttrscptID", file=outfile)
-        totalWins = self.windbtools.operateDB("select", "select count(*) from " + self.wintabletextvalueallwin)[0][0]
-        allwins = self.windbtools.operateDB("select", "select * from " + self.wintabletextvalueallwin + " limit 1," + str(totalWins))
+
+        allwins = self.windbtools.operateDB("select", "select * from " + self.wintabletextvalueallwin )
         self.windbtools.operateDB("callproc", "mysql_sp_add_column", data=(self.dbname, self.wintabletextvalueallwin, "geneName", "varchar(128)", "default null"))
         self.windbtools.operateDB("callproc", "mysql_sp_add_column", data=(self.dbname, self.wintabletextvalueallwin, "trscptID", "varchar(128)", "default null"))  
         for win in allwins:
             region = (win[0], int(win[1]) * slideSize, int(win[1]) * slideSize + winwidth, win[1], win[5])
             geneNames = ""
             trscptIDs = ""
-            recs=self.collectTrscptInWin(genomedbtools, TranscriptGenetable, region)
+            recs=self.collectTrscptInWin(genomedbtools, TranscriptGenetable, region,upextend, downextend,findNearestGenee[0])
             for rec in recs:
                 trscptIDs += rec[0].strip() + ";"
                 if rec[2].strip() != "":
@@ -1283,6 +1284,7 @@ class WinInGenome():
         allwins = self.windbtools.operateDB("select", "select * from " + self.wintabletextvalueallwin)
         for win in allwins:
 #                 win=tuple([a for a in win[0:4]]+['NA','NA']+[a for a in win[6:]])
+    
             if win[-2] == "":
                 if win[-1] == "":
                     print(*(win[:-2] + ("NA", "NA")), sep="\t", file=outfile)
@@ -1292,7 +1294,7 @@ class WinInGenome():
                 print(*win, sep="\t", file=outfile)
         outfile.close()
 
-    def collectTrscptInWin(self, genomedbtools, trscptableName, region, upextend=0, downextend=0):
+    def collectTrscptInWin(self, genomedbtools, trscptableName, region, upextend=0, downextend=0,findNearestGene=False):
         """select region overlaped with the trscpt
         reture a list of trscpts [tp_generecord1,tp_generecord2,,,]
         """
@@ -1344,7 +1346,17 @@ class WinInGenome():
         for row in result:
             row += tuple([6])
             trscptlist.append(row)
-        
+        if trscptlist==[] and findNearestGene:
+            result=genomedbtools.operateDB("select","select * from "+ transcripttable + " where chrID='" + chrID +  "' and trscpt_end_pos < "+str(Region_start) + " order by trscpt_end_pos")
+            if len(result)!=0:#result is a list
+                row=list(result[-1])
+                row[2]=(str(Region_start-int(row[6]))+"<"+row[7])+row[2]
+                trscptlist.append(tuple(row))
+            result=genomedbtools.operateDB("select","select * from "+ transcripttable + " where chrID='" + chrID +  "' and trscpt_start_pos > "+ str(Region_end)+" order by trscpt_start_pos")
+            if len(result)!=0:#result is a list
+                row=list(result[-1])
+                row[2]+=(">"+row[7]+str(int(row[6]-Region_start)))
+                trscptlist.append(tuple(row))
         return trscptlist
 
 class BinDepth():
