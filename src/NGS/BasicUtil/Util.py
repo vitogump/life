@@ -1264,27 +1264,45 @@ class WinInGenome():
         tempdbtools.operateDB("delete", "delete from " + tableNametextValueForappendGeneName + " where chrID='chrNo' and winNo='winNo' and winvalue='winvalue' ")    
 
         return chromOrder, tempdbtools, tableNamewithoutNA, tableNametextValueForappendGeneName 
-    def appendGeneName(self, TranscriptGenetable, genomedbtools, winwidth, slideSize, outfileName,upextend=0, downextend=0,findNearestGenee=(False,"a")):
+    def appendGeneName(self, TranscriptGenetable, genomedbtools, winwidth, slideSize, outfileName,upextend=0, downextend=0,findNearestGene=(5,"m")):
         outfile = open(outfileName, 'w')
         print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnps\twinvalue\tzvalue\tgeneName\ttrscptID", file=outfile)
 
         allwins = self.windbtools.operateDB("select", "select * from " + self.wintabletextvalueallwin )
         self.windbtools.operateDB("callproc", "mysql_sp_add_column", data=(self.dbname, self.wintabletextvalueallwin, "geneName", "varchar(128)", "default null"))
         self.windbtools.operateDB("callproc", "mysql_sp_add_column", data=(self.dbname, self.wintabletextvalueallwin, "trscptID", "varchar(128)", "default null"))  
+
         for win in allwins:
             region = (win[0], int(win[1]) * slideSize, int(win[1]) * slideSize + winwidth, win[1], win[5])
-            geneNames = ""
-            trscptIDs = ""
-            recs=self.collectTrscptInWin(genomedbtools, TranscriptGenetable, region,upextend, downextend,findNearestGenee[0])
+            geneNames = "";trscptIDs = ""
+            recs=self.collectTrscptInWin(genomedbtools, TranscriptGenetable, region, upextend, downextend)
             for rec in recs:
                 trscptIDs += rec[0].strip() + ";"
                 if rec[2].strip() != "":
                     geneNames += (rec[2].strip() + ";")
             self.windbtools.operateDB("update", "update " + self.wintabletextvalueallwin + " set geneName = '" + geneNames[0:-1] + "', trscptID= '" + trscptIDs[0:-1] + "' where chrID= '" + win[0] + "' and winNo=" + win[1])
+        #process outliers win
+        
+        total_outliers=findNearestGene[0]
+        if findNearestGene[1]=="m":
+            outlierwins=self.windbtools.operateDB("select","select * from "+ self.wintablewithoutNA+" order by zvalue desc limit 0,"+str(total_outliers))
+        elif  findNearestGene[1]=="l":
+            outlierwins=self.windbtools.operateDB("select","select * from "+ self.wintablewithoutNA+" order by zvalue asc limit 0,"+str(total_outliers))
+        print(total_outliers,outlierwins)
+        for win in outlierwins:
+            region = (win[0], int(win[1]) * slideSize, int(win[1]) * slideSize + winwidth, win[1], win[5])
+            geneNames = "";trscptIDs = ""
+            recs=self.collectTrscptInWin(genomedbtools, TranscriptGenetable, region,upextend, downextend,True)
+            for rec in recs:
+                trscptIDs+=rec[0].strip() + ";"
+                if rec[2].strip()!="":
+                    geneNames+=(rec[2].strip() + ";")
+            if recs==[]:
+                geneNames+="top"+str(total_outliers)
+                trscptIDs+="NA"
+            self.windbtools.operateDB("update","update " + self.wintabletextvalueallwin + " set geneName = '" + geneNames[0:-1] + "', trscptID= '" + trscptIDs[0:-1] + "' where chrID= '" + win[0] + "' and winNo=" + win[1])
         allwins = self.windbtools.operateDB("select", "select * from " + self.wintabletextvalueallwin)
         for win in allwins:
-#                 win=tuple([a for a in win[0:4]]+['NA','NA']+[a for a in win[6:]])
-    
             if win[-2] == "":
                 if win[-1] == "":
                     print(*(win[:-2] + ("NA", "NA")), sep="\t", file=outfile)

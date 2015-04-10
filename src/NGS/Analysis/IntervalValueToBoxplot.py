@@ -124,7 +124,7 @@ if __name__ == '__main__':
         # final_table={region:[tp2,tp2,],region:}
         for chrom in selectedRegion:
             for region in selectedRegion[chrom]:
-                intervalmap[minvalue, minvalue + dincrease] += winGenome.collectTrscptInWin(dbtools, TranscriptGenetable, None, region)
+                intervalmap[minvalue, minvalue + dincrease] += winGenome.collectTrscptInWin(dbtools, TranscriptGenetable, region)
         minvalue += dincrease
     kaksMap={}
     for line in dndsfile:

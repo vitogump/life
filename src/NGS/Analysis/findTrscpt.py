@@ -26,7 +26,7 @@ parser.add_option("-s","--slideSize",dest="slideSize",default="20000",help="win 
 parser.add_option("-w","--winWidth",dest="winWidth",default="40000",help="win width ")
 parser.add_option("-X","--winType",dest="winType",default="zvalue",help="winvalue or zvalue")
 parser.add_option("-N","--mergeNA",dest="mergeNA",default=False,help="winvalue or zvalue")
-parser.add_option("-F","--findNearestGene",dest="findNearestGene",default=False,action="store_true",help="winvalue or zvalue")
+parser.add_option("-n","--numberofoutlier_to_NearestGene",dest="numberofoutlier_to_NearestGene",default=0,help="number of outlier value")
 
                                                                                                                                                           
 (options, args) = parser.parse_args()
@@ -43,7 +43,7 @@ else:
     path=a.readline().strip()+"/"
     a.close()
 
-
+total_outliers=int(options.numberofoutlier_to_NearestGene)
 threshold = options.threshold
 percentage = options.percentage
 outfilename=path+options.outfileprename
@@ -59,11 +59,10 @@ outfile=open(outfilename,'w')
 print("chrNo\tRegion_start\tRegion_end\tNoofWin\textram"+options.winType+"\ttranscpt\tgeneID",file=outfile)
 outfileNameWINwithGENE=winFileName7Field+".wincopywithgene"
 if __name__ == '__main__':
-    genomedbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname)
-#    dbtools.operateDB("alter","alter table "+gene_sample_venn+" add "+outfilename+" smallint(3) default 0") 
+    genomedbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname) 
     winGenome = Util.WinInGenome(Util.ghostdbname, winFileName7Field)
     time.sleep(SLEEP_FOR_NEXT_TRY)
-    winGenome.appendGeneName(Util.TranscriptGenetable, genomedbtools, winWidth, slideSize, outfileNameWINwithGENE,upextend,downextend,(options.findNearestGene,morethan_lessthan))
+    winGenome.appendGeneName(Util.TranscriptGenetable, genomedbtools, winWidth, slideSize, outfileNameWINwithGENE,upextend,downextend,(total_outliers,morethan_lessthan))
     selectWinNos="threshold method"
     if percentage!=None:
         totalWin = winGenome.windbtools.operateDB("select", "select count(*) from " + winGenome.wintablewithoutNA)[0][0]
@@ -86,6 +85,7 @@ if __name__ == '__main__':
         outfile.close()
         print("selectWinNos==0")
         exit(0)
+                
     print(outfilename,selectWinNos,"~=",len(selectedWins),selectedWins[0],selectedWins[-1])
     selectedWinMap={}
     for win in selectedWins:
@@ -173,10 +173,12 @@ if __name__ == '__main__':
     final_table={}
     for chrom in selectedRegion:
         for region in selectedRegion[chrom]:
-            final_table[region]=winGenome.collectTrscptInWin(genomedbtools,Util.TranscriptGenetable,region,upextend,downextend,options.findNearestGene)
-#    for win in selectedWins:
-#        winRegion=(win,upextend,downextend)
-#        winGenome.collectTrscptInWin(dbtools, TranscriptGenetable, vcftable, winRegion)
+            if total_outliers>0:
+                final_table[region]=winGenome.collectTrscptInWin(genomedbtools,Util.TranscriptGenetable,region,upextend,downextend,True)
+            else:
+                final_table[region]=winGenome.collectTrscptInWin(genomedbtools,Util.TranscriptGenetable,region,upextend,downextend)
+#process top outlier values
+
     for chrom in winGenome.chromOrder:
         if chrom not in selectedRegion:
             continue
