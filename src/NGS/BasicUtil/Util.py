@@ -1368,13 +1368,15 @@ class WinInGenome():
             result=genomedbtools.operateDB("select","select * from "+ transcripttable + " where chrID='" + chrID +  "' and trscpt_end_pos < "+str(Region_start) + " order by trscpt_end_pos")
             if len(result)!=0:#result is a list
                 row=list(result[-1])
-                row[2]=(str(Region_start-int(row[6]))+"<"+row[7])+row[2]
-                trscptlist.append(tuple(row))
+                if Region_start-int(row[6])<180000:
+                    row[2]=(str(Region_start-int(row[6]))+"<"+row[7])+row[2]
+                    trscptlist.append(tuple(row))
             result=genomedbtools.operateDB("select","select * from "+ transcripttable + " where chrID='" + chrID +  "' and trscpt_start_pos > "+ str(Region_end)+" order by trscpt_start_pos")
             if len(result)!=0:#result is a list
                 row=list(result[-1])
-                row[2]+=(">"+row[7]+str(int(row[6]-Region_start)))
-                trscptlist.append(tuple(row))
+                if int(row[6])-Region_end<180000:
+                    row[2]+=(">"+row[7]+str(int(row[6])-Region_end))
+                    trscptlist.append(tuple(row))
         return trscptlist
 
 class BinDepth():
