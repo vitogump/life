@@ -32,11 +32,53 @@ def alin2PopSnpPos(vcfMaplist,innerjoin_outjoin="i"):
     one map like this {chrNo:[(pos,REF,ALT,(INFO,FORMAT,sample,...),(INFO,FORMAT,sample,...)),(,,,(),()),,,,,],chrNo:[],,,}
                                             from pop1                        from pop2
     """
-    doubleVcfMap={}
     multipleVcfMap={}
+    if len(multipleVcfMap)==1 or innerjoin_outjoin=="o":
+
+        for currentChrom in vcfMaplist[0].keys():
+            multipleVcfMap[currentChrom]=[]
+            for SNPrec in vcfMaplist[0][currentChrom]:
+                posInPop1 = SNPrec[0]#;print(posInPop1,file=open("testpos_8rep.txt0",'a'))
+                RefInPop1 = SNPrec[1]
+                AltInPop1 = SNPrec[2]
+                multipleVcfMap[currentChrom].append([posInPop1,RefInPop1,AltInPop1,SNPrec[3:]])
+        if len(vcfMaplist)==1:
+            return copy.deepcopy(multipleVcfMap)
+        vcfMap_obj_idx=0
+        for vcfMap in vcfMaplist[1:]:
+            vcfMap_obj_idx+=1
+            for currentChrom in vcfMap:
+                for SNPrec in vcfMap[currentChrom]:
+                    posInPop1 = SNPrec[0]#;print(posInPop1,file=open("testpos_8rep.txt"+str(vcfMap_obj_idx),'a'))
+                    RefInPop1 = SNPrec[1]
+                    AltInPop1 = SNPrec[2]
+                    low=0;high=len(multipleVcfMap[currentChrom])-1
+                    while low<=high:
+                        mid = (low + high)>>1
+                        if multipleVcfMap[currentChrom][mid][0]<posInPop1:
+                            low=mid+1
+                        elif multipleVcfMap[currentChrom][mid][0]>posInPop1:
+                            high=mid-1
+                        else:
+                            if AltInPop1 == multipleVcfMap[currentChrom][mid][2]:#same alt alle
+                                fillNoneNum=vcfMap_obj_idx-(len(multipleVcfMap[currentChrom][mid])-3)
+                                for i in range(fillNoneNum):
+                                    multipleVcfMap[currentChrom][mid].append(None)
+                                multipleVcfMap[currentChrom][mid].append(SNPrec[3:])
+                            break
+                    else:
+                        insertelem=[posInPop1,RefInPop1,AltInPop1]
+                        for i in range(0,vcfMap_obj_idx):
+                            insertelem.append(None)
+                        insertelem.append(SNPrec[3:])
+                        multipleVcfMap[currentChrom].insert(low,insertelem)
+        for REC_idx in range(0,len(multipleVcfMap[list(multipleVcfMap.keys())[0]])):
+            for i in range(len(vcfMaplist)+3-len(multipleVcfMap[list(multipleVcfMap.keys())[0]][REC_idx])):
+                multipleVcfMap[list(multipleVcfMap.keys())[0]][REC_idx].append(None)
+        return copy.deepcopy(multipleVcfMap)
+    
     for currentChrom in vcfMaplist[0].keys():
 #             self.FstMapByChrom[currentChrom] = []
-        doubleVcfMap[currentChrom] = []
         multipleVcfMap[currentChrom]=[]
         for SNPrec in vcfMaplist[0][currentChrom]:
             posInPop1 = SNPrec[0]
@@ -50,14 +92,14 @@ def alin2PopSnpPos(vcfMaplist,innerjoin_outjoin="i"):
                 vcfMap_obj=vcfMaplist[vcfMap_obj_idx]
                 if currentChrom not in vcfMap_obj or len(vcfMap_obj[currentChrom])==0:
                     print("alin2PopSnpPos",currentChrom,"didn't find in vcfMap2")
-                    if innerjoin_outjoin=="i":
-                        break
-                    elif innerjoin_outjoin=="o":
-                        if vcfMap_obj_idx!=len(vcfMaplist)-1:
-                            elementToAppend.append(None)
-                        else:
-                            elementToAppend.append(None)
-                            multipleVcfMap[currentChrom].append(elementToAppend)
+#                     if innerjoin_outjoin=="i":
+                    break
+#                     elif innerjoin_outjoin=="o":
+#                         if vcfMap_obj_idx!=len(vcfMaplist)-1:
+#                             elementToAppend.append(None)
+#                         else:
+#                             elementToAppend.append(None)
+#                             multipleVcfMap[currentChrom].append(elementToAppend)
                 low = 0
                 high = len(vcfMap_obj[currentChrom]) - 1
                 
@@ -79,28 +121,26 @@ def alin2PopSnpPos(vcfMaplist,innerjoin_outjoin="i"):
                             elif vcfMap_obj_idx==len(vcfMaplist)-1:
                                 elementToAppend.append(vcfMap_obj[currentChrom][mid][3:])
                                 multipleVcfMap[currentChrom].append(elementToAppend)
-                        elif innerjoin_outjoin=="i":
-                            print("skip the different allele rec",currentChrom,posInPop1,AltInPop1,vcfMap_obj[currentChrom][mid][2])
+#                         elif innerjoin_outjoin=="i":
+                        print("skip the different allele rec",currentChrom,posInPop1,AltInPop1,vcfMap_obj[currentChrom][mid][2])
 #                             print(currentChrom,posInPop1,AltInPop1,vcfMap_obj[currentChrom][mid][2],"different alt allele,should skip this rec,but i have no time to improve this now")
-                        elif innerjoin_outjoin=="o":
-                            if vcfMap_obj_idx!=len(vcfMaplist)-1:
-                                elementToAppend.append(None)
-                            elif vcfMap_obj_idx==len(vcfMaplist)-1:
-                                elementToAppend.append(None)
-                                multipleVcfMap[currentChrom].append(elementToAppend)                                
-                            
+#                         elif innerjoin_outjoin=="o":
+#                             if vcfMap_obj_idx!=len(vcfMaplist)-1:
+#                                 elementToAppend.append(None)
+#                             elif vcfMap_obj_idx==len(vcfMaplist)-1:
+#                                 elementToAppend.append(None)
+#                                 multipleVcfMap[currentChrom].append(elementToAppend)
                         break
-                
                 else:
                     if innerjoin_outjoin=="i":
                         #ignore the rec
                         break
-                    elif innerjoin_outjoin=="o":
-                        if vcfMap_obj_idx!=len(vcfMaplist)-1:
-                            elementToAppend.append(None)
-                        elif vcfMap_obj_idx==len(vcfMaplist)-1:
-                            elementToAppend.append(None)
-                            multipleVcfMap[currentChrom].append(elementToAppend)                              
+#                     elif innerjoin_outjoin=="o":
+#                         if vcfMap_obj_idx!=len(vcfMaplist)-1:
+#                             elementToAppend.append(None)
+#                         elif vcfMap_obj_idx==len(vcfMaplist)-1:
+#                             elementToAppend.append(None)
+#                             multipleVcfMap[currentChrom].append(elementToAppend)                              
 #                     print("snp not found in vcfMap2",SNPrec)
 #                     self.doubleVcfMap[currentChrom].append(SNPrec+)
     return multipleVcfMap

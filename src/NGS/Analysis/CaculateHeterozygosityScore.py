@@ -33,7 +33,7 @@ parser.add_option("-q", "--quiet",
 minlength=options.minlength
 windowWidth=int(options.winwidth)
 slideSize=int(options.slideSize)
-chromtable=options.chromtable
+chromtable=Util.TranscriptGenetable
 outputpath=options.outputpath.strip()
 sql = "select * from " + chromtable+" where chrlength>="+minlength
 vcffileslist=options.vcffile
@@ -51,7 +51,9 @@ if __name__ == '__main__':
     outname=outputpath
     for vcf in vcffileslist[:]:
         vcfname=re.search(r"[^/]*$",vcf).group(0)
-        outname+=vcfname
+        if len(re.split(r"\.",vcfname))>=2:
+            vcfname=re.split(r"\.",vcfname)[0]+"."+re.split(r"\.",vcfname)[1]+"_"
+        outname+=vcfname[0:-1]
         poplist.append(VCFutil.VCF_Data(vcf))  # new a class
         
         if re.search(r"indvd[^/]+",vcf)!=None:
@@ -75,6 +77,7 @@ if __name__ == '__main__':
                 vcflist_A_chrom_container=[]
                 for vcf_idx in range(len(vcffileslist)):
                     tempmap={}
+                    print(vcffileslist[vcf_idx])
                     tempmap[currentchrID]=poplist[vcf_idx].getVcfListByChrom(vcffileslist[vcf_idx], currentchrID)
                     vcflist_A_chrom_container.append(copy.deepcopy(tempmap))
                 MultipleVcfMap = Util.alin2PopSnpPos(vcflist_A_chrom_container,"o")
