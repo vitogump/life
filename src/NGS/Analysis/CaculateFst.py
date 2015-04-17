@@ -34,7 +34,7 @@ minlength=options.minlength
 windowWidth=int(options.winwidth)
 slideSize=int(options.slideSize)
 
-chromtable = options.chromtable
+chromtable = Util.pekingduckchromtable
 fsttype=options.fsttype
 primaryID = "chrID"
 vcffileslist=options.vcffile

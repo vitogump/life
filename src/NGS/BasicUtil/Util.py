@@ -22,9 +22,11 @@ username=cfparser.get("mysqldatabase","username")
 password=cfparser.get("mysqldatabase","password")
 webdbname=cfparser.get("mysqldatabase","webdbname")
 genomeinfodbname=cfparser.get("mysqldatabase","genomeinfodbname")
+pekingduckchromtable=cfparser.get("mysqldatabase","pekingduckchromtable")
 ghostdbname=cfparser.get("mysqldatabase","ghostdbname")
 vcfdbname=cfparser.get("mysqldatabase","vcfdbname")
 TranscriptGenetable=cfparser.get("mysqldatabase","TranscriptGenetable")
+
 def alin2PopSnpPos(vcfMaplist,innerjoin_outjoin="i"):
     """input:
     two map fomart like this {chrNo:[(pos,REF,ALT,INFO,FORMAT,sample,...),(pos,REF,ALT,INFO,FORMAT,sample,...),,,,,],chrNo:[],,,,,,}
@@ -122,7 +124,7 @@ def alin2PopSnpPos(vcfMaplist,innerjoin_outjoin="i"):
                                 elementToAppend.append(vcfMap_obj[currentChrom][mid][3:])
                                 multipleVcfMap[currentChrom].append(elementToAppend)
 #                         elif innerjoin_outjoin=="i":
-                        print("skip the different allele rec",currentChrom,posInPop1,AltInPop1,vcfMap_obj[currentChrom][mid][2])
+#                         print("skip the different allele rec",currentChrom,posInPop1,AltInPop1,vcfMap_obj[currentChrom][mid][2])
 #                             print(currentChrom,posInPop1,AltInPop1,vcfMap_obj[currentChrom][mid][2],"different alt allele,should skip this rec,but i have no time to improve this now")
 #                         elif innerjoin_outjoin=="o":
 #                             if vcfMap_obj_idx!=len(vcfMaplist)-1:
