@@ -243,7 +243,7 @@ class JobTracker():#for one dir
             session.execute("update jobsstate set state='-1' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
             session.commit()
             print("JobTracker "+scriptname+" runshell error")
-            exit(-1)#just exit this threads the python programma still go on
+            return#just exit this threads the python programma still go on
         else:
             #session.execute("update jobsstate set outputinfo='"+logtext+"' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
             session.execute("update jobsstate set state='2' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")

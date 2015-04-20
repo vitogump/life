@@ -21,8 +21,7 @@ parser.add_option("-g", "--gtffile", dest="gtffile", help="gtffile")
 parser.add_option("-v", "--variantstable", dest="variantstable", help="variants")
 parser.add_option("-b", "--bedfiles", dest="bedfiles", action="append", default=[], help="bedfiles")
 parser.add_option("-o", "--outputpath", dest="outputpath", help="default infile1_infile2")
-parser.add_option("-c", "--chromtablename", dest="chromtablename", help="")
-parser.add_option("-d", "--chromdbname", dest="chromdbname", help="")
+
 parser.add_option("-m", "--minlength", dest="minlength")
 parser.add_option("-5", "--TSSregion", dest="TSSregion", default="0", help="")
 parser.add_option("-3", "--utr3_region", dest="utr3_region", default="0")
@@ -37,7 +36,7 @@ reffahandler = open(options.reffa, "r")
 
 
 minlength = options.minlength
-chromtable = options.chromtablename
+chromtable = Util.pekingduckchromtable#options.chromtablename
 dbchromtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname)
 
 variantstablename = options.variantstable.strip()
@@ -59,10 +58,10 @@ testrefaa = open(outputpath+variantstablename+".refaa", "w")
 sql = "select * from " + chromtable + " where chrlength>=" + minlength
 primaryID = "chrID"
 
-intergenicVF = open(outputpath + "intergenic.Variantfile", 'w')
-cdsVF = open(outputpath + "cds.Variantfile", 'w')
-intronVF = open(outputpath + "intron.Variantfile", 'w')
-utrVF = open(outputpath + "utr.Variantfile", 'w')
+intergenicVF = open(outputpath + variantstablename+".intergenic", 'w')
+cdsVF = open(outputpath + variantstablename+".cds", 'w')
+intronVF = open(outputpath + variantstablename+".intron", 'w')
+utrVF = open(outputpath + variantstablename+".utr", 'w')
 titlelist = [a[0].strip() for a in dbvariantstools.operateDB("select", "select column_name  from information_schema.columns where table_schema='" + "ninglabvariantdata" + "' and table_name='" + variantstablename + "'")]
 print(*(titlelist + ["trscptID", "geneID", "strand", "cdsidx", "refcodon", "refaa", "altcodon", "altaa"]), sep="\t", file=cdsVF)
 print(*(titlelist + ["trscptID", "geneID", "strand", "intronidx"]), sep="\t", file=intronVF)
@@ -117,7 +116,16 @@ if __name__ == '__main__':
                 print(*snp, sep="\t", file=intergenicVF)
             GeneGrouplist = Util.getGeneGrouplist(gtfMap[currentchrID])
             print(currentchrID, "\n", len(GeneGrouplist), GeneGrouplist, file=genegrouptest)
+            print("collect intergenic rear part of chr :",currentchrID,GeneGrouplist[-1][0],str(currentchrLen))
+            snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>=" + str(GeneGrouplist[-1][0]) + " and snp_pos<" + str(currentchrLen) + " order by snp_pos")
+            for snp in snps:
+                print(*snp, sep="\t", file=intergenicVF)  
             for geneGroup in GeneGrouplist:
+                grouplist_idx=GeneGrouplist.index(geneGroup)
+                if grouplist_idx>=1:
+                    intergennicsnps=dbvariantstools.operateDB("select","select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>=" + str(GeneGrouplist[grouplist_idx-1][0]) + " and snp_pos<" + str(geneGroup[1][2]) + " order by snp_pos");
+                    for snp in intergennicsnps:
+                        print(*snp,sep='\t',file=intergenicVF)
                 RefSeqMap = Util.getRefSeqBypos(reffahandler, refidxByChr, currentchrID, geneGroup[1][2], geneGroup[0], currentchrLen, seektuple)
                 seektuple = (reffahandler.tell(), len(RefSeqMap[currentchrID]) + RefSeqMap[currentchrID][0] - 1)
                 
@@ -136,11 +144,12 @@ if __name__ == '__main__':
                     tscptSeqAllCds_mut[tscptID] = copy.deepcopy(tscptSeqAllCds[tscptID])                   
                     
                 print("geneGroup", len(geneGroup), geneGroup, file=genegrouptest)
+                linetoCDSMap = {};linetoIntronMap = {}
                 for gene_idx in range(1, len(geneGroup)):
                     tscptID = geneGroup[gene_idx][0]
                     print(tscptID, file=genegrouptest)
-                    linetoCDSMap = {}
-                    linetoIntronMap = {}
+                    
+                    
                     if geneGroup[gene_idx][1] == '+':
                         snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][2]) + " and snp_pos<" + str(geneGroup[gene_idx][3]) + " order by snp_pos")  # extend UTR here
                         for snp in snps:
@@ -182,7 +191,11 @@ if __name__ == '__main__':
                                 elif snppos > elemEnd and snppos < geneGroup[gene_idx][cdsidx + 1][1]:
                                     Intron_idx = cdsidx - 3
                             if Intron_idx != -1:
-                                print(*(list(snp) + [tscptID, "geneID", "+", Intron_idx]), sep="\t", file=intronVF)
+                                if snp[:5] in linetoIntronMap:
+                                    linetoIntronMap[snp[:5]][1]=linetoIntronMap[snp[:5]][1]+";"+tscptID;linetoIntronMap[snp[:5]][2]=linetoIntronMap[snp[:5]][2]+";geneID";linetoIntronMap[snp[:5]][3]=linetoIntronMap[snp[:5]][3]+";+";linetoIntronMap[snp[:5]][4]=linetoIntronMap[snp[:5]][4]+";"+str(Intron_idx)
+                                else:
+                                    linetoIntronMap[snp[:5]]=[snp[5:],tscptID, "geneID", "+", str(Intron_idx)]
+#                                 print(*(list(snp) + [tscptID, "geneID", "+", Intron_idx]), sep="\t", file=intronVF)
 ####################           translate protein       ###################
                         gene=geneGroup[gene_idx]
                         mutat_amino_seq[tscptID] = []
@@ -202,7 +215,7 @@ if __name__ == '__main__':
                                 try:
                                     snppos_cds, ref_base_cds, alt_base_cds = Util.getSNPrecInCDS(i, len(tscptSeqAllCds[tscptID]), codon, codon_m, cds_frame[tscptID], gene)
                                     if (currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds) in linetoCDSMap:
-                                        if len(linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)])==10:
+                                        if len(linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)])==9:
                                             linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][5] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][5] + ";" + codon;linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][6] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][6] + ";" + CodonTable[codon];linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][7] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][7] + ";" + codon_m;linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][8] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][8] + ";" + CodonTable[codon_m]
                                         else:
                                             linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)] += [codon, CodonTable[codon], codon_m, CodonTable[codon_m]]
@@ -211,7 +224,7 @@ if __name__ == '__main__':
                                 except KeyError:
                                     snppos_cds, ref_base_cds, alt_base_cds = Util.getSNPrecInCDS(i, len(tscptSeqAllCds[tscptID]), codon, codon_m, cds_frame[tscptID], gene)
                                     if (currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds) in linetoCDSMap:
-                                        if len(linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)])==10:
+                                        if len(linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)])==9:
                                             linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][5] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][5] + ";" + codon;linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][6] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][6] + ";X";linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][7] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][7] + ";" + codon_m;linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][8] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][8] + ";X"
                                         else:
                                             linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)] += [codon, "X", codon_m, "X"]
@@ -255,8 +268,8 @@ if __name__ == '__main__':
                                         
                                         else:  # len(refbase)==len(altbase)==1
                                             tscptSeqAllCds_mut[tscptID][snppos - elemStart + cds_frame[tscptID][cdsidx][1]] = altbase
-                                            print("1",snp[:5],linetoCDSMap,file=open("debug",'a'))
                                             if snp[:5] in linetoCDSMap:
+                                                print("1",snp[:5],linetoCDSMap,file=open("debug",'a'))
                                                 linetoCDSMap[snp[:5]][1] = linetoCDSMap[snp[:5]][1] + ";" + tscptID;linetoCDSMap[snp[:5]][2] = linetoCDSMap[snp[:5]][2] + ";geneID";linetoCDSMap[snp[:5]][3] = linetoCDSMap[snp[:5]][3] + ";-";linetoCDSMap[snp[:5]][4] = linetoCDSMap[snp[:5]][4] + ";" + str(len(cds_frame[tscptID]) - (cdsidx-4))
                                             else:
                                                 linetoCDSMap[snp[:5]] = [snp[5:],tscptID, "geneID", "-", str(len(cds_frame[tscptID]) - (cdsidx-4))]   
@@ -264,7 +277,11 @@ if __name__ == '__main__':
                                 elif snppos > elemEnd and snppos < geneGroup[gene_idx][cdsidx + 1][1]:
                                     Intron_idx = len(cds_frame[tscptID]) - (cdsidx-3)
                             if Intron_idx != -1:
-                                print(*(list(snp) + [tscptID, "geneID", "-", Intron_idx]), sep="\t", file=intronVF)
+                                if snp[:5] in linetoIntronMap:
+                                    linetoIntronMap[snp[:5]][1]=linetoIntronMap[snp[:5]][1]+";"+tscptID;linetoIntronMap[snp[:5]][2]=linetoIntronMap[snp[:5]][2]+";geneID";linetoIntronMap[snp[:5]][3]=linetoIntronMap[snp[:5]][3]+";-";linetoIntronMap[snp[:5]][4]=linetoIntronMap[snp[:5]][4]+";"+str(Intron_idx)
+                                else:
+                                    linetoIntronMap[snp[:5]]=[snp[5:],tscptID, "geneID", "-", str(Intron_idx)]
+#                                 print(*(list(snp) + [tscptID, "geneID", "-", Intron_idx]), sep="\t", file=intronVF)
 # translate protein
                         gene=geneGroup[gene_idx]
                         mutat_amino_seq[tscptID] = []
@@ -292,7 +309,7 @@ if __name__ == '__main__':
                                     snppos_cds, ref_base_cds, alt_base_cds = Util.getSNPrecInCDS(i, len(tscptSeqAllCds[tscptID]), codon, codon_m, cds_frame[tscptID], gene)
                                     if (currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds) in linetoCDSMap:
                                         print((currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds),"in",linetoCDSMap,file=open("debug",'a'))
-                                        if len(linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)])==10:
+                                        if len(linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)])==9:
                                             linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][5] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][5] + ";" + codon;linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][6] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][6] + ";" + CodonTable[codon];linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][7] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][7] + ";" + codon_m;linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][8] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][8] + ";" + CodonTable[codon_m]
                                             print("mytest",linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)],file=open("debug",'a'))
                                         else:
@@ -303,7 +320,7 @@ if __name__ == '__main__':
                                 except KeyError:
                                     print("except KEYERROR")
                                     if (currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds) in linetoCDSMap:
-                                        if len(linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)])==10:
+                                        if len(linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)])==9:
                                             linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][5] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][5] + ";" + codon;linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][6] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][6] + ";X";linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][7] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][7] + ";" + codon_m;linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][8] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][8] + ";X"
                                         else:
                                             linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)] += [codon, "X", codon_m, "X"]
@@ -315,33 +332,34 @@ if __name__ == '__main__':
                             except KeyError:
                                 ref_amino_seq[tscptID].append("X")
                             
-                    print(">transcript:" + tscptID, file=testmutcds)
-                    print(">" + tscptID, file=testrefaa)
-                    print(">" + tscptID, file=mutaa)
-                    k = 0
+                print(">transcript:" + tscptID, file=testmutcds)
+                print(">" + tscptID, file=testrefaa)
+                print(">" + tscptID, file=mutaa)
+                k = 0
+                cdsstrline = "".join(tscptSeqAllCds_mut[tscptID][k:k + 60])
+                while len(cdsstrline) == 60:
+                    print(cdsstrline, file=testmutcds);k += 60
                     cdsstrline = "".join(tscptSeqAllCds_mut[tscptID][k:k + 60])
-                    while len(cdsstrline) == 60:
-                        print(cdsstrline, file=testmutcds);k += 60
-                        cdsstrline = "".join(tscptSeqAllCds_mut[tscptID][k:k + 60])
-                    else:
-                        print(cdsstrline, file=testmutcds)
-                    k = 0
+                else:
+                    print(cdsstrline, file=testmutcds)
+                k = 0
+                aastrline = "".join(mutat_amino_seq[tscptID][k:k + 60])
+                while len(aastrline)==60:
+                    print(aastrline, end="\n", file=mutaa);k += 60
                     aastrline = "".join(mutat_amino_seq[tscptID][k:k + 60])
-                    while len(aastrline)==60:
-                        print(aastrline, end="\n", file=mutaa);k += 60
-                        aastrline = "".join(mutat_amino_seq[tscptID][k:k + 60])
-                    else:
-                        print(aastrline, file=mutaa)    
-                    k = 0
+                else:
+                    print(aastrline, file=mutaa)    
+                k = 0
+                aastrline = "".join(ref_amino_seq[tscptID][k:k + 60])
+                while len(aastrline) == 60:
+                    print(aastrline, end="\n", file=testrefaa);k += 60
                     aastrline = "".join(ref_amino_seq[tscptID][k:k + 60])
-                    while len(aastrline) == 60:
-                        print(aastrline, end="\n", file=testrefaa);k += 60
-                        aastrline = "".join(ref_amino_seq[tscptID][k:k + 60])
-                    else:
-                        print(aastrline, file=testrefaa)                                    
-                                    
-                    for snpInCDS in linetoCDSMap:
-                        print(*(list(snpInCDS) +list(linetoCDSMap[snpInCDS][0])+ linetoCDSMap[snpInCDS][1:]), sep="\t", file=cdsVF)
+                else:
+                    print(aastrline, file=testrefaa)                                    
+                for snpInIntron in linetoIntronMap:
+                    print(*(list(snpInIntron)+list(linetoIntronMap[snpInIntron][0])+linetoIntronMap[snpInIntron][1:]),sep="\t",file=intronVF)           
+                for snpInCDS in linetoCDSMap:
+                    print(*(list(snpInCDS) +list(linetoCDSMap[snpInCDS][0])+ linetoCDSMap[snpInCDS][1:]), sep="\t", file=cdsVF)
     intergenicVF.close()
     cdsVF.close()
     intronVF.close()

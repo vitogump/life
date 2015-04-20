@@ -212,7 +212,7 @@ class MakeMhtGraph(object):
         r('.libPaths("/opt/Rpackages/")')
         r("library(gap)")
         r("library(Cairo)")
-        r('CairoPNG("'+outname+'.png",width='+str(((len(positive_winfiles)+len(negtive_winfiles))*221.5+35)*2)+',height='+str((len(positive_winfiles)+len(negtive_winfiles))*221.5+35)+')')
+#         r('CairoPNG("'+outname+'.png",width='+str(((len(positive_winfiles)+len(negtive_winfiles))*221.5+35)*2)+',height='+str((len(positive_winfiles)+len(negtive_winfiles))*221.5+35)+')')
         r('CairoPNG("'+outname+'.png",width=1600,height=800)')
         for i in range(0,len(positive_winfiles)):
             p_threshold[i]=float(positive_winfiles[i][1].strip())
@@ -238,9 +238,9 @@ class MakeMhtGraph(object):
             r('n_highlithcolors'+str(i)+'<- rep("red",nrow(n_highlight'+str(i)+'))')
             
         r('colors <- rep(c("red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red"),300)')
-        r('par(las=1, cex.axis=1.5, cex=0.8,mfrow=c('+str(len(positive_winfiles)+len(negtive_winfiles)) +',1),mar=c(2, 4, 1.5, 2))')
+        r('par(las=1, cex.axis=1.5, cex=0.8,mfrow=c('+str(len(positive_winfiles)+len(negtive_winfiles)) +',1),mar=c(0.8, 4, 0.8, 2))')
         print('colors <- rep(c("red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red"),300)',file=scriptfile)
-        print('par(las=1, cex.axis=1.5, cex=0.8,mfrow=c('+str(len(positive_winfiles)+len(negtive_winfiles)) +',1),mar=c(2, 4, 1.5, 2))',file=scriptfile)
+        print('par(las=1, cex.axis=1.5, cex=0.8,mfrow=c('+str(len(positive_winfiles)+len(negtive_winfiles)) +',1),mar=c(0.8, 4, 0.8, 2))',file=scriptfile)
         for i in range(0,len(positive_winfiles)):
             r('ops<-mht.control(logscale=FALSE,colors=colors,cex=0.6)')
             r('hops<-hmht.control(data=p_highlight'+str(i)+',cex=0.6)')

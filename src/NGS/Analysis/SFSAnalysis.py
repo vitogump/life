@@ -16,8 +16,7 @@ from NGS.BasicUtil import Util, VCFutil
 tempdbname="temp"
 parser = OptionParser()
 
-parser.add_option("-d", "--dbname", dest="dbname",default="life_pilot",
-                  help="write report to FILE")
+
 parser.add_option("-c", "--topleveltable", dest="topleveltable",# action="callback",type="string",callback=useoptionvalue_previous2,
                   help="write report to FILE")
 parser.add_option("-f", "--farsurebutfew", dest="farsurebutfew",help="far sure but with few locs")
@@ -52,7 +51,7 @@ if __name__ == '__main__':
     
     tempdbtools=dbm.DBTools(Util.ip, Util.username, Util.password, Util.ghostdbname)
     tempdbtools.create_table(TABLES)
-    titlelist=[a[0].strip() for a in dbtools.operateDB("select","select column_name  from information_schema.columns where table_schema='"+options.dbname+"' and table_name='"+options.topleveltable+"'")]
+    titlelist=[a[0].strip() for a in dbtools.operateDB("select","select column_name  from information_schema.columns where table_schema='"+Util.vcfdbname+"' and table_name='"+options.topleveltable+"'")]
     ancestralspeciesidx=titlelist.index(ancestralspeciescolname)
     farsurebutfewidx=titlelist.index(farsurebutfew)
     print(titlelist)

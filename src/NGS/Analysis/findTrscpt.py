@@ -36,8 +36,9 @@ parser.add_option("-n","--numberofoutlier_to_NearestGene",dest="numberofoutlier_
 upextend=int(options.upextend);slideSize=int(options.slideSize);winWidth=int(options.winWidth)
 downextend=int(options.downextend)
 winFileName7Field = options.winfileName
-if re.search(r'^.*/',options.winfileName)!=None:
-    path=re.search(r'^.*/',options.winfileName).group(0)
+re.search(r"[^/]*$",winFileName7Field).group(0)
+if re.search(r'^.*/',options.outfileprename)!=None:
+    path=re.search(r'^.*/',options.outfileprename).group(0)
 else:
     a = os.popen("pwd")
     path=a.readline().strip()+"/"
@@ -46,7 +47,7 @@ else:
 total_outliers=int(options.numberofoutlier_to_NearestGene)
 threshold = options.threshold
 percentage = options.percentage
-outfilename=path+options.outfileprename
+outfilename=options.outfileprename
 morethan_lessthan=options.morethan_lessthan.lower()
 mergeNA=options.mergeNA
 print(mergeNA)
@@ -57,7 +58,7 @@ if percentage!=None and threshold!=None:
 vcftable=None
 outfile=open(outfilename,'w')
 print("chrNo\tRegion_start\tRegion_end\tNoofWin\textram"+options.winType+"\ttranscpt\tgeneID",file=outfile)
-outfileNameWINwithGENE=winFileName7Field+".wincopywithgene"
+outfileNameWINwithGENE=path+re.search(r"[^/]*$",winFileName7Field).group(0)+".wincopywithgene"
 if __name__ == '__main__':
     genomedbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname) 
     winGenome = Util.WinInGenome(Util.ghostdbname, winFileName7Field)
