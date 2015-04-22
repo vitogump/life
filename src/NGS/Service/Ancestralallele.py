@@ -23,7 +23,7 @@ class AncestralAlleletabletools():
         self.dbvariant_name=database
         self.dbgenomename=dbgenome
 
-    def createtable(self, vcffilename="derived_alle_ref"):
+    def createtable(self, vcffilename="derived_alle_ref",drop=False):
 
         TABLES = {}
         tablename=re.search(r'[^/]*$',vcffilename).group(0)
@@ -40,7 +40,17 @@ class AncestralAlleletabletools():
             " PRIMARY KEY (`chrID`,`snp_pos`) "
             ")ENGINE=InnoDB DEFAULT CHARSET=utf8"
             )
-        signal=self.dbvariant.create_table(TABLES)
+
+        signal,key=self.dbvariant.create_table(TABLES)
+        if signal!="OK":
+            print(signal)
+            while signal=="already exist" and drop:
+                self.dbvariant.drop_table(key)
+                signal,key=self.dbvariant.create_table(TABLES)
+                print(signal)
+            else:
+                if signal=="already exist" and not drop:
+                    exit(-1)
         return tablename
     def filldata(self,vcffilename,tablename):
         """

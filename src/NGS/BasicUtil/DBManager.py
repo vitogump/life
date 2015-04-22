@@ -106,7 +106,7 @@ class DBTools():
             except mysql.connector.Error as err:
                 if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
                     print(table,'already exist.')
-                    return "already exist"
+                    return "already exist",key
                 else:
                     print(err.errmsg)
                     return -1

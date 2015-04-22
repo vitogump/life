@@ -53,11 +53,12 @@ class OperatorWithData():
         print(p, d)
 # myprint=OperatorWithData()
 class OperatorWithData_loadintodatabase(OperatorWithData):
-    def __init__(self,inputdatapath,ancestralalleletabletools,interceptdirs,vcfsuffix):
+    def __init__(self,inputdatapath,ancestralalleletabletools,interceptdirs,vcfsuffix,drop):
         self.inputdatapath=inputdatapath
         self.ancestralalleletabletools=ancestralalleletabletools
         self.interceptdirs=interceptdirs
         self.vcfsuffix=vcfsuffix.strip()
+        self.drop=drop
     def process(self,curpath,datadepth,curdepth):
         if self.interceptdirs!=[] and re.search(r".*/([^/]+)$",curpath).group(1).strip() not in self.interceptdirs:
             return        
@@ -66,7 +67,7 @@ class OperatorWithData_loadintodatabase(OperatorWithData):
             if len(re.split(r"/",rootStr))==len(re.split(r"/",self.inputdatapath))+datadepth:
                 for datafilename in files:
                     if re.search(r".*?"+self.vcfsuffix+"$", datafilename) != None:
-                        tablename=self.ancestralalleletabletools.createtable(rootStr + "/" +datafilename)
+                        tablename=self.ancestralalleletabletools.createtable(rootStr + "/" +datafilename,drop=self.drop)
                         self.ancestralalleletabletools.filldata(rootStr + "/" +datafilename,tablename=tablename)
         return "OperatorWithData_loadintodatabase return"
 class OperatorWithData_mode1(OperatorWithData):
