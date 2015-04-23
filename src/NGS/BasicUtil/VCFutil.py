@@ -93,6 +93,58 @@ class VCF_Data():
 #         for chrom in chromlist:
 #             vcfFile.seek(self.VcfIndexMap[chrom][0])
     @staticmethod        
+    def Vcf2geno_snp_ind(vcfFileName,sampleID_to_popmap,outputfileprefix,software,cmperbp,VcfIndexMap=None,withheader=False):
+        vcffile = open(vcfFileName, "r")
+        genofile=open(outputfileprefix+".geno","w")
+        snpfile=open(outputfileprefix+".snp","w")
+        indfile=open(outputfileprefix+".ind",'w')
+        snpPositionlist=[]
+        pedmap={}
+        genolistOrderbySamplelist=[]
+        if withheader:
+            line = vcffile.readline()
+            while re.search(r"^##", line) != None:
+                line = vcffile.readline()
+            title=re.split(r"\s+",line.strip())
+            total_individ= len(title) -9
+            print("Vcf2geno_snp_ind",title,len(title),total_individ)
+            for sampleName in title[len(title)-total_individ:]:
+                print(sampleName,"M",sampleID_to_popmap[sampleName],sep="\t",file=indfile)
+        else:
+            title=VcfIndexMap["title"]
+            total_individ=len(VcfIndexMap["title"])-9
+            print("Vcf2geno_snp_ind",VcfIndexMap["title"],len(VcfIndexMap["title"]),total_individ)
+            for sampleName in VcfIndexMap["title"][len(VcfIndexMap["title"])-total_individ:]:
+                print(sampleName,"M",sampleID_to_popmap[sampleName],sep="\t",file=indfile)
+        for line in vcffile:
+            linelist=re.split(r"\s+",line)
+            if linelist[3].strip().upper()=='N' or len(linelist[3].strip()) > 1 or len(linelist[4].strip())>1:#when ref is N ,or INDEL ,or multiple allels 
+                continue
+            print("\t"+linelist[0]+"_"+linelist[1]+"\t"+linelist[0]+"\t"+str(cmperbp*int(linelist[1]))+"\t"+linelist[1]+"\t"+linelist[3]+"\t"+linelist[4],file=snpfile)
+            if software.upper()=="GATK":
+                GT_idx=(re.split(":",linelist[8])).index("GT")
+                PL_idx=(re.split(":",linelist[8])).index("PL")
+                genolistOrderbySamplelist=[]
+                for i in range(total_individ):
+                    sample=linelist[i+9]
+                    if len(re.split(":",sample))==1 or re.split(":",sample)[GT_idx]=="./." or  len(re.split(r",",re.split(":",sample)[PL_idx]))!=3:# ./.
+                        genolistOrderbySamplelist+=['9']
+                    else:
+                        pl=re.split(":",sample)[PL_idx]
+                        genotype = re.split(":",sample)[GT_idx]
+                        a1=int(re.search(r"(\d)/(\d)",genotype).group(1))
+                        a2=int(re.search(r"(\d)/(\d)",genotype).group(2))
+                        if a1==a2 and a1==1:
+                            genolistOrderbySamplelist+=['0']
+                        elif a1==a2 and a1==0:
+                            genolistOrderbySamplelist+=['1']
+                        elif a1!=a2:
+                            genolistOrderbySamplelist+=['2']
+            print(*genolistOrderbySamplelist,sep="",file=genofile)
+        indfile.close()
+        genofile.close()
+        snpfile.close()
+    @staticmethod
     def Vcf2Ped(vcfFileName,outputfileprefix,software,VcfIndexMap=None,withheader=False):
         vcffile = open(vcfFileName, "r")
         mapfile = open(outputfileprefix+".map", "w")
@@ -160,7 +212,7 @@ class VCF_Data():
         for elem in positionlist:
             print(elem[0],elem[1],elem[2],elem[3],sep='\t',file=mapfile)
         i=1
-        for name in pedmap.keys():
+        for name in sorted(pedmap.keys()):
             print(i,name,"0","0","1","1","\t".join(pedmap[name]),sep='\t',file=pedfile)
             i+=1       
         mapfile.close()
@@ -181,7 +233,7 @@ class VCF_Data():
         elif self.NumOfRecbychromOrder[i]<1000:
             dilute=1
         vcfFile = open(vcfFileName, 'r')
-        print("getVcfListByChrom", self.VcfIndexMap[chrom], chrom,int(dilute*self.NumOfRecbychromOrder[i]),"total recs in this vcf belong to this chrom",self.NumOfRecbychromOrder[i])            
+        print("getVcfListByChrom", self.VcfIndexMap[chrom], chrom,self.NumOfRecbychromOrder[i],"total recs in this vcf belong to this chrom,dilute to",int(dilute*self.NumOfRecbychromOrder[i]))            
         vcfFile.seek(self.VcfIndexMap[chrom][0])
         line = vcfFile.readline().strip()
         i = 1

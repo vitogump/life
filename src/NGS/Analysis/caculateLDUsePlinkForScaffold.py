@@ -50,12 +50,14 @@ if __name__ == '__main__':
     for chrom in vcfdata.chromOrder:
         vcfRecOfAChrom=vcfdata.getVcfListByChrom(options.vcffilename.strip(), chrom,dilute)
         if len(vcfRecOfAChrom)<100:
+            print("skip chrom with snps less than 100")
             continue
         else:
             sumRecOfVCF+=len(vcfRecOfAChrom)
         chrom_sub=chromlisttosub[i%len(chromlisttosub)].strip()
-        if(i%len(chromlisttosub))==0:
+        if(i%len(chromlisttosub))==0 and i!=0:
             if sumRecOfVCF<100*len(chromlisttosub):
+                print("skip the first times,constraint  total snps ,but program never get here,under the constrant above except the last server chrom")
                 tempvcffile.close()
                 tempvcffile=open(outputprefix+".vcf","w")
                 i+=1;continue
