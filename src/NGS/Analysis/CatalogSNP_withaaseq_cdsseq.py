@@ -332,7 +332,7 @@ if __name__ == '__main__':
                             except KeyError:
                                 ref_amino_seq[tscptID].append("X")
                             
-                print(">transcript:" + tscptID, file=testmutcds)
+                print(">"+tscptID+" transcript:" + tscptID, file=testmutcds)
                 print(">" + tscptID, file=testrefaa)
                 print(">" + tscptID, file=mutaa)
                 k = 0

@@ -86,11 +86,11 @@ if __name__ == '__main__':
                 Util.generateIndexByChrom(cdsfafileName, cdsfafileName + ".myindex")
                 aa_cds_filemap[speciesname].append(pickle.load(open(aafafileName + ".myindex", 'rb')))
                 aa_cds_filemap[speciesname].append(pickle.load(open(cdsfafileName + ".myindex", 'rb')))
-            stat = os.system("rm " + aafafileName + ".myindex " + cdsfafileName + ".myindex")
-            if stat != 0:
-                print("rm " + aafafileName + ".myindex " + cdsfafileName + ".myindex" + " os.system return not 0")
-                exit(-1)
-            print(stat)
+#             stat = os.system("rm " + aafafileName + ".myindex " + cdsfafileName + ".myindex")
+#             if stat != 0:
+#                 print("rm " + aafafileName + ".myindex " + cdsfafileName + ".myindex" + " os.system return not 0")
+#                 exit(-1)
+#             print(stat)
 # run muscle and paml loop
     finalkakslist=[]
     """

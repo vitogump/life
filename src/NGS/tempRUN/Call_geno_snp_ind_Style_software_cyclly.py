@@ -11,7 +11,9 @@ parser = OptionParser()
 parser.add_option("-v", "--vcffile", dest="vcffilename",# action="callback",type="string",callback=useoptionvalue_previous1,
                   help="write report to FILE")
 parser.add_option("-c", "--configure", dest="configure")
-parser.add_option("-t","--cmperbp",dest="cmperbp",default="3e-06")
+parser.add_option("-l", "--chromlistfilename", dest="chromlistfilename", help="i")
+
+parser.add_option("-t","--Morganperbp",dest="Morganperbp",default="5.4696217209617786e-8")
 parser.add_option("-s","--software",dest="software",help="GATK or samtools ")
 parser.add_option("-1", "--ld-window-kb", dest="ldwinkb")
 parser.add_option("-2", "--ld-window", dest="ldwin")
@@ -26,24 +28,32 @@ parser.add_option("-q", "--quiet",
 configure = open(options.configure, 'r')
 
 sampleID_to_popmap={}
+
 sampleID_to_popmapfile=open(options.sampleID_to_popmapfile,'r')
 for line in sampleID_to_popmapfile:
     linelist=re.split(r'\s*=\s*',line.strip())
     sampleID_to_popmap[linelist[1].strip()]=linelist[0].strip()
 outputprefix=options.outputpre.strip()
-tempvcffile=open(outputprefix+".vcf","w")
+
 dilute =float(options.dilute.strip())
 if dilute >1 or dilute <0:
     dilute =1
 chromlisttosub=configure.readlines()
 print(chromlisttosub)
 software=options.software.upper().strip()
-cmperbp=float(options.cmperbp)
-
+Morganperbp=float(options.Morganperbp)
+chromlistfile=open(options.chromlistfilename,"r")
+chromlist=[]
+for chrrow in chromlistfile:
+    chrrowlist=re.split(r'\s+',chrrow.strip())
+    chromlist.append(chrrowlist[0].strip())
+tempvcffile=open(outputprefix+".vcf","w")
 if __name__ == '__main__':
     vcfdata=VCFutil.VCF_Data(options.vcffilename.strip())
     i=0;outputfilepart=0;sumRecOfVCF=0
-    for chrom in vcfdata.chromOrder:
+    for chrom in chrrowlist:
+        if chrom not in vcfdata.chromOrder:
+            continue
         vcfRecOfAChrom=vcfdata.getVcfListByChrom(options.vcffilename.strip(), chrom,dilute)
         if len(vcfRecOfAChrom)<200:
             print("Call_geno_snp_ind_Style_software_cyclly","skip chrom with snps less than 100")
@@ -53,9 +63,9 @@ if __name__ == '__main__':
         chrom_sub=chromlisttosub[i%len(chromlisttosub)].strip()
         if(i%len(chromlisttosub))==0 and i!=0:
             tempvcffile.close()
-            VCFutil.VCF_Data.Vcf2geno_snp_ind(outputprefix+".vcf",sampleID_to_popmap,outputprefix, software,cmperbp,vcfdata.VcfIndexMap)
+            VCFutil.VCF_Data.Vcf2geno_snp_ind(outputprefix+".vcf",sampleID_to_popmap,outputprefix, software,Morganperbp,vcfdata.VcfIndexMap)
             tempvcffile=open(outputprefix+".vcf","w")
-            break
+            outputfilepart+=1
         for pos, REF, ALT, INFO,FORMAT,samples in vcfRecOfAChrom:
             print(chrom_sub,pos,".", REF, ALT,"100",".", INFO,FORMAT,*samples,sep="\t",end="\n",file=tempvcffile)
         i+=1
