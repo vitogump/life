@@ -642,8 +642,95 @@ def getRefSeqBypos(refFastahandle, refindex, currentChromNO, startpos, endpos, c
         print("getRefSeqBypos", currentChromNO, startpos, endpos)
         return -1
     
-    return refSeqMap        
-
+    return refSeqMap   
+#phylip format
+class PhylipError(Exception):
+    pass
+def nunique_lengths(seq_of_seq):
+    """
+    Given a sequence of sequences, return the number of unique lengths.
+    @param: a sequence of sequences
+    @return: the number of unique sequence lengths
+    """
+    return len(set(len(seq) for seq in seq_of_seq))
+     
+def get_lines(f):
+    """
+    @param raw_lines: raw lines
+    @return: a list of nonempty lines
+    """
+    lines=[]
+    #process header line
+    lines.append(f.readline().rstrip('\r\n'))
+    
+    line=f.readline()
+    line=line[:10]+line[10:].rstrip('\r\n').replace(" ","").replace("\t","");line_len_first=1
+    lines.append(line)
+    while line.split():
+        line=f.readline().rstrip('\r\n')
+        lines.append(line[:10]+line[10:].rstrip('\r\n').replace(" ","").replace("\t",""))
+        line_len_first+=1
+    line_len=1    
+    for line in f:
+        if not line.split() and line_len_first==line_len:
+            line_len=1
+        else:
+            lines[line_len]+=line.rstrip('\r\n').replace(" ","").replace("\t","")
+            line_len+=1            
+#     lines = [x.rstrip('\r\n') for x in raw_lines]
+    return [x for x in lines if x]
+def decode_phyliplines(raw_lines):
+    """
+    This parses lines of a non-interleaved phylip sequence file.
+    @param raw_lines: raw lines of a non-interleaved phylip alignment file
+    @return: headers, sequences
+    """
+    lines = get_lines(raw_lines)
+    header_line, data_lines = lines[0], lines[1:]
+    header_row = header_line.split()
+    if len(header_row) != 2:
+        raise PhylipError('the header should be a line with two integers')
+    ntaxa_s, ncolumns_s = header_row
+    try:
+        ntaxa = int(ntaxa_s)
+        ncolumns = int(ncolumns_s)
+    except ValueError:
+        raise PhylipError('the header should be a line with two integers')
+    # check the number of data lines
+    ntaxa_observed = len(data_lines)
+    if ntaxa_observed != ntaxa:
+        msg_a = 'the header says there are %d taxa' % ntaxa
+        msg_b = 'but %d taxa were observed' % ntaxa_observed
+        raise PhylipError(msg_a + msg_b)
+    # all line lengths should be the same
+    if nunique_lengths(data_lines) != 1:
+        raise PhylipError('all data lines should be the same length')
+    # break lines into taxa and data
+    compound_data_rows = [[x[:10].strip(), x[10:].strip()] for x in data_lines]
+    headers, sequences = zip(*compound_data_rows)
+    ncolumns_observed = len(sequences[0])
+    if ncolumns_observed != ncolumns:
+        msg_a = 'the header says there are %d alignment columns' % ncolumns
+        msg_b = 'but %d alignment columns were observed' % ncolumns_observed
+        raise PhylipError(msg_a + msg_b)
+    maptoreturn={}
+    for i in range(ntaxa_observed):
+        maptoreturn[headers[i]]=sequences[i]
+    return maptoreturn
+def encode_phyliplines(headers, sequences):
+    """
+    This creates the contents of a non-interleaved phylip sequence file.
+    @param headers: some header strings
+    @param sequences: some sequence strings
+    """
+    nrows = len(headers)
+    ncols = len(sequences[0])
+    out_lines = ['%d %d' % (nrows, ncols)]
+    for h, seq in zip(headers, sequences):
+        out_h = h[:10].ljust(10)
+        out_lines.append(out_h + seq)
+    return '\n'.join(out_lines)
+#phylip format 
 
 def getRefSeqMap(refFastafilehander, currentChromNO=None, preBaseTotal=0, linesOnce=500000, mapname=None):
     '''
