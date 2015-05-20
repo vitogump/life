@@ -26,6 +26,7 @@ pekingduckchromtable=cfparser.get("mysqldatabase","pekingduckchromtable")
 ghostdbname=cfparser.get("mysqldatabase","ghostdbname")
 vcfdbname=cfparser.get("mysqldatabase","vcfdbname")
 TranscriptGenetable=cfparser.get("mysqldatabase","TranscriptGenetable")
+KB743256_1=cfparser.get("mysqldatabase","KB743256_1")
 
 def alin2PopSnpPos(vcfMaplist,innerjoin_outjoin="i"):
     """input:
@@ -161,14 +162,10 @@ def bedfiletools(bedfilename, withtitle=False):
         if linelist[0] in m:
             m[linelist[0].strip()].append((int(linelist[1]), int(linelist[2]), linelist[3:]))
         else:
-            print(linelist, file=open("testbedfile", 'a'))
             m[linelist[0].strip()] = [(int(linelist[1]), int(linelist[2]), linelist[3:])]
     f.close()
     for chrom in m.keys():
         m[chrom].sort(key=lambda listRec:listRec[0])
-        print(chrom, file=open("testbedfile", 'a'))
-        for i in m[chrom]:
-            print(i, file=open("testbedfile", 'a'))
     return m
 def interval_setOperation(bedlikefile1, bedlikefile2):
     """
@@ -207,22 +204,34 @@ def interval_setOperation(bedlikefile1, bedlikefile2):
                     elif intervals2[chrom][mid][0] > q5:
                         high = mid - 1
                     else:
+                        print(chrom, file=open("testout.txt", 'a'))
+                        midcount=0
                         if intervals2[chrom][mid][1] < q3:
+                            intersectionRegions=collectRegion(intersectionRegions, chrom,(intervals2[chrom][mid][0], intervals2[chrom][mid][1]))
+                            mid += 1;midcount+=1
                             while mid < len(intervals2[chrom]) and intervals2[chrom][mid][0] <= intervals1[chrom][q_idx][1]:
                                 
                                 if intervals1[chrom][q_idx][1] >= intervals2[chrom][mid][1]:
-#                                     unionRegions=collectRegion(unionRegions,chrom,(q5,intervals1[chrom][q_idx][1]))
-                                    diffRegions = collectRegion(diffRegions, chrom, (intervals2[chrom][mid][1], intervals1[chrom][q_idx][1]))
                                     intersectionRegions = collectRegion(intersectionRegions, chrom, (intervals2[chrom][mid][0], intervals2[chrom][mid][1]))
+#                                     unionRegions=collectRegion(unionRegions,chrom,(q5,intervals1[chrom][q_idx][1]))
+                                    diffRegions = collectRegion(diffRegions, chrom, (intervals2[chrom][mid-1][1], intervals2[chrom][mid][0]))
+                                    
                                     mid += 1
+                                    midcount+=1
                                     continue
                                 else:
+                                    diffRegions = collectRegion(diffRegions, chrom, (intervals2[chrom][mid-1][1], intervals2[chrom][mid][0]))
                                     intersectionRegions = collectRegion(intersectionRegions, chrom, (intervals2[chrom][mid][0], intervals1[chrom][q_idx][1]))
                                     unionRegions = collectRegion(unionRegions, chrom, (intervals1[chrom][q_idx][0], intervals2[chrom][mid][1]))
                                     break
                             else:
+
+                                diffRegions=collectRegion(diffRegions, chrom,(intervals2[chrom][mid-1][1],intervals1[chrom][q_idx][1]))
+
                                 unionRegions = collectRegion(unionRegions, chrom, (intervals1[chrom][q_idx][0], intervals1[chrom][q_idx][1]))
                         else:  # intervals2[chrom][mid][1]>=q3
+                            intersectionRegions = collectRegion(intersectionRegions,chrom,(intervals1[chrom][q_idx][0], intervals1[chrom][q_idx][1]))
+                            q_idx+=1
                             while q_idx < len(intervals1[chrom]) and intervals1[chrom][q_idx][0] <= intervals2[chrom][mid][1]:
                                 if intervals1[chrom][q_idx][1] >= intervals2[chrom][mid][1]:
                                     unionRegions = collectRegion(unionRegions, chrom, (q5, intervals1[chrom][q_idx][1]))
@@ -239,7 +248,7 @@ def interval_setOperation(bedlikefile1, bedlikefile2):
                             
                         break
                 else:
-                    print("high:", str(high), "should < low:", str(low), file=open("testout.txt", 'a'))
+                    print("high:", str(high), "should < low:", str(low),chrom, file=open("testout.txt", 'a'))
                     high3 = intervals2[chrom][high][1];high5 = intervals2[chrom][high][0]
                     if high < 0:
                         high3 = -1;high5 = -2
@@ -302,6 +311,12 @@ def interval_setOperation(bedlikefile1, bedlikefile2):
                                     elif q3 == low5:
                                         unionRegions = collectRegion(unionRegions, chrom, (q5, low3))
                                     break
+                            else:
+                                # out condition1 ,but not intervel on the right side of q
+                                if lowcount == 0:
+                                    diffRegions=collectRegion(diffRegions, chrom, (q5, q3))
+                                else:
+                                    diffRegions = collectRegion(diffRegions, chrom, (intervals2[chrom][low - 1][1], q3))
                             lowcount = 0
 #                             break
                         else:
@@ -326,6 +341,7 @@ def interval_setOperation(bedlikefile1, bedlikefile2):
                                         if q3 > low3:
                                             if lowcount == 0:
                                                 intersectionRegions = collectRegion(intersectionRegions, chrom, (q5, high3))
+                                                diffRegions=collectRegion(diffRegions,chrom,(high3,low5))
                                             else:
                                                 intersectionRegions = collectRegion(intersectionRegions, chrom, (low5, low3))
                                                 diffRegions = collectRegion(diffRegions, chrom, (intervals2[chrom][low - 1][1], low5))
@@ -346,12 +362,20 @@ def interval_setOperation(bedlikefile1, bedlikefile2):
                                             break
                                     else:  # out condition 3
                                         intersectionRegions = collectRegion(intersectionRegions, chrom, (q5, high3))
-                                        diffRegions = collectRegion(diffRegions, chrom, (high3, q3))
+                                        if lowcount==0:
+                                            diffRegions = collectRegion(diffRegions, chrom, (high3, q3))
+                                        else:
+                                            diffRegions=collectRegion(diffRegions,chrom,(intervals2[chrom][low - 1][1],q3))
                                         if q3 == low5:
                                             unionRegions = collectRegion(unionRegions, chrom, (high5, low3))
                                         else:
                                             unionRegions = collectRegion(unionRegions, chrom, (high5, q3))
                                         break
+                                else:
+                                    if lowcount==0:
+                                        diffRegions=collectRegion(diffRegions,chrom,(high3,q3))
+                                    else:
+                                        diffRegions=collectRegion(diffRegions,chrom,(intervals2[chrom][low - 1][1],q3))
                                 lowcount = 0
                 q_idx += 1
                 print("overall", "q_idx+=1", str(q_idx), file=aaa)
@@ -437,6 +461,7 @@ def getGtfMap(gtfFileName, elementTypes=["CDS", "stop_codon"]):
     gtfFileHandler = open(gtfFileName, 'r')
     protein_codingMap = {}
     chrtranscrpitididxMap = {}
+    utrMap={}
 #     gtfline = gtfFileHandler.readline()
     jumpout = False
     for getfirstcds in gtfFileHandler:
@@ -459,6 +484,8 @@ def getGtfMap(gtfFileName, elementTypes=["CDS", "stop_codon"]):
                 jumpout = True
                 protein_codingMap[chromNo] = [[transcript_id, gtfColList[6], int(gtfColList[3]), int(gtfColList[4]), (gtfColList[2], int(gtfColList[3]), int(gtfColList[4]), gtfColList[7])]]
         else:
+            if gtfColList[2].strip()=="UTR":
+                utrMap[chromNo]={transcript_id:[("UTR",int(gtfColList[3]), int(gtfColList[4]))]}
             print(getfirstcds)
         if jumpout:
             break
@@ -471,6 +498,14 @@ def getGtfMap(gtfFileName, elementTypes=["CDS", "stop_codon"]):
             if elementType == gtfColList[2].strip():
                 break
         else:
+            if gtfColList[2].strip()=="UTR":
+                if chromNo in utrMap:
+                    if transcript_id in utrMap[chromNo]:
+                        utrMap[chromNo][transcript_id].append(("UTR",int(gtfColList[3]), int(gtfColList[4])))
+                    else:
+                        utrMap[chromNo][transcript_id]=[("UTR",int(gtfColList[3]), int(gtfColList[4]))]
+                else:
+                    utrMap[chromNo]={transcript_id:[("UTR",int(gtfColList[3]), int(gtfColList[4]))]}
             continue
         chromNo = gtfColList[0].strip()
         if chromNo in protein_codingMap:
@@ -509,7 +544,15 @@ def getGtfMap(gtfFileName, elementTypes=["CDS", "stop_codon"]):
                 print(protein_codingMap[chromNo][i][k], file=testfile)
     testfile.close()
     gtfFileHandler.close()
-    return protein_codingMap
+    testutr=open("testURT","w")
+    for chrom in utrMap.keys():
+        print(chrom,file=testutr)
+        for tpid in utrMap[chrom].keys():
+            utrMap[chrom][tpid].sort(key=lambda listRec:listRec[1])
+            print(tpid,file=testutr)
+            print(utrMap[chrom][tpid],file=testutr)
+    testutr.close()
+    return protein_codingMap,utrMap
 def getNearestGenegroup(gtfList, pos):
     """
     input:for a chrom,contain all transcript of this chrom
@@ -737,6 +780,7 @@ def getRefSeqMap(refFastafilehander, currentChromNO=None, preBaseTotal=0, linesO
     the refSeqMap has only one chromosome's sequence
     '''
     refSeqMap = {}
+    print(refFastafilehander.tell(),currentChromNO)
     if currentChromNO == None:
         refline = refFastafilehander.readline() 
         print("getRefSeqMap", refline)
@@ -758,7 +802,7 @@ def getRefSeqMap(refFastafilehander, currentChromNO=None, preBaseTotal=0, linesO
             return refSeqMap, currentChromNO, "end of the reffile"
         if re.search(r'^[>]', refline) != None:
             collist = re.split(r'\s+', refline)
-            print("getRefSeqMap", re.search(r'[^>]+', collist[0]).group(0))
+            print("getRefSeqMap","3", re.search(r'[^>]+', collist[0]).group(0))
 #            refSeqMap[currentChromNO] = [0]
             nextChromNo = re.search(r'[^>]+', collist[0]).group(0)
             return refSeqMap, currentChromNO, nextChromNo  # clean the refSeqMap and report the current chromNO

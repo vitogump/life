@@ -42,7 +42,7 @@ dbchromtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinf
 variantstablename = options.variantstable.strip()
 dbvariantstools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.vcfdbname)
 
-gtfMap = Util.getGtfMap(options.gtffile)
+gtfMap,utrMap = Util.getGtfMap(options.gtffile)
 bedfileNames = options.bedfiles
 
 outputpath = options.outputpath.strip()
@@ -107,26 +107,57 @@ if __name__ == '__main__':
             currentchrID = row[0]
             currentchrLen = int(row[1])
             if currentchrID not in gtfMap:
+                print("intergenicVF","select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>=" + str(0) + " and snp_pos<" + str(currentchrLen) + " order by snp_pos")
                 snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>=" + str(0) + " and snp_pos<" + str(currentchrLen) + " order by snp_pos")
                 for snp in snps:
                     print(*snp, sep="\t", file=intergenicVF)            
                 print("no gene in the chrom:", currentchrID)
                 continue
-            snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>=" + str(0) + " and snp_pos<" + str(gtfMap[currentchrID][0][2]) + " order by snp_pos")
+            ####################### 
+            
+            
+            ########################### collect snp in  upstream and downstream of the genegroup
+            if gtfMap[currentchrID][0][1]=="+":
+                firstutrstartpos=gtfMap[currentchrID][0][2]-TSSregionlen
+            else:
+                firstutrstartpos=gtfMap[currentchrID][0][2]-utr3_region
+            if currentchrID in utrMap:
+                if gtfMap[currentchrID][0][0] in utrMap[currentchrID]:
+                    if utrMap[currentchrID][gtfMap[currentchrID][0][0]][0][2]<gtfMap[currentchrID][0][2]:
+                        firstutrstartpos=utrMap[currentchrID][gtfMap[currentchrID][0][0]][0][1]
+            print("intergenicVF","select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>=" + str(0) + " and snp_pos<" + str(firstutrstartpos) + " order by snp_pos")
+            snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>=" + str(0) + " and snp_pos<" + str(firstutrstartpos) + " order by snp_pos")
             for snp in snps:
                 print(*snp, sep="\t", file=intergenicVF)
             GeneGrouplist = Util.getGeneGrouplist(gtfMap[currentchrID])
+            
+
+            
+            for gene in GeneGrouplist[-1][1:]:
+                if gene[3]==GeneGrouplist[-1][0]:
+                    transcript_id=gene[0]
+                    if gene[1]=="+":
+                        lastutr=gene[3]+utr3_region
+                    else:
+                        lastutr=gene[3]+TSSregionlen
+                    if currentchrID in utrMap:
+                        if transcript_id in utrMap[currentchrID]:
+                            if utrMap[currentchrID][transcript_id][-1][2]>gene[3]:
+                                lastutr=utrMap[currentchrID][transcript_id][-1][2]                    
+                    break
+            print("intergenicVF","select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>=" + str(lastutr) + " and snp_pos<" + str(currentchrLen) + " order by snp_pos")
+            snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>=" + str(lastutr) + " and snp_pos<" + str(currentchrLen) + " order by snp_pos")
             print(currentchrID, "\n", len(GeneGrouplist), GeneGrouplist, file=genegrouptest)
-            print("collect intergenic rear part of chr :",currentchrID,GeneGrouplist[-1][0],str(currentchrLen))
-            snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>=" + str(GeneGrouplist[-1][0]) + " and snp_pos<" + str(currentchrLen) + " order by snp_pos")
             for snp in snps:
-                print(*snp, sep="\t", file=intergenicVF)  
+                print(*snp, sep="\t", file=intergenicVF)              
+#  ###################################################           print("collect intergenic rear part of chr :",currentchrID,GeneGrouplist[-1][0],str(currentchrLen))
+            lasttscptID_endpos=None
             for geneGroup in GeneGrouplist:
                 grouplist_idx=GeneGrouplist.index(geneGroup)
-                if grouplist_idx>=1:
-                    intergennicsnps=dbvariantstools.operateDB("select","select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>=" + str(GeneGrouplist[grouplist_idx-1][0]) + " and snp_pos<" + str(geneGroup[1][2]) + " order by snp_pos");
-                    for snp in intergennicsnps:
-                        print(*snp,sep='\t',file=intergenicVF)
+#                 if grouplist_idx>=1:
+#                     intergennicsnps=dbvariantstools.operateDB("select","select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>=" + str(lasttscptID_endpos) + " and snp_pos<" + str(geneGroup[1][2]) + " order by snp_pos");
+#                     for snp in intergennicsnps:
+#                         print(*snp,sep='\t',file=intergenicVF)
                 RefSeqMap = Util.getRefSeqBypos(reffahandler, refidxByChr, currentchrID, geneGroup[1][2], geneGroup[0], currentchrLen, seektuple)
                 seektuple = (reffahandler.tell(), len(RefSeqMap[currentchrID]) + RefSeqMap[currentchrID][0] - 1)
                 
@@ -150,9 +181,48 @@ if __name__ == '__main__':
                     tscptID = geneGroup[gene_idx][0]
                     print(tscptID, file=genegrouptest)
                     
-                    
+                    currenttscptID_endpos=geneGroup[gene_idx][3]+utr3_region
+                    currenttscptID_startpos=geneGroup[gene_idx][2]-TSSregionlen
                     if geneGroup[gene_idx][1] == '+':
-                        snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][2]) + " and snp_pos<" + str(geneGroup[gene_idx][3]) + " order by snp_pos")  # extend UTR here
+                        
+#                       collect  both  5UTR and 3UTR
+                        if currentchrID in utrMap:
+                            if tscptID in utrMap[currentchrID]:
+                                i=0;exist_3utr=False;exist_5utr=False
+                                for utr_type,utr_s,utr_e in utrMap[currentchrID][tscptID]:
+                                    if i>=1:
+                                        print("intergenicVF","select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(utrMap[currentchrID][i-1][2]) + " and snp_pos<" + str(utr_s) + " order by snp_pos")
+                                        snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(utrMap[currentchrID][i-1][2]) + " and snp_pos<" + str(utr_s) + " order by snp_pos")
+                                        for snp in snps:
+                                            print(*snp, sep="\t", file=intergenicVF)
+                                    if utr_s>geneGroup[gene_idx][3]:
+                                        utrMap[currentchrID][i]=["3UTR",utr_s,utr_e]
+                                        currenttscptID_endpos=utr_e
+                                        exist_3utr=True
+                                    if utr_e<geneGroup[gene_idx][2]:
+                                        utrMap[currentchrID][i]=["5UTR",utr_s,utr_e]
+                                        if not exist_5utr:
+                                            currenttscptID_startpos=utr_s
+                                        exist_5utr=True
+                                    print("select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(utr_s) + " and snp_pos<" + str(utr_e) + " order by snp_pos")
+                                    snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(utr_s) + " and snp_pos<" + str(utr_e) + " order by snp_pos")
+                                    for snp in snps:
+                                        print(*snp,sep="\t",end="\t",file=utrVF)
+                                        print(tscptID,"geneID","+",utrMap[currentchrID][i][0],sep="\t",file=utrVF)               
+                                    i+=1
+                                if not exist_3utr:
+                                    snps=dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][3]) + " and snp_pos<" + str(geneGroup[gene_idx][3]+utr3_region) + " order by snp_pos")
+                                    for snp in snps:
+                                        print(*snp,sep="\t",end="\t",file=utrVF)
+                                        print(tscptID,"geneID","+","3UTR",sep="\t",file=utrVF)
+                                elif not exist_5utr:
+                                    snps=dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][2]-TSSregionlen) + " and snp_pos<" + str(geneGroup[gene_idx][2]) + " order by snp_pos")
+                                    for snp in snps:
+                                        print(*snp,sep="\t",end="\t",file=utrVF)
+                                        print(tscptID,"geneID","+","5UTR",sep="\t",file=utrVF)
+            ######################################## UTR collection finish
+                        print("cds","select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][2]) + " and snp_pos<" + str(geneGroup[gene_idx][3]) + " order by snp_pos")
+                        snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][2]) + " and snp_pos<" + str(geneGroup[gene_idx][3]) + " order by snp_pos")  
                         for snp in snps:
                             snppos = snp[1]
                             refbase = snp[3]
@@ -185,7 +255,6 @@ if __name__ == '__main__':
                                             tscptSeqAllCds_mut[tscptID][snppos - elemStart + cds_frame[tscptID][cdsidx][1]] = altbase
                                             if snp[:5] in linetoCDSMap:
                                                 linetoCDSMap[snp[:5]][1] = linetoCDSMap[snp[:5]][1] + ";" + tscptID;linetoCDSMap[snp[:5]][2] = linetoCDSMap[snp[:5]][2] + ";geneID";linetoCDSMap[snp[:5]][3] = linetoCDSMap[snp[:5]][3] + ";+";linetoCDSMap[snp[:5]][4] = linetoCDSMap[snp[:5]][4] + ";" + str(cdsidx-3)
-                                                print("mytest",linetoCDSMap[snp[:5]])
                                             else:
                                                 linetoCDSMap[snp[:5]] = [snp[5:], tscptID, "geneID", "+", str(cdsidx-3)]
 ###########################################################################
@@ -223,7 +292,7 @@ if __name__ == '__main__':
                                     else:
                                         print(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds,i,"should in the linetoCDSMap:",tscptID,codon, codon_m,cds_frame[tscptID],"\n",linetoCDSMap,file=open("wrong.txt",'a'))
                                 except KeyError:
-                                    snppos_cds, ref_base_cds, alt_base_cds = Util.getSNPrecInCDS(i, len(tscptSeqAllCds[tscptID]), codon, codon_m, cds_frame[tscptID], gene)
+#                                     snppos_cds, ref_base_cds, alt_base_cds = Util.getSNPrecInCDS(i, len(tscptSeqAllCds[tscptID]), codon, codon_m, cds_frame[tscptID], gene)
                                     if (currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds) in linetoCDSMap:
                                         if len(linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)])==9:
                                             linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][5] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][5] + ";" + codon;linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][6] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][6] + ";X";linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][7] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][7] + ";" + codon_m;linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][8] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][8] + ";X"
@@ -238,6 +307,40 @@ if __name__ == '__main__':
                                 ref_amino_seq[tscptID].append("X")
                                     
                     else:  # strand == '-'
+                        ###############################
+                        if currentchrID in utrMap:
+                            if tscptID in utrMap[currentchrID]:
+                                i=0;exist_3utr=False;exist_5utr=False
+                                for utr_type,utr_s,utr_e in utrMap[currentchrID][tscptID]:
+                                    if i>=1:
+                                        snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(utrMap[currentchrID][i-1][2]) + " and snp_pos<" + str(utr_s) + " order by snp_pos")
+                                        for snp in snps:
+                                            print(*snp, sep="\t", file=intergenicVF)
+                                    if utr_s>geneGroup[gene_idx][3]:
+                                        utrMap[currentchrID][i]=["5UTR",utr_s,utr_e]
+                                        currenttscptID_endpos=utr_e
+                                        exist_5utr=True
+                                    if utr_e<geneGroup[gene_idx][2]:
+                                        utrMap[currentchrID][i]=["3UTR",utr_s,utr_e]
+                                        if not exist_3utr:
+                                            currenttscptID_startpos=utr_s
+                                        exist_3utr=True
+                                    snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(utr_s) + " and snp_pos<" + str(utr_e) + " order by snp_pos")
+                                    for snp in snps:
+                                        print(*snp,sep="\t",end="\t",file=utrVF)
+                                        print(tscptID,"geneID","+",utrMap[currentchrID][i][0],sep="\t",file=utrVF)               
+                                    i+=1
+                                if not exist_3utr:
+                                    snps=dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][3]-utr3_region) + " and snp_pos<" + str(geneGroup[gene_idx][3]) + " order by snp_pos")
+                                    for snp in snps:
+                                        print(*snp,sep="\t",end="\t",file=utrVF)
+                                        print(tscptID,"geneID","+","3UTR",sep="\t",file=utrVF)
+                                elif not exist_5utr:
+                                    snps=dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][2]) + " and snp_pos<" + str(geneGroup[gene_idx][2]+TSSregionlen) + " order by snp_pos")
+                                    for snp in snps:
+                                        print(*snp,sep="\t",end="\t",file=utrVF)
+                                        print(tscptID,"geneID","+","5UTR",sep="\t",file=utrVF)
+                        ################################# utr region collection finished #############################
                         snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][2]) + " and snp_pos<" + str(geneGroup[gene_idx][3]) + " order by snp_pos")
                         for snp in snps:
                             snppos = snp[1]
@@ -292,6 +395,7 @@ if __name__ == '__main__':
                         tscptSeqAllCds_Revr_Cmplm = Util.complementary(tscptSeqAllCds[tscptID])
                         tscptSeqAllCds_Revr_Cmplm.reverse()
                         tscptSeqAllCds_mut_Revr_Cmplm = Util.complementary(tscptSeqAllCds_mut[tscptID])
+                        tscptSeqAllCds_mut[tscptID]=tscptSeqAllCds_mut_Revr_Cmplm
                         for bases_idx in range(len(tscptSeqAllCds_mut_Revr_Cmplm)):  # reverse every element of the list,ie . reverse every str of the list
                             tscptSeqAllCds_mut_Revr_Cmplm[bases_idx] = tscptSeqAllCds_mut_Revr_Cmplm[bases_idx][::-1]
                         if len(tscptSeqAllCds_Revr_Cmplm) != len(tscptSeqAllCds_mut_Revr_Cmplm):
@@ -330,10 +434,10 @@ if __name__ == '__main__':
                     print(">" + tscptID, file=testrefaa)
                     print(">transcript:" + tscptID, file=mutaa)
                     k = 0
-                    cdsstrline = "".join(tscptSeqAllCds_mut[tscptID][k:k + 60])
+                    cdsstrline = "".join(tscptSeqAllCds_mut[tscptID][k:k + 60]).upper()
                     while len(cdsstrline) == 60:
                         print(cdsstrline, file=testmutcds);k += 60
-                        cdsstrline = "".join(tscptSeqAllCds_mut[tscptID][k:k + 60])
+                        cdsstrline = "".join(tscptSeqAllCds_mut[tscptID][k:k + 60]).upper()
                     else:
                         print(cdsstrline, file=testmutcds)
                     k = 0
@@ -350,10 +454,16 @@ if __name__ == '__main__':
                         aastrline = "".join(ref_amino_seq[tscptID][k:k + 60])
                     else:
                         print(aastrline, file=testrefaa)                                    
-                for snpInIntron in linetoIntronMap:
+                if grouplist_idx>=1:
+                    print("intergenicVF","select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>=" + str(lasttscptID_endpos) + " and snp_pos<" + str(currenttscptID_startpos) + " order by snp_pos")
+                    intergennicsnps=dbvariantstools.operateDB("select","select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>=" + str(lasttscptID_endpos) + " and snp_pos<" + str(currenttscptID_startpos) + " order by snp_pos");
+                    for snp in intergennicsnps:
+                        print(*snp,sep='\t',file=intergenicVF)                
+                for snpInIntron in sorted(linetoIntronMap.keys()):
                     print(*(list(snpInIntron)+list(linetoIntronMap[snpInIntron][0])+linetoIntronMap[snpInIntron][1:]),sep="\t",file=intronVF)           
-                for snpInCDS in linetoCDSMap:
+                for snpInCDS in sorted(linetoCDSMap.keys()):
                     print(*(list(snpInCDS) +list(linetoCDSMap[snpInCDS][0])+ linetoCDSMap[snpInCDS][1:]), sep="\t", file=cdsVF)
+                lasttscptID_endpos=currenttscptID_endpos
     intergenicVF.close()
     cdsVF.close()
     intronVF.close()

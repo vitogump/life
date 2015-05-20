@@ -10,7 +10,7 @@ Created on 2015-4-22
 parser = OptionParser()
 parser.add_option("-v", "--vcffile", dest="vcffilename",# action="callback",type="string",callback=useoptionvalue_previous1,
                   help="write report to FILE")
-parser.add_option("-c", "--configure", dest="configure")
+parser.add_option("-c", "--configure", dest="configure",default=None)
 parser.add_option("-l", "--chromlistfilename", dest="chromlistfilename", help="i")
 
 parser.add_option("-t","--Morganperbp",dest="Morganperbp",default="5.4696217209617786e-8")
@@ -24,8 +24,11 @@ parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", default=True,
                   help="don't print status messages to stdout")
 (options, args) = parser.parse_args()
-
-configure = open(options.configure, 'r')
+if options.configure!=None:
+    configure = open(options.configure, 'r')
+    chromlisttosub=configure.readlines()
+else:
+    chromlisttosub=None
 
 sampleID_to_popmap={}
 
@@ -38,7 +41,7 @@ outputprefix=options.outputpre.strip()
 dilute =float(options.dilute.strip())
 if dilute >1 or dilute <0:
     dilute =1
-chromlisttosub=configure.readlines()
+
 print(chromlisttosub)
 software=options.software.upper().strip()
 Morganperbp=float(options.Morganperbp)
@@ -51,7 +54,7 @@ tempvcffile=open(outputprefix+".vcf","w")
 if __name__ == '__main__':
     vcfdata=VCFutil.VCF_Data(options.vcffilename.strip())
     i=0;outputfilepart=0;sumRecOfVCF=0
-    for chrom in chrrowlist:
+    for chrom in chromlist:
         if chrom not in vcfdata.chromOrder:
             continue
         vcfRecOfAChrom=vcfdata.getVcfListByChrom(options.vcffilename.strip(), chrom,dilute)
@@ -60,8 +63,11 @@ if __name__ == '__main__':
             continue
         else:
             sumRecOfVCF+=len(vcfRecOfAChrom)
-        chrom_sub=chromlisttosub[i%len(chromlisttosub)].strip()
-        if(i%len(chromlisttosub))==0 and i!=0:
+        if chromlisttosub!=None:
+            chrom_sub=chromlisttosub[i%len(chromlisttosub)].strip()
+        else:
+            chrom_sub=chrom
+        if chromlisttosub!=None and (i%len(chromlisttosub))==0 and i!=0:
             tempvcffile.close()
             VCFutil.VCF_Data.Vcf2geno_snp_ind(outputprefix+".vcf",sampleID_to_popmap,outputprefix, software,Morganperbp,vcfdata.VcfIndexMap)
             tempvcffile=open(outputprefix+".vcf","w")
@@ -69,3 +75,7 @@ if __name__ == '__main__':
         for pos, REF, ALT, INFO,FORMAT,samples in vcfRecOfAChrom:
             print(chrom_sub,pos,".", REF, ALT,"100",".", INFO,FORMAT,*samples,sep="\t",end="\n",file=tempvcffile)
         i+=1
+    else:
+        if chromlisttosub==None:
+            tempvcffile.close()
+            VCFutil.VCF_Data.Vcf2geno_snp_ind(outputprefix+".vcf",sampleID_to_popmap,outputprefix, software,Morganperbp,"all",vcfdata.VcfIndexMap)

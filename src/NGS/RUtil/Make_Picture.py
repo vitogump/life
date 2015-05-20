@@ -241,9 +241,14 @@ class MakeMhtGraph(object):
         r('par(las=1, cex.axis=1.5, cex=0.8,mfrow=c('+str(len(positive_winfiles)+len(negtive_winfiles)) +',1),mar=c(0.8, 4, 0.8, 2))')
         print('colors <- rep(c("red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red"),300)',file=scriptfile)
         print('par(las=1, cex.axis=1.5, cex=0.8,mfrow=c('+str(len(positive_winfiles)+len(negtive_winfiles)) +',1),mar=c(0.8, 4, 0.8, 2))',file=scriptfile)
+        if len(positive_winfiles)==1:
+            hopscex='1'
+        else:
+            hopscex="0.65"
         for i in range(0,len(positive_winfiles)):
             r('ops<-mht.control(logscale=FALSE,colors=colors,cex=0.6)')
-            r('hops<-hmht.control(data=p_highlight'+str(i)+',cex=0.6)')
+            
+            r('hops<-hmht.control(data=p_highlight'+str(i)+',cex='+hopscex+')')
             r('mhtplot(p_data'+str(i)+',ops,hops,pch=19,ylab="z' + "Fst" + '",xlab="")')
             r("title(main='" + positive_filenames[i] + "',cex.main=0.8)")
             r('axis(2)')

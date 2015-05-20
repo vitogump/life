@@ -24,7 +24,7 @@ parser.add_option("-q", "--quiet",
                   help="don't print status messages to stdout")
 (options, args) = parser.parse_args()
 minlen = int(options.minlen)
-
+print(options.processA,options.processB)
 chitesttable = {0.01:{2:9.2103,3:11.3449},
                 0.05:{2:5.9915,3:7.8147}}
 
@@ -42,7 +42,7 @@ cline = configure.readline()
 outfileNamePre=re.search(r'outfilepre=(.*)', cline).group(1).strip()
 cline = configure.readline()
 treefileName = re.search(r'treefile=(.*)', cline).group(1).strip()
-treefile = open(treefileName, 'r')
+treefile_oringal = open(treefileName, 'r')
 temp_outtreefileName = treefileName + "_markbranch"
 
 
@@ -52,7 +52,6 @@ pamlcodemlctlfile = open(pamlcodemlctl, 'r')
 MuscleInputFileName = tempPath + "/muscleinseq.fa"
 MuscleOutputFileName = tempPath + "/muscleoutseqaln.phy"
 pamlInputCDSFileName = tempPath + "/pamlinputfile.phy"
-
 if __name__ == '__main__':
 
 # load aa_cds_pair file and cdsfafile aafafile into memory
@@ -74,6 +73,7 @@ if __name__ == '__main__':
                 aa_cds_filemap[speciesname].append(pickle.load(open(aafafileName + ".myindex", 'rb')))
                 aa_cds_filemap[speciesname].append(pickle.load(open(cdsfafileName + ".myindex", 'rb')))
             except IOError:
+                print("generateIndexByChrom",speciesname)
                 Util.generateIndexByChrom(aafafileName, aafafileName + ".myindex", "transcript:")
                 Util.generateIndexByChrom(cdsfafileName, cdsfafileName + ".myindex")
                 aa_cds_filemap[speciesname].append(pickle.load(open(aafafileName + ".myindex", 'rb')))
@@ -109,11 +109,12 @@ if __name__ == '__main__':
             homotrscptlist[i] = re.search(r'transcript:(.*)', trscpt).group(1).strip()
             curspecies = homotrscpttitle[i].strip()
             if homotrscptlist[i] not in aa_cds_filemap[curspecies][2]:
-                print(homotrscptlist[i], "not in aa file or cds file")
+                print(homotrscptlist[i],curspecies, "not in aa file or cds file")
                 skipthishomotrscptline = True
                 break
             aa_cds_filemap[curspecies][0].seek(aa_cds_filemap[curspecies][2][homotrscptlist[i]])
             # homotrscptlist[i]==currentChromNO
+            print(trscpt,aa_cds_filemap[curspecies][2][homotrscptlist[i]],homotrscptlist[i])
             refSeqMap, currentChromNO, nextChromNO = Util.getRefSeqMap(aa_cds_filemap[curspecies][0], homotrscptlist[i], mapname="transcript:")
             lenofhomeAA.append(len(refSeqMap[homotrscptlist[i]]))
 
@@ -171,6 +172,7 @@ if __name__ == '__main__':
         print(Util.encode_phyliplines(pamlinputcdsheader, pamlinputcdsseq), file=pamlinputcdsfile)
             
         pamlinputcdsfile.close()
+        exit()
         if skipthishomotrscptline:
             skipthishomotrscptline = False
             continue
@@ -230,9 +232,10 @@ if __name__ == '__main__':
             mlcfile.close()
         
         
-        treefile.seek(0)
-        tree = Phylo.read(treefile, "newick")
-        tree_terminal_list = tree.get_terminals()        
+        treefile_oringal.seek(0)
+        tree = Phylo.read(treefile_oringal, "newick")
+        tree_terminal_list = treefile_oringal.get_terminals()
+        print(tree_terminal_list)      
         if options.processB:
 
             ##### configure codeml.ctl file to process B
@@ -385,9 +388,9 @@ if __name__ == '__main__':
                 elif re.search(r'^\s+NSsites\s*=', line) != None:
                     print("      NSsites = 2  * 0:one w;1:neutral;2:selection; 3:discrete;4:freqs;", file=pamlcodemlctlfile)
                 elif re.search(r'^\s+fix_omega\s*=', line) != None:
-                    print("    fix_omega = 1  * 1: omega or omega_1 fixed, 0: estimate", file=pamlcodemlctlfile)
+                    print("    fix_omega = 0  * 1: omega or omega_1 fixed, 0: estimate", file=pamlcodemlctlfile)
                 elif re.search(r'^\s+omega\s*=', line) != None:
-                    print("        omega = 1 * initial or fixed omega, for codons or codon-based AAs", file=pamlcodemlctlfile)
+                    print("        omega = 1.5 * initial or fixed omega, for codons or codon-based AAs", file=pamlcodemlctlfile)
                 else:
                     print(line, file=pamlcodemlctlfile, end="")
             pamlcodemlctlfile.close()
@@ -454,7 +457,7 @@ if __name__ == '__main__':
 #     for t in finalkakslist:
 #         print("\t".join(t), file=outfile)
 #     outfile.close()
-    treefile.close()
+    treefile_oringal.close()
     configure.close()
     print("finish")
         

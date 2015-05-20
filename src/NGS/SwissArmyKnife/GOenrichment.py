@@ -77,9 +77,10 @@ if __name__ == '__main__':
                 mf+=termlist[gotermaccessionidx]+";"+termlist[gotermNameidx]+";"
            
         else:#new gene start
-            gotable[termlist[tpididx].strip()]=(geneID,geneName,bp,cc,mf)
+
             geneID=termlist[geneididx]
             geneName=termlist[genenameidx]
+            print(geneName,file=open("test.txt",'a'))
             bp="";cc="";mf=""
             if termlist[godomainidx].lower().strip()=="biological_process":
                 bp+=termlist[gotermaccessionidx]+";"+termlist[gotermNameidx]+";"
@@ -87,6 +88,10 @@ if __name__ == '__main__':
                 cc+=termlist[gotermaccessionidx]+";"+termlist[gotermNameidx]+";"            
             elif termlist[godomainidx].lower().strip()=="molecular_function":
                 mf+=termlist[gotermaccessionidx]+";"+termlist[gotermNameidx]+";"
+            if geneName.split():
+                gotable[termlist[tpididx].strip()]=(geneID,geneName,bp,cc,mf)
+            else:
+                gotable[termlist[tpididx].strip()]=(geneID,"unknow",bp,cc,mf)            
     GOAnnationForGene_out_fileName=options.outpre.strip()+".GO_annotion"
     GOenrichment_fileName=options.outpre.strip()+".GO_enrichment"
     annf=open(GOAnnationForGene_out_fileName,'w')
@@ -109,19 +114,24 @@ if __name__ == '__main__':
     k=len(sampledIDlist)
     for goassecesion in sorted(oneGO2manyID.keys()):
         x=0
+        containingtrscript=[]
+        genetermlist=[]
         for id in sampledIDlist:
             id=id.strip()
             if id in oneGO2manyID[goassecesion]:
+                containingtrscript.append(id)
+                genetermlist.append(gotable[id][1])
                 x+=1
         m=len(oneGO2manyID[goassecesion])
         n=m_n - m
         pvalue=stats.hypergeom.sf(x-1,m_n,m,k)
         if len(goTermMap[goassecesion])<2:
             continue
-        outlist.append((goassecesion,goTermMap[goassecesion][0],goTermMap[goassecesion][1],pvalue,"FDR",x,len(oneGO2manyID[goassecesion])))
+        outlist.append((goassecesion,goTermMap[goassecesion][0],goTermMap[goassecesion][1],pvalue,"FDR",x,len(oneGO2manyID[goassecesion]),containingtrscript,genetermlist))
     outlist.sort(key=lambda listRec:listRec[3])
     for e in outlist:
         print(*e,sep="\t",file=enrichfile)
     enrichfile.close()
     annf.close()
     gotablefile.close()
+    print("finish")

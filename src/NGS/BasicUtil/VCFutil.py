@@ -93,7 +93,7 @@ class VCF_Data():
 #         for chrom in chromlist:
 #             vcfFile.seek(self.VcfIndexMap[chrom][0])
     @staticmethod        
-    def Vcf2geno_snp_ind(vcfFileName,sampleID_to_popmap,outputfileprefix,software,Morgenperbp,outputfilepart,VcfIndexMap=None,withheader=False):
+    def Vcf2geno_snp_ind(vcfFileName,sampleID_to_popmap,outputfileprefix,software,Morgenperbp,outputfilepart,VcfIndexMap=None,genotypesep=" ",withheader=False):
         vcffile = open(vcfFileName, "r")
         genofile=open(outputfileprefix+str(outputfilepart)+".geno","w")
         snpfile=open(outputfileprefix+str(outputfilepart)+".snp","w")
@@ -140,7 +140,7 @@ class VCF_Data():
                             genolistOrderbySamplelist+=['1']
                         elif a1!=a2:
                             genolistOrderbySamplelist+=['2']
-            print(*genolistOrderbySamplelist,sep="",file=genofile)
+            print(*genolistOrderbySamplelist,sep=genotypesep,file=genofile)
         indfile.close()
         genofile.close()
         snpfile.close()
