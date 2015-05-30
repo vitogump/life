@@ -21,7 +21,7 @@ parser.add_option("-o","--outpre",dest="outpre")
 if __name__ == '__main__':
     gotablefile=open(options.gotablefile,'r')
     title = gotablefile.readline()
-    titlelist= [e.strip().lower() for e in re.split(r",",title)]
+    titlelist= [e.strip().lower() for e in re.split(r"\t",title)]
     geneididx=titlelist.index("ensembl gene id")
     tpididx=titlelist.index("ensembl transcript id")
     gotermaccessionidx=titlelist.index("go term accession")
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     bp="";cc="";mf="";geneName="";geneID=""
     genelist=[]
     for termline in  gotablefile:
-        termlist=re.split(r",",termline)
+        termlist=re.split(r"\t",termline)
         if termlist[gotermaccessionidx].strip() in oneGO2manyID:
             goTermMap[termlist[gotermaccessionidx].strip()]+=[termlist[gotermNameidx],termlist[godomainidx]]
             oneGO2manyID[termlist[gotermaccessionidx].strip()].append(termlist[IDidx].strip())

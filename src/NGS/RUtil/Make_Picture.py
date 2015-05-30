@@ -34,7 +34,7 @@ class Dstistics_allpop(object):
             
             D = DAP.Dstatistics(database=database, ip=ip, usrname=usrname, pw=pw, allpopssnptable=allpopssnptable)
             D_caculator = Caculators.Caculate_Dstatistics()
-            D.caculateFstAccordingdb(chromstable, p1name, p2name, p3name, D_caculator, winwidth, minlengthOfchrom)
+            D.caculateDstatisticsAccordingdb(chromstable, p1name, p2name, p3name, D_caculator, winwidth, minlengthOfchrom)
             winCrossGenome_fix = []
             winCrossGenome_snp = []
             for chrom in sorted(D.DMapByChrom.keys()):

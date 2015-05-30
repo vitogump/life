@@ -16,7 +16,7 @@ class Dstatistics():
         self.DMapByChrom={}#{chrom1:[(first_snp_pos,last_snp_pos,fst),(),(),...],chrom2:[],....}
         self.allpopssnptable=allpopssnptable
 #     def 
-    def caculateFstAccordingdb(self,chromstable,p1name,p2name,p3name,caculator,winwidth,minlengthOfchrom='0',mindeptojudgefix=20):
+    def caculateDstatisticsAccordingdb(self,chromstable,p1name,p2name,p3name,caculator,winwidth,minlengthOfchrom='0',mindeptojudgefix=20):
         totalChroms = self.dbtools.operateDB("select","select count(*) from "+chromstable+" where chrlength>="+minlengthOfchrom)[0][0]
         for i in range(0,totalChroms,20):
             currentsql="select * from " + chromstable+" where chrlength>="+minlengthOfchrom+" order by "+primaryID+" limit "+str(i)+",20"
@@ -51,11 +51,11 @@ class Dstatistics():
                     if int(archicpop.group(2).strip())+int(archicpop.group(3).strip())<=mindeptojudgefix:
                         continue
                     elif archicpop.group(2).strip()=='0':
-                        if snp[3]!=None and archic_base!= snp[3].strip().upper():
+                        if snp[3]!=None or archic_base!= snp[3].strip().upper():
                             continue
                         A_base_idx=1#alt_allele is the ancestral allele
                     elif archicpop.group(3).strip()=='0':
-                        if snp[3]!=None and snp[3].strip().upper()!=ref_base:
+                        if snp[3]!=None or snp[3].strip().upper()!=ref_base:
                             continue
                         A_base_idx=0#ref_allele is the ancestral allele
                     all4popallposInAChr.append((snp_pos,snp[5],snp[6],snp[7],A_base_idx))

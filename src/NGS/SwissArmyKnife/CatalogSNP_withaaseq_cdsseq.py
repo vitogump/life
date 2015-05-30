@@ -91,7 +91,6 @@ CodonTable = {     'ttt': 'F', 'tct': 'S', 'tat': 'Y', 'tgt': 'C',
       'gta': 'V', 'gca': 'A', 'gaa': 'E', 'gga': 'G',
       'gtg': 'V', 'gcg': 'A', 'gag': 'E', 'ggg': 'G'}
 if __name__ == '__main__':
-    genegrouptest = open("genegroup.txt", 'w')
     try:
         refidxByChr = pickle.load(open(reffastaidxName, 'rb'))
     except IOError:
@@ -147,7 +146,7 @@ if __name__ == '__main__':
                     break
             print("intergenicVF","select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>=" + str(lastutr) + " and snp_pos<" + str(currentchrLen) + " order by snp_pos")
             snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>=" + str(lastutr) + " and snp_pos<" + str(currentchrLen) + " order by snp_pos")
-            print(currentchrID, "\n", len(GeneGrouplist), GeneGrouplist, file=genegrouptest)
+
             for snp in snps:
                 print(*snp, sep="\t", file=intergenicVF)              
 #  ###################################################           print("collect intergenic rear part of chr :",currentchrID,GeneGrouplist[-1][0],str(currentchrLen))
@@ -175,11 +174,9 @@ if __name__ == '__main__':
                             tscptSeqAllCds[tscptID] += RefSeqMap[currentchrID][(elemStart - RefSeqMap[currentchrID][0]):(elemEnd - RefSeqMap[currentchrID][0] + 1)]
                     tscptSeqAllCds_mut[tscptID] = copy.deepcopy(tscptSeqAllCds[tscptID])                   
                     
-                print("geneGroup", len(geneGroup), geneGroup, file=genegrouptest)
                 linetoCDSMap = {};linetoIntronMap = {}
                 for gene_idx in range(1, len(geneGroup)):
                     tscptID = geneGroup[gene_idx][0]
-                    print(tscptID, file=genegrouptest)
                     
                     currenttscptID_endpos=geneGroup[gene_idx][3]+utr3_region
                     currenttscptID_startpos=geneGroup[gene_idx][2]-TSSregionlen
@@ -328,7 +325,7 @@ if __name__ == '__main__':
                                     snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(utr_s) + " and snp_pos<" + str(utr_e) + " order by snp_pos")
                                     for snp in snps:
                                         print(*snp,sep="\t",end="\t",file=utrVF)
-                                        print(tscptID,"geneID","+",utrMap[currentchrID][i][0],sep="\t",file=utrVF)               
+                                        print(tscptID,"geneID","-",utrMap[currentchrID][i][0],sep="\t",file=utrVF)               
                                     i+=1
                                 if not exist_3utr:
                                     snps=dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][3]-utr3_region) + " and snp_pos<" + str(geneGroup[gene_idx][3]) + " order by snp_pos")
@@ -468,7 +465,6 @@ if __name__ == '__main__':
     cdsVF.close()
     intronVF.close()
     utrVF.close()
-    genegrouptest.close()
     testrefaa.close()
     testmutcds.close()
     mutaa.close()

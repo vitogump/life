@@ -44,7 +44,7 @@ depthFile=options.depthfile
 
 flanklen=int(options.flanklen.strip())
 if __name__ == '__main__':
-    ancestralalleletabletools=AncestralAlleletabletools(database="ninglabvariantdata", ip="10.2.48.140", usrname="root", pw="1234567",dbgenome="genomebasicinfo")
+    ancestralalleletabletools=AncestralAlleletabletools(database=Util.vcfdbname, ip=Util.ip, usrname=Util.username, pw=Util.password,dbgenome=Util.genomeinfodbname)
     if options.mode.strip()=="1":
         chromlist=[]
         chromlistfile=open(options.chromlistfilename,"r")

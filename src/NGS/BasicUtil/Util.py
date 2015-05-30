@@ -435,22 +435,38 @@ def random_str(randomlength=8):
     random.shuffle(a)
     return ''.join(a[:randomlength])
 
-def generateIndexByChrom(refFastaFileName, indexFileName, mapname=None):
+def generateIndexByChrom(refFastaFileName, indexFileName, mapname=None,startchar=">",):
     refFastaFile = open(refFastaFileName, 'r')
     refChromIndex = {}
     refline = refFastaFile.readline()
     while refline:
-        if re.search(r'^[>]', refline) != None:
+        if re.search(r'^['+startchar+']', refline) != None:
 #            collist = re.split(r'\s+', refline)
             if mapname == "transcript:":
                 currentChromNo = re.search(r'transcript:(.*?)\s+', refline).group(1).strip()
             else:
-                currentChromNo = re.search(r'[^>]+', (re.split(r'\s+', refline))[0]).group(0)
+                currentChromNo = re.search(r'[^'+startchar+']+', (re.split(r'\s+', refline))[0]).group(0)
             refChromIndex[currentChromNo] = int(refFastaFile.tell())  # from here is the sequence
         refline = refFastaFile.readline()
     pickle.dump(refChromIndex, open(indexFileName, 'wb'))
     refFastaFile.close()
-
+def generateIndexByChromForFQ(refFastaFileName, indexFileName, mapname=None,startchar=">"):
+    refFastaFile = open(refFastaFileName, 'r')
+    refChromIndex = {}
+    refline = refFastaFile.readline()
+    while refline:
+        if re.search(r'^['+startchar+']', refline) != None:
+#            collist = re.split(r'\s+', refline)
+            if mapname == "transcript:":
+                currentChromNo = re.search(r'transcript:(.*?)\s+', refline).group(1).strip()
+            else:
+                currentChromNo = re.search(r'[^'+startchar+']+', (re.split(r'\s+', refline))[0]).group(0)
+            refChromIndex[currentChromNo] = int(refFastaFile.tell())  # from here is the sequence
+        if re.search(r"^[+]\s*$",refline)!=None:
+            refChromIndex[currentChromNo]=(refChromIndex[currentChromNo],int(refFastaFile.tell()))
+        refline = refFastaFile.readline()
+    pickle.dump(refChromIndex, open(indexFileName, 'wb'))
+    refFastaFile.close()
 def getGtfMap(gtfFileName, elementTypes=["CDS", "stop_codon"]):
     """protein_codingMap={chromNo:[[transcript_id,strand,start,end,(feature, elemStart, elemEnd, frame),(),(),,,,,],
                         [transcript_id,strand,start,end,(),(),(),,,],[],,,,,,,],
@@ -685,6 +701,54 @@ def getRefSeqBypos(refFastahandle, refindex, currentChromNO, startpos, endpos, c
         print("getRefSeqBypos", currentChromNO, startpos, endpos)
         return -1
     
+    return refSeqMap 
+def getRefSeqBypos_fromFQ(refFastqhandle, refindex, currentChromNO, startpos, endpos, currentChromNOlen=None):
+    '''
+    pos start at 1
+    seektuple=(filepos,basesbeforefilepos)
+    the refSeqMap has only one chromosome's sequence
+    There is no restriction on refFastahander
+    '''    
+    refSeqMap = {}
+    if startpos <= 0:
+        startpos = 1
+    print("getRefSeqBypos", currentChromNO, startpos, endpos)
+    if currentChromNOlen != None and endpos > currentChromNOlen:
+        endpos = currentChromNOlen
+
+    filehandle = refFastqhandle
+    if True:
+        refSeqMap[currentChromNO] = [startpos - 1]
+        filehandle.seek(refindex[currentChromNO][0])  # seekmap is empty so go to the first bases of the currentChromNO
+        preseq = filehandle.read(startpos - 1)
+        dn = preseq.count('\n')
+        while dn != 0:
+            preseq = filehandle.read(dn)
+            dn = preseq.count('\n')
+            
+        # now filehander is right stay at the startpos
+        myseqline = filehandle.read(endpos - startpos + 1)
+        myseqn = myseqline.count('\n')
+#        if len(myseqline)>200:
+#            print(myseqn)
+#            exit(-1)
+#        print("myseqline=",myseqline,"myseqn", myseqn)
+        while myseqn != 0:  # fill the same number of \n with bases
+            myseqline = myseqline.replace('\n', '')
+            myseqline += filehandle.read(myseqn)
+            myseqn = myseqline.count('\n')
+            
+#            print(currentChromNO,myseqline, myseqn)
+        if myseqline.count('>') >= 1:
+            print(currentChromNO, myseqline, myseqn)
+            exit(-1)
+        refSeqMap[currentChromNO].extend(list(myseqline))
+
+    plus = myseqline.count('>')
+    if plus != 0:
+        print("getRefSeqBypos", currentChromNO, startpos, endpos)
+        return -1
+    refFastqhandle
     return refSeqMap   
 #phylip format
 class PhylipError(Exception):
