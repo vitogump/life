@@ -86,16 +86,18 @@ if __name__ == '__main__':
     ###################### prepare chrom specified cdsreds for wild and domestic ###################################
         wildcdsfilelist=[]
         domesticcdsfilelist=[]
-        print(chrom)
+        curchrom=chrom.strip()
         for fname in options.wildcdsfilenames:
-            os.system("awk '$1~/"+chrom.strip()+"/{print $0}' "+fname+">"+fname+"_one_chrom")
+            os.system("rm "+fname+"_one_chrom")
+            os.system("awk '$1~/"+curchrom+"/{print $0}' "+fname+">"+fname+"_one_chrom")
             a=os.popen("less -S "+fname+"_one_chrom|wc -l")
             if a.readline().strip()=="0":
                 a.close()
                 continue
             wildcdsfilelist.append(open(fname+"_one_chrom",'r'))
         for fname in options.domesticcdsfilenames:
-            os.system("awk '$1~/"+chrom.strip()+"/{print $0}' "+fname+">"+fname+"_one_chrom")
+            os.system("rm "+fname+"_one_chrom")
+            os.system("awk '$1~/"+curchrom+"/{print $0}' "+fname+">"+fname+"_one_chrom")
             a=os.popen("less -S "+fname+"_one_chrom|wc -l")
             if a.readline().strip()=="0":
                 a.close()
@@ -106,7 +108,6 @@ if __name__ == '__main__':
 #             wildcdsfilelist[wf_idx].readline()#title
             line=wildcdsfilelist[wf_idx].readline()
             if line.split():
-                print(line)
                 wild_CurRecsLinelist.append(re.split(r"\s+",line.strip()))
                 posOfCurRecwild.append(int(wild_CurRecsLinelist[wf_idx][1]))###############
             else:
@@ -119,7 +120,7 @@ if __name__ == '__main__':
                 posOfCurRecdom.append(int(dom_CurRecsLinelist[df_idx][1]))
             else:
                 dom_CurRecsLinelist.append(None)
-        curchrom=chrom.strip()
+        
         while wild_CurRecsLinelist!=[None]*len(wildcdsfilelist) or dom_CurRecsLinelist!=[None]*len(domesticcdsfilelist):
             #loop every time clean dom_CurPosRecs ;wild_CurPosRecs it is used to caculate delta AF for every pos
             wild_CurPosRecs=[];dom_CurPosRecs=[]
@@ -129,6 +130,9 @@ if __name__ == '__main__':
                     if  posOfCurRecwild[wf_idx]<=curpos:
                         posOfCurRecwild[wf_idx]=999999999999999999999999999999
                 elif int(wild_CurRecsLinelist[wf_idx][1])==curpos:
+                    if wild_CurRecsLinelist[wf_idx][0]!=curchrom:
+                        print(wild_CurRecsLinelist[wf_idx][0],curchrom)
+                        exit(-1)
                     wild_CurPosRecs.append(copy.deepcopy(wild_CurRecsLinelist[wf_idx]))
                     line=wildcdsfilelist[wf_idx].readline()
                     if line.split():
@@ -141,6 +145,9 @@ if __name__ == '__main__':
                     if  posOfCurRecdom[df_idx]<=curpos:
                         posOfCurRecdom[df_idx]=9999999999999999999999999999999
                 elif int(dom_CurRecsLinelist[df_idx][1])==curpos:
+                    if dom_CurRecsLinelist[df_idx][0]!=curchrom:
+                        print(curchrom,dom_CurRecsLinelist[df_idx][0])
+                        exit(-1)
                     dom_CurPosRecs.append(copy.deepcopy(dom_CurRecsLinelist[df_idx]))
                     line=domesticcdsfilelist[df_idx].readline()
                     if line.split():
