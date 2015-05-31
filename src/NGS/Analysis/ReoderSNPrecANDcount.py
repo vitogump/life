@@ -34,11 +34,21 @@ outdomesticfile=open(outdomesticfileName,'w')
 statisticsfile=open(options.outfileprename+"_statistics","w")
 #make a chrom list contain all chrom of all file,no matter there are one or more file for -w -d each
 #extract chroms and uniq
+AF_idxlistwild=[]
+AF_idxlistdomestic=[]
 for fname in options.wildcdsfilenames:
+    t=open(fname,'r')
+    AF_idxlistwild.append(re.split(r"\t",t.readline().strip()).index("AF"))
+    t.close()
     os.system("awk 'NR>1{print $1}' "+fname+"|sort|uniq|sort >"+fname+"_chrom")
+print(AF_idxlistwild)
 #     wildcdsfilelist.append(open(fname,'r'))
 for fname in options.domesticcdsfilenames:
+    t=open(fname,'r')
+    AF_idxlistdomestic.append(re.split(r"\t",t.readline().strip()).index("AF"))
+    t.close()
     os.system("awk 'NR>1{print $1}' "+fname+"|sort|uniq|sort >"+fname+"_chrom")
+print(AF_idxlistdomestic)
 #     domesticcdsfilelist.append(open(fname,'r'))
 #merge and uniq ,when there is only one file for wild or domestic,the for loop below don't excute
 for f_idx in range(1,len(options.wildcdsfilenames)):
@@ -86,25 +96,42 @@ if __name__ == '__main__':
     ###################### prepare chrom specified cdsreds for wild and domestic ###################################
         wildcdsfilelist=[]
         domesticcdsfilelist=[]
+        tempAF_idxlistwild=copy.deepcopy(AF_idxlistwild)
+        tempAF_idxlistdomestic=copy.deepcopy(AF_idxlistdomestic)
         curchrom=chrom.strip()
-        for fname in options.wildcdsfilenames:
+        idx=len(options.wildcdsfilenames)
+        for fname in options.wildcdsfilenames[::-1]:
+            idx-=1
             os.system("rm "+fname+"_one_chrom")
             os.system("awk '$1~/"+curchrom+"/{print $0}' "+fname+">"+fname+"_one_chrom")
             a=os.popen("less -S "+fname+"_one_chrom|wc -l")
             if a.readline().strip()=="0":
                 a.close()
+                tempAF_idxlistwild.pop(idx)
+#                 wildcdsfilelist.append("norecords")
                 continue
             wildcdsfilelist.append(open(fname+"_one_chrom",'r'))
-        for fname in options.domesticcdsfilenames:
+
+        wildcdsfilelist.reverse()
+        print(tempAF_idxlistwild)
+        idx=len(options.domesticcdsfilenames)
+        for fname in options.domesticcdsfilenames[::-1]:
+            idx-=1
             os.system("rm "+fname+"_one_chrom")
             os.system("awk '$1~/"+curchrom+"/{print $0}' "+fname+">"+fname+"_one_chrom")
             a=os.popen("less -S "+fname+"_one_chrom|wc -l")
             if a.readline().strip()=="0":
                 a.close()
+                tempAF_idxlistdomestic.pop(idx)
+#                 domesticcdsfilelist.append("norecords")
                 continue
             domesticcdsfilelist.append(open(fname+"_one_chrom",'r'))
+        domesticcdsfilelist.reverse()
+        print(tempAF_idxlistdomestic)
     ########## collect delta_AF #################################################################
         for wf_idx in range(len(wildcdsfilelist)):
+#             if wildcdsfilelist[wf_idx]=="norecords":
+#                 continue
 #             wildcdsfilelist[wf_idx].readline()#title
             line=wildcdsfilelist[wf_idx].readline()
             if line.split():
@@ -114,6 +141,8 @@ if __name__ == '__main__':
                 wild_CurRecsLinelist.append(None)
         for df_idx in range(len(domesticcdsfilelist)):
 #             domesticcdsfilelist[df_idx].readline()#title
+#             if domesticcdsfilelist[df_idx]=="norecords":
+#                 continue
             line=domesticcdsfilelist[df_idx].readline()
             if line.split():
                 dom_CurRecsLinelist.append(re.split(r"\s+",line.strip()))
@@ -124,16 +153,15 @@ if __name__ == '__main__':
         while wild_CurRecsLinelist!=[None]*len(wildcdsfilelist) or dom_CurRecsLinelist!=[None]*len(domesticcdsfilelist):
             #loop every time clean dom_CurPosRecs ;wild_CurPosRecs it is used to caculate delta AF for every pos
             wild_CurPosRecs=[];dom_CurPosRecs=[]
+            AF_idxlistwild_CurPos=[];AF_idxlistdomestic_CurPos=[]
             curpos=min(posOfCurRecwild+posOfCurRecdom)
             for wf_idx in range(len(wildcdsfilelist)):
                 if  wild_CurRecsLinelist[wf_idx]==None :
                     if  posOfCurRecwild[wf_idx]<=curpos:
                         posOfCurRecwild[wf_idx]=999999999999999999999999999999
                 elif int(wild_CurRecsLinelist[wf_idx][1])==curpos:
-                    if wild_CurRecsLinelist[wf_idx][0]!=curchrom:
-                        print(wild_CurRecsLinelist[wf_idx][0],curchrom)
-                        exit(-1)
                     wild_CurPosRecs.append(copy.deepcopy(wild_CurRecsLinelist[wf_idx]))
+                    AF_idxlistwild_CurPos.append(tempAF_idxlistwild[wf_idx])
                     line=wildcdsfilelist[wf_idx].readline()
                     if line.split():
                         wild_CurRecsLinelist[wf_idx]=re.split(r"\s+",line.strip())
@@ -145,10 +173,8 @@ if __name__ == '__main__':
                     if  posOfCurRecdom[df_idx]<=curpos:
                         posOfCurRecdom[df_idx]=9999999999999999999999999999999
                 elif int(dom_CurRecsLinelist[df_idx][1])==curpos:
-                    if dom_CurRecsLinelist[df_idx][0]!=curchrom:
-                        print(curchrom,dom_CurRecsLinelist[df_idx][0])
-                        exit(-1)
                     dom_CurPosRecs.append(copy.deepcopy(dom_CurRecsLinelist[df_idx]))
+                    AF_idxlistdomestic_CurPos.append(tempAF_idxlistdomestic[df_idx])
                     line=domesticcdsfilelist[df_idx].readline()
                     if line.split():
                         dom_CurRecsLinelist[df_idx]=re.split(r"\s+",line.strip())
@@ -173,27 +199,34 @@ if __name__ == '__main__':
                 archic_base=archicpop.group(1).strip().upper()
             if not snp or re.search(r'[\w\W]+[,][\w\W]+:\d+,\d+',snp[0][6])!=None or (archicpop.group(2).strip()!='0' and archicpop.group(3).strip()!='0') or snp[0][6]=="no covered":
                 A_base_idx=random.randint(0,1)
+                continue
 #                 print("can't judge which is derived allele,random select ref or alt as ancenstral")
             if not snp or re.search(r'[\w\W]+[,][\w\W]+:\d+,\d+',snp[0][6])!=None or (int(archicpop.group(2).strip())+int(archicpop.group(3).strip())<=mindeptojudgefix):
                 A_base_idx=random.randint(0,1)
+                continue
 #                 print("can't judge which is derived allele,random select ref or alt as ancenstral")
-            if snp and snp[0][6]!="no covered" and archicpop.group(2).strip()=='0':
+            if  archicpop.group(2).strip()=='0':
 #                 print("determin derived allele")
                 A_base_idx=1#alt_allele is the ancestral allele
-            elif snp and snp[0][6]!="no covered" and  archicpop.group(3).strip()=='0':
+            elif  archicpop.group(3).strip()=='0':
 #                 print("determin derived allele")
                 A_base_idx=0#ref_allele is the ancestral allele
             #caculate allele freq for each pop
+            idx=0
             for e in wild_CurPosRecs:
                 if A_base_idx==1:
-                    w_af+=(1-float(e[5]))
+                    w_af+=(1-float(e[AF_idxlistwild_CurPos[idx]]))
                 else:
-                    w_af+=float(e[5])
+                    w_af+=float(e[AF_idxlistwild_CurPos[idx]])
+                idx+=1
+            idx=0
             for e in dom_CurPosRecs:
                 if A_base_idx==1:
-                    d_af+=(1-float(e[5]))
+                    d_af+=(1-float(e[AF_idxlistdomestic_CurPos[idx]]))
                 else:
-                    d_af+=float(e[5])
+                    d_af+=float(e[AF_idxlistdomestic_CurPos[idx]])
+                
+                idx+=1
             
             delta_af=(w_af/len(wild_CurPosRecs))-(d_af/len(dom_CurPosRecs))
 #             print("wild_CurPosRecs",wild_CurPosRecs,"\n","dom_CurPosRecs",dom_CurPosRecs)
@@ -203,10 +236,10 @@ if __name__ == '__main__':
 #                         print("sysnonymous")
                         intervalMap_wild_SNPrec[a,b]["sysnonymous"].append(wild_CurPosRecs)
                     elif wild_CurPosRecs[0][-3].find("*")!=-1 or wild_CurPosRecs[0][-1].find("*")!=-1:
-#                         print("nonsense")
+                        
                         intervalMap_wild_SNPrec[a,b]["nonsense"].append(wild_CurPosRecs)
                     elif wild_CurPosRecs[0][-3]!=wild_CurPosRecs[0][-1]:
-#                         print("nonsysnonymous")
+                        print(w_af,"=",wild_CurPosRecs,d_af,"=",dom_CurPosRecs,delta_af,">",a,delta_af,"<",b)
                         intervalMap_wild_SNPrec[a,b]["nonsysnonymous"].append(wild_CurPosRecs)
             #reverse
             delta_af=(d_af/len(dom_CurPosRecs))-(w_af/len(wild_CurPosRecs))
@@ -246,7 +279,7 @@ if __name__ == '__main__':
             print(a,b,"nonsense",*rec,sep="\t",file=outdomesticfile)
     print("delta_AFbins\t\tdomesticpops\t\twildpops\t\t",file=statisticsfile)
     print("            \tsysnonymous\tnonsysnonymous\tnonsense\tsysnonymous\tnonsysnonymous\tnonsense",file=statisticsfile)
-    for a,b in statisticMap.keys():
+    for a,b in sorted(statisticMap.keys()):
         print(a,b,statisticMap[a,b][0]["sysnonymous"],statisticMap[a,b][0]["nonsysnonymous"],statisticMap[a,b][0]["nonsense"],statisticMap[a,b][1]["sysnonymous"],statisticMap[a,b][1]["nonsysnonymous"],statisticMap[a,b][1]["nonsense"],sep="\t",file=statisticsfile)
     statisticsfile.close()
     outdomesticfile.close()
