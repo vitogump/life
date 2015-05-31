@@ -74,9 +74,9 @@ if __name__ == '__main__':
     intervalfile=open(intervalFileName,'r')
     for line in intervalfile:
         linelist=re.split(r'\s+',line.strip())
-        statisticMap[float(linelist[0]),float(linelist[1])]=[{"synonymous":0,"nonsynonymou":0,"nonsense":0},{"synonymous":0,"nonsynonymou":0,"nonsense":0}]#domestic and wild  
-        intervalMap_wild_SNPrec[float(linelist[0]),float(linelist[1])]={"synonymous":[],"nonsynonymou":[],"nonsense":[]}
-        intervalMap_dom_SNPrec[float(linelist[0]),float(linelist[1])]={"synonymous":[],"nonsynonymou":[],"nonsense":[]}
+        statisticMap[float(linelist[0]),float(linelist[1])]=[{"sysnonymous":0,"nonsysnonymous":0,"nonsense":0},{"sysnonymous":0,"nonsysnonymous":0,"nonsense":0}]#domestic and wild  
+        intervalMap_wild_SNPrec[float(linelist[0]),float(linelist[1])]={"sysnonymous":[],"nonsysnonymous":[],"nonsense":[]}
+        intervalMap_dom_SNPrec[float(linelist[0]),float(linelist[1])]={"sysnonymous":[],"nonsysnonymous":[],"nonsense":[]}
         
     ############################# bin the delta AF for all chrom; ###########
     for chrom in chromlist:
@@ -189,30 +189,34 @@ if __name__ == '__main__':
                     d_af+=float(e[5])
             
             delta_af=(w_af/len(wild_CurPosRecs))-(d_af/len(dom_CurPosRecs))
+#             print("wild_CurPosRecs",wild_CurPosRecs,"\n","dom_CurPosRecs",dom_CurPosRecs)
             for a,b in intervalMap_wild_SNPrec.keys():
-                if delta_af>=a and delta_af<b and len(wild_CurPosRecs)>=14:
-                    if wild_CurPosRecs[11]==wild_CurPosRecs[13]: 
+                if delta_af>=a and delta_af<b and len(wild_CurPosRecs[0])>=14:
+                    if wild_CurPosRecs[0][-3]==wild_CurPosRecs[0][-1]:
+#                         print("sysnonymous")
                         intervalMap_wild_SNPrec[a,b]["sysnonymous"].append(wild_CurPosRecs)
-                    elif wild_CurPosRecs[11].find("*")!=-1 or wild_CurPosRecs[13].find("*")!=-1:
+                    elif wild_CurPosRecs[0][-3].find("*")!=-1 or wild_CurPosRecs[0][-1].find("*")!=-1:
+#                         print("nonsense")
                         intervalMap_wild_SNPrec[a,b]["nonsense"].append(wild_CurPosRecs)
-                    elif wild_CurPosRecs[11]!=wild_CurPosRecs[13]:
+                    elif wild_CurPosRecs[0][-3]!=wild_CurPosRecs[0][-1]:
+#                         print("nonsysnonymous")
                         intervalMap_wild_SNPrec[a,b]["nonsysnonymous"].append(wild_CurPosRecs)
             #reverse
             delta_af=(d_af/len(dom_CurPosRecs))-(w_af/len(wild_CurPosRecs))
             for a,b in intervalMap_dom_SNPrec.keys():
-                if delta_af>=a and delta_af<b and len(dom_CurPosRecs)>=14:
-                    if dom_CurPosRecs[11]==dom_CurPosRecs[13]:
+                if delta_af>=a and delta_af<b and len(dom_CurPosRecs[0])>=14:
+                    if dom_CurPosRecs[0][-3]==dom_CurPosRecs[0][-1]:
                         intervalMap_dom_SNPrec[a,b]["sysnonymous"].append(dom_CurPosRecs)
-                    elif dom_CurPosRecs[11].find("*")!=-1 or dom_CurPosRecs[13].find("*")!=-1:
+                    elif dom_CurPosRecs[0][-3].find("*")!=-1 or dom_CurPosRecs[0][-1].find("*")!=-1:
                         intervalMap_dom_SNPrec[a,b]["nonsense"].append(dom_CurPosRecs)
-                    elif dom_CurPosRecs[11]!=dom_CurPosRecs[13]:
+                    elif dom_CurPosRecs[0][-3]!=dom_CurPosRecs[0][-1]:
                         intervalMap_dom_SNPrec[a,b]["nonsysnonymous"].append(dom_CurPosRecs)
 
         for f in domesticcdsfilelist:
             f.close()
         for f in wildcdsfilelist:
             f.close()
-    
+#output    
     for a,b in intervalMap_wild_SNPrec.keys():
         for rec in intervalMap_wild_SNPrec[a,b]["sysnonymous"]:
             statisticMap[a,b][1]["sysnonymous"]+=1
@@ -240,3 +244,4 @@ if __name__ == '__main__':
     statisticsfile.close()
     outdomesticfile.close()
     outwildfile.close()
+    print("finish")
