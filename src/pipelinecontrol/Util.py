@@ -132,15 +132,16 @@ class OperatorWithData_mode1(OperatorWithData):
                     
                     os.makedirs(outputpath + pathToOutputdata_createdir  + outsuffix)
             else:
-                newcmdline = re.sub(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}", outputpath + pathToOutputdata_createdir + updirname + "." + outsuffix, newcmdline)
+                newcmdline = re.sub(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}", outputpath + pathToOutputdata_createdir + updirname + "myNtosub." + outsuffix, newcmdline)
         targetdata_count=0
         for i in range(0, len(targetdatasuffix)):
             lists =os.walk(curpath)    
             for rootStr,dirs,files in lists:
                 if len(re.split(r"/",rootStr))==len(re.split(r"/",self.inputdatapath))+datadepth:# reach the depth that datafiles in it
-                    print(rootStr+"/",files)
+                    print("reach the depth that datafiles in it",rootStr+"/",files)
                     for datafilename in files:
                         if re.search(r".*?" + targetdatasuffix[i]+"$", datafilename) != None:
+                            print("make new cmdline:",newcmdline)
                             targetdata_count+=1
                             option_suffix_obj = re.search(r"([-\w\d]+[=\s]+)\${(\s*" + targetdatasuffix[i] + "\s*)}", newcmdline)  # for example "INPUT=${.bam} -i ${.sam}"
                             optionstr = option_suffix_obj.group(1)
@@ -149,9 +150,11 @@ class OperatorWithData_mode1(OperatorWithData):
         newcmdline = re.sub(r"[-\w\d]+[=\s]+\${.*?}", " ", newcmdline)                
                     # sub was acted from the first to the rear most
         print("pathToOutputdata_createdir", pathToOutputdata_createdir)
-        if len(targetdatasuffix)!=0 and targetdata_count!=len(targetdatasuffix)-no_of_tags:
-            print("targetdata_count!=len(targetdatasuffix)")
-            return newcmdline
+#         if len(targetdatasuffix)!=0 and targetdata_count!=len(targetdatasuffix)-no_of_tags:
+#             print(targetdata_count,len(targetdatasuffix),no_of_tags)
+#             print("targetdata_count!=len(targetdatasuffix)")
+#             return newcmdline
+        newcmdline=re.sub(r"myNtosub.",str(targetdata_count)+".",newcmdline)
         try:
             print(self.scriptcontext + newcmdline, file=open(self.scriptsstoredir + self.cmdtemplatefilename + "." + updirname + "Script.sh", "a"))
         except FileNotFoundError:
