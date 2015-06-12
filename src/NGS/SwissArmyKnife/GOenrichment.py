@@ -89,9 +89,9 @@ if __name__ == '__main__':
             elif termlist[godomainidx].lower().strip()=="molecular_function":
                 mf+=termlist[gotermaccessionidx]+";"+termlist[gotermNameidx]+";"
             if geneName.split():
-                gotable[termlist[tpididx].strip()]=(geneID,geneName,bp,cc,mf)
+                gotable[termlist[IDidx].strip()]=(geneID,geneName,bp,cc,mf)
             else:
-                gotable[termlist[tpididx].strip()]=(geneID,"unknow",bp,cc,mf)            
+                gotable[termlist[IDidx].strip()]=(geneID,"unknow",bp,cc,mf)            
     GOAnnationForGene_out_fileName=options.outpre.strip()+".GO_annotion"
     GOenrichment_fileName=options.outpre.strip()+".GO_enrichment"
     annf=open(GOAnnationForGene_out_fileName,'w')

@@ -33,7 +33,7 @@ parser.add_option("-q", "--quiet",
 minlength=options.minlength
 windowWidth=int(options.winwidth)
 slideSize=int(options.slideSize)
-chromtable=Util.TranscriptGenetable
+chromtable=Util.pekingduckchromtable
 outputpath=options.outputpath.strip()
 sql = "select * from " + chromtable+" where chrlength>="+minlength
 vcffileslist=options.vcffile
@@ -65,7 +65,8 @@ if __name__ == '__main__':
 #        pop.getVcfMap(vcf)
     outfile = open(outname + ".het"+str(windowWidth)+"_"+str(slideSize), 'w')
     hp_caculator = Caculators.Caculate_Hp(SeqMethodlist=methodlist)
-    print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnp\twinvalue\tzvalue",file=outfile)     
+    print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnp\twinvalue\tzvalue",file=outfile)
+    print("select","select count(*) from "+chromtable + " where chrlength>="+minlength)
     totalChroms = dbtools.operateDB("select","select count(*) from "+chromtable + " where chrlength>="+minlength)[0][0]
     for i in range(0,totalChroms,20):
         currentsql=sql+" order by "+primaryID+" limit "+str(i)+",20"

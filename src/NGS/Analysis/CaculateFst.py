@@ -33,7 +33,7 @@ outputpath=options.outputpath.strip()
 minlength=options.minlength
 windowWidth=int(options.winwidth)
 slideSize=int(options.slideSize)
-
+tttttt=False
 chromtable = Util.pekingduckchromtable
 fsttype=options.fsttype
 primaryID = "chrID"
@@ -180,6 +180,9 @@ if __name__ == '__main__':
                     if fst.FstMapByChrom[chrom][i][3] != 'NA':
                         Number += 1
                         sum += fst.FstMapByChrom[chrom][i][3]
+#                     if chrom=="KB820867.1" or tttttt:
+#                         tttttt=True
+                    print("insert into "+treearrayprename+"treearray(chrID,winNo,"+fstpaire1name[0:5]+fstpaire2name[0:5]+") values(%s,%s,%s) on duplicate key update "+fstpaire1name[0:5]+fstpaire2name[0:5]+" = '"+str(fst.FstMapByChrom[chrom][i][3])+"'",chrom,str(i),str(fst.FstMapByChrom[chrom][i][3]))
                     tempdbtools.operateDB("insert","insert into "+treearrayprename+"treearray(chrID,winNo,"+fstpaire1name[0:5]+fstpaire2name[0:5]+") values(%s,%s,%s) on duplicate key update "+fstpaire1name[0:5]+fstpaire2name[0:5]+" = '"+str(fst.FstMapByChrom[chrom][i][3])+"'",data=(chrom,str(i),str(fst.FstMapByChrom[chrom][i][3])))
             alldistMap[fstpaire1name+fstpaire2name] = (sum / Number,allspeices.index(fstpaire1name))
             outfile.close()
@@ -218,6 +221,7 @@ if __name__ == '__main__':
             MethodToSeqpop1=None
             fstlist=[]
             vcfname=re.search(r"[^/]*$",majorpop).group(0)
+            vcfname+="VS"
             for othrpop in vcffileslist[:]:
                 MethodToSeqpop2=None
                 if majorpop == othrpop:
@@ -235,7 +239,7 @@ if __name__ == '__main__':
                     MethodToSeqpop2="pool"
                 fst_caculator = Caculators.Caculate_Fst(MethodToSeqpop1=MethodToSeqpop1, MethodToSeqpop2=MethodToSeqpop2)
                 fstlist[-1].caculateFstAccordingdb(dbtools, chromtable, majorpop, othrpop, fst_caculator, windowWidth,slideSize,minlength)          
-                vcfname+=("VS"+re.search(r"[^/]*$",othrpop).group(0)[0])
+                vcfname+=("_"+re.search(r"[^/]*$",othrpop).group(0)[0])
             outfile=open(outputpath+vcfname+'.gfst'+str(windowWidth)+"_"+str(slideSize)+"_"+specisnum,'w')
             print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnp\twinvalue\tzvalue",file=outfile)
             if len(fstlist) != 0:

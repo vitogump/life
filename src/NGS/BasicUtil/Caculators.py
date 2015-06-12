@@ -129,7 +129,7 @@ class Caculate_Dstatistics(Caculator):
         return ABBAcount, BABAcount, D_fixed, D_snp, noofsnps
         
         
-        
+
 class Caculate_Hp(Caculator):
     def __init__(self, SeqMethodlist=["pool"], minsnps=10, considerFixed=False):
         super().__init__()
@@ -139,9 +139,9 @@ class Caculate_Hp(Caculator):
         self.CNMA = [0] * len(SeqMethodlist)
         self.sum_mean_2pq = 0
         self.considerFixed = considerFixed
-        self.SeqMethodlist = SeqMethodlist
+        self.SeqMethodlist = SeqMethodlist     
     def process(self, T, seqerrorrate=0.01, mode=1):
-        if len(T[1]) != len(T[2]):
+        if len(T[1]) != len(T[2]) or len(T[2])!=1:
             return
         for MethodToSeq_idx in range(len(self.SeqMethodlist)):
             MethofToSeq = self.SeqMethodlist[MethodToSeq_idx]
@@ -259,7 +259,7 @@ class Caculate_Fst(Caculator):
         self.MethodToSeqpop1 = MethodToSeqpop1
         self.MethodToSeqpop2 = MethodToSeqpop2
     def process(self, T, seqerrorrate=0.01):
-        if len(T[1]) != len(T[2]):
+        if len(T[1]) != len(T[2]) or len(T[2])!=1:
             return
         refdep_1 = 0;refdep_2 = 0
         altalleledep_1 = 0;altalleledep_2 = 0
