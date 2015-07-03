@@ -141,7 +141,7 @@ class Caculate_Hp(Caculator):
         self.considerFixed = considerFixed
         self.SeqMethodlist = SeqMethodlist     
     def process(self, T, seqerrorrate=0.01, mode=1):
-        if len(T[1]) != len(T[2]) or len(T[2])!=1:
+        if len(T[1]) != len(T[2]) or len(T[2])!=1 or len(T[2])!=1:
             return
         for MethodToSeq_idx in range(len(self.SeqMethodlist)):
             MethofToSeq = self.SeqMethodlist[MethodToSeq_idx]
@@ -249,22 +249,25 @@ class Caculate_depth_judge(Caculator):
             self.AVERAGE_DEPTH = [0] * len(self.speciesorder)
         return "empty", ([a / self.winsize for a in countlist], [a / self.winsize for a in average])
 class Caculate_Fst(Caculator):
-    def __init__(self, MethodToSeqpop1="pool", MethodToSeqpop2="indvd", minsnps=3, considerFixed=False):
+    def __init__(self, MethodToSeqpop1="pool", MethodToSeqpop2="indvd", minsnps=3):
         super().__init__()
         self.minsnps = minsnps
         self.CNk = 0
         self.CDk = 0
         self.COUNTED = 0
-        self.considerFixed = considerFixed
+#         self.considerFixed = considerFixed
         self.MethodToSeqpop1 = MethodToSeqpop1
         self.MethodToSeqpop2 = MethodToSeqpop2
+        self.depthforcurrentchrom=None
+        self.species_idx_map=None
+        self.pop1_indvds=10#when pop1 is none at a pos,and no depth information
+        self.pop2_indvds=10
     def process(self, T, seqerrorrate=0.01):
-        if len(T[1]) != len(T[2]) or len(T[2])!=1:
+        if len(T[1]) != len(T[2]) or len(T[2])!=1  or len(T[2])!=1:
             return
         refdep_1 = 0;refdep_2 = 0
         altalleledep_1 = 0;altalleledep_2 = 0
-#        T1 = (T[0], T[1], T[2], T[3])
-#        T2 = (T[4], T[5], T[6], T[7])
+#        T=(pos,REF,ALT,(INFO,FORMAT,sampleslist),(INFO,FORMAT,sampleslist))
         pop1 = T[3]
         pop2 = T[4]
         dp4_1 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", pop1[0])
@@ -277,42 +280,101 @@ class Caculate_Fst(Caculator):
         else:  # vcf from gatk
             if self.MethodToSeqpop1 == "pool":
                 AD_idx_1 = (re.split(":", pop1[1])).index("AD")  # gatk GT:AD:DP:GQ:PL
-                
-                for sample in pop1[2][:]:
-                    if len(re.split(":", sample)) == 1:  # ./.
-                        continue
-                    AD_depth = re.split(",", re.split(":", sample)[AD_idx_1])
-                    try:
-                        refdep_1 += int(AD_depth[0])
-                        altalleledep_1 += int(AD_depth[1])
-                    except ValueError:
-                        print(sample, end="|")
+                if pop1==None:
+                    if self.depthforcurrentchrom==None:
+                        refdep_1=self.pop1_indvds
+                        altalleledep_1=0
+                    else:
+                        depth_linelist=re.split(r"\t",self.depthforcurrentchrom["vcfpop1_ref"][int(T[0])-1])
+                        sum_depth=0
+                        for idx in self.species_idx_map["vcfpop1_ref"]:
+                            sum_depth+=int(depth_linelist[idx])
+                        if sum_depth>=self.pop1_indvds:
+                            refdep_1=self.pop1_indvds
+                            altalleledep_1=0
+                        else:
+                            return
+                else:
+                    for sample in pop1[2][:]:
+                        if len(re.split(":", sample)) == 1:  # ./.
+                            continue
+                        AD_depth = re.split(",", re.split(":", sample)[AD_idx_1])
+                        try:
+                            refdep_1 += int(AD_depth[0])
+                            altalleledep_1 += int(AD_depth[1])
+                        except ValueError:
+                            print(sample, end="|")
             elif self.MethodToSeqpop1 == "indvd":
-                AN = int(re.search(r"AN=(\d+);", pop1[0]).group(1))
-                AC = int(re.search(r"AC=(\d+);", pop1[0]).group(1))
-                refdep_1 = AN - AC
-                altalleledep_1 = AC
+                if pop1==None:
+                    if self.depthforcurrentchrom==None:
+                        refdep_1=self.pop1_indvds
+                        altalleledep_1=0
+                    else:
+                        depth_linelist=re.split(r"\t",self.depthforcurrentchrom["vcfpop1_ref"][int(T[0])-1])
+                        sum_depth=0
+                        for idx in self.species_idx_map["vcfpop1_ref"]:
+                            sum_depth+=int(depth_linelist[idx])
+                        if sum_depth>=self.pop1_indvds:
+                            refdep_1=self.pop1_indvds
+                            altalleledep_1=0
+                        else:
+                            return
+                else:
+                    AN = int(re.search(r"AN=(\d+);", pop1[0]).group(1))
+                    AC = int(re.search(r"AC=(\d+);", pop1[0]).group(1))
+                    refdep_1 = AN - AC
+                    altalleledep_1 = AC
             if self.MethodToSeqpop2 == "pool":
                 AD_idx_2 = (re.split(":", pop2[1])).index("AD")
-                for sample in pop2[2][:]:
-                    if len(re.split(":", sample)) == 1:  # ./.
-                        continue
-                    AD_depth = re.split(",", re.split(":", sample)[AD_idx_2])
-                    try:
-                        refdep_2 += int(AD_depth[0])
-                        altalleledep_2 += int(AD_depth[1])
-                    except ValueError:
-                        print(sample, end="|")
+                if pop2!=None:
+                    if self.depthforcurrentchrom==None:
+                        refdep_2=self.pop2_indvds
+                        altalleledep_2=0
+                    else:
+                        depth_linelist=re.split(r"\t",self.depthforcurrentchrom["vcfpop2"][int(T[0])-1])
+                        sum_depth=0
+                        for idx in self.species_idx_map["vcfpop2"]:
+                            sum_depth+=int(depth_linelist[idx])
+                        if sum_depth>=self.pop2_indvds:
+                            refdep_2=self.pop2_indvds
+                            altalleledep_2=0
+                        else:
+                            return
+                else:
+                    for sample in pop2[2][:]:
+                        if len(re.split(":", sample)) == 1:  # ./.
+                            continue
+                        AD_depth = re.split(",", re.split(":", sample)[AD_idx_2])
+                        try:
+                            refdep_2 += int(AD_depth[0])
+                            altalleledep_2 += int(AD_depth[1])
+                        except ValueError:
+                            print(sample, end="|")
             elif self.MethodToSeqpop2 == "indvd":
-                AN = int(re.search(r"AN=(\d+);", pop2[0]).group(1))
-                AC = int(re.search(r"AC=(\d+);", pop2[0]).group(1))
-                refdep_2 = AN - AC
-                altalleledep_2 = AC  
+                if pop2==None:
+                    if self.depthforcurrentchrom==None:
+                        refdep_2=self.pop2_indvds
+                        altalleledep_2=0
+                    else:
+                        depth_linelist=re.split(r"\t",self.depthforcurrentchrom["vcfpop2"][int(T[0])-1])
+                        sum_depth=0
+                        for idx in self.species_idx_map["vcfpop2"]:
+                            sum_depth+=int(depth_linelist[idx])
+                        if sum_depth>=self.pop2_indvds:
+                            refdep_2=self.pop2_indvds
+                            altalleledep_2=0
+                        else:
+                            return
+                else:
+                    AN = int(re.search(r"AN=(\d+);", pop2[0]).group(1))
+                    AC = int(re.search(r"AC=(\d+);", pop2[0]).group(1))
+                    refdep_2 = AN - AC
+                    altalleledep_2 = AC  
 
               
                 
-        if (not self.considerFixed) and (refdep_1 <= seqerrorrate * (refdep_1 + altalleledep_1) or refdep_2 <= seqerrorrate * (refdep_2 + altalleledep_2)):
-            return  # NOTICT HERE
+#         if  (refdep_1 <= seqerrorrate * (refdep_1 + altalleledep_1) or refdep_2 <= seqerrorrate * (refdep_2 + altalleledep_2)):
+#             return  # NOTICT HERE
         self.COUNTED += 1
         h_1 = refdep_1 * altalleledep_1 / ((refdep_1 + altalleledep_1 - 1) * (refdep_1 + altalleledep_1))
         h_2 = refdep_2 * altalleledep_2 / ((refdep_2 + altalleledep_2 - 1) * (refdep_2 + altalleledep_2))

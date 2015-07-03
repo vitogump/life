@@ -244,7 +244,7 @@ class MakeMhtGraph(object):
         if len(positive_winfiles)==1:
             hopscex='1'
         else:
-            hopscex="0.65"
+            hopscex=str(0.6*(len(positive_winfiles)+len(negtive_winfiles)))
         for i in range(0,len(positive_winfiles)):
             r('ops<-mht.control(logscale=FALSE,colors=colors,cex=0.6)')
             
@@ -252,26 +252,26 @@ class MakeMhtGraph(object):
             r('mhtplot(p_data'+str(i)+',ops,hops,pch=19,ylab="z' + "Fst" + '",xlab="")')
             r("title(main='" + positive_filenames[i] + "',cex.main=0.8)")
             r('axis(2)')
-            r('abline(h=5)')
+            r('abline(h='+str(positive_winfiles[i][1])+')')
             print('ops<-mht.control(logscale=FALSE,colors=colors,cex=0.6)',file=scriptfile)
-            print('hops<-hmht.control(data=p_highlight'+str(i)+',cex=0.6)',file=scriptfile)
+            print('hops<-hmht.control(data=p_highlight'+str(i)+',cex='+str(0.6*(len(positive_winfiles)+len(negtive_winfiles)))+')',file=scriptfile)
             print('mhtplot(p_data'+str(i)+',ops,hops,pch=19,ylab="z' + "Fst" + '",xlab="")',file=scriptfile)
             print("title(main='" + positive_filenames[i] + "',cex.main=0.8)",file=scriptfile)
             print('axis(2)',file=scriptfile)
             print('abline(h=5)',file=scriptfile)
         for i in range(0,len(negtive_winfiles)):
             r('ops<-mht.control(logscale=FALSE,colors=colors,cex=0.6)')
-            r('hops<-hmht.control(data=n_highlight'+str(i)+',cex=0.6)')
+            r('hops<-hmht.control(data=n_highlight'+str(i)+',cex='+hopscex+')')
             r('mhtplot(n_data'+str(i)+',ops,hops,pch=19,ylab="zHp",xlab="")')
             r("title(main='" + negtive_filenames[i] + "',cex.main=0.8)")
             r('axis(2)')
-            r('abline(h=-5)')
+            r('abline(h='+str(negtive_winfiles[i][1])+')')
             print('ops<-mht.control(logscale=FALSE,colors=colors,cex=0.6)',file=scriptfile)
             print('hops<-hmht.control(data=n_highlight'+str(i)+',cex=0.6)',file=scriptfile)
             print('mhtplot(n_data'+str(i)+',ops,hops,pch=19,ylab="zHp",xlab="")',file=scriptfile)
             print("title(main='" + negtive_filenames[i] + "',cex.main=0.8)",file=scriptfile)
             print('axis(2)',file=scriptfile)
-            print('abline(h=-5)',file=scriptfile)
+            print('abline(h='+str(negtive_winfiles[i][1])+')',file=scriptfile)
         r('axis(1)')
         r('dev.off()')
         print(r('Cairo.capabilities()'))

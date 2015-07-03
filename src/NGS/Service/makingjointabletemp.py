@@ -12,21 +12,36 @@ from NGS.Service.Ancestralallele import AncestralAlleletabletools
 parser = OptionParser()
 
 #"output data name is defined as 'inputdatapath folder name'+'is subfolder name'+'is subfolder name'+..."
-parser.add_option("-v", "--vcftablelist", dest="vcftablelist",action="append",default=[],help="")
+parser.add_option("-v", "--vcftablelist", dest="vcftablelist",action="append",default=[],nargs=2,help="vcftablename filerecord_allname_in_depthfiletitle_belongtothisvcfpop")
 # parser.add_option("-o", "--outputpath", dest="outputpath", help="outputpath")
 parser.add_option("-c", "--chromlistfilename", dest="chromlistfilename", help="it's the depth of the dir from the inputdatapath which the data file that need to be process in it,the depth of the inputdatapath is 0")
 
 parser.add_option("-t","--toplevelsnptable",dest="toplevelsnptable",default="ducksnp_toplevel",help="depth of the folder to output")
 parser.add_option("-o","--outputtablename",dest="outputtablename",default="duckout",help="depth of the folder to output")
 
-parser.add_option("-d", "--quiet",action="append", dest="depthfilenames",default=None)
+# parser.add_option("-d", "--depthfiles",action="append", dest="depthfilenames",default=None)
                                                                                                                                                           
 (options, args) = parser.parse_args()
-vcftablenames=options.vcftablelist
-print(vcftablenames)
+vcftablenames=[];depthfilenames={}#{ vcftablename1:[depthfilename1,gatkdepthfile,name1,name2] , vcftablename2:[depthfilename2,gatkdepthfile,name1,name2] } or {vcftablename1:None, vcftablename2:None}
+for vcftablename,namefile in options.vcftablelist:
+    vcftablenames.append(vcftablename)
+    depthfilenames[vcftablename]=[]
+    if namefile.lower()!="none":
+        fp=open(namefile,'r')
+        for line in fp:
+            depthfile_obj=re.search(r"depthfilename=(.*)",line.strip())
+            if depthfile_obj!=None:
+                depthfilenames[vcftablename].append(depthfile_obj.group(1).strip())
+            elif line.split():
+                depthfilenames[vcftablename].append(line.strip())
+        fp.close()
+    else:
+        depthfilenames[vcftablename]=None
+        
+print(vcftablenames,depthfilenames)
 toplevelsnptable=options.toplevelsnptable
 outtable_filename=options.outputtablename
-depthfilenames=options.depthfilenames
+# depthfilenames=options.depthfilenames
 chromlist=[]
 chromlistfile=open(options.chromlistfilename,"r")
 for chrrow in chromlistfile:

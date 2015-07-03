@@ -111,8 +111,7 @@ class OperatorWithData_mode1(OperatorWithData):
         pathToOutputdata_createdir = ""
 
         if curdepth<=datadepth:
-            pathToOutputdata_createdir = re.search(r"" + self.inputdatapath + "((/.*?){" + str(interceptdepth) + "}[/])", curpath + "/").group(1)
-            
+            pathToOutputdata_createdir = re.search(r"" + self.inputdatapath + "((/.*?){" + str(interceptdepth) + "}[/])", curpath + "/").group(1) 
             #leftPathName_filenamepre = re.search(r"" + self.inputdatapath + pathToOutputdata_createdir + "(.*)", curpath + "/").group(1).replace("/", ".")
             for outputtuple in self.outputlist:
                 if not os.path.exists(outputtuple[0] + pathToOutputdata_createdir):
@@ -129,7 +128,6 @@ class OperatorWithData_mode1(OperatorWithData):
                 newcmdline = re.sub(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}", outputpath + pathToOutputdata_createdir + outsuffix, newcmdline)
                 print(outputpath + pathToOutputdata_createdir )
                 if not os.path.exists(outputpath + pathToOutputdata_createdir + outsuffix):
-                    
                     os.makedirs(outputpath + pathToOutputdata_createdir  + outsuffix)
             else:
                 newcmdline = re.sub(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}", outputpath + pathToOutputdata_createdir + updirname + "myNtosub." + outsuffix, newcmdline)
@@ -138,12 +136,12 @@ class OperatorWithData_mode1(OperatorWithData):
             lists =os.walk(curpath)    
             for rootStr,dirs,files in lists:
                 if len(re.split(r"/",rootStr))==len(re.split(r"/",self.inputdatapath))+datadepth:# reach the depth that datafiles in it
-                    print("reach the depth that datafiles in it",rootStr+"/",files)
+                    print("reach the depth that datafiles in it",rootStr+"/",files,targetdatasuffix)
                     for datafilename in files:
                         if re.search(r".*?" + targetdatasuffix[i]+"$", datafilename) != None:
-                            print("make new cmdline:",newcmdline)
                             targetdata_count+=1
                             option_suffix_obj = re.search(r"([-\w\d]+[=\s]+)\${(\s*" + targetdatasuffix[i] + "\s*)}", newcmdline)  # for example "INPUT=${.bam} -i ${.sam}"
+                            print("option_suffix_obj",option_suffix_obj,"make new cmdline:",newcmdline)
                             optionstr = option_suffix_obj.group(1)
                             suffixstr = option_suffix_obj.group(2)
                             newcmdline=re.sub(r"[-\w\d]+[=\s]+\${\s*" + targetdatasuffix[i] + "\s*}", optionstr  + rootStr + "/" + datafilename.strip() + " " + option_suffix_obj.group(0), newcmdline)                
@@ -229,44 +227,47 @@ class OperatorWithData_mode2(OperatorWithData):
 
 
 
-class JobTracker():#for one dir
+class myJobTracker():#for one dir
     def __init__(self, scriptDir, NumOfThread=8):
         self.scriptDir = scriptDir
         self.NumOfThread = int(NumOfThread)
-    def __runashell(self,scriptname):
-        session=DBA.getSession()
-        session.execute("update jobsstate set state='1' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
-        session.execute("update jobsstate set startdate='"+time.strftime(ISOTIMEFORMAT, time.localtime()) +"' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
-        session.commit()
-        scriptout=re.sub(r".sh$",".out",scriptname)
-        a=os.system(self.scriptDir+"/"+scriptname+">>"+self.scriptDir+"/"+scriptout+" 2>&1")
+def runashell(a):
+    scriptDir=a[0];scriptname=a[1]
+    session=DBA.getSession()
+    session.execute("update jobsstate set state='1' where scriptname='"+scriptname+"' and foldername='"+scriptDir+"'")
+    session.execute("update jobsstate set startdate='"+time.strftime(ISOTIMEFORMAT, time.localtime()) +"' where scriptname='"+scriptname+"' and foldername='"+scriptDir+"'")
+    session.commit()
+    scriptout=re.sub(r".sh$",".out",scriptname)
+    a=os.system(scriptDir+"/"+scriptname+">>"+scriptDir+"/"+scriptout+" 2>&1")
 #         logfile=open(self.scriptDir+"/"+scriptout,'r')
 #         logtext=logfile.read()
 #         logfile.close()
-        if a!=0:
-            session.execute("update jobsstate set state='-1' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
-            session.commit()
-            print("JobTracker "+scriptname+" runshell error")
-            return#just exit this threads the python programma still go on
-        else:
-            #session.execute("update jobsstate set outputinfo='"+logtext+"' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
-            session.execute("update jobsstate set state='2' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
-            session.execute("update jobsstate set finishdate='"+time.strftime(ISOTIMEFORMAT, time.localtime()) +"' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
-            session.commit()
-        return
-    def callsh_updateDB(self):
-        pool=Pool(self.NumOfThread)
-        scriptfiles = os.listdir(path=self.scriptDir)
-        for filename in scriptfiles:
-            if re.search(r".*\.sh$", filename) == None:
-                print("skip",filename)
-                scriptfiles.remove(filename)
-        DBA.addJobs2jobstate(scriptfiles,self.scriptDir)
-        a = os.system("chmod +x " + self.scriptDir + "/*.sh")
+    if a!=0:
+        session.execute("update jobsstate set state='-1' where scriptname='"+scriptname+"' and foldername='"+scriptDir+"'")
+        session.commit()
+        print("JobTracker "+scriptname+" runshell error")
+        return#just exit this threads the python programma still go on
+    else:
+        #session.execute("update jobsstate set outputinfo='"+logtext+"' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
+        session.execute("update jobsstate set state='2' where scriptname='"+scriptname+"' and foldername='"+scriptDir+"'")
+        session.execute("update jobsstate set finishdate='"+time.strftime(ISOTIMEFORMAT, time.localtime()) +"' where scriptname='"+scriptname+"' and foldername='"+scriptDir+"'")
+        session.commit()
+    return
+def callsh_updateDB(scriptDir,NumOfThread):
+    pool=Pool(NumOfThread)
+    scriptfiles = os.listdir(path=scriptDir)
+    inputscriptfiles=[]
+    for filename in scriptfiles:
+        if re.search(r".*\.sh$", filename) == None:
+            print("skip",filename)
+            scriptfiles.remove(filename)
+        inputscriptfiles.append((scriptDir,filename))
+    DBA.addJobs2jobstate(scriptfiles,scriptDir)
+    a = os.system("chmod +x " + scriptDir + "/*.sh")
 #         if a!=0:
 #             print("JobTracker chmod error")
 #             exit(-1)
-        pool.map(self.__runashell,scriptfiles)
-        pool.close()
-        pool.join()
-        
+    pool.map(runashell,inputscriptfiles)
+    pool.close()
+    pool.join()
+    

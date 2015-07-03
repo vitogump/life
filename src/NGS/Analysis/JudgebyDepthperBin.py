@@ -19,10 +19,8 @@ parser = OptionParser()
 parser.add_option("-c", "--genomeCoveragefile", dest="genomedepth", help="genomeCoveragefile")
 parser.add_option("-p", "--percentageofCovered", dest="percentageofCovered", help="percentageofCovered")
 parser.add_option("-a", "--averagedepthThreshold", dest="averagedepthThreshold", help="averagedepthThreshold")
-parser.add_option("-D", "--dbname", dest="dbname",  # action="callback",type="string",callback=useoptionvalue_previous1,
-                  help="write report to FILE")
-parser.add_option("-t", "--chromtable", dest="chromtable",  # action="callback",type="string",callback=useoptionvalue_previous2,
-                  help="write report to FILE")
+
+
 parser.add_option("-w","--winwidth",dest="winwidth",help="default infile1_infile2")#
 parser.add_option("-s","--slidesize",dest="slidesize",help="default infile2_infile1")#
 parser.add_option("-o","--outfile",dest="outfile",help="outfile")#
@@ -34,8 +32,8 @@ outfile=open(options.outfile,'w')
 outfilewithvalue=open(options.outfile+"_withvalue",'w')
 percentage = float(options.percentageofCovered)
 averagedepth=int(options.averagedepthThreshold)
-dbname = options.dbname
-chromtable = options.chromtable
+
+chromtable = Util.pekingduckchromtable
 windowWidth=int(options.winwidth)
 slideSize=int(options.slidesize)
 mindepth=int(options.mindepth)
@@ -70,6 +68,7 @@ if __name__ == '__main__':
     totalChroms = dbtools.operateDB("select", "select count(*) from " + chromtable)[0][0]
     m = depthfile.covfileidx
     m.pop("title")
+    m.pop("chromOrder")
     chrmapListOrderByDepthfilepos = sorted(m.items(), key=lambda m:m[1])
     print(chrmapListOrderByDepthfilepos[-1][0])
     print(*chrmapListOrderByDepthfilepos,sep="\n")

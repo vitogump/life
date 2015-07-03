@@ -33,3 +33,4 @@ if tmpColumnName  is null then
 end if;
 
 END;
+该存储过程会自己判断，如果表已经存在，则不再执行该存储过程。

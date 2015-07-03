@@ -226,7 +226,7 @@ if __name__ == '__main__':
                             altbase = snp[4]
                             cdsidx = 3
                             Intron_idx = -1
-                            if re.search(r'[^a-zA-Z]', altbase) != None:  # contain ',' ie. multiple alle
+                            if re.search(r'[^a-zA-Z]', altbase) != None or len(altbase)>1 or len(refbase)>1:  # contain ',' ie. multiple alle
                                 continue  # go to the next snp
                             for feature, elemStart, elemEnd, frame in geneGroup[gene_idx][4:]:
                                 
@@ -345,7 +345,7 @@ if __name__ == '__main__':
                             altbase = snp[4]
                             cdsidx = 3
                             Intron_idx = -1
-                            if re.search(r'[^a-zA-Z]', altbase) != None:  # contain ',' ie. multiple alle
+                            if re.search(r'[^a-zA-Z]', altbase) != None or len(altbase)>1 or len(refbase):  # contain ',' ie. multiple alle
                                 continue  # go to the next snp
                             for feature, elemStart, elemEnd, frame in geneGroup[gene_idx][4:]:
                                 

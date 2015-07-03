@@ -12,8 +12,7 @@ Created on 2013-7-2
 
 primaryID = "chrID"
 parser = OptionParser()
-parser.add_option("-c", "--chromtable", dest="chromtable",# action="callback",type="string",callback=useoptionvalue_previous2,
-                  help="write report to FILE")
+
 parser.add_option("-o","--outputpath",dest="outputpath",help="default infile1_infile2")
 parser.add_option("-v","--vcffile",dest="vcffile",action="append", default=[],help="default infile1_infile2")
 parser.add_option("-w","--winwidth",dest="winwidth",help="default infile1_infile2")#

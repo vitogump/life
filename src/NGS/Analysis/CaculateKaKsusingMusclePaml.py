@@ -7,7 +7,7 @@ Created on 2014-4-3
 from NGS.BasicUtil import Util
 from optparse import OptionParser
 import pickle, sys, os, re, time
-from Bio import Phylo
+from Bio import Phylo,SeqIO
 from io import StringIO
 
 parser = OptionParser()
@@ -41,17 +41,19 @@ pamlPath = re.search(r'pamlpath=(.*)', cline).group(1).strip()
 cline = configure.readline()
 outfileNamePre=re.search(r'outfilepre=(.*)', cline).group(1).strip()
 cline = configure.readline()
-treefileName = re.search(r'treefile=(.*)', cline).group(1).strip()
-treefile_oringal = open(treefileName, 'r')
-temp_outtreefileName = treefileName + "_markbranch"
+clustalw = re.search(r'clustalw=(.*)', cline).group(1).strip()
+# treefile_oringal = open(tempPath+"/", 'r')
+# treefileName=(tempPath+"/treefileforonehomogene")
+# temp_outtreefileName = treefileName + "_markbranch"
 
 
 pamlcodeml = pamlPath + "/codeml"
 pamlcodemlctl = pamlPath + "/codeml.ctl"
 pamlcodemlctlfile = open(pamlcodemlctl, 'r')
 MuscleInputFileName = tempPath + "/muscleinseq.fa"
-MuscleOutputFileName = tempPath + "/muscleoutseqaln.phy"
+MuscleOutputFileName = tempPath + "/muscleoutseqaln.aln"
 pamlInputCDSFileName = tempPath + "/pamlinputfile.phy"
+fastalnforcdstree=tempPath+"/pamlinputfile"
 if __name__ == '__main__':
 
 # load aa_cds_pair file and cdsfafile aafafile into memory
@@ -137,20 +139,25 @@ if __name__ == '__main__':
         if skipthishomotrscptline:
             skipthishomotrscptline = False
             continue
-        stat = os.system(musclePath + " -in " + MuscleInputFileName + " -phyiout " + MuscleOutputFileName)
+        stat = os.system(musclePath + " -in " + MuscleInputFileName + " -out " + MuscleOutputFileName)
         if stat != 0 :
-            print("Error:" + musclePath + " -in " + MuscleInputFileName + " -phyiout " + MuscleOutputFileName)
+            print("Error:" + musclePath + " -in " + MuscleInputFileName + " -out " + MuscleOutputFileName)
             exit(-1)
-        print(stat)
+        print("muscle ok:",stat)
         
         # fill back cds seq
-        muscleoutfile = open(MuscleOutputFileName, 'r')
+#         muscleoutfile = open(MuscleOutputFileName, 'r')
         pamlinputcdsfile = open(pamlInputCDSFileName, 'w')
         pamlinputcdsheader = [];pamlinputcdsseq = []
         j = 0;curspecies = homotrscpttitle[j].strip()  # same order as specise
         
-        muscleout_seqmap = Util.decode_phyliplines(muscleoutfile)
-        muscleoutfile.close()
+#         muscleout_seqmap = Util.decode_phyliplines(muscleoutfile)
+        muscleout_seqmap={}
+        muscleout_seqgenerator=SeqIO.parse(MuscleOutputFileName,"fasta")
+        for seq_rec in muscleout_seqgenerator:
+            muscleout_seqmap[seq_rec.id]=seq_rec.seq
+#         muscleoutfile.close()
+        maxlenlist=[]
         for species_and_trscpt_idx in range(len(homotrscpttitle)):
             curspecies = homotrscpttitle[species_and_trscpt_idx]
             curtrscpt = homotrscptlist[species_and_trscpt_idx]
@@ -168,11 +175,24 @@ if __name__ == '__main__':
                     locofaa += 1
                 cdsseqfillback += codon
             pamlinputcdsheader.append(curspecies)
+            maxlenlist.append(len(curspecies))
             pamlinputcdsseq.append(cdsseqfillback)
-        print(Util.encode_phyliplines(pamlinputcdsheader, pamlinputcdsseq), file=pamlinputcdsfile)
+        maxlen=max(maxlenlist)
+        print(maxlen)
+        print(Util.encode_phyliplines(pamlinputcdsheader, pamlinputcdsseq,maxlen+2), file=pamlinputcdsfile)
+        ffff=open(fastalnforcdstree,'w')
+        for i in range(len(pamlinputcdsheader)):
+            print(">"+pamlinputcdsheader[i],file=ffff)
+            print(pamlinputcdsseq[i],file=ffff)
+        ffff.close()
             
         pamlinputcdsfile.close()
-        exit()
+        #make tree
+        os.system(clustalw+" -infile="+fastalnforcdstree+" -type=DNA -output=FASTA -align")
+        print(clustalw+" -infile="+fastalnforcdstree+" -type=DNA -output=FASTA -align")
+        treefile_oringal=open(fastalnforcdstree+".dnd",'r')
+        temp_outtreefileName = fastalnforcdstree+".dnd" + "_markbranch"
+#         exit()
         if skipthishomotrscptline:
             skipthishomotrscptline = False
             continue
@@ -234,7 +254,8 @@ if __name__ == '__main__':
         
         treefile_oringal.seek(0)
         tree = Phylo.read(treefile_oringal, "newick")
-        tree_terminal_list = treefile_oringal.get_terminals()
+        tree_terminal_list = tree.get_terminals()
+        treefile_oringal.close()
         print(tree_terminal_list)      
         if options.processB:
 
@@ -457,7 +478,7 @@ if __name__ == '__main__':
 #     for t in finalkakslist:
 #         print("\t".join(t), file=outfile)
 #     outfile.close()
-    treefile_oringal.close()
+#     treefile_oringal.close()
     configure.close()
     print("finish")
         

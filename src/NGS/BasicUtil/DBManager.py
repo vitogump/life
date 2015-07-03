@@ -109,10 +109,10 @@ class DBTools():
                     return "already exist",key
                 else:
                     print(err.errmsg)
-                    return -1
+                    return -1,-1
         else:
             print('OK')
-            return 'OK'
+            return 'OK',"ok"
         cursor.close()
 #    def load_file(self,sql):
 #        print(sql)

@@ -43,7 +43,7 @@ class AncestralAlleletabletools():
 
         signal,key=self.dbvariant.create_table(TABLES)
         if signal!="OK":
-            print(signal)
+            print("signal",signal,drop)
             while signal=="already exist" and drop:
                 self.dbvariant.drop_table(key)
                 signal,key=self.dbvariant.create_table(TABLES)
@@ -264,6 +264,7 @@ class AncestralAlleletabletools():
 #         for i in range(0,totalChroms,20):
 #             currentsql="select * from " + chromtable+" order by chrlength desc limit "+str(i)+",20"
 #             result=self.dbgenome.operateDB("select",currentsql)
+        lastposofdepthfilefp=0
         for currentchrID in chromlist:
             print(currentchrID+":",end="")
         
@@ -303,7 +304,8 @@ class AncestralAlleletabletools():
                         popsdata_dep=str(refdep)+","+str(altalleledep)
                         break
                 else:
-                    depth_linelist = depthfile.getdepthByPos(currentchrID, snp_pos)
+                    depth_linelist = depthfile.getdepthByPos(currentchrID, snp_pos,lastposofdepthfilefp)
+                    lastposofdepthfilefp=depthfile.depthfilefp.tell()
                     sum_depth=0
                     for species_idx in species_idx_list:
                         sum_depth+=int(depth_linelist[species_idx])
@@ -312,24 +314,34 @@ class AncestralAlleletabletools():
                         popsdata_dep="no covered"
                     else:
                         popsdata_alt=ALT 
-                        popsdata_dep=sum_depth + ",0"
+                        popsdata_dep=str(sum_depth) + ",0"
                 #change to insert if exist skip
                 print(str(snp_pos),popsdata_alt,popsdata_dep)
                 self.dbvariant.operateDB("update", "update " + toplevelsnptablename + " set "+archicpop_colname+"_alt = '" + popsdata_alt+"',"+archicpop_colname+"_dep= '"+popsdata_dep+"' where chrID="+"'"+currentchrID+"' and snp_pos="+str(snp[0]))
-    def leftjoinSelectedTables(self,chromlist,outtable_file_Name,vcftables=[],toplevelsnptable="ducksnp_toplevel",depthfilenames=None):
-        depthfilehandlerlist=[]
-        if depthfilenames !=None:
-            for depthfileName in depthfilenames:
-                depthfilehandlerlist.append(Util.GATK_depthfile(depthfileName, depthfileName + ".index"))
+    def leftjoinSelectedTables(self,chromlist,outtable_file_Name,vcftables=[],toplevelsnptable="ducksnp_toplevel",depthfilenames):
+        depthobjmap={};lastposofdepthfilefp={}#
+        for vcftablename in depthfilenames.keys():
+            if depthfilenames[vcftablename]!=None:
+                lastposofdepthfilefp[vcftablename]=0
+                depthobjmap[vcftablename]=Util.GATK_depthfile(depthfilenames[vcftablename][0], depthfilenames[vcftablename][0] + ".index")
+            else:
+                depthobjmap[vcftablename]=None
+
         species_idx_map={}
         
         for vcftable in vcftables:
-            popnamesubStringInDepthTitle=re.search(r"^([^_]+)_.*",vcftable).group(1)
-            species_idx_map[popnamesubStringInDepthTitle]=[]
-            for depthfilehanlder in depthfilehandlerlist:
-                for i in range(0,len(depthfilehanlder.title)):
-                    if re.search(r""+popnamesubStringInDepthTitle,depthfilehanlder.title[i])!=None:
-                        species_idx_map[popnamesubStringInDepthTitle].append(i)   
+            species_idx_map[vcftable]=[]
+            if depthfilenames[vcftablename]!=None:
+                for name in depthfilenames[vcftable][1:]:
+                    for i in range(0,len(depthobjmap[vcftable].title)):
+                        if re.search(r""+name,depthobjmap[vcftable].title[i])!=None:
+                            species_idx_map[vcftable].append(i)
+#             popnamesubStringInDepthTitle=re.search(r"^([^_]+)_.*",vcftable).group(1)
+#             species_idx_map[popnamesubStringInDepthTitle]=[]
+#             for depthfilehanlder in depthfilehandlerlist:
+#                 for i in range(0,len(depthfilehanlder.title)):
+#                     if re.search(r""+popnamesubStringInDepthTitle,depthfilehanlder.title[i])!=None:
+#                         species_idx_map[popnamesubStringInDepthTitle].append(i)   
         
         outfile=open(outtable_file_Name,'w')
         outtable_Name=re.search(r'[^/]*$', outtable_file_Name).group(0)
@@ -360,25 +372,18 @@ class AncestralAlleletabletools():
                 NumOfColOftoplevel=NumOfColOftoplevel_fix
                 recToPrint=list(rec[0:NumOfColOftoplevel])
                 for vcftable in vcftables:
-            #                         titlelist=[a[0].strip() for a in self.dbvariant.operateDB("select","select column_name  from information_schema.columns where table_schema='"+self.dbvariant_name+"' and table_name='"+vcftable+"'")]
-            #                         indvdnameslist=titlelist[5:]#suppose to be 3 for indvd  or 1 for pool
-            #                         refdep=0;altalleledep=0
-            #                         print("lastpart",rec[NumOfColOftoplevel:NumOfColOftoplevel+1+len(indvdnameslist)])
                     if rec[NumOfColOftoplevel]==None:
-                        if depthfilenames==None:
+                        if depthfilenames[vcftable]==None:
                             popsdata="unknow" #may be fixed as ref ,check the depth file ..... need to be done
                         else:
                             sum_depth=0
-                            popnamesubStringInDepthTitle=re.search(r"^([^_]+)_.*",vcftable).group(1).strip()
                             #find the depth file which the title contain the popnamesubStringInDepthTitle
-                            for dfh in depthfilehandlerlist:
-                                for title in dfh.title:
-                                    if re.search(r""+popnamesubStringInDepthTitle,title)!=None:
-                                        depthfilehanlder=dfh
-                                        depth_linelist = dfh.getdepthByPos(currentchrID, snp_pos)
-                                        break
+                            depth_linelist = depthobjmap[vcftable].getdepthByPos(currentchrID, snp_pos,lastposofdepthfilefp[vcftable])
+                            lastposofdepthfilefp[vcftable]=depthobjmap[vcftable].depthfilefp.tell()
+#                             popnamesubStringInDepthTitle=re.search(r"^([^_]+)_.*",vcftable).group(1).strip()
+                            
                             # accumulate  the depth
-                            for idx in species_idx_map[popnamesubStringInDepthTitle]:
+                            for idx in species_idx_map[vcftable]:
                                 sum_depth+=int(depth_linelist[idx])
                             if sum_depth<20:
                                 popsdata="no covered"

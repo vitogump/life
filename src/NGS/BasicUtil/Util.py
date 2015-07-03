@@ -824,7 +824,7 @@ def decode_phyliplines(raw_lines):
     for i in range(ntaxa_observed):
         maptoreturn[headers[i]]=sequences[i]
     return maptoreturn
-def encode_phyliplines(headers, sequences):
+def encode_phyliplines(headers, sequences,maxlen=10):
     """
     This creates the contents of a non-interleaved phylip sequence file.
     @param headers: some header strings
@@ -834,7 +834,7 @@ def encode_phyliplines(headers, sequences):
     ncols = len(sequences[0])
     out_lines = ['%d %d' % (nrows, ncols)]
     for h, seq in zip(headers, sequences):
-        out_h = h[:10].ljust(10)
+        out_h = h[:maxlen].ljust(maxlen)
         out_lines.append(out_h + seq)
     return '\n'.join(out_lines)
 #phylip format 
@@ -1084,6 +1084,7 @@ class GATK_depthfile():
             GATK_depthfile.indexGATK_depthfile(depthfileName, indexFileName)
             self.covfileidx = pickle.load(open(indexFileName, 'rb'))
         self.title = self.covfileidx["title"]
+        self.chromOrder=self.covfileidx["chromOrder"]
         self.depthfilefp = open(depthfileName, 'r')
         self.depthfilefp.readline()
     @staticmethod
@@ -1101,6 +1102,7 @@ class GATK_depthfile():
 #        self.title = linelist
         print("title", line, linelist)
         covfileidx["title"] = linelist
+        covfileidx["chromOrder"]=[]
         lastPosition = depthfile.tell()
         line = depthfile.readline()
         linelist = re.split(r"\s+", line)        
@@ -1108,6 +1110,7 @@ class GATK_depthfile():
             linelist = re.split(r"\s+", line)
             if currentChrom != re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1):
                 currentChrom = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1)
+                covfileidx["chromOrder"].append(currentChrom)
                 covfileidx[currentChrom] = lastPosition
             lastPosition = depthfile.tell()
     
@@ -1165,6 +1168,7 @@ class GATK_depthfile():
     def getdepthByPos(self, targetchr, targetloc, lastposoffilehandler=0):
          
         linelist = re.split(r"\s+", self.depthfilefp.readline())
+        posoffilehandlerofnextchr=self.covfileidx[self.chromOrder[self.chromOrder.index(targetchr)+1]]
         if linelist[0] == "":  # read the last line of the depthfile
             self.depthfilefp.seek(self.covfileidx[targetchr])
         else:
@@ -1174,7 +1178,8 @@ class GATK_depthfile():
                 return linelist
             if chrom != targetchr or pos > targetloc:
                 self.depthfilefp.seek(self.covfileidx[targetchr])
-            elif chrom == targetchr and pos < targetloc - 100:
+            if chrom == targetchr and pos < targetloc and self.depthfilefp.tell()<lastposoffilehandler and lastposoffilehandler<posoffilehandlerofnextchr:
+                self.depthfilefp.seek(lastposoffilehandler)
                 pass  # use the lastposoffilehandler to set the filehanlder quickly
         linelist = re.split(r"\s+", self.depthfilefp.readline())
         chrom = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1)
@@ -1379,7 +1384,20 @@ class Window():
                 self.winValueL.append((startPos, lastPos, noofsnps, value))
             except UnboundLocalError:
                 self.winValueL.append((0, 0, noofsnps, value))
-#             
+            if nextIdx!=-1:
+                currentIdx = nextIdx
+                nextIdx = -1
+                while currentIdx != len(L):
+                    lastPos = L[currentIdx][0]
+                    Caculator.process(L[currentIdx])
+                    currentIdx += 1
+                else:
+                    noofsnps, value = Caculator.getResult()
+                    try:
+                        self.winValueL.append((startPos, lastPos, noofsnps, value))
+                    except:
+                        self.winValueL.append((0, 0, noofsnps, value))
+#            
         
         n = int((L_End_Pos - (len(self.winValueL) * slideSize + windowWidth)) / slideSize) + 1
         for i in range(n):

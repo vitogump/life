@@ -5,7 +5,7 @@ Created on 2014-11-11
 '''
 from optparse import OptionParser
 
-from src.pipelinecontrol.Util import JobTracker
+from src.pipelinecontrol.Util import *
 
 
 #just fo
@@ -24,6 +24,6 @@ parser.add_option("-t", "--ThreadsNum", dest="ThreadsNum",help="p:parallel s:ser
 (options, args) = parser.parse_args()
 
 if __name__ == '__main__':
-    jk=JobTracker(scriptDir=options.scriptDir,NumOfThread=int(options.ThreadsNum))
-    jk.callsh_updateDB()
+#     jk=myJobTracker(scriptDir=options.scriptDir,NumOfThread=int(options.ThreadsNum))
+    callsh_updateDB(scriptDir=options.scriptDir,NumOfThread=int(options.ThreadsNum))
     print("finish")

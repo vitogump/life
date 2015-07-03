@@ -17,7 +17,6 @@ parser.add_option("-c", "--cmdexample", dest="cmdtemplatefile",help="oneline scr
 # parser.add_option("-o", "--outputpath", dest="outputpath", help="outputpath")
 parser.add_option("-d", "--datadepth", dest="datadepth", help="it's the depth of the dir from the inputdatapath which the data file that need to be process in it,the depth of the inputdatapath is 0")
 
-
 parser.add_option("-s", "--scriptstorepath", dest="scriptstorepath", help="bam bai sam sorted.bam vcf blast and so on. note this is just used in the cmdline output parameter")
 parser.add_option("-m", "--mode", dest="mode",
                   help="1 :means produce cmdline scripts for every terminal folder,the input data should be all the data files under the terminal folder. 2:use all selected data files as the input parameters in the only one cmdline script")

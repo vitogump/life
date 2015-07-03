@@ -4,10 +4,9 @@ Created on 2015-5-28
 
 @author: liurui
 '''
-import copy, re, os
+import copy, re, os,random
 from optparse import OptionParser
-import random
-
+from scipy.stats import fisher_exact as fe
 from NGS.BasicUtil import Util
 import src.NGS.BasicUtil.DBManager as dbm
 
@@ -19,6 +18,7 @@ parser.add_option("-w", "--wildcdsfilenames", dest="wildcdsfilenames",action="ap
 parser.add_option("-d", "--domesticcdsfilenames", dest="domesticcdsfilenames",action="append",default=[],help="")
 parser.add_option("-t", "--topleveltablejudgeancestral", dest="topleveltablejudgeancestral")
 parser.add_option("-o", "--outfileprename", dest="outfileprename", help="default infile1_infile2")
+parser.add_option("-2","--ancenstral_or_derived",dest="ancenstral_or_derived",help="ancenstral(a) or derived(d)")
 (options, args) = parser.parse_args()
 mindeptojudgefix=15
 
@@ -41,14 +41,14 @@ for fname in options.wildcdsfilenames:
     AF_idxlistwild.append(re.split(r"\t",t.readline().strip()).index("AF"))
     t.close()
     os.system("awk 'NR>1{print $1}' "+fname+"|sort|uniq|sort >"+fname+"_chrom")
-print(AF_idxlistwild)
+print("AF_idxlistwild",AF_idxlistwild)
 #     wildcdsfilelist.append(open(fname,'r'))
 for fname in options.domesticcdsfilenames:
     t=open(fname,'r')
     AF_idxlistdomestic.append(re.split(r"\t",t.readline().strip()).index("AF"))
     t.close()
     os.system("awk 'NR>1{print $1}' "+fname+"|sort|uniq|sort >"+fname+"_chrom")
-print(AF_idxlistdomestic)
+print("AF_idxlistdomestic",AF_idxlistdomestic)
 #     domesticcdsfilelist.append(open(fname,'r'))
 #merge and uniq ,when there is only one file for wild or domestic,the for loop below don't excute
 for f_idx in range(1,len(options.wildcdsfilenames)):
@@ -62,6 +62,7 @@ for f_idx in range(1,len(options.domesticcdsfilenames)):
 os.system("comm -12 "+options.domesticcdsfilenames[-1]+"_chrom "+options.wildcdsfilenames[-1]+"_chrom > chromtable_containbothwildanddomestic")
 os.system("rm "+options.domesticcdsfilenames[-1]+"_chrom");os.system("rm "+options.wildcdsfilenames[-1]+"_chrom")
 t=open("chromtable_containbothwildanddomestic","r")
+os.system("rm chromtable_containbothwildanddomestic")
 chromlist=t.readlines();t.close()
 if __name__ == '__main__':
     intervalFileName=options.outfileprename+".interval"
@@ -94,38 +95,42 @@ if __name__ == '__main__':
         wild_CurPosRecs=[];dom_CurPosRecs=[]#
         posOfCurRecwild=[];posOfCurRecdom=[]
     ###################### prepare chrom specified cdsreds for wild and domestic ###################################
-        wildcdsfilelist=[]
-        domesticcdsfilelist=[]
+        wildcdsfilelist=[];wildcdsfilenamelist=[]
+        domesticcdsfilelist=[];domesticcdsfilenamelist=[]
         tempAF_idxlistwild=copy.deepcopy(AF_idxlistwild)
         tempAF_idxlistdomestic=copy.deepcopy(AF_idxlistdomestic)
         curchrom=chrom.strip()
         idx=len(options.wildcdsfilenames)
         for fname in options.wildcdsfilenames[::-1]:
             idx-=1
-            os.system("rm "+fname+"_one_chrom")
-            os.system("awk '$1~/"+curchrom+"/{print $0}' "+fname+">"+fname+"_one_chrom")
-            a=os.popen("less -S "+fname+"_one_chrom|wc -l")
+#             os.system("rm "+fname+"_one_chrom")
+            filename=fname+"_one_chrom"+Util.random_str()
+            os.system("awk '$1~/"+curchrom+"/{print $0}' "+fname+">"+filename)
+            a=os.popen("less -S "+filename+"|wc -l")
             if a.readline().strip()=="0":
                 a.close()
                 tempAF_idxlistwild.pop(idx)
 #                 wildcdsfilelist.append("norecords")
                 continue
-            wildcdsfilelist.append(open(fname+"_one_chrom",'r'))
+            wildcdsfilelist.append(open(filename,'r'))
+            wildcdsfilenamelist.append(filename)
 
         wildcdsfilelist.reverse()
         print(tempAF_idxlistwild)
         idx=len(options.domesticcdsfilenames)
         for fname in options.domesticcdsfilenames[::-1]:
             idx-=1
-            os.system("rm "+fname+"_one_chrom")
-            os.system("awk '$1~/"+curchrom+"/{print $0}' "+fname+">"+fname+"_one_chrom")
-            a=os.popen("less -S "+fname+"_one_chrom|wc -l")
+#             os.system("rm "+fname+"_one_chrom")
+            filename=fname+"_one_chrom"+Util.random_str()
+            os.system("awk '$1~/"+curchrom+"/{print $0}' "+fname+">"+filename)
+            a=os.popen("less -S "+filename+"|wc -l")
             if a.readline().strip()=="0":
                 a.close()
                 tempAF_idxlistdomestic.pop(idx)
 #                 domesticcdsfilelist.append("norecords")
                 continue
-            domesticcdsfilelist.append(open(fname+"_one_chrom",'r'))
+            domesticcdsfilelist.append(open(filename,'r'))
+            domesticcdsfilenamelist.append(filename)
         domesticcdsfilelist.reverse()
         print(tempAF_idxlistdomestic)
     ########## collect delta_AF #################################################################
@@ -193,26 +198,36 @@ if __name__ == '__main__':
             w_af=0;d_af=0
             #determin derived allele
             snp=dbvariantstools.operateDB("select","select * from "+options.topleveltablejudgeancestral+" where chrID='"+curchrom+"' and snp_pos='"+str(curpos)+"'")
-
-            if snp and snp[0][6]!=None and snp[0][6]!="no covered" and re.search(r'[\w\W]+[,][\w\W]+:\d+,\d+',snp[0][6])==None:
-                archicpop=re.search(r'([ATCGNatcg]+):(\d+),(\d+)',snp[0][6])
-                archic_base=archicpop.group(1).strip().upper()
-            if not snp or re.search(r'[\w\W]+[,][\w\W]+:\d+,\d+',snp[0][6])!=None or (archicpop.group(2).strip()!='0' and archicpop.group(3).strip()!='0') or snp[0][6]=="no covered":
-                A_base_idx=random.randint(0,1)
+            if not snp:
+                print("snp not find,skip")
                 continue
-#                 print("can't judge which is derived allele,random select ref or alt as ancenstral")
-            if not snp or re.search(r'[\w\W]+[,][\w\W]+:\d+,\d+',snp[0][6])!=None or (int(archicpop.group(2).strip())+int(archicpop.group(3).strip())<=mindeptojudgefix):
-                A_base_idx=random.randint(0,1)
-                continue
-#                 print("can't judge which is derived allele,random select ref or alt as ancenstral")
-            if  archicpop.group(2).strip()=='0':
-#                 print("determin derived allele")
-                A_base_idx=1#alt_allele is the ancestral allele
-            elif  archicpop.group(3).strip()=='0':
-#                 print("determin derived allele")
-                A_base_idx=0#ref_allele is the ancestral allele
+            depthlist1=re.split(r",",snp[0][7])
+            if snp[0][7]=="no covered":
+                depthlist2=re.split(r",",snp[0][9])
+                if snp[0][8].upper()==snp[0][4].upper() and len(depthlist2)==2 and int(depthlist2[0]) + int(depthlist2[1])>=mindeptojudgefix:
+                    if depthlist2[0].strip()=='0':
+                        A_base_idx=1#alt_allele is the ancestral allele
+                    elif depthlist2[1].strip()=='0':
+                        A_base_idx=0#ref_allele is the ancestral allele
+                    else:
+                        continue
+                else:
+                    continue
+            elif snp[0][6].upper()==snp[0][4].upper() and len(depthlist1)==2 and int(depthlist1[0]) + int(depthlist1[1])>=mindeptojudgefix:
+                if depthlist1[0].strip()=='0':
+                    A_base_idx=1#alt_allele is the ancestral allele
+                elif depthlist1[1].strip()=='0':
+                    A_base_idx=0#ref_allele is the ancestral allele
+                else:
+                    continue#don't make judgement
+                depthlist2=re.split(r",",snp[0][9])
+                if len(depthlist2)==2 and depthlist2[A_base_idx].strip()=='0':
+                    print("don't agree,contradiction")
+                    continue#secend species didn't agree with the judement from first species,contradiction
             #caculate allele freq for each pop
             idx=0
+            if options.ancenstral_or_derived=="a":
+                A_base_idx=1-A_base_idx
             for e in wild_CurPosRecs:
                 if A_base_idx==1:
                     w_af+=(1-float(e[AF_idxlistwild_CurPos[idx]]))
@@ -256,6 +271,10 @@ if __name__ == '__main__':
             f.close()
         for f in wildcdsfilelist:
             f.close()
+        for filename in domesticcdsfilenamelist:
+            os.system("rm "+filename)
+        for filename in wildcdsfilenamelist:
+            os.system("rm "+filename)
 #output    
     for a,b in intervalMap_wild_SNPrec.keys():
         for rec in intervalMap_wild_SNPrec[a,b]["sysnonymous"]:
@@ -278,9 +297,9 @@ if __name__ == '__main__':
             statisticMap[a,b][0]["nonsense"]+=1
             print(a,b,"nonsense",*rec,sep="\t",file=outdomesticfile)
     print("delta_AFbins\t\tdomesticpops\t\twildpops\t\t",file=statisticsfile)
-    print("            \tsysnonymous\tnonsysnonymous\tnonsense\tsysnonymous\tnonsysnonymous\tnonsense",file=statisticsfile)
+    print("            \tsysnonymous\tnonsysnonymous\tnonsense\tsysnonymous\tnonsysnonymous\tnonsense\tfishertestpvalue",file=statisticsfile)
     for a,b in sorted(statisticMap.keys()):
-        print(a,b,statisticMap[a,b][0]["sysnonymous"],statisticMap[a,b][0]["nonsysnonymous"],statisticMap[a,b][0]["nonsense"],statisticMap[a,b][1]["sysnonymous"],statisticMap[a,b][1]["nonsysnonymous"],statisticMap[a,b][1]["nonsense"],sep="\t",file=statisticsfile)
+        print(a,b,statisticMap[a,b][0]["sysnonymous"],statisticMap[a,b][0]["nonsysnonymous"],statisticMap[a,b][0]["nonsense"],statisticMap[a,b][1]["sysnonymous"],statisticMap[a,b][1]["nonsysnonymous"],statisticMap[a,b][1]["nonsense"],str(fe([[statisticMap[a,b][0]["nonsysnonymous"],statisticMap[a,b][1]["nonsysnonymous"]],[statisticMap[a,b][0]["sysnonymous"],statisticMap[a,b][1]["sysnonymous"]]],"two-sided")[1]),sep="\t",file=statisticsfile)
     statisticsfile.close()
     outdomesticfile.close()
     outwildfile.close()
