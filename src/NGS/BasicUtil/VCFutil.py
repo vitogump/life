@@ -223,7 +223,7 @@ class VCF_Data():
             although dilute and dilutetodensity can present at the same time,but it not make sense.
             return a list that contain all vcf record of a chrom
         """
-        print(dilute,dilutetodensity)
+        print("getVcfListByChrom",chrom,dilute,dilutetodensity)
         VcfList_A_Chrom = []
         if chrom not in self.chromOrder:
             return []
@@ -268,7 +268,7 @@ class VCF_Data():
         vcfFile.close()
         if dilutetodensity != "noofsnpperkb":
             dilute = dilutetodensity * (VcfList_A_Chrom[-1][0] - VcfList_A_Chrom[0][0]) / (1000 * len(VcfList_A_Chrom))
-            print(dilute)
+#             print(dilute)
             if dilute < 1:
                 VcfRecRandomSelectIdxlist = random.sample([j for j in range(len(VcfList_A_Chrom))], int(dilute * len(VcfList_A_Chrom)))
                 VcfRecRandomSelectIdxlist.sort()
@@ -276,8 +276,7 @@ class VCF_Data():
             for recidx in VcfRecRandomSelectIdxlist:
                 new_VcfList_A_Chrom.append(VcfList_A_Chrom[recidx])
             VcfList_A_Chrom = copy.deepcopy(new_VcfList_A_Chrom)
-        print("getVcfListByChrom", self.VcfIndexMap[chrom], chrom, self.NumOfRecbychromOrder[i], "total recs in this vcf belong to this chrom,dilute to", int(dilute * self.NumOfRecbychromOrder[i]))
-        print("getVcfListByChrom", chrom, "len(VcfList_A_Chrom)", len(VcfList_A_Chrom))    
+        print("getVcfListByChrom",chrom, len(VcfList_A_Chrom), self.VcfIndexMap[chrom], self.NumOfRecbychromOrder[i], "total recs in this vcf belong to this chrom,dilute to", int(dilute * self.NumOfRecbychromOrder[i])) 
         return copy.deepcopy(VcfList_A_Chrom)
         
 

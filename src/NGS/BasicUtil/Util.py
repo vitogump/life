@@ -1191,7 +1191,7 @@ class GATK_depthfile():
             chrom = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1)
             pos = int(re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2))
         else:
-            return []
+            return ["0"]*len(self.title)
         
                     
     def closedepthfile(self):

@@ -231,6 +231,7 @@ class Fst():
                     FstMapByChrom={}
                     fst_caculator = Caculators.Caculate_Fst(MethodToSeqpop1=MethodToSeqpop1, MethodToSeqpop2=MethodToSeqpop2)
                     fstlist.append(self.caculateFstAccordingdb(FstMapByChrom,self.dbtools, self.chromtable, majorpop, othrpop, fst_caculator, self.windowWidth,self.slideSize,self.minlength))    
+                    print("fstlist[-1]",fstlist[-1])
                     vcfname+=("_"+re.search(r"[^/]*$",othrpop).group(0)[0])
                 outfile=open(self.outputpath+vcfname+'.gfst'+str(self.windowWidth)+"_"+str(self.slideSize)+"_"+self.specisnum,'w')
                 print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnp\twinvalue\tzvalue",file=outfile)
@@ -307,39 +308,36 @@ class Fst():
                     pop1SeqOfAChr[currentchrID]=pop1.getVcfListByChrom(vcfNAME_POP1, currentchrID)
                     pop2SeqOfAChr[currentchrID]=pop2.getVcfListByChrom(vcfNAME_POP2, currentchrID)
                     if self.i_o=="o" and self.depthfilenames!={}:
-                        depthobjmap={};depthfileContentForcurrentchrID={};fst_caculator.species_idx_map={}
+                        depthobjmap={};fst_caculator.species_idx_map={};fst_caculator.lastposofdepthfilefp={}
                         depthobjmap[vcfNAME_POP1]=Util.GATK_depthfile(self.depthfilenames[vcfNAME_POP1][0],self.depthfilenames[vcfNAME_POP1][0]+".index")
 
                         depthobjmap[vcfNAME_POP1].depthfilefp.seek(depthobjmap[vcfNAME_POP1].covfileidx[currentchrID.strip()])
-                        content = depthobjmap[vcfNAME_POP1].depthfilefp.read(depthobjmap[vcfNAME_POP1].covfileidx[depthobjmap[vcfNAME_POP1].chromOrder[depthobjmap[vcfNAME_POP1].chromOrder.index(currentchrID.strip()) + 1]] - depthobjmap[vcfNAME_POP1].covfileidx[currentchrID.strip()])
-                        depthfileContentForcurrentchrID["vcfpop1_ref"]=re.split(r"\n",content.strip())
-                        print(depthfileContentForcurrentchrID["vcfpop1_ref"][0])
-                        print(depthfileContentForcurrentchrID["vcfpop1_ref"][-1])
+                        fst_caculator.lastposofdepthfilefp["vcfpop1_ref"]=depthobjmap[vcfNAME_POP1].depthfilefp.tell()
                         fst_caculator.species_idx_map["vcfpop1_ref"]=[]
                         for name in self.depthfilenames[vcfNAME_POP1][1:]:
                             fst_caculator.species_idx_map["vcfpop1_ref"].append(depthobjmap[vcfNAME_POP1].title.index("Depth_for_"+name))
                         #process vcfpop2
-                        if self.depthfilenames[vcfNAME_POP1][0]!=self.depthfilenames[vcfNAME_POP2][0]:
-                            depthobjmap[vcfNAME_POP2]=Util.GATK_depthfile(self.depthfilenames[vcfNAME_POP2][0],self.depthfilenames[vcfNAME_POP2][0]+".index")
-                            content = depthobjmap[vcfNAME_POP2].depthfilefp.read(depthobjmap[vcfNAME_POP2].covfileidx[depthobjmap[vcfNAME_POP2].chromOrder[depthobjmap[vcfNAME_POP2].chromOrder.index(currentchrID.strip()) + 1]] - depthobjmap[vcfNAME_POP2].covfileidx[currentchrID.strip()])
-                            depthfileContentForcurrentchrID["vcfpop2"]=re.split(r"\n",content.strip())
-                            print(depthfileContentForcurrentchrID["vcfpop2"][0])
-                            print(depthfileContentForcurrentchrID["vcfpop2"][-1])
-                        else:
-                            depthobjmap[vcfNAME_POP2]=depthobjmap[vcfNAME_POP1]
-                            depthfileContentForcurrentchrID["vcfpop2"]=depthfileContentForcurrentchrID["vcfpop1_ref"]
+
+                        depthobjmap[vcfNAME_POP2]=Util.GATK_depthfile(self.depthfilenames[vcfNAME_POP2][0],self.depthfilenames[vcfNAME_POP2][0]+".index")
+                        depthobjmap[vcfNAME_POP2].depthfilefp.seek(depthobjmap[vcfNAME_POP2].covfileidx[currentchrID.strip()])
+
+                        fst_caculator.lastposofdepthfilefp["vcfpop2"]=depthobjmap[vcfNAME_POP2].depthfilefp.tell()
                         fst_caculator.species_idx_map["vcfpop2"]=[]
                         for name in self.depthfilenames[vcfNAME_POP2][1:]:
                             fst_caculator.species_idx_map["vcfpop2"].append(depthobjmap[vcfNAME_POP2].title.index("Depth_for_"+name))
-                        fst_caculator.depthforcurrentchrom=depthfileContentForcurrentchrID
+                        fst_caculator.depthobjmap={}    
+                        fst_caculator.depthobjmap["vcfpop1_ref"]=depthobjmap[vcfNAME_POP1]
+                        fst_caculator.depthobjmap["vcfpop2"]=depthobjmap[vcfNAME_POP2]
+                        fst_caculator.currentchrID=currentchrID
+#                         fst_caculator.depthforcurrentchrom=depthfileContentForcurrentchrID
                         
-                    FstMapByChrom=self.caculateFst(FstMapByChrom,pop1SeqOfAChr,pop2SeqOfAChr, fst_caculator,currentchrID,currentchrLen,winwidth,slideSize)
+                    newFstMapByChrom=self.caculateFst(FstMapByChrom,pop1SeqOfAChr,pop2SeqOfAChr, fst_caculator,currentchrID,currentchrLen,winwidth,slideSize)
                 else:#pop1 don't contation the current chromosome
                     fillNA=[(0,0,0,'NA')]
                     for i in range(int((currentchrLen-winwidth)/slideSize)):
                         fillNA.append((0,0,0,'NA'))
-                    FstMapByChrom[currentchrID]=fillNA
-        return copy.deepcopy(FstMapByChrom)
+                    newFstMapByChrom[currentchrID]=fillNA
+        return copy.deepcopy(newFstMapByChrom)
                                  
     def caculateFst(self, FstMapByChrom,vcfMap1_ref, vcfMap2, caculator,currentchrID,currentchrLen, winwidth, slideSize):
         win = Util.Window()
@@ -348,11 +346,10 @@ class Fst():
                 doubleVcfMap=Util.alin2PopSnpPos([vcfMap1_ref, vcfMap2],"i")
             elif self.i_o=="o":
                 doubleVcfMap = Util.alin2PopSnpPos([vcfMap1_ref, vcfMap2],"o")#produce self.doubleVcfMap{}
-                
 #            for currentChrom in self.doubleVcfMap.keys():
     #             self.FstMapByChrom[currentChrom]=[]
             win.winValueL = []
-            print("after alin2PopSnpPos ,caculateFst value in "+currentchrID)
+            print("after alin2PopSnpPos ,caculateFst value in "+currentchrID,len(doubleVcfMap[currentchrID]))
                 
             win.slidWindowOverlap(doubleVcfMap[currentchrID], currentchrLen,winwidth, slideSize, caculator)
             FstMapByChrom[currentchrID] = copy.deepcopy(win.winValueL)

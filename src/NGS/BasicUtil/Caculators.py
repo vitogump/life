@@ -258,8 +258,11 @@ class Caculate_Fst(Caculator):
 #         self.considerFixed = considerFixed
         self.MethodToSeqpop1 = MethodToSeqpop1
         self.MethodToSeqpop2 = MethodToSeqpop2
-        self.depthforcurrentchrom=None
+#         self.depthforcurrentchrom=None
+        self.depthobjmap=None
+        self.lastposofdepthfilefp=None
         self.species_idx_map=None
+        self.currentchrID=None
         self.pop1_indvds=10#when pop1 is none at a pos,and no depth information
         self.pop2_indvds=10
     def process(self, T, seqerrorrate=0.01):
@@ -270,22 +273,25 @@ class Caculate_Fst(Caculator):
 #        T=(pos,REF,ALT,(INFO,FORMAT,sampleslist),(INFO,FORMAT,sampleslist))
         pop1 = T[3]
         pop2 = T[4]
-        dp4_1 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", pop1[0])
-        if dp4_1 != None:  # vcf from samtools
-            refdep_1 = int(dp4_1.group(1)) + int(dp4_1.group(2))
-            altalleledep_1 = int(dp4_1.group(3)) + int(dp4_1.group(4))
-            dp4_2 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", pop2[0])
-            refdep_2 = int(dp4_2.group(1)) + int(dp4_2.group(2))
-            altalleledep_2 = int(dp4_2.group(3)) + int(dp4_2.group(4))
+#         dp4_1 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", pop1[0])
+#         if dp4_1 != None:  # vcf from samtools
+        if None !=None:  # vcf from samtools
+            pass
+#             refdep_1 = int(dp4_1.group(1)) + int(dp4_1.group(2))
+#             altalleledep_1 = int(dp4_1.group(3)) + int(dp4_1.group(4))
+#             dp4_2 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", pop2[0])
+#             refdep_2 = int(dp4_2.group(1)) + int(dp4_2.group(2))
+#             altalleledep_2 = int(dp4_2.group(3)) + int(dp4_2.group(4))
         else:  # vcf from gatk
             if self.MethodToSeqpop1 == "pool":
-                AD_idx_1 = (re.split(":", pop1[1])).index("AD")  # gatk GT:AD:DP:GQ:PL
+                
                 if pop1==None:
-                    if self.depthforcurrentchrom==None:
+                    if self.depthobjmap==None:
                         refdep_1=self.pop1_indvds
                         altalleledep_1=0
                     else:
-                        depth_linelist=re.split(r"\t",self.depthforcurrentchrom["vcfpop1_ref"][int(T[0])-1])
+                        depth_linelist=self.depthobjmap["vcfpop1_ref"].getdepthByPos(self.currentchrID,int(T[0]),self.lastposofdepthfilefp["vcfpop1_ref"])#  re.split(r"\t",self.depthforcurrentchrom["vcfpop1_ref"][int(T[0])-1])
+                        self.lastposofdepthfilefp["vcfpop1_ref"]=self.depthobjmap["vcfpop1_ref"].depthfilefp.tell()
                         sum_depth=0
                         for idx in self.species_idx_map["vcfpop1_ref"]:
                             sum_depth+=int(depth_linelist[idx])
@@ -295,6 +301,7 @@ class Caculate_Fst(Caculator):
                         else:
                             return
                 else:
+                    AD_idx_1 = (re.split(":", pop1[1])).index("AD")  # gatk GT:AD:DP:GQ:PL
                     for sample in pop1[2][:]:
                         if len(re.split(":", sample)) == 1:  # ./.
                             continue
@@ -306,11 +313,13 @@ class Caculate_Fst(Caculator):
                             print(sample, end="|")
             elif self.MethodToSeqpop1 == "indvd":
                 if pop1==None:
-                    if self.depthforcurrentchrom==None:
+                    if self.depthobjmap==None:
                         refdep_1=self.pop1_indvds
                         altalleledep_1=0
                     else:
-                        depth_linelist=re.split(r"\t",self.depthforcurrentchrom["vcfpop1_ref"][int(T[0])-1])
+                        depth_linelist=self.depthobjmap["vcfpop1_ref"].getdepthByPos(self.currentchrID,int(T[0]),self.lastposofdepthfilefp["vcfpop1_ref"])#re.split(r"\t",self.depthforcurrentchrom["vcfpop1_ref"][int(T[0])-1])
+                        self.lastposofdepthfilefp["vcfpop1_ref"]=self.depthobjmap["vcfpop1_ref"].depthfilefp.tell()
+#                         print("vcfpop1_ref",self.lastposofdepthfilefp["vcfpop1_ref"])
                         sum_depth=0
                         for idx in self.species_idx_map["vcfpop1_ref"]:
                             sum_depth+=int(depth_linelist[idx])
@@ -325,13 +334,14 @@ class Caculate_Fst(Caculator):
                     refdep_1 = AN - AC
                     altalleledep_1 = AC
             if self.MethodToSeqpop2 == "pool":
-                AD_idx_2 = (re.split(":", pop2[1])).index("AD")
-                if pop2!=None:
-                    if self.depthforcurrentchrom==None:
+                
+                if pop2==None:
+                    if self.depthobjmap==None:
                         refdep_2=self.pop2_indvds
                         altalleledep_2=0
                     else:
-                        depth_linelist=re.split(r"\t",self.depthforcurrentchrom["vcfpop2"][int(T[0])-1])
+                        depth_linelist=self.depthobjmap["vcfpop2"].getdepthByPos(self.currentchrID,int(T[0]),self.lastposofdepthfilefp["vcfpop2"])#re.split(r"\t",self.depthforcurrentchrom["vcfpop2"][int(T[0])-1])
+                        self.lastposofdepthfilefp["vcfpop2"]=self.depthobjmap["vcfpop2"].depthfilefp.tell()
                         sum_depth=0
                         for idx in self.species_idx_map["vcfpop2"]:
                             sum_depth+=int(depth_linelist[idx])
@@ -341,6 +351,7 @@ class Caculate_Fst(Caculator):
                         else:
                             return
                 else:
+                    AD_idx_2 = (re.split(":", pop2[1])).index("AD")
                     for sample in pop2[2][:]:
                         if len(re.split(":", sample)) == 1:  # ./.
                             continue
@@ -352,11 +363,13 @@ class Caculate_Fst(Caculator):
                             print(sample, end="|")
             elif self.MethodToSeqpop2 == "indvd":
                 if pop2==None:
-                    if self.depthforcurrentchrom==None:
+                    if self.depthobjmap==None:
                         refdep_2=self.pop2_indvds
                         altalleledep_2=0
                     else:
-                        depth_linelist=re.split(r"\t",self.depthforcurrentchrom["vcfpop2"][int(T[0])-1])
+                        depth_linelist=self.depthobjmap["vcfpop2"].getdepthByPos(self.currentchrID,int(T[0]),self.lastposofdepthfilefp["vcfpop2"])#re.split(r"\t",self.depthforcurrentchrom["vcfpop2"][int(T[0])-1])
+                        self.lastposofdepthfilefp["vcfpop2"]=self.depthobjmap["vcfpop2"].depthfilefp.tell()
+#                         print("vcfpop2",self.lastposofdepthfilefp["vcfpop2"])
                         sum_depth=0
                         for idx in self.species_idx_map["vcfpop2"]:
                             sum_depth+=int(depth_linelist[idx])
@@ -395,5 +408,4 @@ class Caculate_Fst(Caculator):
         self.CNk = 0
         noofsnp = self.COUNTED
         self.COUNTED = 0
-        
         return noofsnp, Fst
