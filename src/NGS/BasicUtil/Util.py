@@ -1073,11 +1073,22 @@ class genes():
         
 
 class GATK_depthfile():
+    onecopy=None
+    static_depthfileName=None
+    static_allrecsforcurchrom_mapbypos=None
     def __init__(self, depthfileName, indexFileName):
         super().__init__()
         self.covfileidx = {}
         self.title = []
         self.depthfileName = depthfileName
+        
+        if self.static_depthfileName==None:
+            self.onecopy=True
+            self.static_depthfileName=self.depthfileName
+        elif self.onecopy and self.static_depthfileName==self.depthfileName:
+            self.onecopy=True
+        else:
+            self.onecopy=False
         try:
             self.covfileidx = pickle.load(open(indexFileName, 'rb'))
         except IOError:
@@ -1087,6 +1098,8 @@ class GATK_depthfile():
         self.chromOrder=self.covfileidx["chromOrder"]
         self.depthfilefp = open(depthfileName, 'r')
         self.depthfilefp.readline()
+        self.allrecsforcurchrom_mapbypos=None
+        self.curchrom=None
     @staticmethod
     def indexGATK_depthfile(depthfileName, indexFileName):
         """
@@ -1165,6 +1178,28 @@ class GATK_depthfile():
         chrom = re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(1)
         pos = int(re.search(r"^([\w\W]*)[:]([\d]*)", linelist[0]).group(2))
         return chrom, pos, linelist, self.depthfilefp.tell()
+    def getdepthByPos_optimized(self, targetchr, targetloc):
+        if self.curchrom!=targetchr:
+            if (self.onecopy and self.static_allrecsforcurchrom_mapbypos==None) or not self.onecopy:#(first time only one obj )or not first time  multimple copy
+                self.depthfilefp.seek(self.covfileidx[targetchr])
+                content=self.depthfilefp.read(self.covfileidx[self.chromOrder[self.chromOrder.index(targetchr.strip()) + 1]] - self.covfileidx[targetchr.strip()])
+                contentlines=re.split(r"\n",content.strip())
+                self.allrecsforcurchrom_mapbypos={}
+                for line in contentlines:
+                    chr_line=re.split(r":",line.strip())
+                    linelist=re.split(r"\s+",chr_line[1])
+                    self.allrecsforcurchrom_mapbypos[int(linelist[0])]=linelist
+                self.curchrom=targetchr
+                self.static_allrecsforcurchrom_mapbypos=self.allrecsforcurchrom_mapbypos
+            elif self.onecopy and self.static_allrecsforcurchrom_mapbypos!=None:
+                self.allrecsforcurchrom_mapbypos=self.static_allrecsforcurchrom_mapbypos# 
+    
+                 
+        if targetloc in self.allrecsforcurchrom_mapbypos:
+#             print("getdepthByPos_optimized",self.allrecsforcurchrom_mapbypos[targetloc])
+            return self.allrecsforcurchrom_mapbypos[targetloc]
+        else:
+            return ["0"]*len(self.title)
     def getdepthByPos(self, targetchr, targetloc, lastposoffilehandler=0):
          
         linelist = re.split(r"\s+", self.depthfilefp.readline())

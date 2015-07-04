@@ -304,8 +304,8 @@ class AncestralAlleletabletools():
                         popsdata_dep=str(refdep)+","+str(altalleledep)
                         break
                 else:
-                    depth_linelist = depthfile.getdepthByPos(currentchrID, snp_pos,lastposofdepthfilefp)
-                    lastposofdepthfilefp=depthfile.depthfilefp.tell()
+                    depth_linelist = depthfile.getdepthByPos_optimized(currentchrID, snp_pos)
+#                     lastposofdepthfilefp=depthfile.depthfilefp.tell()
                     sum_depth=0
                     for species_idx in species_idx_list:
                         sum_depth+=int(depth_linelist[species_idx])
@@ -378,8 +378,8 @@ class AncestralAlleletabletools():
                         else:
                             sum_depth=0
                             #find the depth file which the title contain the popnamesubStringInDepthTitle
-                            depth_linelist = depthobjmap[vcftable].getdepthByPos(currentchrID, snp_pos,lastposofdepthfilefp[vcftable])
-                            lastposofdepthfilefp[vcftable]=depthobjmap[vcftable].depthfilefp.tell()
+                            depth_linelist = depthobjmap[vcftable].getdepthByPos_optimized(currentchrID, snp_pos)
+#                             lastposofdepthfilefp[vcftable]=depthobjmap[vcftable].depthfilefp.tell()
 #                             popnamesubStringInDepthTitle=re.search(r"^([^_]+)_.*",vcftable).group(1).strip()
                             
                             # accumulate  the depth

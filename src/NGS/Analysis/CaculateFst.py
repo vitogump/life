@@ -170,7 +170,7 @@ class Fst():
                 Number = 0
                 for chrom in sorted(FstMapByChrom.keys()):
                     for i in range(len(FstMapByChrom[chrom])):
-                        if self.FstMapByChrom[chrom][i][3] != 'NA':
+                        if FstMapByChrom[chrom][i][3] != 'NA':
                             Number += 1
                             sum += FstMapByChrom[chrom][i][3]
     #                     if chrom=="KB820867.1" or tttttt:
@@ -310,8 +310,8 @@ class Fst():
                     if self.i_o=="o" and self.depthfilenames!={}:
                         depthobjmap={};fst_caculator.species_idx_map={};fst_caculator.lastposofdepthfilefp={}
                         depthobjmap[vcfNAME_POP1]=Util.GATK_depthfile(self.depthfilenames[vcfNAME_POP1][0],self.depthfilenames[vcfNAME_POP1][0]+".index")
-
                         depthobjmap[vcfNAME_POP1].depthfilefp.seek(depthobjmap[vcfNAME_POP1].covfileidx[currentchrID.strip()])
+                        
                         fst_caculator.lastposofdepthfilefp["vcfpop1_ref"]=depthobjmap[vcfNAME_POP1].depthfilefp.tell()
                         fst_caculator.species_idx_map["vcfpop1_ref"]=[]
                         for name in self.depthfilenames[vcfNAME_POP1][1:]:
