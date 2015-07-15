@@ -179,8 +179,18 @@ class Fst():
                         self.tempdbtools.operateDB("insert","insert into "+self.treearrayprename+"treearray(chrID,winNo,"+fstpaire1name[0:5]+fstpaire2name[0:5]+") values(%s,%s,%s) on duplicate key update "+fstpaire1name[0:5]+fstpaire2name[0:5]+" = '"+str(FstMapByChrom[chrom][i][3])+"'",data=(chrom,str(i),str(FstMapByChrom[chrom][i][3])))
                 alldistMap[fstpaire1name+fstpaire2name] = (sum / Number,self.allspeices.index(fstpaire1name))
                 outfile.close()
+            
             for n in alldistMap.keys():
                 print(n + "\t" + str(alldistMap[n]), file=open(self.outputpath+"testdist.txt", 'a'))
+            print("    "+str(len(self.allspeices)),file=open(self.outputpath+"testdist.txt", 'a'))
+            for row_sname in self.allspeices:
+                for col_sname in self.allspeices:
+                    print(row_sname[0:8],end="  ",file=open(self.outputpath+"testdist.txt", 'a'))
+                    if row_sname+col_sname in alldistMap:
+                        print(alldistMap[row_sname+col_sname][0],end="\t",file=open(self.outputpath+"testdist.txt", 'a'))
+                    elif col_sname+row_sname in alldistMap:
+                        print(alldistMap[col_sname+row_sname][0],end="\t",file=open(self.outputpath+"testdist.txt", 'a'))
+                print("",file=open(self.outputpath+"testdist.txt", 'a'))
             tatalwins = self.tempdbtools.operateDB("select", "select count(*) from "+self.treearrayprename+"treearray")[0][0]
             for j in range(0, tatalwins, 100):
                 wins = self.tempdbtools.operateDB("select","select * from "+self.treearrayprename+"treearray order by chrID asc,winNo asc limit "+str(j) +",100")
@@ -305,8 +315,8 @@ class Fst():
                 if currentchrID in pop1.VcfIndexMap:
                     pop1SeqOfAChr={}
                     pop2SeqOfAChr={}
-                    pop1SeqOfAChr[currentchrID]=pop1.getVcfListByChrom(vcfNAME_POP1, currentchrID)
-                    pop2SeqOfAChr[currentchrID]=pop2.getVcfListByChrom(vcfNAME_POP2, currentchrID)
+                    pop1SeqOfAChr[currentchrID]=pop1.getVcfListByChrom(currentchrID)
+                    pop2SeqOfAChr[currentchrID]=pop2.getVcfListByChrom(currentchrID)
                     if self.i_o=="o" and self.depthfilenames!={}:
                         depthobjmap={};fst_caculator.species_idx_map={};fst_caculator.lastposofdepthfilefp={}
                         depthobjmap[vcfNAME_POP1]=Util.GATK_depthfile(self.depthfilenames[vcfNAME_POP1][0],self.depthfilenames[vcfNAME_POP1][0]+".index")

@@ -41,7 +41,7 @@ pamlPath = re.search(r'pamlpath=(.*)', cline).group(1).strip()
 cline = configure.readline()
 outfileNamePre=re.search(r'outfilepre=(.*)', cline).group(1).strip()
 cline = configure.readline()
-clustalw = re.search(r'clustalw=(.*)', cline).group(1).strip()
+PhyMLpath = re.search(r'PhyMLpath=(.*)', cline).group(1).strip()
 # treefile_oringal = open(tempPath+"/", 'r')
 # treefileName=(tempPath+"/treefileforonehomogene")
 # temp_outtreefileName = treefileName + "_markbranch"
@@ -80,11 +80,11 @@ if __name__ == '__main__':
                 Util.generateIndexByChrom(cdsfafileName, cdsfafileName + ".myindex")
                 aa_cds_filemap[speciesname].append(pickle.load(open(aafafileName + ".myindex", 'rb')))
                 aa_cds_filemap[speciesname].append(pickle.load(open(cdsfafileName + ".myindex", 'rb')))
-#             stat = os.system("rm " + aafafileName + ".myindex " + cdsfafileName + ".myindex")
-#             if stat != 0:
-#                 print("rm " + aafafileName + ".myindex " + cdsfafileName + ".myindex" + " os.system return not 0")
-#                 exit(-1)
-#             print("rm " + aafafileName + ".myindex " + cdsfafileName + ".myindex OK", stat)
+            stat = os.system("rm " + aafafileName + ".myindex " + cdsfafileName + ".myindex")
+            if stat != 0:
+                print("rm " + aafafileName + ".myindex " + cdsfafileName + ".myindex" + " os.system return not 0")
+                exit(-1)
+            print("rm " + aafafileName + ".myindex " + cdsfafileName + ".myindex OK", stat)
 # run muscle and paml loop
     finalkakslist = []
     """
@@ -180,19 +180,26 @@ if __name__ == '__main__':
         maxlen=max(maxlenlist)
         print(maxlen)
         print(Util.encode_phyliplines(pamlinputcdsheader, pamlinputcdsseq,maxlen+2), file=pamlinputcdsfile)
-        ffff=open(fastalnforcdstree,'w')
-        for i in range(len(pamlinputcdsheader)):
-            print(">"+pamlinputcdsheader[i],file=ffff)
-            print(pamlinputcdsseq[i],file=ffff)
-        ffff.close()
-            
+#         ffff=open(fastalnforcdstree,'w')
+#         for i in range(len(pamlinputcdsheader)):
+#             print(">"+pamlinputcdsheader[i],file=ffff)
+#             print(pamlinputcdsseq[i],file=ffff)
+#         ffff.close()
+#             
         pamlinputcdsfile.close()
         #make tree
-        os.system(clustalw+" -infile="+fastalnforcdstree+" -type=DNA -output=FASTA -align")
-        print(clustalw+" -infile="+fastalnforcdstree+" -type=DNA -output=FASTA -align")
-        treefile_oringal=open(fastalnforcdstree+".dnd",'r')
-        temp_outtreefileName = fastalnforcdstree+".dnd" + "_markbranch"
-#         exit()
+        a=os.system(PhyMLpath+" -i "+pamlInputCDSFileName+" -m GTR -b 100 -t e -a e")
+        if a!=0:
+            print("error",PhyMLpath+" -i "+pamlInputCDSFileName+" -m GTR -b 100 -t e -a e")
+            exit(-1)
+#         os.system(PhyMLpath+" -infile="+pamlInputCDSFileName+" -type=DNA -output=FASTA -align")
+        print(PhyMLpath+" -i "+pamlInputCDSFileName+" -m GTR -b 100 -t e -a e")
+        treefile_oringal=open(pamlInputCDSFileName+"_phyml_tree.txt",'r')
+        fixtreetext=treefile_oringal.readline()
+        treefile_oringal.close()
+        print(re.subn(r"\)[\d\.]+:","):",fixtreetext.strip())[0],end="",file=open(pamlInputCDSFileName+"_phyml_tree.txt",'w'))
+        treefile_oringal=open(pamlInputCDSFileName+"_phyml_tree.txt",'r')
+        temp_outtreefileName = pamlInputCDSFileName+"_phyml_tree.txt" + "_markbranch"
         if skipthishomotrscptline:
             skipthishomotrscptline = False
             continue

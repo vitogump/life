@@ -48,7 +48,7 @@ if __name__ == '__main__':
     os.chdir(temppath)
     i=0;outputfilepart=0;sumRecOfVCF=0
     for chrom in vcfdata.chromOrder:
-        vcfRecOfAChrom=vcfdata.getVcfListByChrom(options.vcffilename.strip(), chrom,dilute)
+        vcfRecOfAChrom=vcfdata.getVcfListByChrom(chrom,dilute)
         if len(vcfRecOfAChrom)<100:
             print("skip chrom with snps less than 100")
             continue

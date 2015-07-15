@@ -67,7 +67,7 @@ if __name__ == '__main__':
     for chrom in chromlist:
         if chrom not in vcfdata.chromOrder:
             continue
-        vcfRecOfAChrom=vcfdata.getVcfListByChrom(options.vcffilename.strip(), chrom,dilute,dilutetodensity=dilutetodensity)
+        vcfRecOfAChrom=vcfdata.getVcfListByChrom(chrom,dilute,dilutetodensity=dilutetodensity)
         if len(vcfRecOfAChrom)<30:
             print("Call_geno_snp_ind_Style_software_cyclly","skip chrom with snps less than 100")
             continue

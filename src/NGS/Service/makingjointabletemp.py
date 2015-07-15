@@ -50,4 +50,4 @@ for chrrow in chromlistfile:
 print(chromlistfile,outtable_filename,toplevelsnptable,depthfilenames)
 if __name__ == '__main__':
     atools=AncestralAlleletabletools(database=Util.vcfdbname, ip=Util.ip, usrname=Util.username, pw=Util.password,dbgenome=Util.genomeinfodbname)
-    atools.leftjoinSelectedTables(chromlist,outtable_filename,vcftablenames,toplevelsnptable,depthfilenames=depthfilenames)
+    atools.leftjoinSelectedTables(chromlist,outtable_filename,depthfilenames,vcftablenames,toplevelsnptable)

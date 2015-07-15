@@ -91,7 +91,7 @@ if __name__ == '__main__':
             nearestGenes = Util.genes(gtfMap[currentChromNO], currentBaselocinGenome, RefSeqMap[currentChromNO])
         #the the use of if block upside is that make sure RefSeqMap[currentChromNO] has enough seq contain the geneOverlapList scope
         if vcfchrom!=currentChromNO:
-            vcflist_A_chrom = vcfpop.getVcfListByChrom(options.variants, currentChromNO)
+            vcflist_A_chrom = vcfpop.getVcfListByChrom(currentChromNO)
             vcfchrom=currentChromNO
             if vcflist_A_chrom:
                 idx_vcf=0

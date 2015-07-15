@@ -71,7 +71,7 @@ if __name__ == '__main__':
         collection_depth=datadepth
         upTodownTravelDir(operatorwithdata_mode2.inputdatapath,operatorwithdata_mode2,datadepth,Interceptor_depth,collection_depth=collection_depth,interceptdirs=interceptdirs,rootDirnotchange=operatorwithdata_mode2.inputdatapath,Interceptor_depth_notchange=Interceptor_depth)
         #finalcmdline=re.sub(r"\${output}")
-        finalcmdline=re.sub(operatorwithdata_mode2.outputfilenamewithoutoupfilesuffix,operatorwithdata_mode2.outputfilenamewithoutoupfilesuffix+str(operatorwithdata_mode2.count),operatorwithdata_mode2.newcmdline)
+        finalcmdline=re.sub(operatorwithdata_mode2.outputfilenamewithoutoupfilesuffix+"."+operatorwithdata_mode2.outsuffix,operatorwithdata_mode2.outputfilenamewithoutoupfilesuffix+str(operatorwithdata_mode2.count)+"."+operatorwithdata_mode2.suffixstr,operatorwithdata_mode2.newcmdline)
         finalcmdline=re.sub(r"[-\w\d]+[=\s]+\${.*?}"," ",finalcmdline)
         try:
             print(operatorwithdata_mode2.scriptcontext+finalcmdline,file=open(operatorwithdata_mode2.scriptsstoredir+"/"+re.search(r"[^/]*$",outfilepre).group(0)+str(operatorwithdata_mode2.count)+"_"+operatorwithdata_mode2.cmdtemplatefilename+"_"+operatorwithdata_mode2.suffixstr+"Script.sh",'a'))

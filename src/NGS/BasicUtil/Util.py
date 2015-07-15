@@ -1365,6 +1365,7 @@ class Window():
         firstComeInWin = True
         notjustforsnp = True
         while currentIdx != len(L):
+#             print(L[currentIdx][0],L[currentIdx])
             if L[currentIdx][0] > winStart and  L[currentIdx][0] <= (winStart + windowWidth):
 #                if notjustforsnp or (len(L[currentIdx][1])==1 and re.search(r'[^a-zA-Z]', L[currentIdx][2]) != None and len(L[currentIdx][2])==1):# it's not a snp? indel or cnv
                 if firstComeInWin:
@@ -1419,19 +1420,19 @@ class Window():
                 self.winValueL.append((startPos, lastPos, noofsnps, value))
             except UnboundLocalError:
                 self.winValueL.append((0, 0, noofsnps, value))
-            if nextIdx!=-1:
-                currentIdx = nextIdx
-                nextIdx = -1
-                while currentIdx != len(L):
-                    lastPos = L[currentIdx][0]
-                    Caculator.process(L[currentIdx])
-                    currentIdx += 1
-                else:
-                    noofsnps, value = Caculator.getResult()
-                    try:
-                        self.winValueL.append((startPos, lastPos, noofsnps, value))
-                    except:
-                        self.winValueL.append((0, 0, noofsnps, value))
+#             if nextIdx!=-1:
+#                 currentIdx = nextIdx
+#                 nextIdx = -1
+#                 while currentIdx != len(L):
+#                     lastPos = L[currentIdx][0]
+#                     Caculator.process(L[currentIdx])
+#                     currentIdx += 1
+#                 else:
+#                     noofsnps, value = Caculator.getResult()
+#                     try:
+#                         self.winValueL.append((startPos, lastPos, noofsnps, value))
+#                     except:
+#                         self.winValueL.append((0, 0, noofsnps, value))
 #            
         
         n = int((L_End_Pos - (len(self.winValueL) * slideSize + windowWidth)) / slideSize) + 1

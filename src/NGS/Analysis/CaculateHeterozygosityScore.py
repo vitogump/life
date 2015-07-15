@@ -78,9 +78,11 @@ if __name__ == '__main__':
                 for vcf_idx in range(len(vcffileslist)):
                     tempmap={}
                     print(vcffileslist[vcf_idx])
-                    tempmap[currentchrID]=poplist[vcf_idx].getVcfListByChrom(vcffileslist[vcf_idx], currentchrID)
+                    tempmap[currentchrID]=poplist[vcf_idx].getVcfListByChrom(currentchrID)
                     vcflist_A_chrom_container.append(copy.deepcopy(tempmap))
+#                 print("vcflist_A_chrom_container",vcflist_A_chrom_container)
                 MultipleVcfMap = Util.alin2PopSnpPos(vcflist_A_chrom_container,"o")
+#                 print("MultipleVcfMap",MultipleVcfMap)
                 win.slidWindowOverlap(MultipleVcfMap[currentchrID], currentchrLen, windowWidth, slideSize, hp_caculator)
                 hscore.HeterozyMap[currentchrID]=copy.deepcopy(win.winValueL)
             else:

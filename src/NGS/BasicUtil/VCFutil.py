@@ -16,6 +16,7 @@ class VCF_Data():
         self.VcfMap_AllChrom = {}
         self.VcfIndexMap = {}
         self.chromOrder = []
+        self.vcfFileName=vcffileName
         self.NumOfRecbychromOrder = []
         try:
             self.VcfIndexMap = pickle.load(open(vcffileName + ".myindex", 'rb'))
@@ -218,7 +219,7 @@ class VCF_Data():
         mapfile.close()
         pedfile.close()   
         vcffile.close()
-    def getVcfListByChrom(self, vcfFileName, chrom, dilute=1, dilutetodensity="noofsnpperkb", posUniq=True, considerINDEL=False):
+    def getVcfListByChrom(self, chrom, dilute=1, dilutetodensity="noofsnpperkb", posUniq=True, considerINDEL=False):
         """
             although dilute and dilutetodensity can present at the same time,but it not make sense.
             return a list that contain all vcf record of a chrom
@@ -227,24 +228,27 @@ class VCF_Data():
         VcfList_A_Chrom = []
         if chrom not in self.chromOrder:
             return []
-            print(chrom + "didn't find in " + vcfFileName)
+            print(chrom + "didn't find in " + self.vcfFileName)
         i = self.chromOrder.index(chrom.strip())
         if dilute != 1:
             VcfRecRandomSelectIdxlist = random.sample([j for j in range(self.NumOfRecbychromOrder[i])], int(dilute * self.NumOfRecbychromOrder[i]))
             VcfRecRandomSelectIdxlist.sort()
 
 
-        vcfFile = open(vcfFileName, 'r')
+        vcfFile = open(self.vcfFileName, 'r')
                     
         vcfFile.seek(self.VcfIndexMap[chrom][0])
-        line = vcfFile.readline().strip()
+        linescontent=vcfFile.read(self.VcfIndexMap[chrom][1]-self.VcfIndexMap[chrom][0])
+        vcflineslist=re.split(r"\n",linescontent.strip())
+#         line = vcfFile.readline().strip()
         recidx = 0
-
-        while line and (re.split(r'\s+', line))[0] == chrom:
+#         print(line)
+        for line in vcflineslist:
+#         while line and (re.split(r'\s+', line))[0] == chrom:
             if dilute != 1 and len(VcfRecRandomSelectIdxlist) == 0:
                 break
             elif dilute != 1 and recidx != VcfRecRandomSelectIdxlist[0]:
-                line = vcfFile.readline();recidx += 1
+                recidx += 1#line = vcfFile.readline();
                 continue
             elif dilute != 1 and recidx == VcfRecRandomSelectIdxlist[0]:
                 VcfRecRandomSelectIdxlist.pop(0)
@@ -260,7 +264,7 @@ class VCF_Data():
                 continue
             INFO = linelist[7]
             FORMAT = linelist[8]
-            line = vcfFile.readline();recidx += 1
+            recidx += 1#line = vcfFile.readline();
             if posUniq and VcfList_A_Chrom and pos == VcfList_A_Chrom[0]:
                 print("VCFutil unique the vcf pos", line, VcfList_A_Chrom[-1])
                 continue

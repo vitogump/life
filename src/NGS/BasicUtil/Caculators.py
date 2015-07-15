@@ -131,7 +131,7 @@ class Caculate_Dstatistics(Caculator):
         
 
 class Caculate_Hp(Caculator):
-    def __init__(self, SeqMethodlist=["pool"], minsnps=10, considerFixed=False):
+    def __init__(self, SeqMethodlist=["pool"], minsnps=10, considerFixed=True):
         super().__init__()
         self.minsnps = minsnps
         self.COUNTED = [0] * len(SeqMethodlist)

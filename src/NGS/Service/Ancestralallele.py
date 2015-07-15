@@ -269,7 +269,7 @@ class AncestralAlleletabletools():
             print(currentchrID+":",end="")
         
             archicpopSeqOfAChr={}
-            archicpopSeqOfAChr[currentchrID]=archicpop.getVcfListByChrom(archicpopVcfFile, currentchrID)
+            archicpopSeqOfAChr[currentchrID]=archicpop.getVcfListByChrom(currentchrID)
             allsnpsInAchr=self.dbvariant.operateDB("select","select snp_pos,alt_base from "+toplevelsnptablename+" where chrID='"+currentchrID+"'")
             for snp in allsnpsInAchr:
                 snp_pos=int(snp[0])
@@ -318,7 +318,7 @@ class AncestralAlleletabletools():
                 #change to insert if exist skip
                 print(str(snp_pos),popsdata_alt,popsdata_dep)
                 self.dbvariant.operateDB("update", "update " + toplevelsnptablename + " set "+archicpop_colname+"_alt = '" + popsdata_alt+"',"+archicpop_colname+"_dep= '"+popsdata_dep+"' where chrID="+"'"+currentchrID+"' and snp_pos="+str(snp[0]))
-    def leftjoinSelectedTables(self,chromlist,outtable_file_Name,vcftables=[],toplevelsnptable="ducksnp_toplevel",depthfilenames):
+    def leftjoinSelectedTables(self,chromlist,outtable_file_Name,depthfilenames,vcftables=[],toplevelsnptable="ducksnp_toplevel"):
         depthobjmap={};lastposofdepthfilefp={}#
         for vcftablename in depthfilenames.keys():
             if depthfilenames[vcftablename]!=None:
