@@ -70,12 +70,15 @@ class DBTools():
                     exit(-1)
         except mysql.connector.Error as e:
             time.sleep(SLEEP_FOR_NEXT_TRY)
+            print('query error!{}'.format(e))
+            print("DBManager operateDB","may be the file name is wrong")
+            print(sqls,data)
             a=self.operateDB(sqltype,sqls,data)
             if a==0:
                 return 0
             print('query error!{}'.format(e))
             print("DBManager operateDB","may be the file name is wrong")
-            print(sqls,data)
+            
             exit(-1)
         finally:
             cursor.close()

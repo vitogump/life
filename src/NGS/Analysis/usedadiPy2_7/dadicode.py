@@ -11,7 +11,9 @@ parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", default=True,
                   help="don't print status messages to stdout")
 (options, args) = parser.parse_args()
-fsdata=dadi.Spectrum.from_file(options.fsfile)
+dd=dadi.Misc.make_data_dict(options.fsfile)
+fsdata=dadi.Spectrum.from_data_dict(dd,pop_ids=['mallard14',"spotbilled13"],polarized=True,projections=[26,26])
+# fsdata=dadi.Spectrum.from_file(options.fsfile)
 for parametername,initvalue,lower,upper in options.parameters:
 	if "nuM"==parametername.strip():
 		nuM=float(initvalue)

@@ -23,9 +23,9 @@ parser.add_option("-2","--ancenstral_or_derived",dest="ancenstral_or_derived",de
 parser.add_option("-v","--outgroupvcf",dest="outgroupvcf",action="append",nargs=2,help="vcffile prioritylevel")
 (options, args) = parser.parse_args()
 mindeptojudgefix=15
-VCFobj={}
-for outgroupvcffilename,prioritylevel in options.outgroupvcf:
-    VCFobj[int(prioritylevel.strip())]=VCFutil.VCF_Data(outgroupvcffilename)
+# VCFobj={}
+# for outgroupvcffilename,prioritylevel in options.outgroupvcf:
+#     VCFobj[int(prioritylevel.strip())]=VCFutil.VCF_Data(outgroupvcffilename)
 dbvariantstools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.vcfdbname)
 minvalue = float(options.interval[0])
 maxvalue = float(options.interval[1])
@@ -136,10 +136,10 @@ if __name__ == '__main__':
 #         tempAF_idxlistwild=copy.deepcopy(AF_idxlistwild)
 #         tempAF_idxlistdomestic=copy.deepcopy(AF_idxlistdomestic)
         curchrom=chrom.strip()
-        allsnprecinAchr_mapbyprioritylevel={}
-        for prioritylevel in VCFobj.keys():
-            print("prioritylevel",prioritylevel)
-            allsnprecinAchr_mapbyprioritylevel[prioritylevel]=VCFobj[prioritylevel].getVcfListByChrom(curchrom)
+#         allsnprecinAchr_mapbyprioritylevel={}
+#         for prioritylevel in VCFobj.keys():
+#             print("prioritylevel",prioritylevel)
+#             allsnprecinAchr_mapbyprioritylevel[prioritylevel]=VCFobj[prioritylevel].getVcfListByChrom(curchrom)
         idx=len(wildcdsfilenames)
         depthobjmap={};species_idx_map={};randomstr=Util.random_str()
         for fname in wildcdsfilenames[::-1]:#bacause pop need from the end to start according by idx
@@ -263,101 +263,135 @@ if __name__ == '__main__':
             #determin derived allele
             snp=dbvariantstools.operateDB("select","select * from "+options.topleveltablejudgeancestral+" where chrID='"+curchrom+"' and snp_pos='"+str(curpos)+"'")
             if not snp:
-#                 print(curchrom,curpos,"snp not find,skip")
-                low0=0
-                high0=len(allsnprecinAchr_mapbyprioritylevel[0])-1
-                while low0<=high0:
-                    mid0=(low0+high0)>>1
-                    if allsnprecinAchr_mapbyprioritylevel[0][mid0][0]<curpos:
-                        low0=mid0+1
-                    elif allsnprecinAchr_mapbyprioritylevel[0][mid0][0]>curpos:
-                        high0=mid0-1
-                    else:#find the pos
-                        pos, REF, archicpop_ALT, INFO,FORMAT,samples = allsnprecinAchr_mapbyprioritylevel[0][mid0]
-                        refdep=0;altalleledep=0
-                        AD_idx=(re.split(":",FORMAT)).index("AD")#gatk GT:AD:DP:GQ:PL
-                        for sample in samples:
-                            if len(re.split(":",sample))==1:# ./.
-                                continue
-                            AD_depth=re.split(",",re.split(":",sample)[AD_idx])
-                            try :
-                                refdep+=int(AD_depth[0])
-                                altalleledep+=int(AD_depth[1])
-                            except ValueError:
-                                print("Ancestralallele.fillAncestral except ValueError",sample,end="")
-                        if refdep!=0:
-                            A_base_idx=-1#alt_allele is the ancestral allele
-                        else:
-                            A_base_idx=1
-                        break
-                        
-                else:
-                    A_base_idx=0
-                    
-                low1=0
-                high1=len(allsnprecinAchr_mapbyprioritylevel[1])-1
-                while low1<=high1:
-                    mid1=(low1+high1)>>1
-                    if allsnprecinAchr_mapbyprioritylevel[1][mid1][0]<curpos:
-                        low1=mid1+1
-                    elif allsnprecinAchr_mapbyprioritylevel[1][mid1][0]>curpos:
-                        high1=mid1-1
-                    else:
-                        pos, REF, archicpop_ALT, INFO,FORMAT,samples = allsnprecinAchr_mapbyprioritylevel[1][mid1]
-                        refdep=0;altalleledep=0
-                        AD_idx=(re.split(":",FORMAT)).index("AD")#gatk GT:AD:DP:GQ:PL
-                        for sample in samples:
-                            if len(re.split(":",sample))==1:# ./.
-                                continue
-                            AD_depth=re.split(",",re.split(":",sample)[AD_idx])
-                            try :
-                                refdep+=int(AD_depth[0])
-                                altalleledep+=int(AD_depth[1])
-                            except ValueError:
-                                print("Ancestralallele.fillAncestral except ValueError",sample,end="")
-                        if A_base_idx==0 and refdep!=0:
-                            A_base_idx=-1
-                        else:
-                            A_base_idx=1
-                        break
-                else:
-                    if A_base_idx==1:
-                        A_base_idx=-1
-                    else:
-                        A_base_idx=0
-                if A_base_idx==-1:
-                    print(curchrom,curpos,"skip this snp")
-                    continue
-                else:
-                    print(curchrom,curpos,"regard as fix allele")    
-                    
+                print(curchrom,curpos,"snp not find,skip")
+                continue
+#                 doublecheck=False
+#                 low0=0
+#                 high0=len(allsnprecinAchr_mapbyprioritylevel[0])-1
+#                 while low0<=high0:
+#                     mid0=(low0+high0)>>1
+#                     if allsnprecinAchr_mapbyprioritylevel[0][mid0][0]<curpos:
+#                         low0=mid0+1
+#                     elif allsnprecinAchr_mapbyprioritylevel[0][mid0][0]>curpos:
+#                         high0=mid0-1
+#                     else:#find the pos
+#                         pos, REF, archicpop_ALT, INFO,FORMAT,samples = allsnprecinAchr_mapbyprioritylevel[0][mid0]
+#                         refdep=0;altalleledep=0
+#                         AD_idx=(re.split(":",FORMAT)).index("AD")#gatk GT:AD:DP:GQ:PL
+#                         for sample in samples:
+#                             if len(re.split(":",sample))==1:# ./.
+#                                 continue
+#                             AD_depth=re.split(",",re.split(":",sample)[AD_idx])
+#                             try :
+#                                 refdep+=int(AD_depth[0])
+#                                 altalleledep+=int(AD_depth[1])
+#                             except ValueError:
+#                                 print("Ancestralallele.fillAncestral except ValueError",sample,end="")
+#                         if refdep!=0:
+#                             A_base_idx=-1000#alt_allele is the ancestral allele
+#                         elif altalleledep>=mindeptojudgefix:
+#                             A_base_idx=1
+#                         break
+#                 else:
+#                     A_base_idx=0
+#                     
+#                 low1=0
+#                 high1=len(allsnprecinAchr_mapbyprioritylevel[1])-1
+#                 while low1<=high1:
+#                     mid1=(low1+high1)>>1
+#                     if allsnprecinAchr_mapbyprioritylevel[1][mid1][0]<curpos:
+#                         low1=mid1+1
+#                     elif allsnprecinAchr_mapbyprioritylevel[1][mid1][0]>curpos:
+#                         high1=mid1-1
+#                     else:
+#                         pos, REF, archicpop_ALT, INFO,FORMAT,samples = allsnprecinAchr_mapbyprioritylevel[1][mid1]
+#                         refdep=0;altalleledep=0
+#                         AD_idx=(re.split(":",FORMAT)).index("AD")#gatk GT:AD:DP:GQ:PL
+#                         for sample in samples:
+#                             if len(re.split(":",sample))==1:# ./.
+#                                 continue
+#                             AD_depth=re.split(",",re.split(":",sample)[AD_idx])
+#                             try :
+#                                 refdep+=int(AD_depth[0])
+#                                 altalleledep+=int(AD_depth[1])
+#                             except ValueError:
+#                                 print("Ancestralallele.fillAncestral except ValueError",sample,end="")
+#                         if  refdep!=0:
+#                             doublecheck=True
+#                             print(" affirm the orignal judgment")
+#                         elif A_base_idx==0 and altalleledep>=mindeptojudgefix:
+#                             print("don't agree,contradiction")
+#                             A_base_idx=-1000
+#                         break
+#                 else:
+#                     if A_base_idx==1:
+#                         A_base_idx=-1000
+#                     elif A_base_idx==0:
+#                         doublecheck=True
+#                         print(" affirm the orignal judgment")
+#                 if A_base_idx==-1000 or not doublecheck:
+#                     print(curchrom,curpos,"skip this snp")
+#                     continue
+#                 else:
+#                     print(curchrom,curpos,"regard as fix allele")
             else:
                 depthlist1=re.split(r",",snp[0][7])
-                if snp[0][7]=="no covered":
-                    depthlist2=re.split(r",",snp[0][9])
-                    if snp[0][8].upper()==snp[0][4].upper() and len(depthlist2)==2 and int(depthlist2[0]) + int(depthlist2[1])>=mindeptojudgefix:
-                        if depthlist2[0].strip()=='0':
-                            A_base_idx=1#alt_allele is the ancestral allele
-                        elif depthlist2[1].strip()=='0':
-                            A_base_idx=0#ref_allele is the ancestral allele
-                        else:
-                            print(curchrom,curpos,"can't make judgement")
-                            continue
-                    else:
-                        print(curchrom,curpos,"can't make judgement")
-                        continue
-                elif snp[0][6].upper()==snp[0][4].upper() and len(depthlist1)==2 and int(depthlist1[0]) + int(depthlist1[1])>=mindeptojudgefix:
+                depthlist2=re.split(r",",snp[0][9])
+                if snp[0][6].upper()==snp[0][4].upper() and len(depthlist1)==2 and int(depthlist1[0]) + int(depthlist1[1])>=mindeptojudgefix and (depthlist1[0].strip()=="0" or depthlist1[1].strip()=="0"):
                     if depthlist1[0].strip()=='0':
                         A_base_idx=1#alt_allele is the ancestral allele
                     elif depthlist1[1].strip()=='0':
                         A_base_idx=0#ref_allele is the ancestral allele
                     else:
-                        print(curchrom,curpos,"can't make judgement")
-                        continue#don't make judgement
-                    depthlist2=re.split(r",",snp[0][9])
-                    if len(depthlist2)==2 and depthlist2[A_base_idx].strip()=='0':
-                        print(curchrom,curpos,"don't agree,contradiction")
-                        continue#secend species didn't agree with the judement from first species,contradiction
+                        print(snp,"never get here!")
+                    if snp[0][8].upper()==snp[0][4].upper() and len(depthlist2)==2 and int(depthlist2[0]) + int(depthlist2[1])>=mindeptojudgefix and depthlist2[A_base_idx].strip()=="0" :
+                        print(snp,"don't agree,contradiction")
+                        continue
+                elif snp[0][8].upper()==snp[0][4].upper() and len(depthlist2)==2 and int(depthlist2[0]) + int(depthlist2[1])>=mindeptojudgefix and(depthlist2[0].strip()=='0' or depthlist2[1].strip()=='0'):
+                    if depthlist2[0].strip()=='0':
+                        A_base_idx=1#alt_allele is the ancestral allele
+                    elif depthlist2[1].strip()=='0':
+                        A_base_idx=0#ref_allele is the ancestral allele
+                    else:
+                        print("never get here!",)
+                else:
+                    print(snp,"both can't make judgement!")
+                    continue
+                ####################################
+#                 if snp[0][7]=="no covered":
+#                     depthlist2=re.split(r",",snp[0][9])
+#                     if snp[0][8].upper()==snp[0][4].upper() and len(depthlist2)==2 and int(depthlist2[0]) + int(depthlist2[1])>=mindeptojudgefix:
+#                         if depthlist2[0].strip()=='0':
+#                             A_base_idx=1#alt_allele is the ancestral allele
+#                         elif depthlist2[1].strip()=='0':
+#                             A_base_idx=0#ref_allele is the ancestral allele
+#                         else:
+#                             print(curchrom,curpos,"can't make judgement")
+#                             continue
+#                     else:
+#                         print(curchrom,curpos,"can't make judgement")
+#                         continue
+#                 elif snp[0][6].upper()==snp[0][4].upper() and len(depthlist1)==2 and int(depthlist1[0]) + int(depthlist1[1])>=mindeptojudgefix:
+#                     if depthlist1[0].strip()=='0':
+#                         A_base_idx=1#alt_allele is the ancestral allele
+#                     elif depthlist1[1].strip()=='0':
+#                         A_base_idx=0#ref_allele is the ancestral allele
+#                     else:
+#                         print(curchrom,curpos,"can't make judgement")
+#                         continue#don't make judgement
+#                     depthlist2=re.split(r",",snp[0][9])
+#                     if len(depthlist2)==2 and int(depthlist2[0]) + int(depthlist2[1])>=mindeptojudgefix and depthlist2[A_base_idx].strip()=='0':
+#                         print(curchrom,curpos,"don't agree,contradiction")
+#                         continue#secend species didn't agree with the judement from first species,contradiction
+#                 elif len(depthlist2)==2 and int(depthlist2[0]) + int(depthlist2[1])>=mindeptojudgefix :
+#                     if depthlist2[0].strip()=='0':
+#                         A_base_idx=1
+#                     elif depthlist2[1].strip()=='0':
+#                         A_base_idx=0
+#                     else:
+#                         continue
+#                 else:
+#                     continue
             #caculate allele freq for each pop
             idx=0
             if options.ancenstral_or_derived=="a":
