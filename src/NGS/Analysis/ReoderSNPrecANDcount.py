@@ -4,7 +4,7 @@ Created on 2015-5-28
 
 @author: liurui
 '''
-import copy, re, os, random
+import copy, re, os
 from optparse import OptionParser
 from scipy.stats import fisher_exact as fe
 
@@ -337,26 +337,43 @@ if __name__ == '__main__':
             else:
                 depthlist1=re.split(r",",snp[0][7])
                 depthlist2=re.split(r",",snp[0][9])
-                if snp[0][6].upper()==snp[0][4].upper() and len(depthlist1)==2 and int(depthlist1[0]) + int(depthlist1[1])>=mindeptojudgefix and (depthlist1[0].strip()=="0" or depthlist1[1].strip()=="0"):
-                    if depthlist1[0].strip()=='0':
-                        A_base_idx=1#alt_allele is the ancestral allele
-                    elif depthlist1[1].strip()=='0':
-                        A_base_idx=0#ref_allele is the ancestral allele
+                if len(depthlist1)==2 and len(depthlist2)==2 and (int(depthlist1[0]) + int(depthlist1[1])>=mindeptojudgefix or int(depthlist2[0]) + int(depthlist2[1])>=mindeptojudgefix) and ((depthlist1[0].strip()=="0" and depthlist2[0].strip()=="0") or (depthlist1[1].strip()=="0" and depthlist2[1].strip()=="0") ):
+                    if depthlist1[0].strip()=="0" and depthlist2[0].strip()=="0":
+                        A_base_idx=1
+                    elif depthlist1[1].strip()=="0" and depthlist2[1].strip()=="0":
+                        A_base_idx=0
                     else:
                         print(snp,"never get here!")
-                    if snp[0][8].upper()==snp[0][4].upper() and len(depthlist2)==2 and int(depthlist2[0]) + int(depthlist2[1])>=mindeptojudgefix and depthlist2[A_base_idx].strip()=="0" :
-                        print(snp,"don't agree,contradiction")
-                        continue
-                elif snp[0][8].upper()==snp[0][4].upper() and len(depthlist2)==2 and int(depthlist2[0]) + int(depthlist2[1])>=mindeptojudgefix and(depthlist2[0].strip()=='0' or depthlist2[1].strip()=='0'):
-                    if depthlist2[0].strip()=='0':
-                        A_base_idx=1#alt_allele is the ancestral allele
-                    elif depthlist2[1].strip()=='0':
-                        A_base_idx=0#ref_allele is the ancestral allele
+                elif (len(depthlist1)==2 and  snp[0][9] == "no covered" and int(depthlist1[0]) + int(depthlist1[1])>=mindeptojudgefix and (depthlist1[0].strip()=="0" or depthlist1[1].strip()=="0" ))   or (snp[0][7]=="no covered" and len(depthlist2)==2 and int(depthlist2[0]) + int(depthlist2[1])>=mindeptojudgefix and (depthlist2[1].strip()=="0" or depthlist2[0].strip()=="0")):
+                    if (snp[0][9] == "no covered" and depthlist1[0].strip()=="0") or (snp[0][7]=="no covered" and depthlist2[0].strip()=="0"):
+                        A_base_idx=1
+                    elif (snp[0][9] == "no covered" and depthlist1[1].strip()=="0") or (snp[0][7]=="no covered" and depthlist2[1].strip()=="0"):
+                        A_base_idx=0
                     else:
-                        print("never get here!",)
+                        print(snp,"never get here!")
                 else:
-                    print(snp,"both can't make judgement!")
+                    print(snp,"skip snp")
                     continue
+#                 if snp[0][6].upper()==snp[0][4].upper() and len(depthlist1)==2 and int(depthlist1[0]) + int(depthlist1[1])>=mindeptojudgefix and (depthlist1[0].strip()=="0" or depthlist1[1].strip()=="0"):
+#                     if depthlist1[0].strip()=='0':
+#                         A_base_idx=1#alt_allele is the ancestral allele
+#                     elif depthlist1[1].strip()=='0':
+#                         A_base_idx=0#ref_allele is the ancestral allele
+#                     else:
+#                         print(snp,"never get here!")
+#                     if snp[0][8].upper()==snp[0][4].upper() and len(depthlist2)==2 and int(depthlist2[0]) + int(depthlist2[1])>=mindeptojudgefix and depthlist2[A_base_idx].strip()=="0" :
+#                         print(snp,"don't agree,contradiction")
+#                         continue
+#                 elif snp[0][8].upper()==snp[0][4].upper() and len(depthlist2)==2 and int(depthlist2[0]) + int(depthlist2[1])>=mindeptojudgefix and(depthlist2[0].strip()=='0' or depthlist2[1].strip()=='0'):
+#                     if depthlist2[0].strip()=='0':
+#                         A_base_idx=1#alt_allele is the ancestral allele
+#                     elif depthlist2[1].strip()=='0':
+#                         A_base_idx=0#ref_allele is the ancestral allele
+#                     else:
+#                         print("never get here!",)
+#                 else:
+#                     print(snp,"both can't make judgement!")
+#                     continue
                 ####################################
 #                 if snp[0][7]=="no covered":
 #                     depthlist2=re.split(r",",snp[0][9])

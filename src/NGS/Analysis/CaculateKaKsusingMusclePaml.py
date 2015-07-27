@@ -24,7 +24,8 @@ parser.add_option("-q", "--quiet",
                   help="don't print status messages to stdout")
 (options, args) = parser.parse_args()
 minlen = int(options.minlen)
-print(options.processA,options.processB)
+print("processA",options.processA,options.processB)
+mytesttempfile=open("mytesttempfile_forprocessA.txt",'w')
 chitesttable = {0.01:{2:9.2103,3:11.3449},
                 0.05:{2:5.9915,3:7.8147}}
 
@@ -67,6 +68,7 @@ if __name__ == '__main__':
         aa_cds_list = re.split(r';', aa_cds_pair)
         aafafileName = aa_cds_list[0].strip()
         cdsfafileName = aa_cds_list[1].strip()
+        print("aafafileName",aafafileName,"cdsfafileName",cdsfafileName)
         if aafafileName != None and cdsfafileName != None:
             aa_cds_filemap[speciesname] = [open(aafafileName, 'r'), open(cdsfafileName, 'r')]
             aaindex = {}
@@ -99,6 +101,7 @@ if __name__ == '__main__':
     processA_result_collection = {}
     skipthishomotrscptline = False  
     for homotrscptline in homogenefile:
+        print("process:",homotrscptline)
         homotrscptlist = re.split(r'~', homotrscptline.strip())
         i = 0
         lenofhomeAA = []
@@ -110,6 +113,7 @@ if __name__ == '__main__':
             
             homotrscptlist[i] = re.search(r'transcript:(.*)', trscpt).group(1).strip()
             curspecies = homotrscpttitle[i].strip()
+            print("collect aa ",trscpt,curspecies)
             if homotrscptlist[i] not in aa_cds_filemap[curspecies][2]:
                 print(homotrscptlist[i],curspecies, "not in aa file or cds file")
                 skipthishomotrscptline = True
@@ -340,6 +344,7 @@ if __name__ == '__main__':
     #                         
                 mlcfile.close()
         if options.processA:
+            
             #########configure codeml.ctl file to process A ,first time collect LnL #####################
             pamlcodemlctlfile = open(pamlcodemlctl, 'r')
             pamlcodemlctlfilelines = pamlcodemlctlfile.readlines()
@@ -442,7 +447,9 @@ if __name__ == '__main__':
                 # extract data from mlc,fill data into processB_result_collection
                 mlcfile = open(tempPath + "/mlc", 'r')
                 mlclines = mlcfile.readlines()
+                mlcfile.close
                 mlcline_idx=0
+                print(processA_result_collection)
                 while mlcline_idx < len(mlclines):
                     if re.search(r"^lnL", mlclines[mlcline_idx]) != None:
                         lnL_1 = float(re.search(r":\s+([-\.\d]+)",mlclines[mlcline_idx]).group(1))
@@ -450,15 +457,35 @@ if __name__ == '__main__':
                             significant=True
                         else:
                             significant=False
+                        print(processA_result_collection_lnL,significant,lnL_1,chitesttable[0.01][2])
                     elif significant and re.search(r"Bayes Empirical Bayes \(BEB\)",mlclines[mlcline_idx])!=None:
-                        mlcline_idx+=3
+                        while True:
+                            if re.search(r"\s+\d+\s+\w\s+[\.\d]+",mlclines[mlcline_idx])!=None or mlcline_idx==len(mlclines)-2:
+                                break
+                            mlcline_idx+=1
                         while  mlclines[mlcline_idx].split():
-                            t3=re.split(r'\s+',mlclines[mlcline_idx].strip())
-                            processA_result_collection[firstofhomotrscpts][curspecies].append((int(t3[0]),t3[1],float(t3[2])))
+                            t3=re.search(r"\s+(\d+)\s+(\w)\s+([\.\d]+)([\*]*)",mlclines[mlcline_idx])#t3=re.split(r'\s+',mlclines[mlcline_idx].strip())
+                            processA_result_collection[firstofhomotrscpts][curspecies].append((int(t3.group(1)),t3.group(2),float(t3.group(3)),t3.group(4)))
                             mlcline_idx+=1
                         else:
                             print(firstofhomotrscpts,processA_result_collection[firstofhomotrscpts],file=open("test.txt",'a'))
                             break
+                    elif re.search(r"Bayes Empirical Bayes \(BEB\)",mlclines[mlcline_idx])!=None:#just for test
+                        print(firstofhomotrscpts,curspecies,processA_result_collection[firstofhomotrscpts][curspecies],file=mytesttempfile)
+                        print("significant judgement lnL:",lnL_1,"null hypothesis lnL:",processA_result_collection_lnL[curspecies],"(lnL_1 - lnL_1(null)) * 2",(processA_result_collection_lnL[curspecies] - lnL_1) * 2,"chitesttable",chitesttable[0.01][2],file=mytesttempfile)
+                        while True:
+                            if re.search(r"\s+\d+\s+\w\s+[\.\d]+",mlclines[mlcline_idx])!=None or mlcline_idx==len(mlclines)-2:
+                                break
+                            mlcline_idx+=1
+                        while  mlclines[mlcline_idx].split():
+                            print(mlclines[mlcline_idx])
+                            t3=re.search(r"\s+(\d+)\s+(\w)\s+([\.\d]+)([\*]*)",mlclines[mlcline_idx])#  re.split(r'\s+',mlclines[mlcline_idx].strip())
+                            print(int(t3.group(1)),t3.group(2),float(t3.group(3)),t3.group(4),file=mytesttempfile)
+                            processA_result_collection[firstofhomotrscpts][curspecies].append((int(t3.group(1)),t3.group(2),float(t3.group(3)),t3.group(4)))
+                            mlcline_idx+=1
+                        else:
+                            print(firstofhomotrscpts,processA_result_collection[firstofhomotrscpts],file=open("test.txt",'a'))
+                            break                        
                     mlcline_idx+=1
     processB_outfile=open(outfileNamePre+"_branch",'w')
     #process A output map
@@ -472,8 +499,8 @@ if __name__ == '__main__':
     for firstofhomotrscpts in sorted(processA_result_collection.keys()):
         for curspecies in processA_result_collection[firstofhomotrscpts].keys():
             print(firstofhomotrscpts,end=":",file=outfileMap[curspecies])
-            for pos,animo,pro in processA_result_collection[firstofhomotrscpts][curspecies]:
-                print(str(pos),animo,str(pro),sep=" ",end=";",file=outfileMap[curspecies])
+            for pos,animo,pro,sig in processA_result_collection[firstofhomotrscpts][curspecies]:
+                print(str(pos),animo,str(pro),sig,sep=" ",end=";",file=outfileMap[curspecies])
             print(file=outfileMap[curspecies])
     for firstofhomotrscpts in sorted(processB_result_collection.keys()):
         print("\n",firstofhomotrscpts,end="\t",file=processB_outfile)
@@ -487,6 +514,8 @@ if __name__ == '__main__':
 #     outfile.close()
 #     treefile_oringal.close()
     configure.close()
+
+    mytesttempfile.close()
     print("finish")
         
     

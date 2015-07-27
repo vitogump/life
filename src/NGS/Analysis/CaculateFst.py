@@ -184,12 +184,15 @@ class Fst():
                 print(n + "\t" + str(alldistMap[n]), file=open(self.outputpath+"testdist.txt", 'a'))
             print("    "+str(len(self.allspeices)),file=open(self.outputpath+"testdist.txt", 'a'))
             for row_sname in self.allspeices:
+                print(row_sname[0:8],end="  ",file=open(self.outputpath+"testdist.txt", 'a'))
                 for col_sname in self.allspeices:
-                    print(row_sname[0:8],end="  ",file=open(self.outputpath+"testdist.txt", 'a'))
+                    
                     if row_sname+col_sname in alldistMap:
                         print(alldistMap[row_sname+col_sname][0],end="\t",file=open(self.outputpath+"testdist.txt", 'a'))
                     elif col_sname+row_sname in alldistMap:
                         print(alldistMap[col_sname+row_sname][0],end="\t",file=open(self.outputpath+"testdist.txt", 'a'))
+                    elif row_sname==col_sname:
+                        print("0\t",end="\t",file=open(self.outputpath+"testdist.txt", 'a'))
                 print("",file=open(self.outputpath+"testdist.txt", 'a'))
             tatalwins = self.tempdbtools.operateDB("select", "select count(*) from "+self.treearrayprename+"treearray")[0][0]
             for j in range(0, tatalwins, 100):

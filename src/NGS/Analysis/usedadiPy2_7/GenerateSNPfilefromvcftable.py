@@ -4,10 +4,9 @@ Created on 2015-5-7
 
 @author: liurui
 '''
-import copy
+import copy,random,re,os
 from optparse import OptionParser
-import random
-import re
+
 
 from src.NGS.BasicUtil import Util
 import src.NGS.BasicUtil.DBManager as dbm
@@ -16,7 +15,7 @@ import src.NGS.BasicUtil.DBManager as dbm
 parser = OptionParser()
 parser.add_option("-t","--toplevelsnptable",dest="toplevelsnptable",default="ducksnp_toplevel",help="depth of the folder to output")
 parser.add_option("-m","--minlength",dest="minlength",help="require least chrom length")
-# parser.add_option("-A","--minAN",dest="minAN")
+parser.add_option("-C","--countsnpnumberfromvcf",dest="countsnpnumberfromvcf",default=None)
 parser.add_option("-d","--snpperkb",dest="snpperkb")
 parser.add_option("-o","--outputfilename",dest="outputfilename")
 parser.add_option("-v", "--vcftablelist", dest="vcftablelist",action="append",default=[],nargs=2,help="")
@@ -24,6 +23,10 @@ parser.add_option("-v", "--vcftablelist", dest="vcftablelist",action="append",de
 minlength=options.minlength;toplevelsnptable=options.toplevelsnptable;snpperkb=float(options.snpperkb);vcftableslist=options.vcftablelist#minAN=options.minAN
 dadisnpfile=open(options.outputfilename+"dilutetodensity"+options.snpperkb.strip(),'w')
 outgroupidx_in_topleveltable=[6,8];minoutgroupdepth=30
+randomnamefile_recordchr=Util.random_str(8)
+randomnamef_recchr=open(randomnamefile_recordchr,"w")
+# if os.countsnpnumberfromvcf !=None:
+#     vcftocount=open()
 if __name__ == '__main__':
     genomedbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname)
     dbvariantstools=dbm.DBTools(Util.ip, Util.username,Util.password, Util.vcfdbname)
@@ -42,7 +45,10 @@ if __name__ == '__main__':
     ############               finish title print ##################################
     totallength=0
     totallengthduilt=0
+    allsnpcount=0
+    totalduiltsnp=0
     for row in selectedchroms:
+        duiltedsnpcountforcurrentchr=0
         currentchrID=row[0]
         currentchrLen=int(row[1])
         totallength+=currentchrLen
@@ -70,7 +76,13 @@ if __name__ == '__main__':
         else:
             totallength-=currentchrLen
             continue
-        print(totallengthduilt,totallength,sqlselectstatementpart)
+#         if options.countsnpnumberfromvcf!=None:
+#             a=os.popen("grep -n "+currentchrID+" "+options.countsnpnumberfromvcf+"|wc -l")
+#             snpforcurrentchr=int(a.readline().strip())
+#             
+#             allsnpcount+=(snpforcurrentchr-1)
+#             a.close()
+        print("allsnpcount",allsnpcount,"totallengthduilt",totallengthduilt,"totallength",totallength,sqlselectstatementpart)
         print(allsnpOfJoinTableinAchr_sampled_idxlist)
         for sampled_idx in allsnpOfJoinTableinAchr_sampled_idxlist:
             contextwithinspeces=allsnpOfJoinTableinAchr[sampled_idx][5].upper()
@@ -81,47 +93,65 @@ if __name__ == '__main__':
 #             ALT=allsnpOfJoinTableinAchr[sampled_idx][4].upper().strip()
             sampled_idx_find_satisfied=sampled_idx
             #find the nearest correct rec
+            direction=1
             continuesearch=-1#-1 continuesearch; 1 firstoutgroupbase; 2 secondgroupbase
             while continuesearch==-1:
-                if sampled_idx_find_satisfied==len(allsnpOfJoinTableinAchr) or (sampled_idx!=allsnpOfJoinTableinAchr_sampled_idxlist[-1] and sampled_idx_find_satisfied==allsnpOfJoinTableinAchr_sampled_idxlist[allsnpOfJoinTableinAchr_sampled_idxlist.index(sampled_idx)+1] ):
-                    print("search snp out of range ",sampled_idx,len(allsnpOfJoinTableinAchr_sampled_idxlist),sampled_idx_find_satisfied)
-                    break
+                if sampled_idx_find_satisfied==len(allsnpOfJoinTableinAchr) or (sampled_idx!=allsnpOfJoinTableinAchr_sampled_idxlist[-1] and sampled_idx_find_satisfied==allsnpOfJoinTableinAchr_sampled_idxlist[allsnpOfJoinTableinAchr_sampled_idxlist.index(sampled_idx)+1] ) or sampled_idx_find_satisfied==-1 or (sampled_idx!=allsnpOfJoinTableinAchr_sampled_idxlist[0] and sampled_idx_find_satisfied==allsnpOfJoinTableinAchr_sampled_idxlist[allsnpOfJoinTableinAchr_sampled_idxlist.index(sampled_idx)-1]):
+                    if direction==-1:
+                        print("search snp out of range ",direction,sampled_idx,len(allsnpOfJoinTableinAchr_sampled_idxlist),sampled_idx_find_satisfied)
+                        break
+                    direction=-1
+                    print("direction",direction)
+                    sampled_idx_find_satisfied=sampled_idx
                 else:
                     firstoutgroupbase=allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][outgroupidx_in_topleveltable[0]].upper().strip();firstoutgroupdepthlist=re.split(r",",allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][outgroupidx_in_topleveltable[0]+1])
                     secondoutgroupbase=allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][outgroupidx_in_topleveltable[1]].upper().strip();secondoutgroupdepthlist=re.split(r",",allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][outgroupidx_in_topleveltable[1]+1])
                     ALT=allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][4].upper().strip()                    
-                if len(firstoutgroupdepthlist)==2 and int(firstoutgroupdepthlist[0])+int(firstoutgroupdepthlist[1])>=minoutgroupdepth and (firstoutgroupdepthlist[0].strip()=="0" or firstoutgroupdepthlist[1].strip()=="0"):#first outgroup can make judgement
-                    print("1",end="")
-                    if firstoutgroupdepthlist[0].strip()=="0" :
-                        A_base_idx=1
-                    elif firstoutgroupdepthlist[1].strip()=="0" :
-                        A_base_idx=0
+#                 if len(firstoutgroupdepthlist)==2 and int(firstoutgroupdepthlist[0])+int(firstoutgroupdepthlist[1])>=minoutgroupdepth and (firstoutgroupdepthlist[0].strip()=="0" or firstoutgroupdepthlist[1].strip()=="0"):#first outgroup can make judgement
+#                     print("1",end="")
+#                     if firstoutgroupdepthlist[0].strip()=="0" :
+#                         A_base_idx=1
+#                     elif firstoutgroupdepthlist[1].strip()=="0" :
+#                         A_base_idx=0
+#                     else:
+#                         print("never get here")
+#                     if len(secondoutgroupdepthlist)==2 and int(secondoutgroupdepthlist[0])+int(secondoutgroupdepthlist[1])>=minoutgroupdepth and (secondoutgroupdepthlist[0].strip()=="0" or secondoutgroupdepthlist[1].strip()=="0") and secondoutgroupdepthlist[A_base_idx].strip()=="0":
+# #                         if secondoutgroupdepthlist[A_base_idx].strip()=="0":
+#                         print("don't agree,contradiction",allsnpOfJoinTableinAchr[sampled_idx_find_satisfied])
+#                         sampled_idx_find_satisfied+=1
+#                         continue#continue loop
+#                     else:
+#                         continuesearch=3                          
+#                 elif firstoutgroupdepthlist=="no covered" and len(secondoutgroupdepthlist)==2 and int(secondoutgroupdepthlist[0])+int(secondoutgroupdepthlist[1])>=minoutgroupdepth and (secondoutgroupdepthlist[0].strip()=="0" or secondoutgroupdepthlist[1].strip()=="0"):#second outgroup can make judgenment
+#                     print("2",end="")
+#                     if  secondoutgroupdepthlist[0].strip()=="0":
+#                         A_base_idx=1;continuesearch=2
+#                     elif secondoutgroupdepthlist[1].strip()=="0":
+#                         A_base_idx=0;continuesearch=2
+#                     else:
+#                         print("never get here")
+#                 else:
+#                     print("skip this snp,both can not judge",allsnpOfJoinTableinAchr[sampled_idx_find_satisfied])
+#                     sampled_idx_find_satisfied+=1
+                if len(firstoutgroupdepthlist)==2 and len(secondoutgroupdepthlist)==2 and (int(firstoutgroupdepthlist[0])+int(firstoutgroupdepthlist[1])>=minoutgroupdepth or int(secondoutgroupdepthlist[0])+int(secondoutgroupdepthlist[1])>=minoutgroupdepth):
+                    if (firstoutgroupdepthlist[0].strip()=="0" and secondoutgroupdepthlist[0].strip()=="0") :
+                        A_base_idx=1;continuesearch=3
+                    elif (firstoutgroupdepthlist[1].strip()=="0" and secondoutgroupdepthlist[1].strip()=="0"):
+                        A_base_idx=0;continuesearch=3
                     else:
-                        print("never get here")
-                    if len(secondoutgroupdepthlist)==2 and int(secondoutgroupdepthlist[0])+int(secondoutgroupdepthlist[1])>=minoutgroupdepth and (secondoutgroupdepthlist[0].strip()=="0" or secondoutgroupdepthlist[1].strip()=="0") and secondoutgroupdepthlist[A_base_idx].strip()=="0":
-#                         if secondoutgroupdepthlist[A_base_idx].strip()=="0":
-                        print("don't agree,contradiction",allsnpOfJoinTableinAchr[sampled_idx_find_satisfied])
-                        sampled_idx_find_satisfied+=1
-                        continue#continue loop
-                    else:
-                        continuesearch=3                          
-                elif len(secondoutgroupdepthlist)==2 and int(secondoutgroupdepthlist[0])+int(secondoutgroupdepthlist[1])>=minoutgroupdepth and (secondoutgroupdepthlist[0].strip()=="0" or secondoutgroupdepthlist[1].strip()=="0"):#second outgroup can make judgenment
-                    print("2",end="")
-                    if  secondoutgroupdepthlist[0].strip()=="0":
-                        A_base_idx=1;continuesearch=2
-                    elif secondoutgroupdepthlist[1].strip()=="0":
-                        A_base_idx=0;continuesearch=2
-                    else:
-                        print("never get here")
+                        print("skip this snp ",allsnpOfJoinTableinAchr[sampled_idx_find_satisfied])
+                        sampled_idx_find_satisfied+=direction
                 else:
-                    print("skip this snp,both can not judge",allsnpOfJoinTableinAchr[sampled_idx_find_satisfied])
-                    sampled_idx_find_satisfied+=1
+                    print("skip this snp,coverage not sufficent or different direction",allsnpOfJoinTableinAchr[sampled_idx_find_satisfied])
+                    sampled_idx_find_satisfied+=direction
                 #########
          
 
                             
              
             else:#find
+                
+                duiltedsnpcountforcurrentchr+=1
                 print("find",allsnpOfJoinTableinAchr[sampled_idx_find_satisfied])
                 contextwithinspeces=allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][5].upper()
                 contextoutgroup=copy.copy(contextwithinspeces)
@@ -136,7 +166,20 @@ if __name__ == '__main__':
                 for vcftable_idx in range(len(vcftableslist)):
                     print(allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][10+vcftable_idx*2],end="\t",sep="\t",file=dadisnpfile)
                 print(currentchrID.replace(".","_"),postion,sep="\t",file=dadisnpfile)
+        if options.countsnpnumberfromvcf!=None:
+            totalduiltsnp+=duiltedsnpcountforcurrentchr
+            if duiltedsnpcountforcurrentchr!=0:
+                print(currentchrID,file=randomnamef_recchr)
+            print(currentchrID,"totalduiltsnp",totalduiltsnp,"duiltedsnpcountforcurrentchr",duiltedsnpcountforcurrentchr)
 
 
     dadisnpfile.close()
-    print(totallength,totallengthduilt,"finsih")
+    randomnamef_recchr.close()
+    a=os.popen("grep -wFf "+randomnamefile_recordchr+" "+options.countsnpnumberfromvcf+"|grep ^[^#] - |less -S|wc -l")
+    totalsnpforcount=int(a.readline().strip())
+    print("should be none",a.readline())
+    a.close()
+    
+    os.system("rm "+randomnamefile_recordchr)
+    dulttimes=totalduiltsnp/totalsnpforcount
+    print("totalduiltsnp",totalduiltsnp,"totalsnpforcount",totalsnpforcount,totallength,"real totallengthduilt",dulttimes*totallength,"totallengthduilt",totallengthduilt,"finsih")

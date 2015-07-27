@@ -3,11 +3,13 @@ Created on 2014-11-30
 
 @author: liurui
 '''
+import copy
 import os, numpy, sys, re
 
+from NGS.BasicUtil import *
 from NGS.BasicUtil import Util
 import NGS.BasicUtil.DBManager as dbm
-from NGS.BasicUtil import *
+
 
 mindepthforJudgefixref=10
 class AncestralAlleletabletools():
@@ -104,12 +106,22 @@ class AncestralAlleletabletools():
     def getflankseqs(self, chrom,chromlen, startpostocollecteSNP, endpostocollectSNP, idxedreffilehandler,ancestralgenomenameaddtotable, refindex, flanklen,outfile, tablename="derived_alle_ref"):
 #         testfile=open("testsnpfile.txt",'a')
         self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, tablename, "context", "char(3)", "default null"))
+        #add a temp function code block to process the snp before startpos of collecteSNP
+        tempsnps=self.dbvariant.operateDB("select","select * from " + tablename + " where chrID='" + chrom + "' and snp_pos>= 2 and snp_pos<=" + str(startpostocollecteSNP))
+        RefSeqMaptemp = Util.getRefSeqBypos(idxedreffilehandler, refindex, chrom, 1, startpostocollecteSNP+1,chromlen)
+        for snp in tempsnps:
+            self.dbvariant.operateDB("update","update "+tablename+" set context='"+''.join(RefSeqMaptemp[chrom][snp[1]-1:snp[1]+2])+"' where chrID='"+ chrom + "' and snp_pos= "+str(snp[1]))
+            l=copy.deepcopy(RefSeqMaptemp[chrom][snp[1]-1:])
+            l[1]="N"
+            print(">"+chrom+"_"+str(snp[1])+"\n"+"".join(l), file=outfile)
+            
+        #temp function code block end
         snps = self.dbvariant.operateDB("select", "select * from " + tablename + " where chrID='" + chrom + "' and snp_pos>= " + str(startpostocollecteSNP) + " and snp_pos<=" + str(endpostocollectSNP))
         RefSeqMap = Util.getRefSeqBypos(idxedreffilehandler, refindex, chrom, startpostocollecteSNP-flanklen, endpostocollectSNP+flanklen,chromlen)
         
         for snp in snps:
             currentsnpPos = snp[1]
-            if len(snp[3]) != 1 or len(snp[4]) != 1:
+            if len(snp[3]) != 1 :
         #                        print(snp[4])
                 continue# skip indel
             currentsnpID=chrom+"_"+str(snp[1])
@@ -248,18 +260,22 @@ class AncestralAlleletabletools():
         """
         abandon the snps which exist in archicpopVcfFile but absence in all others pop snp sets 
         """
+        archicpop = VCFutil.VCF_Data(archicpopVcfFile)
+        archicpop_colname=re.search(r'[^/]*$',archicpopVcfFile).group(0)
+        archicpop_colname=re.sub(r"[^\w^\d]","_",archicpop_colname)
+        print(archicpop_colname+"_alt",archicpop_colname+"_dep")
+        self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, toplevelsnptablename, archicpop_colname+"_alt", "char(128)", "default null"))
+        self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, toplevelsnptablename, archicpop_colname+"_dep", "char(128)", "default null"))  
+        print("callproc", "mysql_sp_add_column","done")
         depthfile = Util.GATK_depthfile(depthFile, depthFile + ".index")
+        print("Util.GATK_depthfile done")
         species_idx_list=[]
 #         species_idx = depthfile.title.index("Depth_for_" + archicpopNameindepthFile)
         for i in range(0,len(depthfile.title)):
             if re.search(r""+archicpopNameindepthFile,depthfile.title[i])!=None:
-                species_idx_list.append(i)
+                species_idx_list.append(i)        
         
-        archicpop_colname=re.search(r'[^/]*$',archicpopVcfFile).group(0)
-        archicpop_colname=re.sub(r"[^\w^\d]","_",archicpop_colname)
-        self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, toplevelsnptablename, archicpop_colname+"_alt", "char(128)", "default null"))
-        self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, toplevelsnptablename, archicpop_colname+"_dep", "char(128)", "default null"))  
-        archicpop = VCFutil.VCF_Data(archicpopVcfFile)
+        
 #         totalChroms = self.dbgenome.operateDB("select","select count(*) from "+chromtable)[0][0]
 #         for i in range(0,totalChroms,20):
 #             currentsql="select * from " + chromtable+" order by chrlength desc limit "+str(i)+",20"
