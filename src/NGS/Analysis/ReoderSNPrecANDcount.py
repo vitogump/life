@@ -108,6 +108,7 @@ if __name__ == '__main__':
         minvalue+=d_increase
     else:
         if minvalue<maxvalue:
+            print("never get here")
             print(str(minvalue),str(maxvalue),sep="\t",file=intervalfile)
         intervalfile.close()
     ###### data structure ###################################

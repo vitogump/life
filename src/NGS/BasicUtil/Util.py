@@ -28,7 +28,7 @@ vcfdbname=cfparser.get("mysqldatabase","vcfdbname")
 TranscriptGenetable=cfparser.get("mysqldatabase","TranscriptGenetable")
 KB743256_1=cfparser.get("mysqldatabase","KB743256_1")
 
-def alin2PopSnpPos(vcfMaplist,innerjoin_outjoin="i"):
+def alinmultPopSnpPos(vcfMaplist,jointmode="i"):
     """input:
     two map fomart like this {chrNo:[(pos,REF,ALT,INFO,FORMAT,sample,...),(pos,REF,ALT,INFO,FORMAT,sample,...),,,,,],chrNo:[],,,,,,}
     output:
@@ -36,7 +36,7 @@ def alin2PopSnpPos(vcfMaplist,innerjoin_outjoin="i"):
                                             from pop1                        from pop2
     """
     multipleVcfMap={}
-    if len(multipleVcfMap)==1 or innerjoin_outjoin=="o":
+    if len(vcfMaplist)==1 or jointmode=="o" or jointmode=="l":
 
         for currentChrom in vcfMaplist[0].keys():
             multipleVcfMap[currentChrom]=[]
@@ -70,14 +70,19 @@ def alin2PopSnpPos(vcfMaplist,innerjoin_outjoin="i"):
                                 multipleVcfMap[currentChrom][mid].append(SNPrec[3:])
                             break
                     else:
-                        insertelem=[posInPop1,RefInPop1,AltInPop1]
-                        for i in range(0,vcfMap_obj_idx):
-                            insertelem.append(None)
-                        insertelem.append(SNPrec[3:])
-                        multipleVcfMap[currentChrom].insert(low,insertelem)
+                        if jointmode=="o":
+                            insertelem=[posInPop1,RefInPop1,AltInPop1]
+                            for i in range(0,vcfMap_obj_idx):
+                                insertelem.append(None)
+                            insertelem.append(SNPrec[3:])
+                            multipleVcfMap[currentChrom].insert(low,insertelem)
+    #list(multipleVcfMap.keys())[0]==currentChrom
+    #when a pos only exist in the former several pops,but not exist in the rear several pops,the loop block under are neccessary
         for REC_idx in range(0,len(multipleVcfMap[list(multipleVcfMap.keys())[0]])):
+            #
             for i in range(len(vcfMaplist)+3-len(multipleVcfMap[list(multipleVcfMap.keys())[0]][REC_idx])):
                 multipleVcfMap[list(multipleVcfMap.keys())[0]][REC_idx].append(None)
+
         return copy.deepcopy(multipleVcfMap)
     
     for currentChrom in vcfMaplist[0].keys():
@@ -94,10 +99,10 @@ def alin2PopSnpPos(vcfMaplist,innerjoin_outjoin="i"):
             for vcfMap_obj_idx in range(1,len(vcfMaplist[:])):
                 vcfMap_obj=vcfMaplist[vcfMap_obj_idx]
                 if currentChrom not in vcfMap_obj or len(vcfMap_obj[currentChrom])==0:
-                    print("alin2PopSnpPos",currentChrom,"didn't find in vcfMap2")
-#                     if innerjoin_outjoin=="i":
+                    print("alinmultPopSnpPos",currentChrom,"didn't find in vcfMap2")
+#                     if jointmode=="i":
                     break
-#                     elif innerjoin_outjoin=="o":
+#                     elif jointmode=="o":
 #                         if vcfMap_obj_idx!=len(vcfMaplist)-1:
 #                             elementToAppend.append(None)
 #                         else:
@@ -124,7 +129,7 @@ def alin2PopSnpPos(vcfMaplist,innerjoin_outjoin="i"):
                             elif vcfMap_obj_idx==len(vcfMaplist)-1:
                                 elementToAppend.append(vcfMap_obj[currentChrom][mid][3:])
                                 multipleVcfMap[currentChrom].append(elementToAppend)
-#                         elif innerjoin_outjoin=="i":
+#                         elif jointmode=="i":
 #                         print("skip the different allele rec",currentChrom,posInPop1,AltInPop1,vcfMap_obj[currentChrom][mid][2])
 #                             print(currentChrom,posInPop1,AltInPop1,vcfMap_obj[currentChrom][mid][2],"different alt allele,should skip this rec,but i have no time to improve this now")
 #                         elif innerjoin_outjoin=="o":
@@ -135,10 +140,10 @@ def alin2PopSnpPos(vcfMaplist,innerjoin_outjoin="i"):
 #                                 multipleVcfMap[currentChrom].append(elementToAppend)
                         break
                 else:
-                    if innerjoin_outjoin=="i":
+                    if jointmode=="i":
                         #ignore the rec
                         break
-#                     elif innerjoin_outjoin=="o":
+#                     elif jointmode=="o":
 #                         if vcfMap_obj_idx!=len(vcfMaplist)-1:
 #                             elementToAppend.append(None)
 #                         elif vcfMap_obj_idx==len(vcfMaplist)-1:

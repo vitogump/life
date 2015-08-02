@@ -356,13 +356,13 @@ class Fst():
         win = Util.Window()
         try:
             if self.i_o=="i":
-                doubleVcfMap=Util.alin2PopSnpPos([vcfMap1_ref, vcfMap2],"i")
+                doubleVcfMap=Util.alinmultPopSnpPos([vcfMap1_ref, vcfMap2],"i")
             elif self.i_o=="o":
-                doubleVcfMap = Util.alin2PopSnpPos([vcfMap1_ref, vcfMap2],"o")#produce self.doubleVcfMap{}
+                doubleVcfMap = Util.alinmultPopSnpPos([vcfMap1_ref, vcfMap2],"o")#produce self.doubleVcfMap{}
 #            for currentChrom in self.doubleVcfMap.keys():
     #             self.FstMapByChrom[currentChrom]=[]
             win.winValueL = []
-            print("after alin2PopSnpPos ,caculateFst value in "+currentchrID,len(doubleVcfMap[currentchrID]))
+            print("after alinmultPopSnpPos ,caculateFst value in "+currentchrID,len(doubleVcfMap[currentchrID]))
                 
             win.slidWindowOverlap(doubleVcfMap[currentchrID], currentchrLen,winwidth, slideSize, caculator)
             FstMapByChrom[currentchrID] = copy.deepcopy(win.winValueL)

@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 import re, numpy, sys, pickle,copy
 from NGS.BasicUtil import *
-import NGS.BasicUtil.Util
+
 import src.NGS.BasicUtil.DBManager as dbm
 from optparse import OptionParser
 '''
@@ -81,7 +81,7 @@ if __name__ == '__main__':
                     tempmap[currentchrID]=poplist[vcf_idx].getVcfListByChrom(currentchrID)
                     vcflist_A_chrom_container.append(copy.deepcopy(tempmap))
 #                 print("vcflist_A_chrom_container",vcflist_A_chrom_container)
-                MultipleVcfMap = Util.alin2PopSnpPos(vcflist_A_chrom_container,"o")
+                MultipleVcfMap = Util.alinmultPopSnpPos(vcflist_A_chrom_container,"o")
 #                 print("MultipleVcfMap",MultipleVcfMap)
                 win.slidWindowOverlap(MultipleVcfMap[currentchrID], currentchrLen, windowWidth, slideSize, hp_caculator)
                 hscore.HeterozyMap[currentchrID]=copy.deepcopy(win.winValueL)
