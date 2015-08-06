@@ -248,6 +248,90 @@ class Caculate_depth_judge(Caculator):
             self.COVERED_COUNT = [0] * len(self.speciesorder)
             self.AVERAGE_DEPTH = [0] * len(self.speciesorder)
         return "empty", ([a / self.winsize for a in countlist], [a / self.winsize for a in average])
+class Caculate_S_ObsExp_difference(Caculator):
+    def __init__(self,MethodToSeqpoplist=["indvd"],mindepthtojudefixed=20,N_of_targetpop,N_of_refpop,dbvariantstoolstojudgeancestral,topleveltablejudgeancestralname):
+        super().__init__()
+        self.dbvariantstoolstojudgeancestral=dbvariantstoolstojudgeancestral
+        self.topleveltablejudgeancestralname=topleveltablejudgeancestralname
+        self.MethodToSeqpoplist=MethodToSeqpoplist
+        self.mindepthtojudefixed=mindepthtojudefixed
+        self.N_of_targetpop=N_of_targetpop
+        self.N_of_refpop=N_of_refpop
+        self.depthobjlist=[]
+        self.species_idx_list=[]
+        self.currentchrID=None
+        self.COUNT=0
+        self.COBS=0
+        self.CEXP=0
+        self.CfixedDerived=0
+    def process(self,T):
+        """T=[pos,ref,alt,pop1,pop2,.....,popn]"""
+        if len(T[1]) != len(T[2]) or len(T[2])!=1  or len(T[2])!=1:
+            return
+        snp=self.dbvariantstoolstojudgeancestral.operateDB("select","select * from "+self.topleveltablejudgeancestralname+" where chrID='"+self.currentchrID+"' and snp_pos='"+str(T[0])+"'")
+        if not snp:
+            print(self.currentchrID,T,"snp not find,skip")
+            return
+        else:
+            depthlist1=re.split(r",",snp[0][7])
+            depthlist2=re.split(r",",snp[0][9])
+            if len(depthlist1)==2 and len(depthlist2)==2 and (int(depthlist1[0]) + int(depthlist1[1])>=self.mindepthtojudefixed or int(depthlist2[0]) + int(depthlist2[1])>=self.mindepthtojudefixed) and ((depthlist1[0].strip()=="0" and depthlist2[0].strip()=="0") or (depthlist1[1].strip()=="0" and depthlist2[1].strip()=="0") ):
+                if depthlist1[0].strip()=="0" and depthlist2[0].strip()=="0":
+                    A_base_idx=1
+                elif depthlist1[1].strip()=="0" and depthlist2[1].strip()=="0":
+                    A_base_idx=0
+                else:
+                    print(snp,"never get here!")
+            elif (len(depthlist1)==2 and  snp[0][9] == "no covered" and int(depthlist1[0]) + int(depthlist1[1])>=self.mindepthtojudefixed and (depthlist1[0].strip()=="0" or depthlist1[1].strip()=="0" ))   or (snp[0][7]=="no covered" and len(depthlist2)==2 and int(depthlist2[0]) + int(depthlist2[1])>=self.mindepthtojudefixed and (depthlist2[1].strip()=="0" or depthlist2[0].strip()=="0")):
+                if (snp[0][9] == "no covered" and depthlist1[0].strip()=="0") or (snp[0][7]=="no covered" and depthlist2[0].strip()=="0"):
+                    A_base_idx=1
+                elif (snp[0][9] == "no covered" and depthlist1[1].strip()=="0") or (snp[0][7]=="no covered" and depthlist2[1].strip()=="0"):
+                    A_base_idx=0
+                else:
+                    print(snp,"never get here!")
+            else:
+                print(snp,"skip snp")
+                return
+        ancestrallcontext=snp[0][5].strip()[0].upper()+snp[0][3+A_base_idx].strip().upper()+snp[0][5].strip()[2].upper()
+        if "CG" in ancestrallcontext or "GC" in ancestrallcontext:
+            print("skip CG site",ancestrallcontext)
+            return
+        ##########x-axis
+        countedAF=0;target_DAF_sum=0
+        for tpopidx in range(3,self.N_of_targetpop+3):
+            if T[tpopidx]==None:
+                if self.depthobjlist==[]:
+                    print("skip this pos",T)
+                else:
+                    depth_linelist=self.depthobjlist[tpopidx].getdepthByPos_optimized(self.currentchrID,T[0])
+            else:
+                if self.MethodToSeqpoplist[tpopidx]=="indvds":
+                    AF=float(re.search(r"AF=([\d\.]+);", T[tpopidx][0]).group(1))
+                elif self.MethodToSeqpoplist[tpopidx]=="pool":
+                    refdep = 0;altalleledep = 0
+                    AD_idx = (re.split(":", T[tpopidx][1])).index("AD")
+                    for sample in T[tpopidx][2]:
+                        if len(re.split(":", sample)) == 1:  # ./.
+                            continue
+                        AD_depth = re.split(",", re.split(":", sample)[AD_idx])
+                        try :
+                            refdep += int(AD_depth[0])
+                            altalleledep += int(AD_depth[1])
+                        except ValueError:
+                            print(sample, end="|")
+                    if refdep==altalleledep and altalleledep==0:
+                        continue
+                    AF=altalleledep/(altalleledep+refdep)
+            if A_base_idx==0:
+                DAF=1-AF
+            elif A_base_idx==1:
+                DAF=AF
+            target_DAF_sum+=DAF;countedAF+=1                          
+                    
+                        
+                            
+                        
+                            
 class Caculate_Fst(Caculator):
     def __init__(self, MethodToSeqpop1="pool", MethodToSeqpop2="indvd", minsnps=3):
         super().__init__()
@@ -260,12 +344,12 @@ class Caculate_Fst(Caculator):
         self.MethodToSeqpop2 = MethodToSeqpop2
 #         self.depthforcurrentchrom=None
         self.depthobjmap=None
-        self.lastposofdepthfilefp=None
         self.species_idx_map=None
         self.currentchrID=None
         self.pop1_indvds=10#when pop1 is none at a pos,and no depth information
         self.pop2_indvds=10
     def process(self, T, seqerrorrate=0.01):
+        """T=[pos,ref,alt,pop1,pop2]"""
         if len(T[1]) != len(T[2]) or len(T[2])!=1  or len(T[2])!=1:
             return
         refdep_1 = 0;refdep_2 = 0
@@ -275,114 +359,108 @@ class Caculate_Fst(Caculator):
         pop2 = T[4]
 #         dp4_1 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", pop1[0])
 #         if dp4_1 != None:  # vcf from samtools
-        if None !=None:  # vcf from samtools
-            pass
+#         if None !=None:  # vcf from samtools
+#             pass
 #             refdep_1 = int(dp4_1.group(1)) + int(dp4_1.group(2))
 #             altalleledep_1 = int(dp4_1.group(3)) + int(dp4_1.group(4))
 #             dp4_2 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", pop2[0])
 #             refdep_2 = int(dp4_2.group(1)) + int(dp4_2.group(2))
 #             altalleledep_2 = int(dp4_2.group(3)) + int(dp4_2.group(4))
-        else:  # vcf from gatk
-            if self.MethodToSeqpop1 == "pool":
-                
-                if pop1==None:
-                    if self.depthobjmap==None:
+#         else:  # vcf from gatk
+        if self.MethodToSeqpop1 == "pool":              
+            if pop1==None:
+                if self.depthobjmap==None:
+                    refdep_1=self.pop1_indvds
+                    altalleledep_1=0
+                else:
+                    depth_linelist=self.depthobjmap["vcfpop1_ref"].getdepthByPos_optimized(self.currentchrID,T[0])#  re.split(r"\t",self.depthforcurrentchrom["vcfpop1_ref"][int(T[0])-1])
+                    sum_depth=0
+                    for idx in self.species_idx_map["vcfpop1_ref"]:
+                        sum_depth+=int(depth_linelist[idx])
+                    if sum_depth>=self.pop1_indvds:
                         refdep_1=self.pop1_indvds
                         altalleledep_1=0
                     else:
-                        depth_linelist=self.depthobjmap["vcfpop1_ref"].getdepthByPos_optimized(self.currentchrID,int(T[0]))#  re.split(r"\t",self.depthforcurrentchrom["vcfpop1_ref"][int(T[0])-1])
-#                         self.lastposofdepthfilefp["vcfpop1_ref"]=self.depthobjmap["vcfpop1_ref"].depthfilefp.tell()
-                        sum_depth=0
-                        for idx in self.species_idx_map["vcfpop1_ref"]:
-                            sum_depth+=int(depth_linelist[idx])
-                        if sum_depth>=self.pop1_indvds:
-                            refdep_1=self.pop1_indvds
-                            altalleledep_1=0
-                        else:
-                            return
+                        return
+            else:
+                AD_idx_1 = (re.split(":", pop1[1])).index("AD")  # gatk GT:AD:DP:GQ:PL
+                for sample in pop1[2][:]:
+                    if len(re.split(":", sample)) == 1:  # ./.
+                        continue
+                    AD_depth = re.split(",", re.split(":", sample)[AD_idx_1])
+                    try:
+                        refdep_1 += int(AD_depth[0])
+                        altalleledep_1 += int(AD_depth[1])
+                    except ValueError:
+                        print(sample, end="|")
+        elif self.MethodToSeqpop1 == "indvd":
+            if pop1==None:
+                if self.depthobjmap==None:
+                    refdep_1=self.pop1_indvds
+                    altalleledep_1=0
                 else:
-                    AD_idx_1 = (re.split(":", pop1[1])).index("AD")  # gatk GT:AD:DP:GQ:PL
-                    for sample in pop1[2][:]:
-                        if len(re.split(":", sample)) == 1:  # ./.
-                            continue
-                        AD_depth = re.split(",", re.split(":", sample)[AD_idx_1])
-                        try:
-                            refdep_1 += int(AD_depth[0])
-                            altalleledep_1 += int(AD_depth[1])
-                        except ValueError:
-                            print(sample, end="|")
-            elif self.MethodToSeqpop1 == "indvd":
-                if pop1==None:
-                    if self.depthobjmap==None:
+                    depth_linelist=self.depthobjmap["vcfpop1_ref"].getdepthByPos_optimized(self.currentchrID,int(T[0]))#re.split(r"\t",self.depthforcurrentchrom["vcfpop1_ref"][int(T[0])-1])
+                    sum_depth=0
+                    for idx in self.species_idx_map["vcfpop1_ref"]:
+                        sum_depth+=int(depth_linelist[idx])
+                    if sum_depth>=self.pop1_indvds:
                         refdep_1=self.pop1_indvds
                         altalleledep_1=0
                     else:
-                        depth_linelist=self.depthobjmap["vcfpop1_ref"].getdepthByPos_optimized(self.currentchrID,int(T[0]))#re.split(r"\t",self.depthforcurrentchrom["vcfpop1_ref"][int(T[0])-1])
-#                         self.lastposofdepthfilefp["vcfpop1_ref"]=self.depthobjmap["vcfpop1_ref"].depthfilefp.tell()
-#                         print("vcfpop1_ref",self.lastposofdepthfilefp["vcfpop1_ref"])
-                        sum_depth=0
-                        for idx in self.species_idx_map["vcfpop1_ref"]:
-                            sum_depth+=int(depth_linelist[idx])
-                        if sum_depth>=self.pop1_indvds:
-                            refdep_1=self.pop1_indvds
-                            altalleledep_1=0
-                        else:
-                            return
+                        return
+            else:
+                AN = int(re.search(r"AN=(\d+);", pop1[0]).group(1))
+                AC = int(re.search(r"AC=(\d+);", pop1[0]).group(1))
+                refdep_1 = AN - AC
+                altalleledep_1 = AC
+        if self.MethodToSeqpop2 == "pool":
+            
+            if pop2==None:
+                if self.depthobjmap==None:
+                    refdep_2=self.pop2_indvds
+                    altalleledep_2=0
                 else:
-                    AN = int(re.search(r"AN=(\d+);", pop1[0]).group(1))
-                    AC = int(re.search(r"AC=(\d+);", pop1[0]).group(1))
-                    refdep_1 = AN - AC
-                    altalleledep_1 = AC
-            if self.MethodToSeqpop2 == "pool":
-                
-                if pop2==None:
-                    if self.depthobjmap==None:
+                    depth_linelist=self.depthobjmap["vcfpop2"].getdepthByPos_optimized(self.currentchrID,int(T[0]))#re.split(r"\t",self.depthforcurrentchrom["vcfpop2"][int(T[0])-1])
+                    sum_depth=0
+                    for idx in self.species_idx_map["vcfpop2"]:
+                        sum_depth+=int(depth_linelist[idx])
+                    if sum_depth>=self.pop2_indvds:
                         refdep_2=self.pop2_indvds
                         altalleledep_2=0
                     else:
-                        depth_linelist=self.depthobjmap["vcfpop2"].getdepthByPos_optimized(self.currentchrID,int(T[0]))#re.split(r"\t",self.depthforcurrentchrom["vcfpop2"][int(T[0])-1])
-#                         self.lastposofdepthfilefp["vcfpop2"]=self.depthobjmap["vcfpop2"].depthfilefp.tell()
-                        sum_depth=0
-                        for idx in self.species_idx_map["vcfpop2"]:
-                            sum_depth+=int(depth_linelist[idx])
-                        if sum_depth>=self.pop2_indvds:
-                            refdep_2=self.pop2_indvds
-                            altalleledep_2=0
-                        else:
-                            return
+                        return
+            else:
+                AD_idx_2 = (re.split(":", pop2[1])).index("AD")
+                for sample in pop2[2][:]:
+                    if len(re.split(":", sample)) == 1:  # ./.
+                        continue
+                    AD_depth = re.split(",", re.split(":", sample)[AD_idx_2])
+                    try:
+                        refdep_2 += int(AD_depth[0])
+                        altalleledep_2 += int(AD_depth[1])
+                    except ValueError:
+                        print(sample, end="|")
+        elif self.MethodToSeqpop2 == "indvd":
+            if pop2==None:
+                if self.depthobjmap==None:
+                    refdep_2=self.pop2_indvds
+                    altalleledep_2=0
                 else:
-                    AD_idx_2 = (re.split(":", pop2[1])).index("AD")
-                    for sample in pop2[2][:]:
-                        if len(re.split(":", sample)) == 1:  # ./.
-                            continue
-                        AD_depth = re.split(",", re.split(":", sample)[AD_idx_2])
-                        try:
-                            refdep_2 += int(AD_depth[0])
-                            altalleledep_2 += int(AD_depth[1])
-                        except ValueError:
-                            print(sample, end="|")
-            elif self.MethodToSeqpop2 == "indvd":
-                if pop2==None:
-                    if self.depthobjmap==None:
+                    depth_linelist=self.depthobjmap["vcfpop2"].getdepthByPos_optimized(self.currentchrID,int(T[0]))#re.split(r"\t",self.depthforcurrentchrom["vcfpop2"][int(T[0])-1])
+
+                    sum_depth=0
+                    for idx in self.species_idx_map["vcfpop2"]:
+                        sum_depth+=int(depth_linelist[idx])
+                    if sum_depth>=self.pop2_indvds:
                         refdep_2=self.pop2_indvds
                         altalleledep_2=0
                     else:
-                        depth_linelist=self.depthobjmap["vcfpop2"].getdepthByPos_optimized(self.currentchrID,int(T[0]))#re.split(r"\t",self.depthforcurrentchrom["vcfpop2"][int(T[0])-1])
-#                         self.lastposofdepthfilefp["vcfpop2"]=self.depthobjmap["vcfpop2"].depthfilefp.tell()
-#                         print("vcfpop2",self.lastposofdepthfilefp["vcfpop2"])
-                        sum_depth=0
-                        for idx in self.species_idx_map["vcfpop2"]:
-                            sum_depth+=int(depth_linelist[idx])
-                        if sum_depth>=self.pop2_indvds:
-                            refdep_2=self.pop2_indvds
-                            altalleledep_2=0
-                        else:
-                            return
-                else:
-                    AN = int(re.search(r"AN=(\d+);", pop2[0]).group(1))
-                    AC = int(re.search(r"AC=(\d+);", pop2[0]).group(1))
-                    refdep_2 = AN - AC
-                    altalleledep_2 = AC  
+                        return
+            else:
+                AN = int(re.search(r"AN=(\d+);", pop2[0]).group(1))
+                AC = int(re.search(r"AC=(\d+);", pop2[0]).group(1))
+                refdep_2 = AN - AC
+                altalleledep_2 = AC  
 
               
                 

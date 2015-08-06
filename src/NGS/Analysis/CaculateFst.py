@@ -321,20 +321,18 @@ class Fst():
                     pop1SeqOfAChr[currentchrID]=pop1.getVcfListByChrom(currentchrID)
                     pop2SeqOfAChr[currentchrID]=pop2.getVcfListByChrom(currentchrID)
                     if self.i_o=="o" and self.depthfilenames!={}:
-                        depthobjmap={};fst_caculator.species_idx_map={};fst_caculator.lastposofdepthfilefp={}
+                        depthobjmap={};fst_caculator.species_idx_map={}
                         depthobjmap[vcfNAME_POP1]=Util.GATK_depthfile(self.depthfilenames[vcfNAME_POP1][0],self.depthfilenames[vcfNAME_POP1][0]+".index")
-                        depthobjmap[vcfNAME_POP1].depthfilefp.seek(depthobjmap[vcfNAME_POP1].covfileidx[currentchrID.strip()])
+#                         depthobjmap[vcfNAME_POP1].depthfilefp.seek(depthobjmap[vcfNAME_POP1].covfileidx[currentchrID.strip()])
                         
-                        fst_caculator.lastposofdepthfilefp["vcfpop1_ref"]=depthobjmap[vcfNAME_POP1].depthfilefp.tell()
                         fst_caculator.species_idx_map["vcfpop1_ref"]=[]
                         for name in self.depthfilenames[vcfNAME_POP1][1:]:
                             fst_caculator.species_idx_map["vcfpop1_ref"].append(depthobjmap[vcfNAME_POP1].title.index("Depth_for_"+name))
                         #process vcfpop2
 
                         depthobjmap[vcfNAME_POP2]=Util.GATK_depthfile(self.depthfilenames[vcfNAME_POP2][0],self.depthfilenames[vcfNAME_POP2][0]+".index")
-                        depthobjmap[vcfNAME_POP2].depthfilefp.seek(depthobjmap[vcfNAME_POP2].covfileidx[currentchrID.strip()])
+#                         depthobjmap[vcfNAME_POP2].depthfilefp.seek(depthobjmap[vcfNAME_POP2].covfileidx[currentchrID.strip()])
 
-                        fst_caculator.lastposofdepthfilefp["vcfpop2"]=depthobjmap[vcfNAME_POP2].depthfilefp.tell()
                         fst_caculator.species_idx_map["vcfpop2"]=[]
                         for name in self.depthfilenames[vcfNAME_POP2][1:]:
                             fst_caculator.species_idx_map["vcfpop2"].append(depthobjmap[vcfNAME_POP2].title.index("Depth_for_"+name))
