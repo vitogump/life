@@ -1,4 +1,4 @@
-import re, copy
+import re, copy,math,numpy
 '''
 Created on 2013-7-2
 
@@ -249,21 +249,22 @@ class Caculate_depth_judge(Caculator):
             self.AVERAGE_DEPTH = [0] * len(self.speciesorder)
         return "empty", ([a / self.winsize for a in countlist], [a / self.winsize for a in average])
 class Caculate_S_ObsExp_difference(Caculator):
-    def __init__(self,MethodToSeqpoplist=["indvd"],mindepthtojudefixed=20,N_of_targetpop,N_of_refpop,dbvariantstoolstojudgeancestral,topleveltablejudgeancestralname):
+    def __init__(self,mindepthtojudefixed,N_of_targetpop,N_of_refpop,dbvariantstoolstojudgeancestral,topleveltablejudgeancestralname):
         super().__init__()
         self.dbvariantstoolstojudgeancestral=dbvariantstoolstojudgeancestral
         self.topleveltablejudgeancestralname=topleveltablejudgeancestralname
-        self.MethodToSeqpoplist=MethodToSeqpoplist
-        self.mindepthtojudefixed=mindepthtojudefixed
+        self.MethodToSeqpoplist=[]
+        self.mindepthtojudefixed=20
         self.N_of_targetpop=N_of_targetpop
         self.N_of_refpop=N_of_refpop
         self.depthobjlist=[]
         self.species_idx_list=[]
         self.currentchrID=None
         self.COUNT=0
-        self.COBS=0
+        self.obsseq=[]
         self.CEXP=0
         self.CfixedDerived=0
+        self.freq_xaxisKEY_yaxisVALUERelation=None
     def process(self,T):
         """T=[pos,ref,alt,pop1,pop2,.....,popn]"""
         if len(T[1]) != len(T[2]) or len(T[2])!=1  or len(T[2])!=1:
@@ -302,10 +303,18 @@ class Caculate_S_ObsExp_difference(Caculator):
             if T[tpopidx]==None:
                 if self.depthobjlist==[]:
                     print("skip this pos",T)
+                    continue
                 else:
                     depth_linelist=self.depthobjlist[tpopidx].getdepthByPos_optimized(self.currentchrID,T[0])
+                    sum_depth=0
+                    for idx in self.species_idx_list[tpopidx][:]:
+                        sum_depth+=int(depth_linelist[idx])
+                    if sum_depth>self.mindepthtojudefixed:
+                        AF=0
+                    else:
+                        continue
             else:
-                if self.MethodToSeqpoplist[tpopidx]=="indvds":
+                if self.MethodToSeqpoplist[tpopidx]=="indvd":
                     AF=float(re.search(r"AF=([\d\.]+);", T[tpopidx][0]).group(1))
                 elif self.MethodToSeqpoplist[tpopidx]=="pool":
                     refdep = 0;altalleledep = 0
@@ -326,11 +335,80 @@ class Caculate_S_ObsExp_difference(Caculator):
                 DAF=1-AF
             elif A_base_idx==1:
                 DAF=AF
-            target_DAF_sum+=DAF;countedAF+=1                          
-                    
-                        
-                            
-                        
+            target_DAF_sum+=DAF;countedAF+=1
+        if target_DAF_sum==0 or countedAF==0:
+            print("skip this snp,because it fiexd as ancestral or no covered in this pos in target pops",T,snp)
+            return
+        target_DAF=target_DAF_sum/countedAF
+        #########y-axis
+        countedAF=0;rer_DAF_sum=0
+        for rpopidx in range(3+self.N_of_targetpop,self.N_of_refpop+self.N_of_targetpop+3):
+            if T[rpopidx]==None:
+                if self.depthobjlist==[]:
+                    print("skip this snp",T)
+                    continue
+                else:
+                    depth_linelist=self.depthobjlist[rpopidx].getdepthByPos_optimized(self.currentchrID,T[0])
+                    sum_depth=0
+                    for idx in self.species_idx_list[rpopidx][:]:
+                        sum_depth+=int(depth_linelist[idx])
+                    if sum_depth>self.mindepthtojudefixed:
+                        AF=0
+                    else:
+                        continue
+            else:
+                if self.MethodToSeqpoplist[rpopidx]=="indvd":
+                    AF=float(re.search(r"AF=([\d\.]+);", T[rpopidx][0]).group(1))
+                elif self.MethodToSeqpoplist[rpopidx]=="pool":
+                    refdep = 0;altalleledep = 0
+                    AD_idx = (re.split(":", T[rpopidx][1])).index("AD")
+                    for sample in T[rpopidx][2]:
+                        if len(re.split(":",sample))==1:
+                            continue
+                        AD_depth = re.split(",", re.split(":", sample)[AD_idx])
+                        try :
+                            refdep += int(AD_depth[0])
+                            altalleledep += int(AD_depth[1])
+                        except ValueError:
+                            print(sample, end="|")
+                    if refdep==altalleledep and altalleledep==0:
+                        continue
+                    AF=altalleledep/(altalleledep+refdep)
+                if A_base_idx==0:
+                    DAF=1-AF
+                elif A_base_idx==1:
+                    DAF=AF
+                rer_DAF_sum+=DAF;countedAF+=1
+            if  countedAF==0:
+                print("skip this snp,because it  no covered in this pos in target pops",T,snp)
+                return
+        for a,b in sorted(self.freq_xaxisKEY_yaxisVALUERelation.keys()):
+            if target_DAF>a and target_DAF<=b:
+                self.CEXP+=self.freq_xaxisKEY_yaxisVALUERelation[(a,b)]
+                break
+        self.obsseq.append(rer_DAF_sum/countedAF)
+        self.COUNT+=1
+        if rer_DAF_sum/countedAF==1:
+            self.CfixedDerived+=1
+    def getResult(self):
+        S1="NA"
+        S2="NA"
+        try:
+            S1=math.log(numpy.sum(self.obsseq)/self.CEXP)
+            S2=(numpy.sum(self.obsseq)-self.CEXP)/numpy.std(self.obsseq,ddof=1)
+        except:
+            S1="NA"
+            S2="NA"
+        noofsnp=self.COUNT
+        self.COUNT=0
+        self.CEXP=0
+        self.obsseq=[]
+        self.CfixedDerived=0
+        if S1=="NA" and S2=="NA":
+            return noofsnp,"NA"
+        return noofsnp,[S1,S2]
+        
+                                     
                             
 class Caculate_Fst(Caculator):
     def __init__(self, MethodToSeqpop1="pool", MethodToSeqpop2="indvd", minsnps=3):
@@ -460,7 +538,7 @@ class Caculate_Fst(Caculator):
                 AN = int(re.search(r"AN=(\d+);", pop2[0]).group(1))
                 AC = int(re.search(r"AC=(\d+);", pop2[0]).group(1))
                 refdep_2 = AN - AC
-                altalleledep_2 = AC  
+                altalleledep_2 = AC
 
               
                 
