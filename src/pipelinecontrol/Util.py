@@ -143,13 +143,13 @@ class OperatorWithData_mode1(OperatorWithData):
                     for datafilename in files:
                         if re.search(r".*?" + targetdatasuffix[i]+"$", datafilename) != None:
                             targetdata_count+=1
-                            scriptinputdate+=(datafilename+";")
-                            option_suffix_obj = re.search(r"([-\w\d]+[=\s]+)\${(\s*" + targetdatasuffix[i] + "\s*)}", newcmdline)  # for example "INPUT=${.bam} -i ${.sam}"
+                            scriptinputdate+=(rootStr + "/"+datafilename+";")
+                            option_suffix_obj = re.search(r"([-\w\d]*[=\s]*)\${(\s*" + targetdatasuffix[i] + "\s*)}", newcmdline)  # for example "INPUT=${.bam} -i ${.sam}"
                             print("option_suffix_obj",option_suffix_obj,"make new cmdline:",newcmdline)
                             optionstr = option_suffix_obj.group(1)
                             suffixstr = option_suffix_obj.group(2)
-                            newcmdline=re.sub(r"[-\w\d]+[=\s]+\${\s*" + targetdatasuffix[i] + "\s*}", optionstr  + rootStr + "/" + datafilename.strip() + " " + option_suffix_obj.group(0), newcmdline)                
-        newcmdline = re.sub(r"[-\w\d]+[=\s]+\${.*?}", " ", newcmdline)                
+                            newcmdline=re.sub(r"[-\w\d]*[=\s]*\${\s*" + targetdatasuffix[i] + "\s*}", optionstr  + rootStr + "/" + datafilename.strip() + " " + option_suffix_obj.group(0), newcmdline)                
+        newcmdline = re.sub(r"[-\w\d]*[=\s]*\${.*?}", " ", newcmdline)                
                     # sub was acted from the first to the rear most
         print("pathToOutputdata_createdir", pathToOutputdata_createdir)
         #exclude wrong command

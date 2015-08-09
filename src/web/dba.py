@@ -53,7 +53,7 @@ def addJobs2jobs_recoder(scriptslist,foldername,logicalpurpose,state=0):
     
     session = getSession()
     for scriptname in scriptslist:
-        sc=Entity.Jobs_recoder(foldername=foldername,scriptname=scriptname,logicalpurpose,state=state)
+        sc=Entity.Jobs_recoder(foldername=foldername,scriptname=scriptname,logicalpurpose=logicalpurpose,state=state)
         session.add(sc)
         session.commit()
 print("this line meaning this py module arc execute when import ")

@@ -65,7 +65,7 @@ class Jobs_recoder(Base):
     startdate=Column(DateTime)
     finishdate=Column(DateTime)
     state=Column(Integer)
-    def __init__(self,scriptname,foldername,purpose,state):
+    def __init__(self,scriptname,foldername,logicalpurpose,state):
         if foldername[-1]=="/":
             foldername=foldername[0:-1]
         scriptfile=open(foldername+"/"+scriptname,'r')
@@ -87,10 +87,10 @@ class Jobs_recoder(Base):
         self.scriptname=scriptname
         self.foldername=foldername
         self.state=state
-        self.logicalpurpose=purpose
+        self.logicalpurpose=logicalpurpose
 
     def __repr(self):
-        return "<Jobs_recoder('%s')>"%(self.scriptname)
+        return "<jobs_recoder('%s')>"%(self.scriptname)
 class Catalogue(Base):
     __tablename__="catalogues"
     id = Column(Integer,Sequence("catalogue_id_seq"),primary_key=True)
