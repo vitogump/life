@@ -5,7 +5,7 @@ Created on 2014-5-4
 '''
 # from datetime import datetime
 
-import datetime
+import datetime,re
 import time
 
 from sqlalchemy import Column, ForeignKey
@@ -51,6 +51,46 @@ class Jobstate(Base):
 
     def __repr(self):
         return "<Jobstat('%s')>"%(self.scriptname)
+class Jobs_recoder(Base):
+    __tablename__="jobs_recoder"
+    id = Column(Integer,Sequence("jobs_recoder_id_seq"),primary_key=True)
+    logicalpurpose=Column(String(200))
+    scriptname=Column(String(1000))
+    foldername=Column(String(1000))
+    inputdate=Column(String(1000))
+    outputdate=Column(String(1000))
+    scriptcontent=Column(String(1000))
+    outputinfo=Column(Text())
+# startdate=Column(DateTime, default=time.strftime(ISOTIMEFORMAT, time.localtime()))
+    startdate=Column(DateTime)
+    finishdate=Column(DateTime)
+    state=Column(Integer)
+    def __init__(self,scriptname,foldername,purpose,state):
+        if foldername[-1]=="/":
+            foldername=foldername[0:-1]
+        scriptfile=open(foldername+"/"+scriptname,'r')
+        line=scriptfile.readline()
+        if re.search(r"^scriptinputdate=(.*)",line)!=None:
+            self.inputdate=re.search(r"^scriptinputdate=(.*)",line).group(1)
+        else:
+            self.inputdate="unknow"
+        line=scriptfile.readline()
+        if re.search(r"^scriptoutputdate=(.*)",line)!=None:
+            self.outputdate=re.search(r"^scriptoutputdate=(.*)",line).group(1)
+        else:
+            self.inputdate="unknow"
+        scriptcontent_all=scriptfile.read()
+        scriptfile.close()
+        if re.search(r"(.*(\n)*)cmdline=\s*(.*)",scriptcontent_all)!=None:
+            scriptcontent_cmdline=re.search(r"(.*(\n)*)cmdline=\s*(.*)",scriptcontent_all).group(3)
+            self.scriptcontent=scriptcontent_cmdline
+        self.scriptname=scriptname
+        self.foldername=foldername
+        self.state=state
+        self.logicalpurpose=purpose
+
+    def __repr(self):
+        return "<Jobs_recoder('%s')>"%(self.scriptname)
 class Catalogue(Base):
     __tablename__="catalogues"
     id = Column(Integer,Sequence("catalogue_id_seq"),primary_key=True)

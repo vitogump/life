@@ -131,14 +131,13 @@ class Caculate_Dstatistics(Caculator):
         
 
 class Caculate_Hp(Caculator):
-    def __init__(self, SeqMethodlist=["pool"], minsnps=10, considerFixed=True):
+    def __init__(self, SeqMethodlist=["pool"], minsnps=10):
         super().__init__()
         self.minsnps = minsnps
         self.COUNTED = [0] * len(SeqMethodlist)
         self.CNMI = [0] * len(SeqMethodlist)
         self.CNMA = [0] * len(SeqMethodlist)
         self.sum_mean_2pq = 0
-        self.considerFixed = considerFixed
         self.SeqMethodlist = SeqMethodlist     
     def process(self, T, seqerrorrate=0.01, mode=1):
         if len(T[1]) != len(T[2]) or len(T[2])!=1 or len(T[2])!=1:
@@ -165,7 +164,7 @@ class Caculate_Hp(Caculator):
                 AC = int(re.search(r"AC=(\d+);", T[3 + MethodToSeq_idx][0]).group(1))
                 refdep = AN - AC
                 altalleledep = AC
-            if (not self.considerFixed) and refdep <= seqerrorrate * (refdep + altalleledep):  # not fixed
+            if refdep <= seqerrorrate * (refdep + altalleledep):  # skip fixed as altallele ,ie refdep == 0
                 continue
             if refdep + altalleledep < 10:
                 continue
@@ -416,7 +415,7 @@ class Caculate_Fst(Caculator):
         self.minsnps = minsnps
         self.CNk = 0
         self.CDk = 0
-        self.COUNTED = 0
+        self.COUNTED = [0,0]#fst used snp,fixed difference snp
 #         self.considerFixed = considerFixed
         self.MethodToSeqpop1 = MethodToSeqpop1
         self.MethodToSeqpop2 = MethodToSeqpop2
@@ -544,7 +543,12 @@ class Caculate_Fst(Caculator):
                 
 #         if  (refdep_1 <= seqerrorrate * (refdep_1 + altalleledep_1) or refdep_2 <= seqerrorrate * (refdep_2 + altalleledep_2)):
 #             return  # NOTICT HERE
-        self.COUNTED += 1
+        if refdep_1==0 and refdep_2==0:#skip both fixed as alt
+            return
+        if (refdep_1==0 and altalleledep_2==0) or (altalleledep_1==0 and refdep_2==0):#fixed difference
+            self.COUNTED[1]+=1
+            return
+        self.COUNTED[0] += 1
         h_1 = refdep_1 * altalleledep_1 / ((refdep_1 + altalleledep_1 - 1) * (refdep_1 + altalleledep_1))
         h_2 = refdep_2 * altalleledep_2 / ((refdep_2 + altalleledep_2 - 1) * (refdep_2 + altalleledep_2))
         Nk = ((refdep_1 / (refdep_1 + altalleledep_1) - refdep_2 / (refdep_2 + altalleledep_2)) ** 2 - h_1 / (refdep_1 + altalleledep_1) - h_2 / (refdep_2 + altalleledep_2))
@@ -562,6 +566,7 @@ class Caculate_Fst(Caculator):
 #             Fst='NA'
         self.CDk = 0
         self.CNk = 0
-        noofsnp = self.COUNTED
-        self.COUNTED = 0
-        return noofsnp, Fst
+        noofsnp = copy.copy(self.COUNTED[0])
+        nooffixdifference=copy.copy(self.COUNTED[1])
+        self.COUNTED = [0,0]
+        return [noofsnp,nooffixdifference], Fst

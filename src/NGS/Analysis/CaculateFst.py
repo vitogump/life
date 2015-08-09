@@ -120,9 +120,10 @@ class Fst():
                 fstpaire1name = re.search(r"[^/]*$",fstpaire[0]).group(0).replace('.','_')
                 fstpaire2name = re.search(r"[^/]*$", fstpaire[1]).group(0).replace('.','_')  # for linux
                 tableindextoarrayindex.append((self.allspeices.index(fstpaire1name),self.allspeices.index(fstpaire2name)))
-                
+                outfilefixdif = open(self.outputpath+fstpaire1name + fstpaire2name + ".df"+str(self.windowWidth)+"_"+str(self.slideSize), 'w')
                 outfile = open(self.outputpath+fstpaire1name + fstpaire2name + ".fst"+str(self.windowWidth)+"_"+str(self.slideSize), 'w')
                 print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnp\twinvalue\tzvalue",file=outfile)
+                print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnp\twinvalue\tzvalue",file=outfilefixdif)
                 if re.search(r"indvd[^/]*$",fstpaire[0])!=None:
                     MethodToSeqpop1="indvd"
                 elif re.search(r"pool[^/]+",fstpaire[0])!=None:
@@ -159,12 +160,16 @@ class Fst():
                         currentchrLen=int(row[1])
                         if currentchrID in FstMapByChrom:
                             for i in range(len(FstMapByChrom[currentchrID])):
+                                if FstMapByChrom[currentchrID][i][2][1] != "NA":
+                                    print(currentchrID + "\t" + str(i) + "\t" + str(FstMapByChrom[currentchrID][i][0]) + "\t" + str(FstMapByChrom[currentchrID][i][1]) +"\t" + str(FstMapByChrom[currentchrID][i][2][1]) + "\t" + '%.15f'%(FstMapByChrom[currentchrID][i][2][1]/currentchrLen) + "\t" + 'NA', file=outfilefixdif)
+                                else:
+                                    print(currentchrID + "\t" + str(i) + "\t" + str(FstMapByChrom[currentchrID][i][0]) + "\t" + str(FstMapByChrom[currentchrID][i][1]) +"\t" + str(FstMapByChrom[currentchrID][i][2][1]) + "\t" + 'NA' + "\t" + 'NA', file=outfilefixdif)
                                 if FstMapByChrom[currentchrID][i][3] != "NA":
                                     zFst = (FstMapByChrom[currentchrID][i][3] - exception) / std1
-                                    print(currentchrID + "\t" + str(i) + "\t" + str(FstMapByChrom[currentchrID][i][0]) + "\t" + str(FstMapByChrom[currentchrID][i][1])+ "\t" + str(FstMapByChrom[currentchrID][i][2]) + "\t" + '%.15f'%(FstMapByChrom[currentchrID][i][3]) + "\t" + '%.12f'%(zFst), file=outfile) 
+                                    print(currentchrID + "\t" + str(i) + "\t" + str(FstMapByChrom[currentchrID][i][0]) + "\t" + str(FstMapByChrom[currentchrID][i][1])+ "\t" + str(FstMapByChrom[currentchrID][i][2][0]) + "\t" + '%.15f'%(FstMapByChrom[currentchrID][i][3]) + "\t" + '%.12f'%(zFst), file=outfile) 
                                 else:
                                     zFst = "NA"
-                                    print(currentchrID + "\t" + str(i) + "\t" + str(FstMapByChrom[currentchrID][i][0]) + "\t" + str(FstMapByChrom[currentchrID][i][1])+ "\t" + str(FstMapByChrom[currentchrID][i][2]) + "\t" + str(FstMapByChrom[currentchrID][i][3]) + "\t" + str(zFst), file=outfile)                    
+                                    print(currentchrID + "\t" + str(i) + "\t" + str(FstMapByChrom[currentchrID][i][0]) + "\t" + str(FstMapByChrom[currentchrID][i][1])+ "\t" + str(FstMapByChrom[currentchrID][i][2][0]) + "\t" + str(FstMapByChrom[currentchrID][i][3]) + "\t" + str(zFst), file=outfile)                    
     #            for chrom in sorted(fst.FstMapByChrom.keys()):        
                 sum = 0
                 Number = 0
@@ -179,6 +184,7 @@ class Fst():
                         self.tempdbtools.operateDB("insert","insert into "+self.treearrayprename+"treearray(chrID,winNo,"+fstpaire1name[0:5]+fstpaire2name[0:5]+") values(%s,%s,%s) on duplicate key update "+fstpaire1name[0:5]+fstpaire2name[0:5]+" = '"+str(FstMapByChrom[chrom][i][3])+"'",data=(chrom,str(i),str(FstMapByChrom[chrom][i][3])))
                 alldistMap[fstpaire1name+fstpaire2name] = (sum / Number,self.allspeices.index(fstpaire1name))
                 outfile.close()
+                outfilefixdif.close()
             
             for n in alldistMap.keys():
                 print(n + "\t" + str(alldistMap[n]), file=open(self.outputpath+"testdist.txt", 'a'))
@@ -247,7 +253,9 @@ class Fst():
                     print("fstlist[-1]",fstlist[-1])
                     vcfname+=("_"+re.search(r"[^/]*$",othrpop).group(0)[0])
                 outfile=open(self.outputpath+vcfname+'.gfst'+str(self.windowWidth)+"_"+str(self.slideSize)+"_"+self.specisnum,'w')
+                outfilefixdif=open(self.outputpath+vcfname+'.df'+str(self.windowWidth)+"_"+str(self.slideSize)+"_"+self.specisnum,'w')
                 print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnp\twinvalue\tzvalue",file=outfile)
+                print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnp\twinvalue\tzvalue",file=outfilefixdif)
                 if len(fstlist) != 0:
                     for chrom in fstlist[0].keys():
                         self.globalFstMapByChrom[chrom]=[]
@@ -260,7 +268,7 @@ class Fst():
     
                                     if fstlist[i][chrom][winNo][3]!= 'NA':
                                         Number+=1
-                                        minNumberOfsnp=min(minNumberOfsnp,fstlist[i][chrom][winNo][2])
+                                        minNumberOfsnp=min(minNumberOfsnp,fstlist[i][chrom][winNo][2][0])
                                         sumFstInAWin+=fstlist[i][chrom][winNo][3]
                                 except IndexError:
                                     for j in range(0,len(fstlist)):
@@ -292,14 +300,19 @@ class Fst():
                             if currentchrID in self.globalFstMapByChrom:                                
     #                for chrom in sorted(globalFstMapByChrom.keys()):
                                 for i in range(len(self.globalFstMapByChrom[currentchrID])):
+                                    if self.globalFstMapByChrom[currentchrID][i][2][1] != "NA":
+                                        print(currentchrID + "\t" + str(i) + "\t" + str(self.globalFstMapByChrom[currentchrID][i][0]) + "\t" + str(self.globalFstMapByChrom[currentchrID][i][1]) +"\t" + str(self.globalFstMapByChrom[currentchrID][i][2][1]) + "\t" + '%.15f'%(self.globalFstMapByChrom[currentchrID][i][2][1]/currentchrLen) + "\t" + 'NA', file=outfilefixdif)
+                                    else:
+                                        print(currentchrID + "\t" + str(i) + "\t" + str(self.globalFstMapByChrom[currentchrID][i][0]) + "\t" + str(self.globalFstMapByChrom[currentchrID][i][1]) +"\t" + str(self.globalFstMapByChrom[currentchrID][i][2][1]) + "\t" + 'NA' + "\t" + 'NA', file=outfilefixdif)
                                     if self.globalFstMapByChrom[currentchrID][i][3] != "NA":
                                         zgFst = (self.globalFstMapByChrom[currentchrID][i][3] - exception) / std1
     #                                     print(globalFstMapByChrom[currentchrID][i][3])
-                                        print(currentchrID + "\t" + str(i) + "\t" + str(self.globalFstMapByChrom[currentchrID][i][0]) + "\t" + str(self.globalFstMapByChrom[currentchrID][i][1]) +"\t" + str(self.globalFstMapByChrom[currentchrID][i][2]) + "\t" + '%.15f'%(self.globalFstMapByChrom[currentchrID][i][3]) + "\t" + '%.12f'%(zgFst), file=outfile)
+                                        print(currentchrID + "\t" + str(i) + "\t" + str(self.globalFstMapByChrom[currentchrID][i][0]) + "\t" + str(self.globalFstMapByChrom[currentchrID][i][1]) +"\t" + str(self.globalFstMapByChrom[currentchrID][i][2][0]) + "\t" + '%.15f'%(self.globalFstMapByChrom[currentchrID][i][3]) + "\t" + '%.12f'%(zgFst), file=outfile)
                                     else:
                                         zgFst = "NA"
-                                        print(currentchrID + "\t" + str(i) + "\t" + str(self.globalFstMapByChrom[currentchrID][i][0]) + "\t" + str(self.globalFstMapByChrom[currentchrID][i][1]) +"\t" + str(self.globalFstMapByChrom[currentchrID][i][2]) + "\t" + self.globalFstMapByChrom[currentchrID][i][3] + "\t" + zgFst, file=outfile)
+                                        print(currentchrID + "\t" + str(i) + "\t" + str(self.globalFstMapByChrom[currentchrID][i][0]) + "\t" + str(self.globalFstMapByChrom[currentchrID][i][1]) +"\t" + str(self.globalFstMapByChrom[currentchrID][i][2][0]) + "\t" + self.globalFstMapByChrom[currentchrID][i][3] + "\t" + zgFst, file=outfile)
                 outfile.close()
+                outfilefixdif.close()
                 if len(self.vcffileslist)==2:
                     break
     def caculateFstAccordingdb(self,FstMapByChrom,dbtools,chromstable,vcfNAME_POP1,vcfNAME_POP2,fst_caculator,winwidth,slideSize,minlengthOfchrom):
@@ -344,9 +357,9 @@ class Fst():
                         
                     newFstMapByChrom=self.caculateFst(FstMapByChrom,pop1SeqOfAChr,pop2SeqOfAChr, fst_caculator,currentchrID,currentchrLen,winwidth,slideSize)
                 else:#pop1 don't contation the current chromosome
-                    fillNA=[(0,0,0,'NA')]
+                    fillNA=[(0,0,[0,'NA'],'NA')]
                     for i in range(int((currentchrLen-winwidth)/slideSize)):
-                        fillNA.append((0,0,0,'NA'))
+                        fillNA.append((0,0,[0,'NA'],'NA'))
                     newFstMapByChrom[currentchrID]=fillNA
         return copy.deepcopy(newFstMapByChrom)
                                  
@@ -366,9 +379,9 @@ class Fst():
             FstMapByChrom[currentchrID] = copy.deepcopy(win.winValueL)
         except TypeError:#vcfMap2(pop2) don't contation the current chromosome
             print("caculateFst TypeError")
-            fillNA=[(0,0,0,'NA')]
+            fillNA=[(0,0,[max(len(vcfMap1_ref[currentchrID]),len(vcfMap2[currentchrID])),'NA'],'NA')]
             for i in range(int((currentchrLen-winwidth)/slideSize)):
-                fillNA.append((0,0,0,'NA'))
+                fillNA.append((0,0,[max(len(vcfMap1_ref[currentchrID]),len(vcfMap2[currentchrID])),'NA'],'NA'))
             FstMapByChrom[currentchrID]=fillNA
         return copy.deepcopy(FstMapByChrom)         
 

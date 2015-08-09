@@ -4,6 +4,7 @@ Created on 2014-11-8
 
 @author: liurui
 '''
+import copy
 from multiprocessing.dummy import Pool
 import os, re
 import time
@@ -88,8 +89,8 @@ class OperatorWithData_mode1(OperatorWithData):
 
     def process(self, curpath, datadepth, curdepth):
         print("mode1 process")
-#         if self.interceptdirs!=[] and re.search(r".*/([^/]+)$",curpath).group(1).strip() not in self.interceptdirs:
-#             return
+        scriptinputdate="scriptinputdate="
+        scriptoutputdate="scriptoutputdate="
         interceptdepth=curdepth
         newcmdline = self.cmdline
         subtargets = re.findall(r"\${.*?}", newcmdline)
@@ -125,11 +126,13 @@ class OperatorWithData_mode1(OperatorWithData):
             if outsuffix.strip()[-1]=="/":
                 if outsuffix.strip()=="/":
                     outsuffix=""
+                scriptoutputdate+=(outputpath + pathToOutputdata_createdir + outsuffix)+";"
                 newcmdline = re.sub(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}", outputpath + pathToOutputdata_createdir + outsuffix, newcmdline)
                 print(outputpath + pathToOutputdata_createdir )
                 if not os.path.exists(outputpath + pathToOutputdata_createdir + outsuffix):
                     os.makedirs(outputpath + pathToOutputdata_createdir  + outsuffix)
             else:
+                scriptoutputdate+=(outputpath + pathToOutputdata_createdir + updirname + "myNtosub." + outsuffix+";")
                 newcmdline = re.sub(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}", outputpath + pathToOutputdata_createdir + updirname + "myNtosub." + outsuffix, newcmdline)
         targetdata_count=0
         for i in range(0, len(targetdatasuffix)):
@@ -140,6 +143,7 @@ class OperatorWithData_mode1(OperatorWithData):
                     for datafilename in files:
                         if re.search(r".*?" + targetdatasuffix[i]+"$", datafilename) != None:
                             targetdata_count+=1
+                            scriptinputdate+=(datafilename+";")
                             option_suffix_obj = re.search(r"([-\w\d]+[=\s]+)\${(\s*" + targetdatasuffix[i] + "\s*)}", newcmdline)  # for example "INPUT=${.bam} -i ${.sam}"
                             print("option_suffix_obj",option_suffix_obj,"make new cmdline:",newcmdline)
                             optionstr = option_suffix_obj.group(1)
@@ -154,10 +158,11 @@ class OperatorWithData_mode1(OperatorWithData):
             print("targetdata_count!=len(targetdatasuffix)")
             return newcmdline
         newcmdline=re.sub(r"myNtosub.",str(targetdata_count)+".",newcmdline)
+#         print(self.scriptcontext + newcmdline, file=open(self.scriptsstoredir + self.cmdtemplatefilename + "." + updirname + "Script.sh", "w"))
         try:
-            print(self.scriptcontext + newcmdline, file=open(self.scriptsstoredir + self.cmdtemplatefilename + "." + updirname + "Script.sh", "a"))
+            print(scriptinputdate[0:-1]+"\n"+scriptoutputdate[0:-1]+"\n"+self.scriptcontext + newcmdline, file=open(self.scriptsstoredir + self.cmdtemplatefilename + "." + updirname + "Script.sh", "a"))
         except FileNotFoundError:
-            print(self.scriptcontext + newcmdline, file=open(self.scriptsstoredir + self.cmdtemplatefilename + "." + updirname + "Script.sh", "w"))
+            print(scriptinputdate[0:-1]+"\n"+scriptoutputdate[0:-1]+"\n"+self.scriptcontext + newcmdline, file=open(self.scriptsstoredir + self.cmdtemplatefilename + "." + updirname + "Script.sh", "w"))
         return newcmdline
 
 
@@ -183,7 +188,8 @@ class OperatorWithData_mode2(OperatorWithData):
 
         self.suffixstr=""
 #         outputoptionstr = re.search(r"(-[\w\d]+[=\s]+)\${output=.*\|suffix=.*?}", self.cmdline).group(1)  # for example "OUTPUT=${output} -o ${output}"
-        
+        self.scriptinputdate="scriptinputdate="
+        self.scriptoutputdate="scriptoutputdate="        
         for outputtuple in self.outputlist:
             outputpath=re.search(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}",self.cmdline).group(1)
             outsuffix=re.search(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}",self.cmdline).group(2)
@@ -192,6 +198,7 @@ class OperatorWithData_mode2(OperatorWithData):
             if outsuffix=="/":
                 outsuffix=""# dir
             self.outputfilenamewithoutoupfilesuffix=outputpath + "/" +outfilepre
+            self.scriptoutputdate+=(outputpath + "/" +outfilepre+"."+ outsuffix+";")
             self.newcmdline = re.sub(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}", outputpath + "/" +outfilepre+"."+ outsuffix + " ", self.cmdline)
         self.outsuffix=outsuffix
 #         self.newcmdline = re.sub(r"[-\w\d]+[=\s]+\${output=.*\|suffix=.*?}", outputoptionstr + outputpath + "/" + suffix + " ", self.cmdline)
@@ -199,6 +206,7 @@ class OperatorWithData_mode2(OperatorWithData):
 #         self.suffix = suffix
     def process(self, curpath, datadepth, curdepth):
         print("mode2 process")
+
         print(curpath, datadepth, curdepth)
 #         if self.interceptdirs!=[] and re.search(r".*/([^/]+)$",curpath).group(1).strip() not in self.interceptdirs:
 #             return
@@ -220,6 +228,7 @@ class OperatorWithData_mode2(OperatorWithData):
                 for datafilename in files:
                     if re.search(r".*?" + suffixstr+"$", datafilename) != None:
                         self.count+=1
+                        self.scriptinputdate+=(optionstr + " " + curpath + "/" + datafilename + " " + option_suffix_obj.group(0)+";")
                         newcmdline = re.sub(r"[-\w\d]+[=\s]+\${.*?}", optionstr + " " + curpath + "/" + datafilename + " " + option_suffix_obj.group(0), newcmdline)
 
 
@@ -234,23 +243,24 @@ class myJobTracker():#for one dir
         self.scriptDir = scriptDir
         self.NumOfThread = int(NumOfThread)
 def runashell(a):
-    scriptDir=a[0];scriptname=a[1];cmdtemplatefile=a[2]
-    scriptcontent=open(cmdtemplatefile,'r').read()
-    cmdline=re.search(r"(.*(\n)*)cmdline=\s*(.*)",scriptcontent).group(3)
-    inputdatapath=re.search(r"(\n)*inputdatafilesrootpath=\s*(.*)",self.scriptcontext).group(2)
-    cmdline=re.search(r"(.*(\n)*)cmdline=\s*(.*)",scriptcontent).group(3)
-    print(scriptcontent,self.scriptcontext,self.inputdatapath,self.cmdline,sep="\n")
-    outputlist=re.findall(r"\${output=\s*([^\s^\|]*)\|suffix=(.*?)}",self.cmdline)
-
-    
-#         self.interceptdirs=interceptdirs
-
-    suffixstr=""
-#         outputoptionstr = re.search(r"(-[\w\d]+[=\s]+)\${output=.*\|suffix=.*?}", self.cmdline).group(1)  # for example "OUTPUT=${output} -o ${output}"
-    
-    for outputtuple in outputlist:
-        outputpath=re.search(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}",cmdline).group(1)
-        outsuffix=re.search(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}",cmdline).group(2)
+    scriptDir=a[0];scriptname=a[1]
+#     scriptDir=a[0];scriptname=a[1];cmdtemplatefile=a[2]
+#     scriptcontent=open(cmdtemplatefile,'r').read()
+#     cmdline=re.search(r"(.*(\n)*)cmdline=\s*(.*)",scriptcontent).group(3)
+#     inputdatapath=re.search(r"(\n)*inputdatafilesrootpath=\s*(.*)",self.scriptcontext).group(2)
+#     cmdline=re.search(r"(.*(\n)*)cmdline=\s*(.*)",scriptcontent).group(3)
+#     print(scriptcontent,self.scriptcontext,self.inputdatapath,self.cmdline,sep="\n")
+#     outputlist=re.findall(r"\${output=\s*([^\s^\|]*)\|suffix=(.*?)}",self.cmdline)
+# 
+#     
+# #         self.interceptdirs=interceptdirs
+# 
+#     suffixstr=""
+# #         outputoptionstr = re.search(r"(-[\w\d]+[=\s]+)\${output=.*\|suffix=.*?}", self.cmdline).group(1)  # for example "OUTPUT=${output} -o ${output}"
+#     
+#     for outputtuple in outputlist:
+#         outputpath=re.search(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}",cmdline).group(1)
+#         outsuffix=re.search(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}",cmdline).group(2)
     session=DBA.getSession()
     session.execute("update jobsstate set state='1' where scriptname='"+scriptname+"' and foldername='"+scriptDir+"'")
     session.execute("update jobsstate set startdate='"+time.strftime(ISOTIMEFORMAT, time.localtime()) +"' where scriptname='"+scriptname+"' and foldername='"+scriptDir+"'")
@@ -271,20 +281,22 @@ def runashell(a):
         session.execute("update jobsstate set finishdate='"+time.strftime(ISOTIMEFORMAT, time.localtime()) +"' where scriptname='"+scriptname+"' and foldername='"+scriptDir+"'")
         session.commit()
     return
-def callsh_updateDB(scriptDir,NumOfThread):
+def callsh_updateDB(scriptDir,NumOfThread,logicalpurpose):
     pool=Pool(NumOfThread)
     scriptfiles = os.listdir(path=scriptDir)
     inputscriptfiles=[]
-    for filename in scriptfiles:
+    scriptfiles_copy=copy.deepcopy(scriptfiles)
+    for filename in scriptfiles_copy:
         if re.search(r".*\.sh$", filename) == None:
             print("skip",filename)
             scriptfiles.remove(filename)
+            continue
         inputscriptfiles.append((scriptDir,filename))
-    DBA.addJobs2jobstate(scriptfiles,scriptDir)
+    DBA.addJobs2jobs_recoder(scriptfiles,scriptDir,logicalpurpose)
     a = os.system("chmod +x " + scriptDir + "/*.sh")
-#         if a!=0:
-#             print("JobTracker chmod error")
-#             exit(-1)
+    if a!=0:
+        print("JobTracker chmod error")
+        exit(-1)
     pool.map(runashell,inputscriptfiles)
     pool.close()
     pool.join()
