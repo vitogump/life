@@ -262,8 +262,8 @@ def runashell(a):
 #         outputpath=re.search(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}",cmdline).group(1)
 #         outsuffix=re.search(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}",cmdline).group(2)
     session=DBA.getSession()
-    session.execute("update jobsstate set state='1' where scriptname='"+scriptname+"' and foldername='"+scriptDir+"'")
-    session.execute("update jobsstate set startdate='"+time.strftime(ISOTIMEFORMAT, time.localtime()) +"' where scriptname='"+scriptname+"' and foldername='"+scriptDir+"'")
+    session.execute("update jobs_recoder set state='1' where scriptname='"+scriptname+"' and foldername='"+scriptDir+"'")
+    session.execute("update jobs_recoder set startdate='"+time.strftime(ISOTIMEFORMAT, time.localtime()) +"' where scriptname='"+scriptname+"' and foldername='"+scriptDir+"'")
     session.commit()
     scriptout=re.sub(r".sh$",".out",scriptname)
     a=os.system(scriptDir+"/"+scriptname+">>"+scriptDir+"/"+scriptout+" 2>&1")
@@ -271,14 +271,14 @@ def runashell(a):
 #         logtext=logfile.read()
 #         logfile.close()
     if a!=0:
-        session.execute("update jobsstate set state='-1' where scriptname='"+scriptname+"' and foldername='"+scriptDir+"'")
+        session.execute("update jobs_recoder set state='-1' where scriptname='"+scriptname+"' and foldername='"+scriptDir+"'")
         session.commit()
         print("JobTracker "+scriptname+" runshell error")
         return#just exit this threads the python programma still go on
     else:
         #session.execute("update jobsstate set outputinfo='"+logtext+"' where scriptname='"+scriptname+"' and foldername='"+self.scriptDir+"'")
-        session.execute("update jobsstate set state='2' where scriptname='"+scriptname+"' and foldername='"+scriptDir+"'")
-        session.execute("update jobsstate set finishdate='"+time.strftime(ISOTIMEFORMAT, time.localtime()) +"' where scriptname='"+scriptname+"' and foldername='"+scriptDir+"'")
+        session.execute("update jobs_recoder set state='2' where scriptname='"+scriptname+"' and foldername='"+scriptDir+"'")
+        session.execute("update jobs_recoder set finishdate='"+time.strftime(ISOTIMEFORMAT, time.localtime()) +"' where scriptname='"+scriptname+"' and foldername='"+scriptDir+"'")
         session.commit()
     return
 def callsh_updateDB(scriptDir,NumOfThread,logicalpurpose):

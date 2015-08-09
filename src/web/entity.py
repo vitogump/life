@@ -79,11 +79,11 @@ class Jobs_recoder(Base):
             self.outputdate=re.search(r"^scriptoutputdate=(.*)",line).group(1)
         else:
             self.inputdate="unknow"
-        scriptcontent_all=scriptfile.read()
-        scriptfile.close()
-        if re.search(r"(.*(\n)*)cmdline=\s*(.*)",scriptcontent_all)!=None:
-            scriptcontent_cmdline=re.search(r"(.*(\n)*)cmdline=\s*(.*)",scriptcontent_all).group(3)
-            self.scriptcontent=scriptcontent_cmdline
+#         scriptcontent_all=scriptfile.read()
+#         scriptfile.close()
+#         if re.search(r"(.*(\n)*)cmdline=\s*(.*)",scriptcontent_all)!=None:
+#             scriptcontent_cmdline=re.search(r"(.*(\n)*)cmdline=\s*(.*)",scriptcontent_all).group(3)
+#             self.scriptcontent=scriptcontent_cmdline
         self.scriptname=scriptname
         self.foldername=foldername
         self.state=state
