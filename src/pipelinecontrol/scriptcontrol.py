@@ -74,9 +74,9 @@ if __name__ == '__main__':
         finalcmdline=re.sub(operatorwithdata_mode2.outputfilenamewithoutoupfilesuffix+"."+operatorwithdata_mode2.outsuffix,operatorwithdata_mode2.outputfilenamewithoutoupfilesuffix+str(operatorwithdata_mode2.count)+"."+operatorwithdata_mode2.suffixstr,operatorwithdata_mode2.newcmdline)#add count info to outputfile
         finalcmdline=re.sub(r"[-\w\d]+[=\s]+\${.*?}"," ",finalcmdline)
         try:
-            print(operatorwithdata_mode2.scriptinputdate[0:-1]+"\n"+operatorwithdata_mode2.scriptoutputdate[0:-1]+"\n" +operatorwithdata_mode2.scriptcontext+finalcmdline,file=open(operatorwithdata_mode2.scriptsstoredir+"/"+re.search(r"[^/]*$",outfilepre).group(0)+str(operatorwithdata_mode2.count)+"_"+operatorwithdata_mode2.cmdtemplatefilename+"_"+operatorwithdata_mode2.suffixstr+"Script.sh",'a'))
+            print(operatorwithdata_mode2.scriptinputdata[0:-1]+"\n"+operatorwithdata_mode2.scriptoutputdata[0:-1]+"\n" +operatorwithdata_mode2.scriptcontext+finalcmdline,file=open(operatorwithdata_mode2.scriptsstoredir+"/"+re.search(r"[^/]*$",outfilepre).group(0)+str(operatorwithdata_mode2.count)+"_"+operatorwithdata_mode2.cmdtemplatefilename+"_"+operatorwithdata_mode2.suffixstr+"Script.sh",'a'))
         except FileNotFoundError:
-            print(operatorwithdata_mode2.scriptinputdate[0:-1]+"\n"+operatorwithdata_mode2.scriptoutputdate[0:-1]+"\n" +operatorwithdata_mode2.scriptcontext+finalcmdline,file=open(operatorwithdata_mode2.scriptsstoredir+"/"+re.search(r"[^/]*$",outfilepre).group(0)+str(operatorwithdata_mode2.count)+"_"+operatorwithdata_mode2.cmdtemplatefilename+"_"+operatorwithdata_mode2.suffixstr+"Script.sh",'w'))
+            print(operatorwithdata_mode2.scriptinputdata[0:-1]+"\n"+operatorwithdata_mode2.scriptoutputdata[0:-1]+"\n" +operatorwithdata_mode2.scriptcontext+finalcmdline,file=open(operatorwithdata_mode2.scriptsstoredir+"/"+re.search(r"[^/]*$",outfilepre).group(0)+str(operatorwithdata_mode2.count)+"_"+operatorwithdata_mode2.cmdtemplatefilename+"_"+operatorwithdata_mode2.suffixstr+"Script.sh",'w'))
     print("==============")
 #     cmdline=operatorwithdata_mode1.cmdline
 

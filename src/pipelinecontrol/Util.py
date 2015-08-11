@@ -89,8 +89,8 @@ class OperatorWithData_mode1(OperatorWithData):
 
     def process(self, curpath, datadepth, curdepth):
         print("mode1 process")
-        scriptinputdate="scriptinputdate="
-        scriptoutputdate="scriptoutputdate="
+        scriptinputdata="scriptinputdata="
+        scriptoutputdata="scriptoutputdata="
         interceptdepth=curdepth
         newcmdline = self.cmdline
         subtargets = re.findall(r"\${.*?}", newcmdline)
@@ -126,13 +126,13 @@ class OperatorWithData_mode1(OperatorWithData):
             if outsuffix.strip()[-1]=="/":
                 if outsuffix.strip()=="/":
                     outsuffix=""
-                scriptoutputdate+=(outputpath + pathToOutputdata_createdir + outsuffix)+";"
+                scriptoutputdata+=(outputpath + pathToOutputdata_createdir + outsuffix)+";"
                 newcmdline = re.sub(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}", outputpath + pathToOutputdata_createdir + outsuffix, newcmdline)
                 print(outputpath + pathToOutputdata_createdir )
                 if not os.path.exists(outputpath + pathToOutputdata_createdir + outsuffix):
                     os.makedirs(outputpath + pathToOutputdata_createdir  + outsuffix)
             else:
-                scriptoutputdate+=(outputpath + pathToOutputdata_createdir + updirname + "myNtosub." + outsuffix+";")
+                scriptoutputdata+=(outputpath + pathToOutputdata_createdir + updirname + "myNtosub." + outsuffix+";")
                 newcmdline = re.sub(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}", outputpath + pathToOutputdata_createdir + updirname + "myNtosub." + outsuffix, newcmdline)
         targetdata_count=0
         for i in range(0, len(targetdatasuffix)):
@@ -143,7 +143,7 @@ class OperatorWithData_mode1(OperatorWithData):
                     for datafilename in files:
                         if re.search(r".*?" + targetdatasuffix[i]+"$", datafilename) != None:
                             targetdata_count+=1
-                            scriptinputdate+=(rootStr + "/"+datafilename+";")
+                            scriptinputdata+=(rootStr + "/"+datafilename+";")
                             option_suffix_obj = re.search(r"([-\w\d]*[=\s]*)\${(\s*" + targetdatasuffix[i] + "\s*)}", newcmdline)  # for example "INPUT=${.bam} -i ${.sam}"
                             print("option_suffix_obj",option_suffix_obj,"make new cmdline:",newcmdline)
                             optionstr = option_suffix_obj.group(1)
@@ -160,9 +160,9 @@ class OperatorWithData_mode1(OperatorWithData):
         newcmdline=re.sub(r"myNtosub.",str(targetdata_count)+".",newcmdline)
 #         print(self.scriptcontext + newcmdline, file=open(self.scriptsstoredir + self.cmdtemplatefilename + "." + updirname + "Script.sh", "w"))
         try:
-            print(scriptinputdate[0:-1]+"\n"+scriptoutputdate[0:-1]+"\n"+self.scriptcontext + newcmdline, file=open(self.scriptsstoredir + self.cmdtemplatefilename + "." + updirname + "Script.sh", "a"))
+            print(scriptinputdata[0:-1]+"\n"+scriptoutputdata[0:-1]+"\n"+self.scriptcontext + newcmdline, file=open(self.scriptsstoredir + self.cmdtemplatefilename + "." + updirname + "Script.sh", "a"))
         except FileNotFoundError:
-            print(scriptinputdate[0:-1]+"\n"+scriptoutputdate[0:-1]+"\n"+self.scriptcontext + newcmdline, file=open(self.scriptsstoredir + self.cmdtemplatefilename + "." + updirname + "Script.sh", "w"))
+            print(scriptinputdata[0:-1]+"\n"+scriptoutputdata[0:-1]+"\n"+self.scriptcontext + newcmdline, file=open(self.scriptsstoredir + self.cmdtemplatefilename + "." + updirname + "Script.sh", "w"))
         return newcmdline
 
 
@@ -188,8 +188,8 @@ class OperatorWithData_mode2(OperatorWithData):
 
         self.suffixstr=""
 #         outputoptionstr = re.search(r"(-[\w\d]+[=\s]+)\${output=.*\|suffix=.*?}", self.cmdline).group(1)  # for example "OUTPUT=${output} -o ${output}"
-        self.scriptinputdate="scriptinputdate="
-        self.scriptoutputdate="scriptoutputdate="        
+        self.scriptinputdata="scriptinputdata="
+        self.scriptoutputdata="scriptoutputdata="        
         for outputtuple in self.outputlist:
             outputpath=re.search(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}",self.cmdline).group(1)
             outsuffix=re.search(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}",self.cmdline).group(2)
@@ -198,7 +198,7 @@ class OperatorWithData_mode2(OperatorWithData):
             if outsuffix=="/":
                 outsuffix=""# dir
             self.outputfilenamewithoutoupfilesuffix=outputpath + "/" +outfilepre
-            self.scriptoutputdate+=(outputpath + "/" +outfilepre+"."+ outsuffix+";")
+            self.scriptoutputdata+=(outputpath + "/" +outfilepre+"."+ outsuffix+";")
             self.newcmdline = re.sub(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}", outputpath + "/" +outfilepre+"."+ outsuffix + " ", self.cmdline)
         self.outsuffix=outsuffix
 #         self.newcmdline = re.sub(r"[-\w\d]+[=\s]+\${output=.*\|suffix=.*?}", outputoptionstr + outputpath + "/" + suffix + " ", self.cmdline)
@@ -228,7 +228,7 @@ class OperatorWithData_mode2(OperatorWithData):
                 for datafilename in files:
                     if re.search(r".*?" + suffixstr+"$", datafilename) != None:
                         self.count+=1
-                        self.scriptinputdate+=(optionstr + " " + curpath + "/" + datafilename + " " + option_suffix_obj.group(0)+";")
+                        self.scriptinputdata+=(optionstr + " " + curpath + "/" + datafilename + " " + option_suffix_obj.group(0)+";")
                         newcmdline = re.sub(r"[-\w\d]+[=\s]+\${.*?}", optionstr + " " + curpath + "/" + datafilename + " " + option_suffix_obj.group(0), newcmdline)
 
 

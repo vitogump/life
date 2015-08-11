@@ -57,8 +57,8 @@ class Jobs_recoder(Base):
     logicalpurpose=Column(String(200))
     scriptname=Column(String(1000))
     foldername=Column(String(1000))
-    inputdate=Column(String(1000))
-    outputdate=Column(String(1000))
+    inputdata=Column(String(1000))
+    outputdata=Column(String(1000))
     scriptcontent=Column(String(1000))
     outputinfo=Column(Text())
 # startdate=Column(DateTime, default=time.strftime(ISOTIMEFORMAT, time.localtime()))
@@ -70,15 +70,15 @@ class Jobs_recoder(Base):
             foldername=foldername[0:-1]
         scriptfile=open(foldername+"/"+scriptname,'r')
         line=scriptfile.readline()
-        if re.search(r"^scriptinputdate=(.*)",line)!=None:
-            self.inputdate=re.search(r"^scriptinputdate=(.*)",line).group(1)
+        if re.search(r"^scriptinputdata=(.*)",line)!=None:
+            self.inputdata=re.search(r"^scriptinputdata=(.*)",line).group(1)
         else:
-            self.inputdate="unknow"
+            self.inputdata="unknow"
         line=scriptfile.readline()
-        if re.search(r"^scriptoutputdate=(.*)",line)!=None:
-            self.outputdate=re.search(r"^scriptoutputdate=(.*)",line).group(1)
+        if re.search(r"^scriptoutputdata=(.*)",line)!=None:
+            self.outputdata=re.search(r"^scriptoutputdata=(.*)",line).group(1)
         else:
-            self.inputdate="unknow"
+            self.outputdata="unknow"
 #         scriptcontent_all=scriptfile.read()
 #         scriptfile.close()
 #         if re.search(r"(.*(\n)*)cmdline=\s*(.*)",scriptcontent_all)!=None:

@@ -269,6 +269,7 @@ class Fst():
                                     if fstlist[i][chrom][winNo][3]!= 'NA':
                                         Number+=1
                                         minNumberOfsnp=min(minNumberOfsnp,fstlist[i][chrom][winNo][2][0])
+                                        fstlist[i][chrom][winNo][2][0]=minNumberOfsnp
                                         sumFstInAWin+=fstlist[i][chrom][winNo][3]
                                 except IndexError:
                                     for j in range(0,len(fstlist)):
@@ -278,7 +279,7 @@ class Fst():
                                 gfst=sumFstInAWin/Number
                             except ZeroDivisionError:
                                 gfst="NA"
-                            self.globalFstMapByChrom[chrom].append((fstlist[0][chrom][winNo][0],fstlist[0][chrom][winNo][1],minNumberOfsnp,gfst))
+                            self.globalFstMapByChrom[chrom].append((fstlist[0][chrom][winNo][0],fstlist[0][chrom][winNo][1],copy.deepcopy(fstlist[i][chrom][winNo][2]),gfst))
     
                     winCrossGenome = []
                     for chrom in self.globalFstMapByChrom.keys():
