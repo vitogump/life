@@ -270,7 +270,7 @@ class Caculate_S_ObsExp_difference(Caculator):
             return
         snp=self.dbvariantstoolstojudgeancestral.operateDB("select","select * from "+self.topleveltablejudgeancestralname+" where chrID='"+self.currentchrID+"' and snp_pos='"+str(T[0])+"'")
         if not snp:
-            print(self.currentchrID,T,"snp not find,skip")
+#             print(self.currentchrID,T,"snp not find,skip")
             return
         else:
             depthlist1=re.split(r",",snp[0][7])
@@ -290,11 +290,11 @@ class Caculate_S_ObsExp_difference(Caculator):
                 else:
                     print(snp,"never get here!")
             else:
-                print(snp,"skip snp")
+#                 print(snp,"skip snp")
                 return
         ancestrallcontext=snp[0][5].strip()[0].upper()+snp[0][3+A_base_idx].strip().upper()+snp[0][5].strip()[2].upper()
         if "CG" in ancestrallcontext or "GC" in ancestrallcontext:
-            print("skip CG site",ancestrallcontext)
+#             print("skip CG site",ancestrallcontext)
             return
         ##########x-axis
         countedAF=0;target_DAF_sum=0
@@ -304,18 +304,18 @@ class Caculate_S_ObsExp_difference(Caculator):
                     print("skip this pos",T)
                     continue
                 else:
-                    depth_linelist=self.depthobjlist[tpopidx].getdepthByPos_optimized(self.currentchrID,T[0])
+                    depth_linelist=self.depthobjlist[tpopidx-3].getdepthByPos_optimized(self.currentchrID,T[0])
                     sum_depth=0
-                    for idx in self.species_idx_list[tpopidx][:]:
+                    for idx in self.species_idx_list[tpopidx-3][:]:
                         sum_depth+=int(depth_linelist[idx])
                     if sum_depth>self.mindepthtojudefixed:
                         AF=0
                     else:
                         continue
             else:
-                if self.MethodToSeqpoplist[tpopidx]=="indvd":
+                if self.MethodToSeqpoplist[tpopidx-3]=="indvd":
                     AF=float(re.search(r"AF=([\d\.]+);", T[tpopidx][0]).group(1))
-                elif self.MethodToSeqpoplist[tpopidx]=="pool":
+                elif self.MethodToSeqpoplist[tpopidx-3]=="pool":
                     refdep = 0;altalleledep = 0
                     AD_idx = (re.split(":", T[tpopidx][1])).index("AD")
                     for sample in T[tpopidx][2]:
@@ -336,7 +336,7 @@ class Caculate_S_ObsExp_difference(Caculator):
                 DAF=AF
             target_DAF_sum+=DAF;countedAF+=1
         if target_DAF_sum==0 or countedAF==0:
-            print("skip this snp,because it fiexd as ancestral or no covered in this pos in target pops",T,snp)
+#             print("skip this snp,because it fiexd as ancestral or no covered in this pos in target pops",T,snp)
             return
         target_DAF=target_DAF_sum/countedAF
         #########y-axis
@@ -347,18 +347,18 @@ class Caculate_S_ObsExp_difference(Caculator):
                     print("skip this snp",T)
                     continue
                 else:
-                    depth_linelist=self.depthobjlist[rpopidx].getdepthByPos_optimized(self.currentchrID,T[0])
+                    depth_linelist=self.depthobjlist[rpopidx-3-self.N_of_targetpop].getdepthByPos_optimized(self.currentchrID,T[0])
                     sum_depth=0
-                    for idx in self.species_idx_list[rpopidx][:]:
+                    for idx in self.species_idx_list[rpopidx-3-self.N_of_targetpop][:]:
                         sum_depth+=int(depth_linelist[idx])
                     if sum_depth>self.mindepthtojudefixed:
                         AF=0
                     else:
                         continue
             else:
-                if self.MethodToSeqpoplist[rpopidx]=="indvd":
+                if self.MethodToSeqpoplist[rpopidx-3-self.N_of_targetpop]=="indvd":
                     AF=float(re.search(r"AF=([\d\.]+);", T[rpopidx][0]).group(1))
-                elif self.MethodToSeqpoplist[rpopidx]=="pool":
+                elif self.MethodToSeqpoplist[rpopidx-3-self.N_of_targetpop]=="pool":
                     refdep = 0;altalleledep = 0
                     AD_idx = (re.split(":", T[rpopidx][1])).index("AD")
                     for sample in T[rpopidx][2]:
@@ -378,9 +378,9 @@ class Caculate_S_ObsExp_difference(Caculator):
                 elif A_base_idx==1:
                     DAF=AF
                 rer_DAF_sum+=DAF;countedAF+=1
-            if  countedAF==0:
-                print("skip this snp,because it  no covered in this pos in target pops",T,snp)
-                return
+        if  countedAF==0:
+#             print("skip this snp,because it  no covered in this pos in ref pops",T,snp)
+            return
         for a,b in sorted(self.freq_xaxisKEY_yaxisVALUERelation.keys()):
             if target_DAF>a and target_DAF<=b:
                 self.CEXP+=self.freq_xaxisKEY_yaxisVALUERelation[(a,b)]

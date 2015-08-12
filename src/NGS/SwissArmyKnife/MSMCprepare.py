@@ -68,18 +68,18 @@ if __name__ == '__main__':
         print(row)
         currentID=row[0].strip()
         currentchrLen=row[1]
-        a=os.system("""awk 'BEGIN{firstfind="false"}{if(firstfind=="false"){c=$0}if(c~/^>"""+currentID+"""/){firstfind="true";if($0!~/^>"""+currentID+"""/ && $0~/^>/){c=$0}else{print $0}}}' """+snpablegenome+""">"""+outputpath+"""/currentchrsnpablegenome""")
+        a=os.system("""awk 'BEGIN{firstfind="false"}{if(firstfind=="false"){c=$0}if(c~/^>"""+currentID+"""/){firstfind="true";if($0!~/^>"""+currentID+"""/ && $0~/^>/){c=$0}else{print $0}}}' """+snpablegenome+""" |awk 'BEGIN{OFS=" ";FS=" "}{if(NR==1){sub(/[.]1/,"",$1)};print $0}' >"""+outputpath+"""/currentchrsnpablegenome""")
         if a!=0:
             print("""awk 'BEGIN{firstfind="false"}{if(firstfind=="false"){c=$0}if(c~/^>"""+currentID+"""/){firstfind="true";if($0!~/^>"""+currentID+"""/ && $0~/^>/){c=$0}else{print $0}}}' """+snpablegenome+""">"""+outputpath+"""/currentchrsnpablegenome""")
             exit(-1)
         print("finish awk produce currentchrsnpablegenome")
-        a=os.system("""for((i=0,j=1;i<"""+str(row[1])+""";i++,j++)); do printf """+currentID+""""\t"$i"\t"$j"\n"; done >"""+ outputpath+"""/duck_currentchrom_position_raw_converse.bed """)
+        a=os.system("""for((i=0,j=1;i<"""+str(row[1])+""";i++,j++)); do printf """+currentID[:-2]+""""\t"$i"\t"$j"\n"; done >"""+ outputpath+"""/duck_currentchrom_position_raw_converse.bed """)
         if a!=0:
-            print("""for((i=0,j=1;i<"""+str(row[1])+""";i++,j++)); do printf """+currentID+""""\t"$i"\t"$j"\n"; done >"""+ outputpath+"""/duck_currentchrom_position_raw_converse.bed """)
+            print("""for((i=0,j=1;i<"""+str(row[1])+""";i++,j++)); do printf """+currentID[:-2]+""""\t"$i"\t"$j"\n"; done >"""+ outputpath+"""/duck_currentchrom_position_raw_converse.bed """)
             exit(-1)
         print("finish for loop produce duck_currentchrom_position_raw_converse.bed")
-        a=os.system(apply_mask_l+" "+outputpath+"/currentchrsnpablegenome  "+ outputpath+"/duck_currentchrom_position_raw_converse.bed |gzip -c >"+outputpath+"/mappability_mask"+currentID+".bed.gz")
-        mappabilitychrlist.append("mappability_mask"+currentID+".bed.gz")
+        a=os.system(apply_mask_l+" "+outputpath+"/currentchrsnpablegenome  "+ outputpath+"/duck_currentchrom_position_raw_converse.bed |gzip -c >"+outputpath+"/mappability_mask"+currentID[:-2]+".bed.gz")
+        mappabilitychrlist.append("mappability_mask"+currentID[:-2]+".bed.gz")
         if a!=0:
             print(apply_mask_l+" "+outputpath+"/currentchrsnpablegenome  "+ outputpath+"/duck_currentchrom_position_raw_converse.bed ")
             exit(-1)
@@ -92,13 +92,13 @@ if __name__ == '__main__':
                 meandepth=f.readline().strip()
                 print("meandepth",meandepth)
                 f.close()
-                
-                a=os.system(samtoolspath+"/samtools mpileup -q 20 -Q 20 -C 50 -u -r "+currentID+" -f "+refgenome+" "+pathtosample+" |"+samtoolspath+"/bcftools view -cgI - |/home/bioinfo/liurui/software/Python-3.4.3/python /pub/tool/msmc/tools/bamCaller.py "+meandepth+" "+outputpath+"/"+samplename+"_covered_sites_"+currentID+".bed.gz |gzip -c > "+outputpath+"/"+samplename+"_"+currentID+".vcf.gz" )
+#                 print(samtoolspath+"/samtools mpileup -q 20 -Q 20 -C 50 -u -r "+currentID+" -f "+refgenome+" "+pathtosample+" |"+samtoolspath+"/bcftools view -cgI - |sed 's/^"+currentID+"/"+currentID[:-2]+"/g'|/home/bioinfo/liurui/software/Python-3.4.3/python /pub/tool/msmc/tools/bamCaller.py "+meandepth+" "+outputpath+"/"+samplename+"_covered_sites_"+currentID[:-2]+".bed.gz |gzip -c > "+outputpath+"/"+samplename+"_"+currentID[:-2]+".vcf.gz")
+                a=os.system(samtoolspath+"/samtools mpileup -q 20 -Q 20 -C 50 -u -r "+currentID+" -f "+refgenome+" "+pathtosample+" |"+samtoolspath+"/bcftools view -cgI - |sed 's/^"+currentID+"/"+currentID[:-2]+"/g'|/home/bioinfo/liurui/software/Python-3.4.3/python /pub/tool/msmc/tools/bamCaller.py "+meandepth+" "+outputpath+"/"+samplename+"_covered_sites_"+currentID[:-2]+".bed.gz |gzip -c > "+outputpath+"/"+samplename+"_"+currentID[:-2]+".vcf.gz" )
                 if a!=0:
                     print("skip this chrom",row)
                     exit(-1)
                 print("samtools finished")
-                result_chrlistMAPbypopfilename[pop][pathtosample].append((samplename+"_covered_sites_"+currentID+".bed.gz  ",samplename+"_"+currentID+".vcf.gz  "))
+                result_chrlistMAPbypopfilename[pop][pathtosample].append((samplename+"_covered_sites_"+currentID[:-2]+".bed.gz  ",samplename+"_"+currentID[:-2]+".vcf.gz  "))
         generate_multihetsep_statepart1="/home/bioinfo/liurui/software/Python-3.4.3/python /pub/tool/msmc/tools/generate_multihetsep.py "
         generate_multihetsep_statepart2=" "
         for pop in samplebamlistVALUEpopfilenameKEY.keys():
@@ -110,10 +110,11 @@ if __name__ == '__main__':
             for pathtosample in samplebamlistVALUEpopfilenameKEY[pop]:
                 generate_multihetsep_statepart1+=" --mask="+outputpath+"/"+result_chrlistMAPbypopfilename[pop][pathtosample][-1][0]
                 generate_multihetsep_statepart2+=outputpath+"/"+result_chrlistMAPbypopfilename[pop][pathtosample][-1][1]
-            print(generate_multihetsep_statepart1+" --mask="+outputpath+"/mappability_mask"+currentID+".bed.gz "+generate_multihetsep_statepart2+" > "+outputpath+"/"+popname+"/"+popname+"_"+currentID+".msmc.infile")
-            a=os.system(generate_multihetsep_statepart1+" --mask="+outputpath+"/mappability_mask"+currentID+".bed.gz "+generate_multihetsep_statepart2+" > "+outputpath+"/"+popname+"/"+popname+"_"+currentID+".msmc.infile")
-            msmsinfile_chrVALUE_popKEY[pop].append(outputpath+"/"+popname+"/"+popname+"_"+currentID+".msmc.infile  ")
+            a=os.system(generate_multihetsep_statepart1+" --mask="+outputpath+"/mappability_mask"+currentID[:-2]+".bed.gz "+generate_multihetsep_statepart2+" > "+outputpath+"/"+popname+"/"+popname+"_"+currentID[:-2]+".msmc.infile")
+            msmsinfile_chrVALUE_popKEY[pop].append(outputpath+"/"+popname+"/"+popname+"_"+currentID[:-2]+".msmc.infile  ")
             if a!=0:
+                print(generate_multihetsep_statepart1+" --mask="+outputpath+"/mappability_mask"+currentID[:-2]+".bed.gz "+generate_multihetsep_statepart2+" > "+outputpath+"/"+popname+"/"+popname+"_"+currentID[:-2]+".msmc.infile")
+                print(samtoolspath+"/samtools mpileup -q 20 -Q 20 -C 50 -u -r "+currentID+" -f "+refgenome+" "+pathtosample+" |"+samtoolspath+"/bcftools view -cgI - |sed 's/^"+currentID+"/"+currentID[:-2]+"/g'|/home/bioinfo/liurui/software/Python-3.4.3/python /pub/tool/msmc/tools/bamCaller.py "+meandepth+" "+outputpath+"/"+samplename+"_covered_sites_"+currentID[:-2]+".bed.gz |gzip -c > "+outputpath+"/"+samplename+"_"+currentID[:-2]+".vcf.gz")
                 print("error generate_multihetsep.py")
                 exit(-1)
         for pop1,pop2 in allkindofpaire:
@@ -123,9 +124,9 @@ if __name__ == '__main__':
             pop2sample1=samplebamlistVALUEpopfilenameKEY[pop2][0]
             if not os.path.exists(outputpath+"/"+pop1name+"_"+pop2name):
                 os.makedirs(outputpath+"/"+pop1name+"_"+pop2name)
-            print("/home/bioinfo/liurui/software/Python-3.4.3/python /pub/tool/msmc/tools/generate_multihetsep.py --mask="+outputpath+"/"+result_chrlistMAPbypopfilename[pop1][pop1sample1][-1][0]+" --mask="+outputpath+"/"+result_chrlistMAPbypopfilename[pop2][pop2sample1][-1][0]+" --mask="+outputpath+"/mappability_mask"+currentID+".bed.gz "+outputpath+"/"+result_chrlistMAPbypopfilename[pop1][pop1sample1][-1][1]+outputpath+"/"+result_chrlistMAPbypopfilename[pop2][pop2sample1][-1][1]+" > "+outputpath+"/"+pop1name+"_"+pop2name+"/"+pop1name+"_"+pop2name+"_"+currentID+".msmc.infile")
-            a=os.system("/home/bioinfo/liurui/software/Python-3.4.3/python /pub/tool/msmc/tools/generate_multihetsep.py --mask="+outputpath+"/"+result_chrlistMAPbypopfilename[pop1][pop1sample1][-1][0]+" --mask="+outputpath+"/"+result_chrlistMAPbypopfilename[pop2][pop2sample1][-1][0]+" --mask="+outputpath+"/mappability_mask"+currentID+".bed.gz "+outputpath+"/"+result_chrlistMAPbypopfilename[pop1][pop1sample1][-1][1]+outputpath+"/"+result_chrlistMAPbypopfilename[pop2][pop2sample1][-1][1]+" > "+outputpath+"/"+pop1name+"_"+pop2name+"/"+pop1name+"_"+pop2name+"_"+currentID+".msmc.infile")
-            msmsinfilesplit_chrVALUE_popsKEY[(pop1,pop2)].append(outputpath+"/"+pop1name+"_"+pop2name+"/"+pop1name+"_"+pop2name+"_"+currentID+".msmc.infile  ")
+            print("/home/bioinfo/liurui/software/Python-3.4.3/python /pub/tool/msmc/tools/generate_multihetsep.py --mask="+outputpath+"/"+result_chrlistMAPbypopfilename[pop1][pop1sample1][-1][0]+" --mask="+outputpath+"/"+result_chrlistMAPbypopfilename[pop2][pop2sample1][-1][0]+" --mask="+outputpath+"/mappability_mask"+currentID[:-2]+".bed.gz "+outputpath+"/"+result_chrlistMAPbypopfilename[pop1][pop1sample1][-1][1]+outputpath+"/"+result_chrlistMAPbypopfilename[pop2][pop2sample1][-1][1]+" > "+outputpath+"/"+pop1name+"_"+pop2name+"/"+pop1name+"_"+pop2name+"_"+currentID[:-2]+".msmc.infile")
+            a=os.system("/home/bioinfo/liurui/software/Python-3.4.3/python /pub/tool/msmc/tools/generate_multihetsep.py --mask="+outputpath+"/"+result_chrlistMAPbypopfilename[pop1][pop1sample1][-1][0]+" --mask="+outputpath+"/"+result_chrlistMAPbypopfilename[pop2][pop2sample1][-1][0]+" --mask="+outputpath+"/mappability_mask"+currentID[:-2]+".bed.gz "+outputpath+"/"+result_chrlistMAPbypopfilename[pop1][pop1sample1][-1][1]+outputpath+"/"+result_chrlistMAPbypopfilename[pop2][pop2sample1][-1][1]+" > "+outputpath+"/"+pop1name+"_"+pop2name+"/"+pop1name+"_"+pop2name+"_"+currentID[:-2]+".msmc.infile")
+            msmsinfilesplit_chrVALUE_popsKEY[(pop1,pop2)].append(outputpath+"/"+pop1name+"_"+pop2name+"/"+pop1name+"_"+pop2name+"_"+currentID[:-2]+".msmc.infile  ")
     print(result_chrlistMAPbypopfilename)
     runmsmc="/pub/tool/msmc/msmc_linux_64bit  --fixedRecombination  -t 16 -o "
     print("all msmc prepare done,go into runing msmc")
@@ -139,10 +140,11 @@ if __name__ == '__main__':
         if a!=0:
             print("error")
             exit(-1)
+    #the command blow are modyfied after programm running,so break execution when programm reach here
     for pop1,pop2 in msmsinfilesplit_chrVALUE_popsKEY.keys():
         pop1name=re.search(r"[^/]*$",pop1).group(0).strip()
         pop2name=re.search(r"[^/]*$",pop2).group(0).strip()
-        runmsmc="/pub/tool/msmc/msmc_linux_64bit  --fixedRecombination  -t 16 -o "+outputpath+"/"+pop1name+"_"+pop2name+"/"+pop1name+"_"+pop2name+"result "
+        runmsmc="/pub/tool/msmc/msmc_linux_64bit  --fixedRecombination --skipAmbiguous -P 0,0,1,1 -t 16 -o "+outputpath+"/"+pop1name+"_"+pop2name+"/"+pop1name+"_"+pop2name+"result "
         for msmcinfile_a_chr in msmsinfilesplit_chrVALUE_popsKEY[(pop1,pop2)]:
             runmsmc+=msmcinfile_a_chr
         print(runmsmc)

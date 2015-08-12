@@ -22,9 +22,9 @@ parser.add_option("-t","--topleveltablejudgeancestral",dest="topleveltablejudgea
 parser.add_option("-w","--winwidth",dest="winwidth",help="default infile1_infile2")#
 parser.add_option("-s","--slideSize",dest="slideSize",help="default infile2_infile1")#
 parser.add_option("-m","--minlength",dest="minlength")
-parser.add_option("-n","--numberofindvdoftargetpop_todividintobin",dest="numberofindvdoftargetpop_todividintobin",default="o")
+parser.add_option("-n","--numberofindvdoftargetpop_todividintobin",dest="numberofindvdoftargetpop_todividintobin",default="o",help="conflit with correlationfile")
 parser.add_option("-o","--outfileprewithpath",dest="outfileprewithpath")
-parser.add_option("-c","--correlationfile",dest="correlationfile",default=None)
+parser.add_option("-c","--correlationfile",dest="correlationfile",default=None,help="conflit with numberofindvdoftargetpop_todividintobin")
 
 parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", default=True,
@@ -35,17 +35,18 @@ windowWidth=int(options.winwidth)
 slideSize=int(options.slideSize)
 mindepthtojudefixed=20
 if __name__ == '__main__':
-    d_increase=fractions.Fraction(1, (2*int(options.numberofindvdoftargetpop_todividintobin)))
-    d_increase=round(d_increase,11)
-    intervalFileName=options.outfileprewithpath+".freq_correlation"
-    freq_correlation_config=open(intervalFileName,"w")
-    minvalue=0.000000000000
-    freq_xaxisKEY_yaxisseqVALUERelation={}
-    
-    while minvalue+d_increase<=1:
-        freq_xaxisKEY_yaxisseqVALUERelation[(minvalue,minvalue+d_increase+0.00000000004)]=[]
+    if options.correlationfile==None:
+        d_increase=fractions.Fraction(1, (2*int(options.numberofindvdoftargetpop_todividintobin)))
+        d_increase=round(d_increase,11)
+        intervalFileName=options.outfileprewithpath+".freq_correlation"
+        freq_correlation_config=open(intervalFileName,"w")
+        minvalue=0.000000000000
+        freq_xaxisKEY_yaxisseqVALUERelation={}
         
-        minvalue+=d_increase
+        while minvalue+d_increase<=1:
+            freq_xaxisKEY_yaxisseqVALUERelation[(minvalue,minvalue+d_increase+0.00000000004)]=[]
+            
+            minvalue+=d_increase
 
 
 #     for a,b in sorted(freq_xaxisKEY_yaxisseqVALUERelation.keys()):
@@ -257,7 +258,10 @@ if __name__ == '__main__':
             linelist=re.split(r"\s+",line.strip())
             freq_xaxisKEY_yaxisVALUERelation[float(linelist[0]),float(linelist[1])]=float(linelist[2])
         correlationfile.close()
+#     for a,b in sorted(freq_xaxisKEY_yaxisVALUERelation.keys()):
+#         print('%.12f'%a,'%.12f'%(b),'%.12f'%(freq_xaxisKEY_yaxisVALUERelation[(a,b)]),sep="\t")
     #slide window to caculate S
+#     exit()
     obsexpcaculator.freq_xaxisKEY_yaxisVALUERelation=freq_xaxisKEY_yaxisVALUERelation
     win = Util.Window()
     obsexpsignalmapbychrom={}
