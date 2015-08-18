@@ -14,7 +14,7 @@ Created on 2013-9-3
 '''
 parser = OptionParser()
 parser.add_option("-i", "--winfile", dest="winfileName",
-                  help="winfileName", metavar="FILE")
+                  help="winfileName only one", metavar="FILE")
 
 parser.add_option("-t", "--threshold", dest="threshold", help="conflict with -p")
 parser.add_option("-p", "--percentage", dest="percentage",default=None, help="conflict with -t")

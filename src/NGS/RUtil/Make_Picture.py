@@ -5,19 +5,18 @@ Created on 2013-8-10
 '''
 
 import itertools
-import re, os, math
+import re, os, math,time
 
 import numpy
 
 from NGS.BasicUtil import Caculators
 import NGS.BasicUtil.DerivedalleleProcessor as DAP
 import rpy2.robjects as robjects
+
+
 # import rpy2.rinterface as ri
-
-
 # ri.set_initoptions((b'rpy2', b'--verbose', b'--no-save'))
 # ri.initr()
-
 class Dstistics_allpop(object):
     def __init__(self, allpopslist):
         super().__init__()
@@ -213,7 +212,7 @@ class MakeMhtGraph(object):
         r("library(gap)")
         r("library(Cairo)")
 #         r('CairoPNG("'+outname+'.png",width='+str(((len(positive_winfiles)+len(negtive_winfiles))*221.5+35)*2)+',height='+str((len(positive_winfiles)+len(negtive_winfiles))*221.5+35)+')')
-        r('CairoPNG("'+outname+'.png",width=1600,height=800)')
+        r('CairoPNG("'+outname+'.png",width=1800,height=800)')
         for i in range(0,len(positive_winfiles)):
             p_threshold[i]=float(positive_winfiles[i][1].strip())
             positive_filenames[i],positive_filenameWithPaths[i]=self.prepareMhtFile(positive_winfiles[i][0], "Fst", "positive", fillvalue)
@@ -245,10 +244,16 @@ class MakeMhtGraph(object):
             hopscex='1'
         else:
             hopscex=str(0.6*(len(positive_winfiles)+len(negtive_winfiles)))
+        n=[]
         for i in range(0,len(positive_winfiles)):
             r('ops<-mht.control(logscale=FALSE,colors=colors,cex=0.6)')
             
             r('hops<-hmht.control(data=p_highlight'+str(i)+',cex='+hopscex+')')
+            a=list(r('hops$data$geneName[!is.na(hops$data$geneName)&hops$data$geneName!="top1"]'))
+            for e in a:
+                nn=re.split(r";",e)
+                for ee in nn:
+                    n.append(ee)
             r('mhtplot(p_data'+str(i)+',ops,hops,pch=19,ylab="z' + "Fst" + '",xlab="")')
             r("title(main='" + positive_filenames[i] + "',cex.main=0.8)")
             r('axis(2)')
@@ -262,6 +267,11 @@ class MakeMhtGraph(object):
         for i in range(0,len(negtive_winfiles)):
             r('ops<-mht.control(logscale=FALSE,colors=colors,cex=0.6)')
             r('hops<-hmht.control(data=n_highlight'+str(i)+',cex='+hopscex+')')
+            a=list(r('hops$data$geneName[!is.na(hops$data$geneName)&hops$data$geneName!="top1"]'))
+            for e in a:
+                nn=re.split(r";",e)
+                for ee in nn:
+                    n.append(ee)
             r('mhtplot(n_data'+str(i)+',ops,hops,pch=19,ylab="zHp",xlab="")')
             r("title(main='" + negtive_filenames[i] + "',cex.main=0.8)")
             r('axis(2)')
@@ -276,6 +286,7 @@ class MakeMhtGraph(object):
         r('dev.off()')
         print(r('Cairo.capabilities()'))
         scriptfile.close()
+        return list(set(n))
 
     def makeMhtplots_compareInOnePicture(self, outputnamewithpath,positive_winfiles,negtive_winfiles,fillvalue=0,columnname="zvalue"):
         scriptfile=open("stripts.R",'w')

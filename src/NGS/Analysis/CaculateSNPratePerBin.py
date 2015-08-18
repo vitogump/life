@@ -138,7 +138,7 @@ if __name__ == '__main__':
                                     log2snpsperbin = numpy.log2(snpbinmap.SNPsPerBINMap[currentchrID][i][2])
                                 except AttributeError:
                                     log2snpsperbin=-99999999999999999
-                                print(currentchrID + "\t" + str(i) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][0]) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][1]) +"\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][2]) +"\t" + '%.15f'%(snpbinmap.SNPsPerBINMap[currentchrID][i][2]) + "\t" + '%.12f'%(log2snpsperbin), file=outfile)
+                                print(currentchrID + "\t" + str(i) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][0]) + "\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][1]) +"\t" + str(snpbinmap.SNPsPerBINMap[currentchrID][i][2]) +"\t" + '%.15f'%(snpbinmap.SNPsPerBINMap[currentchrID][i][3]) + "\t" + '%.12f'%(log2snpsperbin), file=outfile)
                 else:
                     print("not find this chr:",currentchrID)
         print(vcfname+str(windowWidth)+"_"+str(slideSize), str(expectation), str(std0), str(std1), file=open(outputpath+"caculateSNPratePerBinstaticvalue.txt", 'a'))

@@ -413,6 +413,7 @@ class Caculate_Fst(Caculator):
     def __init__(self, MethodToSeqpop1="pool", MethodToSeqpop2="indvd", minsnps=3):
         super().__init__()
         self.minsnps = minsnps
+        self.considerfixdiffinfst=False
         self.CNk = 0
         self.CDk = 0
         self.COUNTED = [0,0]#fst used snp,fixed difference snp
@@ -547,7 +548,10 @@ class Caculate_Fst(Caculator):
             return
         if (refdep_1==0 and altalleledep_2==0) or (altalleledep_1==0 and refdep_2==0):#fixed difference
             self.COUNTED[1]+=1
-            return
+            if self.considerfixdiffinfst:
+                pass
+            else:
+                return
         self.COUNTED[0] += 1
         h_1 = refdep_1 * altalleledep_1 / ((refdep_1 + altalleledep_1 - 1) * (refdep_1 + altalleledep_1))
         h_2 = refdep_2 * altalleledep_2 / ((refdep_2 + altalleledep_2 - 1) * (refdep_2 + altalleledep_2))

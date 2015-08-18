@@ -23,11 +23,14 @@ parser.add_option("-s","--slideSize",dest="slideSize",help="default infile2_infi
 parser.add_option("-m","--minlength",dest="minlength")
 parser.add_option("-j","--outjoin_innerjoin",dest="outjoin_innerjoin",default="o")
 parser.add_option("-o","--outputpath",dest="outputpath")
-
+parser.add_option("-F","--considerFixdifferentinFSTcaculate",dest="considerFixdifferentinFSTcaculate",action="store_true",default=False)
 parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", default=True,
                   help="don't print status messages to stdout")
+
 (options, args) = parser.parse_args()
+print(options.considerFixdifferentinFSTcaculate)
+
 # if len(sys.argv) < 7:
 #     print("python CaculateFst.py [vcf1] [vcf2] [vcf3]....[globe_Fst(G)/reletivepaire_Fsts(R)] [winwidth] [slidesize] [chromtable]")
 #     exit(-1)
@@ -133,7 +136,8 @@ class Fst():
                 elif re.search(r"pool[^/]+",fstpaire[1])!=None:
                     MethodToSeqpop2="pool"
                 fst_caculator = Caculators.Caculate_Fst(MethodToSeqpop1=MethodToSeqpop1, MethodToSeqpop2=MethodToSeqpop2)
-    
+                if options.considerFixdifferentinFSTcaculate:
+                    fst_caculator.considerfixdiffinfst=True
 #                 fst = Fst() 
                 FstMapByChrom={}
                 self.tempdbtools.operateDB("callproc", "mysql_sp_add_column", data=("ninglabvariantdata_tmp", self.treearrayprename+"treearray", (fstpaire1name[0:5]+fstpaire2name[0:5]), "text", "default null"))
@@ -249,6 +253,8 @@ class Fst():
                         MethodToSeqpop2="pool"
                     FstMapByChrom={}
                     fst_caculator = Caculators.Caculate_Fst(MethodToSeqpop1=MethodToSeqpop1, MethodToSeqpop2=MethodToSeqpop2)
+                    if options.considerFixdifferentinFSTcaculate:
+                        fst_caculator.considerfixdiffinfst=True
                     fstlist.append(self.caculateFstAccordingdb(FstMapByChrom,self.dbtools, self.chromtable, majorpop, othrpop, fst_caculator, self.windowWidth,self.slideSize,self.minlength))    
                     print("fstlist[-1]",fstlist[-1])
                     vcfname+=("_"+re.search(r"[^/]*$",othrpop).group(0)[0])

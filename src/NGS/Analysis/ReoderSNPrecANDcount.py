@@ -309,7 +309,8 @@ if __name__ == '__main__':
                     d_af+=float(e[AF_idxlistdomestic[idx]])
                 
                 idx+=1
-            
+            if len(wild_CurPosRecs)-w_unknowcount==0 or len(dom_CurPosRecs)-d_unknowcount==0:
+                continue
             delta_af=(w_af/(len(wild_CurPosRecs)-w_unknowcount))-(d_af/(len(dom_CurPosRecs)-d_unknowcount))
 #             print("wild_CurPosRecs",wild_CurPosRecs,"\n","dom_CurPosRecs",dom_CurPosRecs)
 #            count by bin

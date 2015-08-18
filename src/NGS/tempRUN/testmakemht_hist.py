@@ -40,6 +40,9 @@ if __name__ == '__main__':
         for n_inputfileName in options.multiple_negtive_winfiles[:]:
             makeMhtGraph.makeHistonPicture(n_inputfileName, "Hp")#,"c(0,2000)","c(0,45)"
     if (options.multiple_negtive_winfiles_withgenename!=[] or options.multiple_positive_winfiles_withgenename!=[]):
-        makeMhtGraph.makeMhtplots_compareInOnePicture_withgeneName(options.pathoutputfilename, options.multiple_positive_winfiles_withgenename, options.multiple_negtive_winfiles_withgenename, 0,columnname)
+        genelist=makeMhtGraph.makeMhtplots_compareInOnePicture_withgeneName(options.pathoutputfilename, options.multiple_positive_winfiles_withgenename, options.multiple_negtive_winfiles_withgenename, 0,columnname)
+        f=open(options.pathoutputfilename+str(len(genelist)),"w")
+        for gene in genelist:
+            print(gene,file=f)
     else:
         makeMhtGraph.makeMhtplots_compareInOnePicture(options.pathoutputfilename, options.multiple_positive_winfiles, options.multiple_negtive_winfiles, 0,columnname)
