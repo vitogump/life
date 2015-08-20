@@ -3,7 +3,7 @@ Created on 2014-11-30
 
 @author: liurui
 '''
-import copy
+import copy,time
 import os, numpy, sys, re
 
 from NGS.BasicUtil import *
@@ -266,9 +266,9 @@ class AncestralAlleletabletools():
         print(archicpop_colname+"_alt",archicpop_colname+"_dep")
         self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, toplevelsnptablename, archicpop_colname+"_alt", "char(128)", "default null"))
         self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, toplevelsnptablename, archicpop_colname+"_dep", "char(128)", "default null"))  
-        print("callproc", "mysql_sp_add_column","done")
+        print("callproc", "mysql_sp_add_column","done",time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
         depthfile = Util.GATK_depthfile(depthFile, depthFile + ".index")
-        print("Util.GATK_depthfile done")
+        print("Util.GATK_depthfile done",time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
         species_idx_list=[]
 #         species_idx = depthfile.title.index("Depth_for_" + archicpopNameindepthFile)
         for i in range(0,len(depthfile.title)):

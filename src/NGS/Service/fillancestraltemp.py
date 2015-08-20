@@ -17,7 +17,7 @@ parser = OptionParser()
 
 #"output data name is defined as 'inputdatapath folder name'+'is subfolder name'+'is subfolder name'+..."
 
-parser.add_option("-m", "--mode", dest="mode", help="mode")
+parser.add_option("-m", "--mode", dest="mode", help="mode 1 according vcf,mode 2 ref compare")
 parser.add_option("-c", "--chromlistfilename", dest="chromlistfilename", help="it's the depth of the dir from the inputdatapath which the data file that need to be process in it,the depth of the inputdatapath is 0")
 parser.add_option("-t","--toplevelsnptable",dest="toplevelsnptable",default="0",help="depth of the folder to output")
 #mode 1
@@ -39,13 +39,14 @@ if options.ancenstralref==None:
 
 toplevelsnptablename=options.toplevelsnptable
 archicpopNameindepthFile=options.outgroupname
-depthFile=options.depthfile
+
 
 
 flanklen=int(options.flanklen.strip())
 if __name__ == '__main__':
     ancestralalleletabletools=AncestralAlleletabletools(database=Util.vcfdbname, ip=Util.ip, usrname=Util.username, pw=Util.password,dbgenome=Util.genomeinfodbname)
     if options.mode.strip()=="1":
+        depthFile=options.depthfile
         chromlist=[]
         chromlistfile=open(options.chromlistfilename,"r")
         for chrrow in chromlistfile:
@@ -53,6 +54,8 @@ if __name__ == '__main__':
             chromlist.append(chrrowlist[0].strip())
         ancestralalleletabletools.fillAncestral(archicpopVcfFile=archicpopVcfFile,depthFile=depthFile,archicpopNameindepthFile=archicpopNameindepthFile,chromlist=chromlist,toplevelsnptablename=toplevelsnptablename)
     elif options.mode.strip()=="2":
+        if options.depthfile!=None:
+            print(options.depthfile,"no need")
         originalspeciesref=options.ancenstralref
         colname=re.search(r'[^/]*$',originalspeciesref).group(0)
         colname=re.sub(r"[^\w^\d]","_",colname);colname=colname[:10]

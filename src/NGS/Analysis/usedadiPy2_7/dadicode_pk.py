@@ -118,23 +118,22 @@ def domestic_IM_decline_growth(params,ns,pts):
     fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
     return fs
 def ancestral_decline_domestic_IM_decline_growth(params,ns,pts):
-    nuA0,nuA1,s,nuM1,nuM,nuP1,nuPb,nuP,TA,Tsplit,TBM,TBP,m12,m21=params
+    nuA0,nuA1,s,nuM1,nuM,nuP1,nuPb,nuP,TA,TS,TBM,TBP,m12,m21=params
     xx=dadi.Numerics.default_grid(pts)
     phi=dadi.PhiManip.phi_1D(xx)
-    nuA_func= lambda t: nuA0*(nuA1/nuA0)**(t/TA)
+    nuA_func= lambda t: nuA0*(nuA1/nuA0)**(t/TA-TS)
     #stage1
-    phi=dadi.Integration.one_pop(phi,xx,TA,nu=nuA_func)
+    phi=dadi.Integration.one_pop(phi,xx,TA-TS,nu=nuA_func)
     phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
     #stage 2 
     nuP0=(1-s)*nuA1
     nuM0=s*nuA1
-    nuP1_func= lambda t: nuP0*(nuP1/nuP0)**(t/Tsplit+TBP)
-    nuM1_func= lambda t:nuM0*(nuM0/nuM1)**(t/Tsplit+TBP)
-    phi=dadi.Integration.two_pops(phi,xx,Tsplit,nuM1_func,nuP1_func,m12=m12,m21=m21)
+    nuP1_func= lambda t: nuP0*(nuP1/nuP0)**(t/(TS-TBM))
+    nuM1_func= lambda t:nuM0*(nuM0/nuM1)**(t/(TS-TBP))#especially here differnet time length
+    phi=dadi.Integration.two_pops(phi,xx,TS-TBM,nuM1_func,nuP1_func,m12=m12,m21=m21)
     # stage 4 ,M bottle,P continue decreas
-    nuP0=nuP1_func(Tsplit)
-#     phi=dadi.Integration.two_pops(phi,xx,TBM-TBP,nuM,nuP1_func,m12=m12,m21=m21)
-    nuP1_func= lambda t: nuP0*(nuP1/nuP0)**(t/TBM+TBP)
+    nuP0=nuP1_func(TS-TBM)
+    nuP1_func= lambda t: nuP0*(nuP1/nuP0)**(t/TBM-TBP)
     phi=dadi.Integration.two_pops(phi,xx,TBM,nuM,nuP1_func,m12=m12,m21=m21)
     #stage 5
     nuP2_func=lambda t: nuPb*(nuP/nuPb)**(t/TBP)

@@ -1081,11 +1081,12 @@ class GATK_depthfile():
     onecopy=None
     static_depthfileName=None
     static_allrecsforcurchrom_mapbypos=None
-    def __init__(self, depthfileName, indexFileName):
+    def __init__(self, depthfileName, indexFileName,ismultplethreads=False):
         super().__init__()
         self.covfileidx = {}
         self.title = []
         self.depthfileName = depthfileName
+        self.ismultplethreads=ismultplethreads
         
         if self.static_depthfileName==None:
             self.onecopy=True
@@ -1185,7 +1186,7 @@ class GATK_depthfile():
         return chrom, pos, linelist, self.depthfilefp.tell()
     def getdepthByPos_optimized(self, targetchr, targetloc):
         if self.curchrom!=targetchr:
-            if (self.onecopy and self.static_allrecsforcurchrom_mapbypos==None) or not self.onecopy:#(first time only one obj )or not first time  multimple copy
+            if self.ismultplethreads or (self.onecopy and self.static_allrecsforcurchrom_mapbypos==None) or not self.onecopy:#((first time only one obj )or not first time )and not multiplethreads. multimple copy
                 self.depthfilefp.seek(self.covfileidx[targetchr])
                 content=self.depthfilefp.read(self.covfileidx[self.chromOrder[self.chromOrder.index(targetchr.strip()) + 1]] - self.covfileidx[targetchr.strip()])
                 contentlines=re.split(r"\n",content.strip())
@@ -1196,7 +1197,7 @@ class GATK_depthfile():
                     self.allrecsforcurchrom_mapbypos[int(linelist[0])]=linelist
                 self.curchrom=targetchr
                 self.static_allrecsforcurchrom_mapbypos=self.allrecsforcurchrom_mapbypos
-            elif self.onecopy and self.static_allrecsforcurchrom_mapbypos!=None:
+            elif self.onecopy and self.static_allrecsforcurchrom_mapbypos!=None:#only one copy
                 self.allrecsforcurchrom_mapbypos=self.static_allrecsforcurchrom_mapbypos# 
     
                  

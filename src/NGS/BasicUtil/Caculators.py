@@ -273,25 +273,34 @@ class Caculate_S_ObsExp_difference(Caculator):
 #             print(self.currentchrID,T,"snp not find,skip")
             return
         else:
-            depthlist1=re.split(r",",snp[0][7])
-            depthlist2=re.split(r",",snp[0][9])
-            if len(depthlist1)==2 and len(depthlist2)==2 and (int(depthlist1[0]) + int(depthlist1[1])>=self.mindepthtojudefixed or int(depthlist2[0]) + int(depthlist2[1])>=self.mindepthtojudefixed) and ((depthlist1[0].strip()=="0" and depthlist2[0].strip()=="0") or (depthlist1[1].strip()=="0" and depthlist2[1].strip()=="0") ):
-                if depthlist1[0].strip()=="0" and depthlist2[0].strip()=="0":
-                    A_base_idx=1
-                elif depthlist1[1].strip()=="0" and depthlist2[1].strip()=="0":
-                    A_base_idx=0
-                else:
-                    print(snp,"never get here!")
-            elif (len(depthlist1)==2 and  snp[0][9] == "no covered" and int(depthlist1[0]) + int(depthlist1[1])>=self.mindepthtojudefixed and (depthlist1[0].strip()=="0" or depthlist1[1].strip()=="0" ))   or (snp[0][7]=="no covered" and len(depthlist2)==2 and int(depthlist2[0]) + int(depthlist2[1])>=self.mindepthtojudefixed and (depthlist2[1].strip()=="0" or depthlist2[0].strip()=="0")):
-                if (snp[0][9] == "no covered" and depthlist1[0].strip()=="0") or (snp[0][7]=="no covered" and depthlist2[0].strip()=="0"):
-                    A_base_idx=1
-                elif (snp[0][9] == "no covered" and depthlist1[1].strip()=="0") or (snp[0][7]=="no covered" and depthlist2[1].strip()=="0"):
-                    A_base_idx=0
-                else:
-                    print(snp,"never get here!")
+            A_base_idx=100
+            fanyadepthlist=re.split(r",",snp[0][9])
+            if len(fanyadepthlist)==2 and int(fanyadepthlist[1]) >=self.mindepthtojudefixed and fanyadepthlist[0].strip()=="0":
+                A_base_idx=1
+            elif len(fanyadepthlist)==2 and int(fanyadepthlist[0])>=self.mindepthtojudefixed and fanyadepthlist[1].strip()=="0":
+                A_base_idx=0
             else:
-#                 print(snp,"skip snp")
+                print("skip snp",snp[0][1],snp[0][7],snp[0][9],snp[0][11],snp[0][13])
                 return
+#             depthlist1=re.split(r",",snp[0][7])
+#             depthlist2=re.split(r",",snp[0][9])
+#             if len(depthlist1)==2 and len(depthlist2)==2 and (int(depthlist1[0]) + int(depthlist1[1])>=self.mindepthtojudefixed or int(depthlist2[0]) + int(depthlist2[1])>=self.mindepthtojudefixed) and ((depthlist1[0].strip()=="0" and depthlist2[0].strip()=="0") or (depthlist1[1].strip()=="0" and depthlist2[1].strip()=="0") ):
+#                 if depthlist1[0].strip()=="0" and depthlist2[0].strip()=="0":
+#                     A_base_idx=1
+#                 elif depthlist1[1].strip()=="0" and depthlist2[1].strip()=="0":
+#                     A_base_idx=0
+#                 else:
+#                     print(snp,"never get here!")
+#             elif (len(depthlist1)==2 and  snp[0][9] == "no covered" and int(depthlist1[0]) + int(depthlist1[1])>=self.mindepthtojudefixed and (depthlist1[0].strip()=="0" or depthlist1[1].strip()=="0" ))   or (snp[0][7]=="no covered" and len(depthlist2)==2 and int(depthlist2[0]) + int(depthlist2[1])>=self.mindepthtojudefixed and (depthlist2[1].strip()=="0" or depthlist2[0].strip()=="0")):
+#                 if (snp[0][9] == "no covered" and depthlist1[0].strip()=="0") or (snp[0][7]=="no covered" and depthlist2[0].strip()=="0"):
+#                     A_base_idx=1
+#                 elif (snp[0][9] == "no covered" and depthlist1[1].strip()=="0") or (snp[0][7]=="no covered" and depthlist2[1].strip()=="0"):
+#                     A_base_idx=0
+#                 else:
+#                     print(snp,"never get here!")
+#             else:
+# #                 print(snp,"skip snp")
+#                 return
         ancestrallcontext=snp[0][5].strip()[0].upper()+snp[0][3+A_base_idx].strip().upper()+snp[0][5].strip()[2].upper()
         if "CG" in ancestrallcontext or "GC" in ancestrallcontext:
 #             print("skip CG site",ancestrallcontext)
