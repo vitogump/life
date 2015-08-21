@@ -267,25 +267,32 @@ if __name__ == '__main__':
                 print(curchrom,curpos,"snp not find,skip")
                 continue
             else:
-                depthlist1=re.split(r",",snp[0][7])
-                depthlist2=re.split(r",",snp[0][9])
-                if len(depthlist1)==2 and len(depthlist2)==2 and (int(depthlist1[0]) + int(depthlist1[1])>=mindeptojudgefix or int(depthlist2[0]) + int(depthlist2[1])>=mindeptojudgefix) and ((depthlist1[0].strip()=="0" and depthlist2[0].strip()=="0") or (depthlist1[1].strip()=="0" and depthlist2[1].strip()=="0") ):
-                    if depthlist1[0].strip()=="0" and depthlist2[0].strip()=="0":
-                        A_base_idx=1
-                    elif depthlist1[1].strip()=="0" and depthlist2[1].strip()=="0":
-                        A_base_idx=0
-                    else:
-                        print(snp,"never get here!")
-                elif (len(depthlist1)==2 and  snp[0][9] == "no covered" and int(depthlist1[0]) + int(depthlist1[1])>=mindeptojudgefix and (depthlist1[0].strip()=="0" or depthlist1[1].strip()=="0" ))   or (snp[0][7]=="no covered" and len(depthlist2)==2 and int(depthlist2[0]) + int(depthlist2[1])>=mindeptojudgefix and (depthlist2[1].strip()=="0" or depthlist2[0].strip()=="0")):
-                    if (snp[0][9] == "no covered" and depthlist1[0].strip()=="0") or (snp[0][7]=="no covered" and depthlist2[0].strip()=="0"):
-                        A_base_idx=1
-                    elif (snp[0][9] == "no covered" and depthlist1[1].strip()=="0") or (snp[0][7]=="no covered" and depthlist2[1].strip()=="0"):
-                        A_base_idx=0
-                    else:
-                        print(snp,"never get here!")
+#                 depthlist1=re.split(r",",snp[0][7])
+                fanyadepthlist=re.split(r",",snp[0][9])
+                if len(fanyadepthlist)==2 and int(fanyadepthlist[1]) >=mindeptojudgefix and fanyadepthlist[0].strip()=="0":
+                    A_base_idx=1
+                elif len(fanyadepthlist)==2 and int(fanyadepthlist[0])>=mindeptojudgefix and fanyadepthlist[1].strip()=="0":
+                    A_base_idx=0
                 else:
-                    print(snp,"skip snp")
+                    print("skip snp",snp[0][1],snp[0][7:])
                     continue
+#                 if len(depthlist1)==2 and len(depthlist2)==2 and (int(depthlist1[0]) + int(depthlist1[1])>=mindeptojudgefix or int(depthlist2[0]) + int(depthlist2[1])>=mindeptojudgefix) and ((depthlist1[0].strip()=="0" and depthlist2[0].strip()=="0") or (depthlist1[1].strip()=="0" and depthlist2[1].strip()=="0") ):
+#                     if depthlist1[0].strip()=="0" and depthlist2[0].strip()=="0":
+#                         A_base_idx=1
+#                     elif depthlist1[1].strip()=="0" and depthlist2[1].strip()=="0":
+#                         A_base_idx=0
+#                     else:
+#                         print(snp,"never get here!")
+#                 elif (len(depthlist1)==2 and  snp[0][9] == "no covered" and int(depthlist1[0]) + int(depthlist1[1])>=mindeptojudgefix and (depthlist1[0].strip()=="0" or depthlist1[1].strip()=="0" ))   or (snp[0][7]=="no covered" and len(depthlist2)==2 and int(depthlist2[0]) + int(depthlist2[1])>=mindeptojudgefix and (depthlist2[1].strip()=="0" or depthlist2[0].strip()=="0")):
+#                     if (snp[0][9] == "no covered" and depthlist1[0].strip()=="0") or (snp[0][7]=="no covered" and depthlist2[0].strip()=="0"):
+#                         A_base_idx=1
+#                     elif (snp[0][9] == "no covered" and depthlist1[1].strip()=="0") or (snp[0][7]=="no covered" and depthlist2[1].strip()=="0"):
+#                         A_base_idx=0
+#                     else:
+#                         print(snp,"never get here!")
+#                 else:
+#                     print(snp,"skip snp")
+#                     continue
             idx=0;w_unknowcount=0
             if options.ancenstral_or_derived=="a":
                 A_base_idx=1-A_base_idx

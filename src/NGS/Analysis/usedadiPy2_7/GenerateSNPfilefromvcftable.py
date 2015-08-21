@@ -22,7 +22,7 @@ parser.add_option("-v", "--vcftablelist", dest="vcftablelist",action="append",de
 (options, args) = parser.parse_args()
 minlength=options.minlength;toplevelsnptable=options.toplevelsnptable;snpperkb=float(options.snpperkb);vcftableslist=options.vcftablelist#minAN=options.minAN
 dadisnpfile=open(options.outputfilename+"dilutetodensity"+options.snpperkb.strip(),'w')
-outgroupidx_in_topleveltable=[6,8];minoutgroupdepth=30
+outgroupidx_in_topleveltable=[6,8];minoutgroupdepth=20
 randomnamefile_recordchr=Util.random_str(8)
 randomnamef_recchr=open(randomnamefile_recordchr,"w")
 # if os.countsnpnumberfromvcf !=None:
@@ -104,43 +104,21 @@ if __name__ == '__main__':
                     print("direction",direction)
                     sampled_idx_find_satisfied=sampled_idx
                 else:
-                    firstoutgroupbase=allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][outgroupidx_in_topleveltable[0]].upper().strip();firstoutgroupdepthlist=re.split(r",",allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][outgroupidx_in_topleveltable[0]+1])
+#                     firstoutgroupbase=allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][outgroupidx_in_topleveltable[0]].upper().strip();firstoutgroupdepthlist=re.split(r",",allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][outgroupidx_in_topleveltable[0]+1])
                     secondoutgroupbase=allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][outgroupidx_in_topleveltable[1]].upper().strip();secondoutgroupdepthlist=re.split(r",",allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][outgroupidx_in_topleveltable[1]+1])
                     ALT=allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][4].upper().strip()                    
-#                 if len(firstoutgroupdepthlist)==2 and int(firstoutgroupdepthlist[0])+int(firstoutgroupdepthlist[1])>=minoutgroupdepth and (firstoutgroupdepthlist[0].strip()=="0" or firstoutgroupdepthlist[1].strip()=="0"):#first outgroup can make judgement
-#                     print("1",end="")
-#                     if firstoutgroupdepthlist[0].strip()=="0" :
-#                         A_base_idx=1
-#                     elif firstoutgroupdepthlist[1].strip()=="0" :
-#                         A_base_idx=0
+                if len(secondoutgroupdepthlist)==2 and int(secondoutgroupdepthlist[1])>=minoutgroupdepth and secondoutgroupdepthlist[0].strip()=="0":
+                    A_base_idx=1;continuesearch=2
+                elif len(secondoutgroupdepthlist)==2 and int(secondoutgroupdepthlist[0])>=minoutgroupdepth and secondoutgroupdepthlist[1].strip()=="0":
+                    A_base_idx=0;continuesearch=2
+#                 if len(firstoutgroupdepthlist)==2 and len(secondoutgroupdepthlist)==2 and (int(firstoutgroupdepthlist[0])+int(firstoutgroupdepthlist[1])>=minoutgroupdepth or int(secondoutgroupdepthlist[0])+int(secondoutgroupdepthlist[1])>=minoutgroupdepth):
+#                     if (firstoutgroupdepthlist[0].strip()=="0" and secondoutgroupdepthlist[0].strip()=="0") :
+#                         A_base_idx=1;continuesearch=3
+#                     elif (firstoutgroupdepthlist[1].strip()=="0" and secondoutgroupdepthlist[1].strip()=="0"):
+#                         A_base_idx=0;continuesearch=3
 #                     else:
-#                         print("never get here")
-#                     if len(secondoutgroupdepthlist)==2 and int(secondoutgroupdepthlist[0])+int(secondoutgroupdepthlist[1])>=minoutgroupdepth and (secondoutgroupdepthlist[0].strip()=="0" or secondoutgroupdepthlist[1].strip()=="0") and secondoutgroupdepthlist[A_base_idx].strip()=="0":
-# #                         if secondoutgroupdepthlist[A_base_idx].strip()=="0":
-#                         print("don't agree,contradiction",allsnpOfJoinTableinAchr[sampled_idx_find_satisfied])
-#                         sampled_idx_find_satisfied+=1
-#                         continue#continue loop
-#                     else:
-#                         continuesearch=3                          
-#                 elif firstoutgroupdepthlist=="no covered" and len(secondoutgroupdepthlist)==2 and int(secondoutgroupdepthlist[0])+int(secondoutgroupdepthlist[1])>=minoutgroupdepth and (secondoutgroupdepthlist[0].strip()=="0" or secondoutgroupdepthlist[1].strip()=="0"):#second outgroup can make judgenment
-#                     print("2",end="")
-#                     if  secondoutgroupdepthlist[0].strip()=="0":
-#                         A_base_idx=1;continuesearch=2
-#                     elif secondoutgroupdepthlist[1].strip()=="0":
-#                         A_base_idx=0;continuesearch=2
-#                     else:
-#                         print("never get here")
-#                 else:
-#                     print("skip this snp,both can not judge",allsnpOfJoinTableinAchr[sampled_idx_find_satisfied])
-#                     sampled_idx_find_satisfied+=1
-                if len(firstoutgroupdepthlist)==2 and len(secondoutgroupdepthlist)==2 and (int(firstoutgroupdepthlist[0])+int(firstoutgroupdepthlist[1])>=minoutgroupdepth or int(secondoutgroupdepthlist[0])+int(secondoutgroupdepthlist[1])>=minoutgroupdepth):
-                    if (firstoutgroupdepthlist[0].strip()=="0" and secondoutgroupdepthlist[0].strip()=="0") :
-                        A_base_idx=1;continuesearch=3
-                    elif (firstoutgroupdepthlist[1].strip()=="0" and secondoutgroupdepthlist[1].strip()=="0"):
-                        A_base_idx=0;continuesearch=3
-                    else:
-                        print("skip this snp ",allsnpOfJoinTableinAchr[sampled_idx_find_satisfied])
-                        sampled_idx_find_satisfied+=direction
+#                         print("skip this snp ",allsnpOfJoinTableinAchr[sampled_idx_find_satisfied])
+#                         sampled_idx_find_satisfied+=direction
                 else:
                     print("skip this snp,coverage not sufficent or different direction",allsnpOfJoinTableinAchr[sampled_idx_find_satisfied])
                     sampled_idx_find_satisfied+=direction
@@ -161,10 +139,10 @@ if __name__ == '__main__':
                 postion=allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][1]
                 print(contextwithinspeces,contextoutgroup,REF,sep="\t",end="\t",file=dadisnpfile)
                 for vcftable_idx in range(len(vcftableslist)):
-                    print(str(int(allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][10+vcftable_idx*2+1])-int(allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][10+vcftable_idx*2])),end="\t",file=dadisnpfile)
+                    print(str(int(allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][len(toplevelsnptable_titlelist)+vcftable_idx*2+1])-int(allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][len(toplevelsnptable_titlelist)+vcftable_idx*2])),end="\t",file=dadisnpfile)
                 print(ALT,end="\t",file=dadisnpfile)
                 for vcftable_idx in range(len(vcftableslist)):
-                    print(allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][10+vcftable_idx*2],end="\t",sep="\t",file=dadisnpfile)
+                    print(allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][len(toplevelsnptable_titlelist)+vcftable_idx*2],end="\t",sep="\t",file=dadisnpfile)
                 print(currentchrID.replace(".","_"),postion,sep="\t",file=dadisnpfile)
         if options.countsnpnumberfromvcf!=None:
             totalduiltsnp+=duiltedsnpcountforcurrentchr
