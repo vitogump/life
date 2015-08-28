@@ -219,7 +219,7 @@ p0=dadi.Misc.perturb_params(params,lower_bound=lower_bound,upper_bound=upper_bou
 popt=dadi.Inference.optimize_log(p0,fsdata,func_ex,pts_1,lower_bound=lower_bound,upper_bound=upper_bound,verbose=len(params))
 model=func_ex(popt,ns,pts_1)
 theta=dadi.Inference.optimal_sfs_scaling(model,fsdata)
-Nref=theta/(4*9.97e-10*277872.0265773854)
+Nref=theta/(4*9.97e-10*277944.66019938875)
 ll_opt=dadi.Inference.ll_multinom(model,fsdata)
 print 'Nref',Nref
 print theta

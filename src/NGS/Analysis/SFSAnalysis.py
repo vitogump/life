@@ -15,8 +15,6 @@ from NGS.BasicUtil import Util, VCFutil
 
 tempdbname="temp"
 parser = OptionParser()
-
-
 parser.add_option("-c", "--topleveltable", dest="topleveltable",# action="callback",type="string",callback=useoptionvalue_previous2,
                   help="write report to FILE")
 parser.add_option("-f", "--farsurebutfew", dest="farsurebutfew",help="far sure but with few locs")

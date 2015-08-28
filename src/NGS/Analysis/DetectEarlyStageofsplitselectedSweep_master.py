@@ -7,6 +7,7 @@ from multiprocessing.dummy import Pool
 from optparse import OptionParser
 import os
 import re, numpy, fractions, copy
+import time
 
 from NGS.BasicUtil import *
 import src.NGS.BasicUtil.DBManager as dbm
@@ -45,7 +46,8 @@ def runSlave_makecorrelationfile(a):
         command+=(" -T "+vcf+" "+depthconfig)
     for vcf,depthconfig in refpopvcffile_withdepthconfig[:]:
         command+=(" -R "+vcf+" "+depthconfig)
-    a=os.system(command+" -n "+numberofindvdoftargetpop_todividintobin+" -o "+outfileprewithpath)
+    chrlistfilewithoutpath=re.search(r"[^/]*$",chromlistfilename).group(0)
+    a=os.system(command+" -n "+numberofindvdoftargetpop_todividintobin+" -o "+outfileprewithpath+" >>"+outfileprewithpath+chrlistfilewithoutpath+".runSlave_makecorrelationfile.out 2>&1")
 def runSlave_slidewin(a):
     chromlistfilename=a[0];topleveltablename=a[1];targetpopvcffile_withdepthconfig=a[2];refpopvcffile_withdepthconfig=a[3];winwidth=a[4];slideSize=a[5];correlationfile=a[6];outfileprewithpath=a[7]
     command=pathtoPython+options.pathtoslave_slidewin+" -c "+chromlistfilename+" -t "+topleveltablename
@@ -53,7 +55,8 @@ def runSlave_slidewin(a):
         command+=(" -T "+vcf+" "+depthconfig)
     for vcf,depthconfig in refpopvcffile_withdepthconfig[:]:
         command+=(" -R "+vcf+" "+depthconfig)
-    a=os.system(command+" -w "+winwidth+" -s "+slideSize+" -o "+outfileprewithpath+" -C "+correlationfile)
+    chrlistfilewithoutpath=re.search(r"[^/]*$",chromlistfilename).group(0)
+    a=os.system(command+" -w "+winwidth+" -s "+slideSize+" -o "+outfileprewithpath+" -C "+correlationfile+" >>"+outfileprewithpath+chrlistfilewithoutpath+".runSlave_slidewin.out 2>&1")
 if __name__ == '__main__':
     if options.correlationfile==None:
         d_increase=fractions.Fraction(1, (2*int(options.numberofindvdoftargetpop_todividintobin)))
@@ -88,14 +91,15 @@ if __name__ == '__main__':
         pool.map(runSlave_makecorrelationfile,parameterstuples_list)
         pool.close()
         pool.join()
+        time.sleep(60)
         f=open(options.outfileprewithpath+".freqcorrelationfilenamelist",'r')
         for freqseq_cor_filename in f:# for every file
             freqseqmap={}
             if freqseq_cor_filename.split():
-                freqseq_cor_file=open(freqseq_cor_filename,'r')
+                freqseq_cor_file=open(freqseq_cor_filename.strip(),'r')
                 for line in freqseq_cor_file:#for every freq seq bin
                     if line.split():
-                        linelist=re.split(r"\t",line.strip)
+                        linelist=re.split(r"\s+",line.strip())
                         a=float(linelist[0]);b=float(linelist[1])
                         freqseqmap[(a,b)]=[]
                         for freq in linelist[2:]:
@@ -112,7 +116,6 @@ if __name__ == '__main__':
             print('%.12f'%a,'%.12f'%b,'%.12f'%(final_freq_xaxisKEY_yaxisVALUERelation[(a,b)]),sep="\t",file=freq_correlation_config)
         freq_correlation_config.close()
         print("freq_correlation_config is produced")
-        exit()
         
     else:
         if len(options.chromlistfilename)!=1:

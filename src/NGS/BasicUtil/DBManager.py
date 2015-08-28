@@ -6,7 +6,7 @@ Created on 2013-8-22
 
 @author: liurui
 '''
-SLEEP_FOR_NEXT_TRY = 3
+SLEEP_FOR_NEXT_TRY = 1
 class DBTools():
     '''
     classdocs
@@ -73,6 +73,9 @@ class DBTools():
             print('query error!{}'.format(e))
             print("DBManager operateDB","may be the file name is wrong")
             print(sqls,data)
+            cursor.close()
+            self.disconnect()
+            
             a=self.operateDB(sqltype,sqls,data)
             if a==0:
                 return 0

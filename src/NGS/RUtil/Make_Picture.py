@@ -248,7 +248,7 @@ class MakeMhtGraph(object):
         for i in range(0,len(positive_winfiles)):
             r('ops<-mht.control(logscale=FALSE,colors=colors,cex=0.6)')
             
-            r('hops<-hmht.control(data=p_highlight'+str(i)+',cex='+hopscex+')')
+            r('hops<-hmht.control(data=p_highlight'+str(i)+',cex='+hopscex+',yoffset=0.2)')
             a=list(r('hops$data$geneName[!is.na(hops$data$geneName)&hops$data$geneName!="top1"]'))
             for e in a:
                 nn=re.split(r";",e)
@@ -259,14 +259,14 @@ class MakeMhtGraph(object):
             r('axis(2)')
             r('abline(h='+str(positive_winfiles[i][1])+')')
             print('ops<-mht.control(logscale=FALSE,colors=colors,cex=0.6)',file=scriptfile)
-            print('hops<-hmht.control(data=p_highlight'+str(i)+',cex='+str(0.6*(len(positive_winfiles)+len(negtive_winfiles)))+')',file=scriptfile)
+            print('hops<-hmht.control(data=p_highlight'+str(i)+',cex='+str(0.6*(len(positive_winfiles)+len(negtive_winfiles)))+',yoffset=0.2)',file=scriptfile)
             print('mhtplot(p_data'+str(i)+',ops,hops,pch=19,ylab="z' + "Fst" + '",xlab="")',file=scriptfile)
             print("title(main='" + positive_filenames[i] + "',cex.main=0.8)",file=scriptfile)
             print('axis(2)',file=scriptfile)
             print('abline(h=5)',file=scriptfile)
         for i in range(0,len(negtive_winfiles)):
             r('ops<-mht.control(logscale=FALSE,colors=colors,cex=0.6)')
-            r('hops<-hmht.control(data=n_highlight'+str(i)+',cex='+hopscex+')')
+            r('hops<-hmht.control(data=n_highlight'+str(i)+',cex='+hopscex+',yoffset=-0.2)')
             a=list(r('hops$data$geneName[!is.na(hops$data$geneName)&hops$data$geneName!="top1"]'))
             for e in a:
                 nn=re.split(r";",e)
@@ -277,7 +277,7 @@ class MakeMhtGraph(object):
             r('axis(2)')
             r('abline(h='+str(negtive_winfiles[i][1])+')')
             print('ops<-mht.control(logscale=FALSE,colors=colors,cex=0.6)',file=scriptfile)
-            print('hops<-hmht.control(data=n_highlight'+str(i)+',cex=0.6)',file=scriptfile)
+            print('hops<-hmht.control(data=n_highlight'+str(i)+',cex=0.6,yoffset=-0.2)',file=scriptfile)
             print('mhtplot(n_data'+str(i)+',ops,hops,pch=19,ylab="zHp",xlab="")',file=scriptfile)
             print("title(main='" + negtive_filenames[i] + "',cex.main=0.8)",file=scriptfile)
             print('axis(2)',file=scriptfile)

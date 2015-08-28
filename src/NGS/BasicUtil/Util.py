@@ -506,7 +506,8 @@ def getGtfMap(gtfFileName, elementTypes=["CDS", "stop_codon"]):
                 protein_codingMap[chromNo] = [[transcript_id, gtfColList[6], int(gtfColList[3]), int(gtfColList[4]), (gtfColList[2], int(gtfColList[3]), int(gtfColList[4]), gtfColList[7])]]
         else:
             if gtfColList[2].strip()=="UTR":
-                utrMap[chromNo]={transcript_id:[("UTR",int(gtfColList[3]), int(gtfColList[4]))]}
+                if int(gtfColList[3])!=int(gtfColList[4]):#ensembl's bug
+                    utrMap[chromNo]={transcript_id:[("UTR",int(gtfColList[3]), int(gtfColList[4]))]}
             print(getfirstcds)
         if jumpout:
             break
@@ -519,7 +520,7 @@ def getGtfMap(gtfFileName, elementTypes=["CDS", "stop_codon"]):
             if elementType == gtfColList[2].strip():
                 break
         else:
-            if gtfColList[2].strip()=="UTR":
+            if gtfColList[2].strip()=="UTR" and int(gtfColList[3])==int(gtfColList[4]):#ensembl's bug
                 if chromNo in utrMap:
                     if transcript_id in utrMap[chromNo]:
                         utrMap[chromNo][transcript_id].append(("UTR",int(gtfColList[3]), int(gtfColList[4])))
@@ -565,14 +566,14 @@ def getGtfMap(gtfFileName, elementTypes=["CDS", "stop_codon"]):
                 print(protein_codingMap[chromNo][i][k], file=testfile)
     testfile.close()
     gtfFileHandler.close()
-    testutr=open("testURT","w")
+#     testutr=open("testURT","w")
     for chrom in utrMap.keys():
-        print(chrom,file=testutr)
+#         print(chrom,file=testutr)
         for tpid in utrMap[chrom].keys():
             utrMap[chrom][tpid].sort(key=lambda listRec:listRec[1])
-            print(tpid,file=testutr)
-            print(utrMap[chrom][tpid],file=testutr)
-    testutr.close()
+#             print(tpid,file=testutr)
+#             print(utrMap[chrom][tpid],file=testutr)
+#     testutr.close()
     return protein_codingMap,utrMap
 def getNearestGenegroup(gtfList, pos):
     """

@@ -27,7 +27,7 @@ def split_mig_1_IM(params,ns,pts):
     nuA,s,TA,TS,m12,m21=params
     xx=dadi.Numerics.default_grid(pts)
     phi=dadi.PhiManip.phi_1D(xx)
-    phi=dadi.Integration.one_pop(phi,xx,TA,nu=nuA)
+    phi=dadi.Integration.one_pop(phi,xx,TA-TS,nu=nuA)
     phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
     nuM=s*nuA
     nuB=(1-s)*nuA
@@ -100,7 +100,7 @@ model=func_ex(popt,ns,pts_1)
 theta=dadi.Inference.optimal_sfs_scaling(model,fsdata)
 print theta
 ll_opt=dadi.Inference.ll_multinom(model,fsdata)
-Nref=theta/(4*9.97e-10*277872.0265773854)
+Nref=theta/(4*9.97e-10*277944.66019938875)
 print 'Nref',Nref
 for i in range(len(popt)):
     if re.search(r"^T",paramsname[i])!=None or re.search(r"^m",paramsname[i])!=None:

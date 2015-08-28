@@ -22,7 +22,7 @@ parser.add_option("-v", "--vcftablelist", dest="vcftablelist",action="append",de
 (options, args) = parser.parse_args()
 minlength=options.minlength;toplevelsnptable=options.toplevelsnptable;snpperkb=float(options.snpperkb);vcftableslist=options.vcftablelist#minAN=options.minAN
 dadisnpfile=open(options.outputfilename+"dilutetodensity"+options.snpperkb.strip(),'w')
-outgroupidx_in_topleveltable=[6,8];minoutgroupdepth=20
+outgroupidx_in_topleveltable=[6,8];minoutgroupdepth=30
 randomnamefile_recordchr=Util.random_str(8)
 randomnamef_recchr=open(randomnamefile_recordchr,"w")
 # if os.countsnpnumberfromvcf !=None:

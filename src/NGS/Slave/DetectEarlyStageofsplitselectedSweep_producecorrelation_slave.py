@@ -177,6 +177,9 @@ def make_freq_xaxisKEY_yaxisseqVALUERelation(a):
                 else:
                     if methodlist[i-3-N_of_targetpop]=="indvd":
                         AF = float(re.search(r"AF=([\d\.]+);", snp_aligned[i][0]).group(1))
+                        AN = float(re.search(r"AN=([\d\.]+);", snp_aligned[i][0]).group(1))
+                        if AN<5:
+                            continue
                     elif methodlist[i-3-N_of_targetpop]=="pool":
                         refdep = 0;altalleledep = 0
                         AD_idx = (re.split(":", snp_aligned[i][1])).index("AD")  # gatk GT:AD:DP:GQ:PL
@@ -189,7 +192,7 @@ def make_freq_xaxisKEY_yaxisseqVALUERelation(a):
                                 altalleledep += int(AD_depth[1])
                             except ValueError:
                                 print(sample, end="|")
-                        if refdep==altalleledep and altalleledep==0:
+                        if (refdep==altalleledep and altalleledep==0) or altalleledep+ refdep<10:
                             continue
                         AF=altalleledep/(altalleledep+refdep)
                 if A_base_idx==0:
@@ -198,7 +201,7 @@ def make_freq_xaxisKEY_yaxisseqVALUERelation(a):
                     DAF=AF
                 rer_DAF_sum+=DAF;countedAF+=1
             if countedAF==0:
-                print("skip this snp,because it  no covered in this pos in target pops",snp_aligned,snp)
+                print("skip this snp,because it  no covered in this pos in ref pops",snp_aligned,snp)
                 continue
             ######collect according bins
             for a,b in sorted(freq_xaxisKEY_yaxisVALUE_seq_list.keys()):
@@ -213,11 +216,11 @@ def make_freq_xaxisKEY_yaxisseqVALUERelation(a):
     return copy.deepcopy(freq_xaxisKEY_yaxisVALUE_seq_list)
 if __name__ == '__main__':
     filenamelistfilename=options.outfileprewithpath+".freqcorrelationfilenamelist"
-    parameterstuples=(options.chromlistfile,options.topleveltablejudgeancestral,options.targetpopvcffile_withdepth,options.refpopvcffile_withdepth,options.numberofindvdoftargetpop_todividintobin)
+    parameterstuples=(options.chromlistfilename,options.topleveltablejudgeancestral,options.targetpopvcffile_withdepth,options.refpopvcffile_withdepth,options.numberofindvdoftargetpop_todividintobin)
     print(parameterstuples)
     freq_xaxisKEY_yaxisVALUE_seq_list=make_freq_xaxisKEY_yaxisseqVALUERelation(parameterstuples)
     outfilename=options.outfileprewithpath+"_part_"+str(os.getpid())+Util.random_str()
-    outfile=open(options.outfileprewithpath+"_part_"+str(os.getpid())+Util.random_str(),'w')
+    outfile=open(outfilename,'w')
     filenamelistfile=open(filenamelistfilename,'a')
     for a,b in sorted(freq_xaxisKEY_yaxisVALUE_seq_list.keys()):
         print(str(a),str(b),*freq_xaxisKEY_yaxisVALUE_seq_list[(a,b)],sep="\t",file=outfile)

@@ -120,6 +120,7 @@ if __name__ == '__main__':
     print(outname, str(expectation), str(std0), str(std1), file=open(outputpath+"staticvalue.txt", 'a'))
     outfile.close()
     dbtools.disconnect()
+    print("finished")
 
 
 

@@ -139,7 +139,7 @@ class Caculate_Hp(Caculator):
         self.CNMA = [0] * len(SeqMethodlist)
         self.sum_mean_2pq = 0
         self.SeqMethodlist = SeqMethodlist     
-    def process(self, T, seqerrorrate=0.01, mode=1):
+    def process(self, T, seqerrorrate=0.005, mode=1):
         if len(T[1]) != len(T[2]) or len(T[2])!=1 or len(T[2])!=1:
             return
         for MethodToSeq_idx in range(len(self.SeqMethodlist)):
@@ -324,6 +324,9 @@ class Caculate_S_ObsExp_difference(Caculator):
             else:
                 if self.MethodToSeqpoplist[tpopidx-3]=="indvd":
                     AF=float(re.search(r"AF=([\d\.]+);", T[tpopidx][0]).group(1))
+                    AN = float(re.search(r"AN=([\d]+);", T[tpopidx][0]).group(1))
+                    if AN<5:
+                        continue
                 elif self.MethodToSeqpoplist[tpopidx-3]=="pool":
                     refdep = 0;altalleledep = 0
                     AD_idx = (re.split(":", T[tpopidx][1])).index("AD")
@@ -336,7 +339,7 @@ class Caculate_S_ObsExp_difference(Caculator):
                             altalleledep += int(AD_depth[1])
                         except ValueError:
                             print(sample, end="|")
-                    if refdep==altalleledep and altalleledep==0:
+                    if (refdep==altalleledep and altalleledep==0) or altalleledep+ refdep<10:
                         continue
                     AF=altalleledep/(altalleledep+refdep)
             if A_base_idx==0:

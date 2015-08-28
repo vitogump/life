@@ -20,9 +20,8 @@ parser.add_option("-d", "--domesticcdsfilenames", dest="domesticcdsfilenames",ac
 parser.add_option("-t", "--topleveltablejudgeancestral", dest="topleveltablejudgeancestral")
 parser.add_option("-o", "--outfileprename", dest="outfileprename", help="default infile1_infile2")
 parser.add_option("-2","--ancenstral_or_derived",dest="ancenstral_or_derived",default="d",help="ancenstral(a) or derived(d)")
-parser.add_option("-v","--outgroupvcf",dest="outgroupvcf",action="append",nargs=2,help="vcffile prioritylevel")
 (options, args) = parser.parse_args()
-mindeptojudgefix=20
+mindeptojudgefix=15
 # VCFobj={}
 # for outgroupvcffilename,prioritylevel in options.outgroupvcf:
 #     VCFobj[int(prioritylevel.strip())]=VCFutil.VCF_Data(outgroupvcffilename)
@@ -95,21 +94,23 @@ for f_idx in range(1,len(domesticcdsfilenames)):
     os.system("cat "+domesticcdsfilenames[f_idx-1]+"_chrom "+domesticcdsfilenames[f_idx]+"_chrom|sort|uniq|sort > temp_chrom")
     os.system("rm "+domesticcdsfilenames[f_idx-1]+"_chrom ")
     os.system("mv temp_chrom "+domesticcdsfilenames[f_idx]+"_chrom")
-os.system("comm -12 "+domesticcdsfilenames[-1]+"_chrom "+wildcdsfilenames[-1]+"_chrom > chromtable_containbothwildanddomestic")
+randomstr=Util.random_str()
+os.system("comm -12 "+domesticcdsfilenames[-1]+"_chrom "+wildcdsfilenames[-1]+"_chrom > chromtable_containbothwildanddomestic"+randomstr)
 os.system("rm "+domesticcdsfilenames[-1]+"_chrom");os.system("rm "+wildcdsfilenames[-1]+"_chrom")
-t=open("chromtable_containbothwildanddomestic","r")
-os.system("rm chromtable_containbothwildanddomestic")
+
+t=open("chromtable_containbothwildanddomestic"+randomstr,"r")
 chromlist=t.readlines();t.close()
+os.system("rm chromtable_containbothwildanddomestic"+randomstr)
 if __name__ == '__main__':
     intervalFileName=options.outfileprename+".interval"
     intervalfile=open(intervalFileName,"w")
-    while minvalue + d_increase<= maxvalue :
+    while minvalue + d_increase<= maxvalue-d_increase :
         print(str(minvalue),str(minvalue+d_increase),sep="\t",file=intervalfile)
         minvalue+=d_increase
     else:
-        if minvalue<maxvalue:
+        if minvalue<maxvalue-d_increase:
             print("never get here")
-            print(str(minvalue),str(maxvalue),sep="\t",file=intervalfile)
+        print(str(minvalue),str(1.0),sep="\t",file=intervalfile)
         intervalfile.close()
     ###### data structure ###################################
     intervalMap_dom_SNPrec={}#{(bin_start,bin_end):{sys:[reclist1,reclist2,,,,],nonsys:[],nonsense:[]}
@@ -134,16 +135,10 @@ if __name__ == '__main__':
     ###################### prepare chrom specified cdsreds for wild and domestic ###################################
         wildcdsfilelist=[];wildcdsfilenamelist=[]
         domesticcdsfilelist=[];domesticcdsfilenamelist=[]
-#         tempAF_idxlistwild=copy.deepcopy(AF_idxlistwild)
-#         tempAF_idxlistdomestic=copy.deepcopy(AF_idxlistdomestic)
         curchrom=chrom.strip()
-#         allsnprecinAchr_mapbyprioritylevel={}
-#         for prioritylevel in VCFobj.keys():
-#             print("prioritylevel",prioritylevel)
-#             allsnprecinAchr_mapbyprioritylevel[prioritylevel]=VCFobj[prioritylevel].getVcfListByChrom(curchrom)
         idx=len(wildcdsfilenames)
         depthobjmap={};species_idx_map={};randomstr=Util.random_str()
-        for fname in wildcdsfilenames[::-1]:#bacause pop need from the end to start according by idx
+        for fname in wildcdsfilenames[::-1]:#bacause popup need from the end to start according by idx
             depthobjmap[fname]=Util.GATK_depthfile(wild_depthfilenames[fname][0],wild_depthfilenames[fname][0]+".index")
             species_idx_map[fname]=[]
             for titlename in wild_depthfilenames[fname][1:]:
@@ -152,12 +147,7 @@ if __name__ == '__main__':
 #             os.system("rm "+fname+"_one_chrom")
             filename=fname+"_one_chrom"+randomstr
             os.system("awk '$1~/"+curchrom+"/{print $0}' "+fname+">"+filename)
-#             a=os.popen("less -S "+filename+"|wc -l")
-#             if a.readline().strip()=="0":
-#                 a.close()
-#                 tempAF_idxlistwild.pop(idx)
-# #                 wildcdsfilelist.append("norecords")
-#                 continue
+
             wildcdsfilelist.append(open(filename,'r'))
             wildcdsfilenamelist.append(filename)
 
@@ -267,32 +257,36 @@ if __name__ == '__main__':
                 print(curchrom,curpos,"snp not find,skip")
                 continue
             else:
-#                 depthlist1=re.split(r",",snp[0][7])
-                fanyadepthlist=re.split(r",",snp[0][9])
-                if len(fanyadepthlist)==2 and int(fanyadepthlist[1]) >=mindeptojudgefix and fanyadepthlist[0].strip()=="0":
-                    A_base_idx=1
-                elif len(fanyadepthlist)==2 and int(fanyadepthlist[0])>=mindeptojudgefix and fanyadepthlist[1].strip()=="0":
-                    A_base_idx=0
-                else:
-                    print("skip snp",snp[0][1],snp[0][7:])
-                    continue
-#                 if len(depthlist1)==2 and len(depthlist2)==2 and (int(depthlist1[0]) + int(depthlist1[1])>=mindeptojudgefix or int(depthlist2[0]) + int(depthlist2[1])>=mindeptojudgefix) and ((depthlist1[0].strip()=="0" and depthlist2[0].strip()=="0") or (depthlist1[1].strip()=="0" and depthlist2[1].strip()=="0") ):
-#                     if depthlist1[0].strip()=="0" and depthlist2[0].strip()=="0":
-#                         A_base_idx=1
-#                     elif depthlist1[1].strip()=="0" and depthlist2[1].strip()=="0":
-#                         A_base_idx=0
-#                     else:
-#                         print(snp,"never get here!")
-#                 elif (len(depthlist1)==2 and  snp[0][9] == "no covered" and int(depthlist1[0]) + int(depthlist1[1])>=mindeptojudgefix and (depthlist1[0].strip()=="0" or depthlist1[1].strip()=="0" ))   or (snp[0][7]=="no covered" and len(depthlist2)==2 and int(depthlist2[0]) + int(depthlist2[1])>=mindeptojudgefix and (depthlist2[1].strip()=="0" or depthlist2[0].strip()=="0")):
-#                     if (snp[0][9] == "no covered" and depthlist1[0].strip()=="0") or (snp[0][7]=="no covered" and depthlist2[0].strip()=="0"):
-#                         A_base_idx=1
-#                     elif (snp[0][9] == "no covered" and depthlist1[1].strip()=="0") or (snp[0][7]=="no covered" and depthlist2[1].strip()=="0"):
-#                         A_base_idx=0
-#                     else:
-#                         print(snp,"never get here!")
-#                 else:
-#                     print(snp,"skip snp")
+#                 if snp[0][11]==None or snp[0][7]==None:
 #                     continue
+                wigeondepthlist1=re.split(r",",snp[0][7])
+                fanyadepthlist=re.split(r",",snp[0][9])
+#                 barheaddepthlist=re.split(r",",snp[0][11])
+#                 if len(fanyadepthlist)==2 and int(fanyadepthlist[1]) >=mindeptojudgefix and fanyadepthlist[0].strip()=="0":
+#                     A_base_idx=1
+#                 elif len(fanyadepthlist)==2 and int(fanyadepthlist[0])>=mindeptojudgefix and fanyadepthlist[1].strip()=="0":
+#                     A_base_idx=0
+#                 else:
+#                     print("skip snp",snp[0][1],snp[0][7:])
+#                     continue
+                #############
+                if len(wigeondepthlist1)==2 and len(fanyadepthlist)==2 and (int(wigeondepthlist1[0]) + int(wigeondepthlist1[1])>=mindeptojudgefix and int(fanyadepthlist[0]) + int(fanyadepthlist[1])>=mindeptojudgefix) and ((wigeondepthlist1[0].strip()=="0" and fanyadepthlist[0].strip()=="0") or (wigeondepthlist1[1].strip()=="0" and fanyadepthlist[1].strip()=="0") ):
+                    if wigeondepthlist1[0].strip()=="0" and fanyadepthlist[0].strip()=="0":
+                        A_base_idx=1
+                    elif wigeondepthlist1[1].strip()=="0" and fanyadepthlist[1].strip()=="0":
+                        A_base_idx=0
+                    else:
+                        print(snp,"never get here!")
+                elif (len(wigeondepthlist1)==2 and  snp[0][9] == "no covered" and int(wigeondepthlist1[0]) + int(wigeondepthlist1[1])>=mindeptojudgefix+5 and (wigeondepthlist1[0].strip()=="0" or wigeondepthlist1[1].strip()=="0" )):#   or (snp[0][7]=="no covered" and len(depthlist2)==2 and int(depthlist2[0]) + int(depthlist2[1])>=mindeptojudgefix and (depthlist2[1].strip()=="0" or depthlist2[0].strip()=="0")):
+                    if (snp[0][9] == "no covered" and wigeondepthlist1[0].strip()=="0") or (snp[0][7]=="no covered" and fanyadepthlist[0].strip()=="0"):
+                        A_base_idx=1
+                    elif (snp[0][9] == "no covered" and wigeondepthlist1[1].strip()=="0") or (snp[0][7]=="no covered" and fanyadepthlist[1].strip()=="0"):
+                        A_base_idx=0
+                    else:
+                        print(snp,"never get here!")
+                else:
+                    print(snp,"skip snp")
+                    continue
             idx=0;w_unknowcount=0
             if options.ancenstral_or_derived=="a":
                 A_base_idx=1-A_base_idx

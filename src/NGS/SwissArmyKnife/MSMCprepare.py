@@ -70,6 +70,7 @@ if __name__ == '__main__':
     for chrrow in chromlistfile:
         chrrowlist=re.split(r'\s+',chrrow.strip())
         chromlist.append((chrrowlist[0].strip(),int(chrrowlist[1].strip())))
+    chromlistfile.close()
 
 #     for i in range(0,totalChroms,20):
     for currentID,currentchrLen in chromlist:
@@ -129,16 +130,16 @@ if __name__ == '__main__':
                 os.system("rm "+outputpath+"/"+popname+"/"+popname+"_"+currentID[:-2]+".msmc.infile")
                 continue
                 exit(-1)
-        for pop1,pop2 in allkindofpaire:
-            pop1name=re.search(r"[^/]*$",pop1).group(0).strip()
-            pop1sample1=samplebamlistVALUEpopfilenameKEY[pop1][0]
-            pop2name=re.search(r"[^/]*$",pop2).group(0).strip()
-            pop2sample1=samplebamlistVALUEpopfilenameKEY[pop2][0]
-            if not os.path.exists(outputpath+"/"+pop1name+"_"+pop2name):
-                os.makedirs(outputpath+"/"+pop1name+"_"+pop2name)
-            print("/home/bioinfo/liurui/software/Python-3.4.3/python /pub/tool/msmc/tools/generate_multihetsep.py --mask="+outputpath+"/"+result_chrlistMAPbypopfilename[pop1][pop1sample1][-1][0]+" --mask="+outputpath+"/"+result_chrlistMAPbypopfilename[pop2][pop2sample1][-1][0]+" --mask="+outputpath+"/mappability_mask"+currentID[:-2]+".bed.gz "+outputpath+"/"+result_chrlistMAPbypopfilename[pop1][pop1sample1][-1][1]+outputpath+"/"+result_chrlistMAPbypopfilename[pop2][pop2sample1][-1][1]+" > "+outputpath+"/"+pop1name+"_"+pop2name+"/"+pop1name+"_"+pop2name+"_"+currentID[:-2]+".msmc.infile")
-            a=os.system("/home/bioinfo/liurui/software/Python-3.4.3/python /pub/tool/msmc/tools/generate_multihetsep.py --mask="+outputpath+"/"+result_chrlistMAPbypopfilename[pop1][pop1sample1][-1][0]+" --mask="+outputpath+"/"+result_chrlistMAPbypopfilename[pop2][pop2sample1][-1][0]+" --mask="+outputpath+"/mappability_mask"+currentID[:-2]+".bed.gz "+outputpath+"/"+result_chrlistMAPbypopfilename[pop1][pop1sample1][-1][1]+outputpath+"/"+result_chrlistMAPbypopfilename[pop2][pop2sample1][-1][1]+" > "+outputpath+"/"+pop1name+"_"+pop2name+"/"+pop1name+"_"+pop2name+"_"+currentID[:-2]+".msmc.infile")
-            msmsinfilesplit_chrVALUE_popsKEY[(pop1,pop2)].append(outputpath+"/"+pop1name+"_"+pop2name+"/"+pop1name+"_"+pop2name+"_"+currentID[:-2]+".msmc.infile  ")
+#         for pop1,pop2 in allkindofpaire:
+#             pop1name=re.search(r"[^/]*$",pop1).group(0).strip()
+#             pop1sample1=samplebamlistVALUEpopfilenameKEY[pop1][0]
+#             pop2name=re.search(r"[^/]*$",pop2).group(0).strip()
+#             pop2sample1=samplebamlistVALUEpopfilenameKEY[pop2][0]
+#             if not os.path.exists(outputpath+"/"+pop1name+"_"+pop2name):
+#                 os.makedirs(outputpath+"/"+pop1name+"_"+pop2name)
+#             print("/home/bioinfo/liurui/software/Python-3.4.3/python /pub/tool/msmc/tools/generate_multihetsep.py --mask="+outputpath+"/"+result_chrlistMAPbypopfilename[pop1][pop1sample1][-1][0]+" --mask="+outputpath+"/"+result_chrlistMAPbypopfilename[pop2][pop2sample1][-1][0]+" --mask="+outputpath+"/mappability_mask"+currentID[:-2]+".bed.gz "+outputpath+"/"+result_chrlistMAPbypopfilename[pop1][pop1sample1][-1][1]+outputpath+"/"+result_chrlistMAPbypopfilename[pop2][pop2sample1][-1][1]+" > "+outputpath+"/"+pop1name+"_"+pop2name+"/"+pop1name+"_"+pop2name+"_"+currentID[:-2]+".msmc.infile")
+#             a=os.system("/home/bioinfo/liurui/software/Python-3.4.3/python /pub/tool/msmc/tools/generate_multihetsep.py --mask="+outputpath+"/"+result_chrlistMAPbypopfilename[pop1][pop1sample1][-1][0]+" --mask="+outputpath+"/"+result_chrlistMAPbypopfilename[pop2][pop2sample1][-1][0]+" --mask="+outputpath+"/mappability_mask"+currentID[:-2]+".bed.gz "+outputpath+"/"+result_chrlistMAPbypopfilename[pop1][pop1sample1][-1][1]+outputpath+"/"+result_chrlistMAPbypopfilename[pop2][pop2sample1][-1][1]+" > "+outputpath+"/"+pop1name+"_"+pop2name+"/"+pop1name+"_"+pop2name+"_"+currentID[:-2]+".msmc.infile")
+#             msmsinfilesplit_chrVALUE_popsKEY[(pop1,pop2)].append(outputpath+"/"+pop1name+"_"+pop2name+"/"+pop1name+"_"+pop2name+"_"+currentID[:-2]+".msmc.infile  ")
     print(result_chrlistMAPbypopfilename)
     runmsmc="/pub/tool/msmc/msmc_linux_64bit  --fixedRecombination  -t 16 -o "
     print("all msmc prepare done,go into runing msmc")
