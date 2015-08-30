@@ -29,7 +29,7 @@ def split_mig_1_IM(params,ns,pts):
     nuA,s,TA,TS,m12,m21=params
     xx=dadi.Numerics.default_grid(pts)
     phi=dadi.PhiManip.phi_1D(xx)
-    phi=dadi.Integration.one_pop(phi,xx,TA-TS,nu=nuA)
+    phi=dadi.Integration.one_pop(phi,xx,TA,nu=nuA)
     phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
     nuM=s*nuA
     nuB=(1-s)*nuA
@@ -38,52 +38,91 @@ def split_mig_1_IM(params,ns,pts):
     return fs
 def bottleneckafter_split_mig_1_IM(params,ns,pts):
     nuA,s,nuP,TA,TS,TBP,m12,m21=params
-    if TA<TS:
-        TA=TS+0.0000000001
+#     if TA<TS:
+#         TA=TS+0.0000000001
     xx=dadi.Numerics.default_grid(pts)
     phi=dadi.PhiManip.phi_1D(xx)
-    phi=dadi.Integration.one_pop(phi,xx,TA-TS,nu=nuA)
+    phi=dadi.Integration.one_pop(phi,xx,TA,nu=nuA)
     phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
     nuM0=s*nuA
     nuP0=(1-s)*nuA
 #         print 'adjust',
 
-    phi=dadi.Integration.two_pops(phi,xx,TS-TBP,nu1=nuM0,nu2=nuP0,m12=m12,m21=m21)
+    phi=dadi.Integration.two_pops(phi,xx,TS,nu1=nuM0,nu2=nuP0,m12=m12,m21=m21)
     phi=dadi.Integration.two_pops(phi,xx,TBP,nu1=nuM0,nu2=nuP,m12=m12,m21=m21)
     fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
     return fs
-def bottleneckdom_splitwild_3d(params,ns,pts):
-    nuA,nuBP,nuM,nuS,TA,TB,TMS,m12,m21,m13,m31,m23,m32=params
+def splitdom_domlinerDecrease_IncreaseAfterBottle_wildbottle_mig_1_IM(params,ns,pts):
+    nuA,s,nuP,TA,TS,m12,m21=params
+
+
+    xx=dadi.Numerics.default_grid(pts)
+    phi=dadi.PhiManip.phi_1D(xx)
+    phi=dadi.Integration.one_pop(phi,xx,TA,nu=nuA)
+    phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
+    nuM0=s*nuA
+    nuP0=(1-s)*nuA
+    nuP_d_func = lambda t: nuP0 + (nuP-nuP0)*t/(TS)
+#     nuP_g_func= lambda t: nuP0 + (nuP1-nuP0)
+    
+    phi=dadi.Integration.two_pops(phi,xx,TS,nu1=nuM0,nu2=nuP_d_func,m12=m12,m21=m21)
+#     nuP0=nuP_d_func(TS+TBP-TBM)
+#     nuP_d_func = lambda t: nuP0 + (nuP1-nuP0)*t/(TBM-TBP)
+
+#     T1=TS+TBP-TBM
+#     phi=dadi.Integration.two_pops(phi,xx,TBP,nu1=nuM0,nu2=nuP)
+#     nuP_g_func= lambda t: nuP2 + (nuP-nuP2)*t/(TBP)
+#     phi=dadi.Integration.two_pops(phi,xx,TBP,nu1=nuM,nu2=nuP)
+    fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
+    return fs
+def splitdom_splitwild_3d(params,ns,pts):
+    nuA,nuM,nuB,nuP,TA,TS1,TS2,m12,m21,mMB,mBM,mBP,mPB,mMP,mPM=params
     xx=dadi.Numerics.default_grid(pts)
     phi=dadi.PhiManip.phi_1D(xx)
     if TA<TB:
-        TA=TB+0.0000000001
+        TA=TB+0.0000001 
     phi=dadi.Integration.one_pop(phi,xx,TA-TB,nu=nuA)
     phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
     if TB<TMS:
-        TB=TMS+0.0000000001
+        TB=TMS+0.0000001 
     phi=dadi.Integration.two_pops(phi,xx,TB-TMS,nu1=nuA,nu2=nuBP,m12=m12,m21=m21)
     phi=dadi.PhiManip.phi_2D_to_3D_split_1(xx,phi)
     phi=dadi.Integration.three_pops(phi,xx,TMS,nu1=nuM,nu3=nuS,nu2=nuBP,m12=m12,m21=m21,m13=m13,m31=m31,m23=m23,m32=m32)
     fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx,xx))
     return fs
-def splitdom_splitwild_3d(params,ns,pts):
-    nuA,s1,s2,TA,TB,TMS,m12,m21,m13,m31,m23,m32=params
+def splitdom_splitwild_bottledom_3d(params,ns,pts):
+    nuA,nuP,s1,s2,TA,TS1,TS2,TBP,m12,m21,mMB,mBM,mBP,mPB,mMP,mPM=params
     xx=dadi.Numerics.default_grid(pts)
     phi=dadi.PhiManip.phi_1D(xx)
-    if TA<TB:
-        TA=TB+0.0000000001
-    phi=dadi.Integration.one_pop(phi,xx,TA-TB,nu=nuA)
+#     if TS1<TS2:
+#         TS1=TS2+0.0000001        
+#     if TA<TS1:
+#         TA=TS1+0.0000001
+    
+    phi=dadi.Integration.one_pop(phi,xx,TA,nu=nuA)
     phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
-    if TB<TMS:
-        TB=TMS+0.0000000001
-    nuP=(1-s1)*nuA
+    nuP0=(1-s1)*nuA
     nuMS=s1*nuA
-    phi=dadi.Integration.two_pops(phi,xx,TB-TMS,nu1=nuMS,nu2=nuP,m12=m12,m21=m21)
-    phi=dadi.PhiManip.phi_2D_to_3D_split_1(xx,phi)
-    nuM=s2*nuMS
-    nuS=(1-s2)*nuMS
-    phi=dadi.Integration.three_pops(phi,xx,TMS,nu1=nuM,nu3=nuS,nu2=nuP,m12=m12,m21=m21,m13=m13,m31=m31,m23=m23,m32=m32)
+    if TBP>TS2:
+        T1=TS1
+        T2=TBP-TS2
+        T3=TS2
+        phi=dadi.Integration.two_pops(phi,xx,T1,nu1=nuMS,nu2=nuP0,m12=m12,m21=m21)
+        phi=dadi.Integration.two_pops(phi,xx,T2,nu1=nuMS,nu2=nuP,m12=m12,m21=m21)
+        phi=dadi.PhiManip.phi_2D_to_3D_split_1(xx,phi)
+        nuM=nuMS*s2
+        nuB=nuMS*(1-s2)
+        phi=dadi.Integration.three_pops(phi,xx,T3,nu1=nuM,nu3=nuB,nu2=nuP,m12=mMP,m21=mPM,m13=mMB,m31=mBM,m23=mPB,m32=mBP)
+    else:
+        T1=TS1+TBP-TS2
+        T2=TS2-TBP
+        T3=TBP
+        phi=dadi.Integration.two_pops(phi,xx,T1,nu1=nuMS,nu2=nuP0,m12=m12,m21=m21)
+        phi=dadi.PhiManip.phi_2D_to_3D_split_1(xx,phi)
+        nuM=nuMS*s2
+        nuB=nuMS*(1-s2)
+        phi=dadi.Integration.three_pops(phi,xx,T2,nu1=nuM,nu3=nuB,nu2=nuP0,m12=mMP,m21=mPM,m13=mMB,m31=mBM,m23=mPB,m32=mBP)
+        phi=dadi.Integration.three_pops(phi,xx,T3,nu1=nuM,nu3=nuB,nu2=nuP,m12=mMP,m21=mPM,m13=mMB,m31=mBM,m23=mPB,m32=mBP)
     fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx,xx))
     return fs
 def expand_splitwithbottleneck_mig_1(params,ns,pts):
@@ -124,10 +163,12 @@ elif options.model=="expand_splitwithbottleneck_mig_1":
     func=expand_splitwithbottleneck_mig_1
 elif options.model=="bottleneckdom_splitwild_3d":
     func=bottleneckdom_splitwild_3d
-elif options.model=="splitdom_splitwild_3d":
-    func=splitdom_splitwild_3d
+elif options.model=="splitdom_splitwild_bottledom_3d":
+    func=splitdom_splitwild_bottledom_3d
 elif options.model=="bottleneckafter_split_mig_1_IM":
     func=bottleneckafter_split_mig_1_IM
+elif options.model=="splitdom_domlinerDecrease_IncreaseAfterBottle_wildbottle_mig_1_IM":
+    func=splitdom_domlinerDecrease_IncreaseAfterBottle_wildbottle_mig_1_IM
 paramslist=[]
 upper_boundlist=[]
 lower_boundlist=[]
@@ -189,6 +230,10 @@ if len(options.popname)==2:
     dadi.Plotting.plot_2d_comp_multinom(model,fsdata,vmin=1)
     pylab.show()
     pylab.savefig('compare_split'+namestr+options.tag+options.model+'.png', dpi=100)
+    pylab.figure()
+    dadi.Plotting.plot_2d_comp_Poisson(model,fsdata,vmin=1)
+    pylab.show()
+    pylab.savefig('compare_Poisson_split'+namestr+options.tag+options.model+'.png', dpi=100)
 elif len(options.popname)==3:
     pylab.figure()
     dadi.Plotting.plot_3d_comp_Poisson(model,fsdata,vmin=1)
