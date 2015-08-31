@@ -182,7 +182,7 @@ if __name__ == '__main__':
                     DAF=(AF_sum/countedAF)
                 ##### count ########
                 for a,b in DAFintervalMap_SNPcounts.keys():
-                    if DAF>=a and DAF<b:
+                    if DAF>=a and DAF<b and DAF!=0:
                         DAFintervalMap_SNPcounts[a,b]+=1
                         break
         DAFsMapByFileName[bedfilenamewithoutpath]=copy.deepcopy(DAFintervalMap_SNPcounts)
@@ -313,7 +313,7 @@ if __name__ == '__main__':
                     continue
                 DAF=(w_af/(len(wild_CurPosRecs)-w_unknowcount))
                 for a,b in DAFintervalMap_SNPcounts_nonsys.keys():
-                    if DAF>=a and DAF<b and len(wild_CurPosRecs[0])>=14:
+                    if DAF>=a and DAF<b and DAF!=0 and len(wild_CurPosRecs[0])>=14:
                         if wild_CurPosRecs[0][-3]==wild_CurPosRecs[0][-1]:
                             DAFintervalMap_SNPcounts_sys[a,b]+=1
                         elif wild_CurPosRecs[0][-3]!=wild_CurPosRecs[0][-1]:
@@ -458,7 +458,7 @@ if __name__ == '__main__':
                     continue
                 DAF=(w_af/(len(wild_CurPosRecs)-w_unknowcount))
                 for a,b in DAFintervalMap_SNPcounts.keys():
-                    if DAF>=a and DAF<b:
+                    if DAF>=a and DAF<b and DAF!=0:
                         DAFintervalMap_SNPcounts[a,b]+=1
                         break
             for f in wildcdsfilelist:

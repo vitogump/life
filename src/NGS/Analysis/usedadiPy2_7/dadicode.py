@@ -8,7 +8,7 @@ parser.add_option("-m", "--model", dest="model",help="1,model1 2,model2 ....")
 parser.add_option("-p","--parameters",dest="parameters",action="append",nargs=4,help="""parametername initvalue lower upper
                                                                                                                 red   blue""")
 parser.add_option("-t", "--tag",
-                   dest="tag", default=True,
+                   dest="tag", default="TAG",
                   help="don't print status messages to stdout")
 (options, args) = parser.parse_args()
 # fsdata=dadi.Spectrum.from_file(options.fsfile)
@@ -52,8 +52,25 @@ def bottleneckafter_split_mig_1_IM(params,ns,pts):
     phi=dadi.Integration.two_pops(phi,xx,TBP,nu1=nuM0,nu2=nuP,m12=m12,m21=m21)
     fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
     return fs
+def IM_2(params,ns,pts):
+    s,TS,m12,m21=params
+    xx=dadi.Numerics.default_grid(pts)
+    phi=dadi.PhiManip.phi_1D(xx)
+    phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
+    phi=dadi.Integration.two_pops(phi,xx,TS,nu1=s,nu2=1-s,m12=m12,m21=m21)
+    fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
+    return fs
+def IM_3(params,ns,pts):
+    s1,s2,TS1,TS2,m12,m21,mMB,mBM,mBP,mPB,mMP,mPM=params
+    xx=dadi.Numerics.default_grid(pts)
+    phi=dadi.PhiManip.phi_1D(xx)
+    phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
+    phi=dadi.Integration.two_pops(phi,xx,TS1,nu1=s1,nu2=1-s1,m12=m12,m21=m21)
+    phi=dadi.Integration.three_pops(phi,xx,TS2,nu1=s1*s2,nu3=s1*(1-s2),nu2=1-s1,m12=mMP,m21=mPM,m13=mMB,m31=mBM,m23=mPB,m32=mBP)
+    fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
+    return fs
 def splitdom_domlinerDecrease_IncreaseAfterBottle_wildbottle_mig_1_IM(params,ns,pts):
-    nuA,s,nuP,TA,TS,m12,m21=params
+    nuA,s,nuP1,nuP,TA,Td,Ti,m12,m21=params
 
 
     xx=dadi.Numerics.default_grid(pts)
@@ -62,32 +79,33 @@ def splitdom_domlinerDecrease_IncreaseAfterBottle_wildbottle_mig_1_IM(params,ns,
     phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
     nuM0=s*nuA
     nuP0=(1-s)*nuA
-    nuP_d_func = lambda t: nuP0 + (nuP-nuP0)*t/(TS)
+    nuP_d_func = lambda t: nuP0 + (nuP1-nuP0)*t/(Td)
 #     nuP_g_func= lambda t: nuP0 + (nuP1-nuP0)
     
-    phi=dadi.Integration.two_pops(phi,xx,TS,nu1=nuM0,nu2=nuP_d_func,m12=m12,m21=m21)
+    phi=dadi.Integration.two_pops(phi,xx,Td,nu1=nuM0,nu2=nuP_d_func,m12=m12,m21=m21)
 #     nuP0=nuP_d_func(TS+TBP-TBM)
-#     nuP_d_func = lambda t: nuP0 + (nuP1-nuP0)*t/(TBM-TBP)
+    nuP_d_func = lambda t: nuP1 * (nuP/nuP1)**(t/Ti)
 
 #     T1=TS+TBP-TBM
 #     phi=dadi.Integration.two_pops(phi,xx,TBP,nu1=nuM0,nu2=nuP)
 #     nuP_g_func= lambda t: nuP2 + (nuP-nuP2)*t/(TBP)
-#     phi=dadi.Integration.two_pops(phi,xx,TBP,nu1=nuM,nu2=nuP)
+    phi=dadi.Integration.two_pops(phi,xx,Ti,nu1=nuM0,nu2=nuP_d_func,m12=m12,m21=m21)
     fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
     return fs
 def splitdom_splitwild_3d(params,ns,pts):
-    nuA,nuM,nuB,nuP,TA,TS1,TS2,m12,m21,mMB,mBM,mBP,mPB,mMP,mPM=params
+    nuA,s1,s2,TA,TS1,TS2,m12,m21,mMB,mBM,mBP,mPB,mMP,mPM=params
     xx=dadi.Numerics.default_grid(pts)
     phi=dadi.PhiManip.phi_1D(xx)
-    if TA<TB:
-        TA=TB+0.0000001 
-    phi=dadi.Integration.one_pop(phi,xx,TA-TB,nu=nuA)
+
+    phi=dadi.Integration.one_pop(phi,xx,TA,nu=nuA)
     phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
-    if TB<TMS:
-        TB=TMS+0.0000001 
-    phi=dadi.Integration.two_pops(phi,xx,TB-TMS,nu1=nuA,nu2=nuBP,m12=m12,m21=m21)
+    nuW=nuA*s1
+    nuP=nuA*(1-s1)
+    phi=dadi.Integration.two_pops(phi,xx,TS1,nu1=nuW,nu2=nuP,m12=m12,m21=m21)
     phi=dadi.PhiManip.phi_2D_to_3D_split_1(xx,phi)
-    phi=dadi.Integration.three_pops(phi,xx,TMS,nu1=nuM,nu3=nuS,nu2=nuBP,m12=m12,m21=m21,m13=m13,m31=m31,m23=m23,m32=m32)
+    nuM=nuW*s2
+    nuB=nuW*(1-s2)
+    phi=dadi.Integration.three_pops(phi,xx,TS2,nu1=nuM,nu3=nuB,nu2=nuP,m12=mMP,m21=mPM,m13=mMB,m31=mBM,m23=mPB,m32=mBP)
     fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx,xx))
     return fs
 def splitdom_splitwild_bottledom_3d(params,ns,pts):
@@ -161,14 +179,18 @@ elif options.model=="split_mig_1_IM":
     func=split_mig_1_IM
 elif options.model=="expand_splitwithbottleneck_mig_1":
     func=expand_splitwithbottleneck_mig_1
-elif options.model=="bottleneckdom_splitwild_3d":
-    func=bottleneckdom_splitwild_3d
+elif options.model=="splitdom_splitwild_3d":
+    func=splitdom_splitwild_3d
 elif options.model=="splitdom_splitwild_bottledom_3d":
     func=splitdom_splitwild_bottledom_3d
 elif options.model=="bottleneckafter_split_mig_1_IM":
     func=bottleneckafter_split_mig_1_IM
 elif options.model=="splitdom_domlinerDecrease_IncreaseAfterBottle_wildbottle_mig_1_IM":
     func=splitdom_domlinerDecrease_IncreaseAfterBottle_wildbottle_mig_1_IM
+elif options.model=="IM_2":
+    func=IM_2
+elif options.model=="IM_3":
+    func=IM_3
 paramslist=[]
 upper_boundlist=[]
 lower_boundlist=[]
