@@ -44,16 +44,20 @@ if __name__ == '__main__':
     intervalfile=open(intervalFileName,'r')
     DAFintervalMap_SNPcounts_template={}
     MAFintervalMap_SNPcounts_template={}
+    AFintervalMap_SNPcounts_template={}
     DAFsMapByFileName={}
     MAFsMapByFileName={}
+    AFsMapByFileName={}
     for line in intervalfile:
         linelist=re.split(r'\s+',line.strip())
         DAFintervalMap_SNPcounts_template[float(linelist[0]),float(linelist[1])]=0
         MAFintervalMap_SNPcounts_template[float(linelist[0]),float(linelist[1])]=0
+        AFintervalMap_SNPcounts_template[float(linelist[0]),float(linelist[1])]=0
     ######start caculate #########################
     for bedfilename in options.bedlikefile:#each col
         DAFintervalMap_SNPcounts=copy.deepcopy(DAFintervalMap_SNPcounts_template)
         MAFintervalMap_SNPcounts=copy.deepcopy(MAFintervalMap_SNPcounts_template)
+        AFintervalMap_SNPcounts=copy.deepcopy(AFintervalMap_SNPcounts_template)
         bedfilenamewithoutpath=re.search(r"[^/]*$",bedfilename).group(0)
         filteredvcffilenamelist=[]
         methodlist=[]
@@ -181,10 +185,15 @@ if __name__ == '__main__':
                 else:
                     DAF=(AF_sum/countedAF)
                 ##### count ########
+                for a,b in AFintervalMap_SNPcounts.keys():
+                    if AF_sum/countedAF>=a and AF_sum/countedAF<b and AF_sum/countedAF!=0:
+                        AFintervalMap_SNPcounts[a,b]+=1
+                        break
                 for a,b in DAFintervalMap_SNPcounts.keys():
                     if DAF>=a and DAF<b and DAF!=0:
-                        DAFintervalMap_SNPcounts[a,b]+=1
+                        AFintervalMap_SNPcounts[a,b]+=1
                         break
+        AFsMapByFileName[bedfilenamewithoutpath]=copy.deepcopy(AFintervalMap_SNPcounts)
         DAFsMapByFileName[bedfilenamewithoutpath]=copy.deepcopy(DAFintervalMap_SNPcounts)
         MAFsMapByFileName[bedfilenamewithoutpath]=copy.deepcopy(MAFintervalMap_SNPcounts)
     for filteredvcffilename in filteredvcffilenamelist:
@@ -195,6 +204,9 @@ if __name__ == '__main__':
         DAFintervalMap_SNPcounts_sys=copy.deepcopy(DAFintervalMap_SNPcounts_template)
         DAFintervalMap_SNPcounts_nonsys=copy.deepcopy(DAFintervalMap_SNPcounts_template)
         DAFintervalMap_SNPcounts_nonsense=copy.deepcopy(DAFintervalMap_SNPcounts_template)
+        AFintervalMap_SNPcounts_sys=copy.deepcopy(AFintervalMap_SNPcounts_template)
+        AFintervalMap_SNPcounts_nonsys=copy.deepcopy(AFintervalMap_SNPcounts_template)
+        AFintervalMap_SNPcounts_nonsense=copy.deepcopy(AFintervalMap_SNPcounts_template)
         for cdsfile,depthfilename in options.cdsfiles:
             cdsfilenameslist.append(cdsfile)
             if depthfilename.lower()!="none":
@@ -274,7 +286,7 @@ if __name__ == '__main__':
                             wild_CurRecsLinelist[wf_idx]="endline"
                 if wild_CurPosRecs==[]:
                     continue
-                w_af=0
+                w_af=0;aaf=0
                 #determin derived allele
                 snp=dbvariantstools.operateDB("select","select * from "+topleveltablename+" where chrID='"+curchrom+"' and snp_pos='"+str(curpos)+"'")
                 if not snp:
@@ -304,6 +316,7 @@ if __name__ == '__main__':
                     if e[AF_idxlist_cds[idx]]=="unknow":
                         idx+=1;w_unknowcount+=1
                         continue
+                    aaf+=float(e[AF_idxlist_cds[idx]])
                     if A_base_idx==1:
                         w_af+=(1-float(e[AF_idxlist_cds[idx]]))
                     else:
@@ -311,7 +324,17 @@ if __name__ == '__main__':
                     idx+=1
                 if len(wild_CurPosRecs)-w_unknowcount==0:
                     continue
+                AAF=(aaf/(len(wild_CurPosRecs)-w_unknowcount))
                 DAF=(w_af/(len(wild_CurPosRecs)-w_unknowcount))
+                for a,b in AFintervalMap_SNPcounts_nonsys.keys():
+                    if AAF>=a and AAF<b and AAF!=0 and len(wild_CurPosRecs[0])>=14:
+                        if wild_CurPosRecs[0][-3]==wild_CurPosRecs[0][-1]:
+                            AFintervalMap_SNPcounts_sys[a,b]+=1
+                        elif wild_CurPosRecs[0][-3]!=wild_CurPosRecs[0][-1]:
+                            AFintervalMap_SNPcounts_nonsys[a,b]+=1
+                        elif wild_CurPosRecs[0][-3].find("*")!=-1 or wild_CurPosRecs[0][-1].find("*")!=-1:
+                            AFintervalMap_SNPcounts_nonsense[a,b]+=1
+                        break
                 for a,b in DAFintervalMap_SNPcounts_nonsys.keys():
                     if DAF>=a and DAF<b and DAF!=0 and len(wild_CurPosRecs[0])>=14:
                         if wild_CurPosRecs[0][-3]==wild_CurPosRecs[0][-1]:
@@ -328,6 +351,9 @@ if __name__ == '__main__':
         DAFsMapByFileName["sys"]=copy.deepcopy(DAFintervalMap_SNPcounts_sys)
         DAFsMapByFileName["nonsys"]=copy.deepcopy(DAFintervalMap_SNPcounts_nonsys)
         DAFsMapByFileName["nonsense"]=copy.deepcopy(DAFintervalMap_SNPcounts_nonsense)
+        AFsMapByFileName["sys"]=copy.deepcopy(AFintervalMap_SNPcounts_sys)
+        AFsMapByFileName["nonsys"]=copy.deepcopy(AFintervalMap_SNPcounts_nonsys)
+        AFsMapByFileName["nonsense"]=copy.deepcopy(AFintervalMap_SNPcounts_nonsense)
     ################## same to INTRON,UTR,INTERGENIC ############
     catalogfilslistlist=[]
     if options.intronfiles!=[]:
@@ -339,6 +365,7 @@ if __name__ == '__main__':
     for catalogfilslist in catalogfilslistlist:
         tag=catalogfilslist[-1]
         cdsfilenameslist=[];cds_depthfileconfig={};AF_idxlist_cds=[]
+        AFintervalMap_SNPcounts=copy.deepcopy(AFintervalMap_SNPcounts_template)
         DAFintervalMap_SNPcounts=copy.deepcopy(DAFintervalMap_SNPcounts_template)    
         for cdsfile,depthfilename in catalogfilslist[:-1]:
             cdsfilenameslist.append(cdsfile)
@@ -419,7 +446,7 @@ if __name__ == '__main__':
                             wild_CurRecsLinelist[wf_idx]="endline"
                 if wild_CurPosRecs==[]:
                     continue
-                w_af=0
+                w_af=0;aaf=0
                 #determin derived allele
                 snp=dbvariantstools.operateDB("select","select * from "+topleveltablename+" where chrID='"+curchrom+"' and snp_pos='"+str(curpos)+"'")
                 if not snp:
@@ -449,6 +476,7 @@ if __name__ == '__main__':
                     if e[AF_idxlist_cds[idx]]=="unknow":
                         idx+=1;w_unknowcount+=1
                         continue
+                    aaf+=float(e[AF_idxlist_cds[idx]])
                     if A_base_idx==1:
                         w_af+=(1-float(e[AF_idxlist_cds[idx]]))
                     else:
@@ -457,6 +485,11 @@ if __name__ == '__main__':
                 if len(wild_CurPosRecs)-w_unknowcount==0:
                     continue
                 DAF=(w_af/(len(wild_CurPosRecs)-w_unknowcount))
+                AAF=(aaf/(len(wild_CurPosRecs)-w_unknowcount))
+                for a,b in AFintervalMap_SNPcounts.keys():
+                    if AAF>=a and AAF<b and AAF!=0:
+                        AFintervalMap_SNPcounts[a,b]+=1
+                        break
                 for a,b in DAFintervalMap_SNPcounts.keys():
                     if DAF>=a and DAF<b and DAF!=0:
                         DAFintervalMap_SNPcounts[a,b]+=1
@@ -465,6 +498,7 @@ if __name__ == '__main__':
                 f.close()
             for filename in wildcdsfilenamelist:
                 os.system("rm "+filename)
+        AFsMapByFileName[tag]=copy.deepcopy(AFintervalMap_SNPcounts)
         DAFsMapByFileName[tag]=copy.deepcopy(DAFintervalMap_SNPcounts)
     outfile=open(options.outfileprename+"DAF","w")
     print("DAFbin",end="\t",file=outfile)
@@ -475,6 +509,17 @@ if __name__ == '__main__':
         print(str(a),str(b),end="\t",file=outfile)
         for tag in sorted(DAFsMapByFileName.keys()):
             print(str(DAFsMapByFileName[tag][a,b]),end="\t",file=outfile)
+        print("",file=outfile)
+    outfile.close()
+    outfile=open(options.outfileprename+"AAF","w")
+    print("AFbin",end="\t",file=outfile)
+    for tag in sorted(AFsMapByFileName.keys()):
+        print(tag,end="\t",file=outfile)
+    print("",file=outfile)
+    for a,b in AFintervalMap_SNPcounts_template.keys():
+        print(str(a),str(b),end="\t",file=outfile)
+        for tag in sorted(AFsMapByFileName.keys()):
+            print(str(AFsMapByFileName[tag][a,b]),end="\t",file=outfile)
         print("",file=outfile)
     outfile.close()
     outfile=open(options.outfileprename+"MAF","w")
