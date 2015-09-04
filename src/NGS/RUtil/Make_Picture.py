@@ -245,7 +245,10 @@ class MakeMhtGraph(object):
         else:
             hopscex=str(0.6*(len(positive_winfiles)+len(negtive_winfiles)))
         n=[]
+        intersectionSet={}
+        intersectionlistMap={}
         for i in range(0,len(positive_winfiles)):
+            intersectionlistMap[str(i)+"p"]=[]
             r('ops<-mht.control(logscale=FALSE,colors=colors,cex=0.6)')
             
             r('hops<-hmht.control(data=p_highlight'+str(i)+',cex='+hopscex+',yoffset=0.2)')
@@ -254,6 +257,7 @@ class MakeMhtGraph(object):
                 nn=re.split(r";",e)
                 for ee in nn:
                     n.append(ee)
+                    intersectionlistMap[str(i)+"p"].append(ee)
             r('mhtplot(p_data'+str(i)+',ops,hops,pch=19,ylab="z' + "Fst" + '",xlab="")')
             r("title(main='" + positive_filenames[i] + "',cex.main=0.8)")
             r('axis(2)')
@@ -265,6 +269,7 @@ class MakeMhtGraph(object):
             print('axis(2)',file=scriptfile)
             print('abline(h=5)',file=scriptfile)
         for i in range(0,len(negtive_winfiles)):
+            intersectionlistMap[str(i)+"n"]=[]
             r('ops<-mht.control(logscale=FALSE,colors=colors,cex=0.6)')
             r('hops<-hmht.control(data=n_highlight'+str(i)+',cex='+hopscex+',yoffset=-0.2)')
             a=list(r('hops$data$geneName[!is.na(hops$data$geneName)&hops$data$geneName!="top1"]'))
@@ -272,6 +277,7 @@ class MakeMhtGraph(object):
                 nn=re.split(r";",e)
                 for ee in nn:
                     n.append(ee)
+                    intersectionlistMap[str(i)+"n"].append(ee)
             r('mhtplot(n_data'+str(i)+',ops,hops,pch=19,ylab="zHp",xlab="")')
             r("title(main='" + negtive_filenames[i] + "',cex.main=0.8)")
             r('axis(2)')
@@ -286,7 +292,10 @@ class MakeMhtGraph(object):
         r('dev.off()')
         print(r('Cairo.capabilities()'))
         scriptfile.close()
-        return list(set(n))
+        intersectionSet=intersectionlistMap[list(intersectionlistMap.keys())[0]]
+        for k in intersectionlistMap.keys():
+            intersectionSet=set(intersectionSet) & set(intersectionlistMap[k])
+        return list(set(n)),list(intersectionSet)
 
     def makeMhtplots_compareInOnePicture(self, outputnamewithpath,positive_winfiles,negtive_winfiles,fillvalue=0,columnname="zvalue"):
         scriptfile=open("stripts.R",'w')

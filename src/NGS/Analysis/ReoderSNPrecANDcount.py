@@ -288,9 +288,10 @@ if __name__ == '__main__':
                                 print("Ancestralallele.fillAncestral except ValueError",sample,end="")
                         if refdep!=0  or altalleledep<mindeptojudgefix:
                             A_base_idx=-1#alt_allele is the ancestral allele
+                            low0=high0+1
                         elif refdep==0 and altalleledep>=mindeptojudgefix:
                             A_base_idx=1
-                        break
+                            break
                         
                 else:
                     depth_linelist=vcfnameKEY_depthfilename_titlenameVALUE_tojudgeancestrall["fanya"].getdepthByPos_optimized(curchrom,curpos)
