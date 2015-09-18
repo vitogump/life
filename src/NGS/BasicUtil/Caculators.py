@@ -422,7 +422,7 @@ class Caculate_S_ObsExp_difference(Caculator):
                                      
                             
 class Caculate_Fst(Caculator):
-    def __init__(self, MethodToSeqpop1="pool", MethodToSeqpop2="indvd", minsnps=3):
+    def __init__(self, MethodToSeqpop1="pool", MethodToSeqpop2="indvd", minsnps=10):
         super().__init__()
         self.minsnps = minsnps
         self.considerfixdiffinfst=False
@@ -436,8 +436,8 @@ class Caculate_Fst(Caculator):
         self.depthobjmap=None
         self.species_idx_map=None
         self.currentchrID=None
-        self.pop1_indvds=10#when pop1 is none at a pos,and no depth information
-        self.pop2_indvds=10
+        self.pop1_indvds=6#when pop1 is none at a pos,and no depth information
+        self.pop2_indvds=6
     def process(self, T, seqerrorrate=0.01):
         """T=[pos,ref,alt,pop1,pop2]"""
         if len(T[1]) != len(T[2]) or len(T[2])!=1  or len(T[2])!=1:
@@ -558,7 +558,7 @@ class Caculate_Fst(Caculator):
 #             return  # NOTICT HERE
         if refdep_1==0 and refdep_2==0:#skip both fixed as alt
             return
-        if (refdep_1==0 and altalleledep_2==0) or (altalleledep_1==0 and refdep_2==0):#fixed difference
+        if (refdep_1==0 and altalleledep_2==0 and altalleledep_1>=self.pop1_indvds and refdep_2>=self.pop2_indvds) or (altalleledep_1==0 and refdep_2==0 and refdep_1>=self.pop1_indvds and altalleledep_2>=self.pop2_indvds):#fixed difference
             self.COUNTED[1]+=1
             if self.considerfixdiffinfst:
                 pass
@@ -585,4 +585,6 @@ class Caculate_Fst(Caculator):
         noofsnp = copy.copy(self.COUNTED[0])
         nooffixdifference=copy.copy(self.COUNTED[1])
         self.COUNTED = [0,0]
+        if noofsnp<self.minsnps:
+            Fst="NA"
         return [noofsnp,nooffixdifference], Fst

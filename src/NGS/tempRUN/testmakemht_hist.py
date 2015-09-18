@@ -21,7 +21,7 @@ parser.add_option("-o","--pathoutputfilename",dest="pathoutputfilename",help="de
 
 parser.add_option("-p","--positive",dest="multiple_positive_winfiles",action="append",nargs=3,default=[],help="on top,filename ond threshold and outpre")#
 parser.add_option("-n","--negtive",dest="multiple_negtive_winfiles",action="append",nargs=3,default=[],help="at bottom")#
-parser.add_option("-c","--columnname",dest="columnname",default="zvalue")
+
 parser.add_option("-g", "--gotablefile", dest="gotablefile", help="gotable title with :Ensembl Gene ID    Ensembl Transcript ID    GO Term Accession    GO Term Evidence Code    GO domain    GO Term Name    GO Term Definition,order and upper/lower case is arbitrarily")
 
 parser.add_option("-x", "--threshold_percentage", dest="threshold_percentage",help="t / p", metavar="FILE")
@@ -38,7 +38,7 @@ parser.add_option("-t","--numberofoutlier_to_NearestGene",dest="numberofoutlier_
 
 (options, args) = parser.parse_args()
 
-columnname=options.columnname.strip()
+columnname=options.winType.strip()
 
 if __name__ == '__main__':
 

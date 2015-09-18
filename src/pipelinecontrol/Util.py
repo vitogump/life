@@ -145,7 +145,7 @@ class OperatorWithData_mode1(OperatorWithData):
                             targetdata_count+=1
                             scriptinputdata+=(rootStr + "/"+datafilename+";")
                             option_suffix_obj = re.search(r"([-\w\d]*[=\s]*)\${(\s*" + targetdatasuffix[i] + "\s*)}", newcmdline)  # for example "INPUT=${.bam} -i ${.sam}"
-                            print("option_suffix_obj",option_suffix_obj,"make new cmdline:",newcmdline)
+                            print("option_suffix_obj",option_suffix_obj.group(0),"make new cmdline:",newcmdline)
                             optionstr = option_suffix_obj.group(1)
                             suffixstr = option_suffix_obj.group(2)
                             newcmdline=re.sub(r"[-\w\d]*[=\s]*\${\s*" + targetdatasuffix[i] + "\s*}", optionstr  + rootStr + "/" + datafilename.strip() + " " + option_suffix_obj.group(0), newcmdline)                

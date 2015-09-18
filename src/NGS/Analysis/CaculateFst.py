@@ -23,6 +23,7 @@ parser.add_option("-s","--slideSize",dest="slideSize",help="default infile2_infi
 parser.add_option("-m","--minlength",dest="minlength")
 parser.add_option("-j","--outjoin_innerjoin",dest="outjoin_innerjoin",default="o")
 parser.add_option("-o","--outputpath",dest="outputpath")
+parser.add_option("-d","--mindepth",dest="mindepth",help="mindepth to judge fixed")
 parser.add_option("-F","--considerFixdifferentinFSTcaculate",dest="considerFixdifferentinFSTcaculate",action="store_true",default=False)
 parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", default=True,
@@ -136,6 +137,8 @@ class Fst():
                 elif re.search(r"pool[^/]+",fstpaire[1])!=None:
                     MethodToSeqpop2="pool"
                 fst_caculator = Caculators.Caculate_Fst(MethodToSeqpop1=MethodToSeqpop1, MethodToSeqpop2=MethodToSeqpop2)
+                fst_caculator.pop1_indvds=int(options.mindepth)
+                fst_caculator.pop2_indvds=int(options.mindepth)
                 if options.considerFixdifferentinFSTcaculate:
                     fst_caculator.considerfixdiffinfst=True
 #                 fst = Fst() 
@@ -253,6 +256,8 @@ class Fst():
                         MethodToSeqpop2="pool"
                     FstMapByChrom={}
                     fst_caculator = Caculators.Caculate_Fst(MethodToSeqpop1=MethodToSeqpop1, MethodToSeqpop2=MethodToSeqpop2)
+                    fst_caculator.pop2_indvds=int(options.mindepth)
+                    fst_caculator.pop1_indvds=int(options.mindepth)
                     if options.considerFixdifferentinFSTcaculate:
                         fst_caculator.considerfixdiffinfst=True
                     fstlist.append(self.caculateFstAccordingdb(FstMapByChrom,self.dbtools, self.chromtable, majorpop, othrpop, fst_caculator, self.windowWidth,self.slideSize,self.minlength))    

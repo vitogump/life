@@ -271,11 +271,33 @@ if __name__ == '__main__':
                         break
                 for a,b in DAFintervalMap_SNPcounts.keys():
                     if DAF>=a and DAF<b and DAF!=0:
-                        AFintervalMap_SNPcounts[a,b]+=1
+                        DAFintervalMap_SNPcounts[a,b]+=1
                         break
         AFsMapByFileName[bedfilenamewithoutpath]=copy.deepcopy(AFintervalMap_SNPcounts)
         DAFsMapByFileName[bedfilenamewithoutpath]=copy.deepcopy(DAFintervalMap_SNPcounts)
         MAFsMapByFileName[bedfilenamewithoutpath]=copy.deepcopy(MAFintervalMap_SNPcounts)
+    outfile=open(options.outfileprename+"bedfilenameAAF","w")
+    print("AFbin",end="\t",file=outfile)
+    for tag in sorted(AFsMapByFileName.keys()):
+        print(tag,end="\t",file=outfile)
+    print("",file=outfile)
+    for a,b in AFintervalMap_SNPcounts_template.keys():
+        print(str(a),str(b),end="\t",file=outfile)
+        for tag in sorted(AFsMapByFileName.keys()):
+            print(str(AFsMapByFileName[tag][a,b]),end="\t",file=outfile)
+        print("",file=outfile)
+    outfile.close()
+    outfile=open(options.outfileprename+"bedfilenameDAF","w")
+    print("DAFbin",end="\t",file=outfile)
+    for tag in sorted(DAFsMapByFileName.keys()):
+        print(tag,end="\t",file=outfile)
+    print("",file=outfile)
+    for a,b in sorted(DAFintervalMap_SNPcounts_template.keys()):
+        print(str(a),str(b),end="\t",file=outfile)
+        for tag in sorted(DAFsMapByFileName.keys()):
+            print(str(DAFsMapByFileName[tag][a,b]),end="\t",file=outfile)
+        print("",file=outfile)
+    outfile.close()
     for filteredvcffilename in filteredvcffilenamelist:
         os.system("rm "+filteredvcffilename+" "+filteredvcffilename+".myindex")
     #################cds######################################

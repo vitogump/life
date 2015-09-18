@@ -69,6 +69,41 @@ def IM_3(params,ns,pts):
     phi=dadi.Integration.three_pops(phi,xx,TS2,nu1=s1*s2,nu3=s1*(1-s2),nu2=1-s1,m12=mMP,m21=mPM,m13=mMB,m31=mBM,m23=mPB,m32=mBP)
     fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
     return fs
+def increader_split_domDecrease_bottle_increase_wildbottle_IM(params,ns,pts):
+    nuA0,nuA1,s,nuM,nuP1,nuPb,nuP,TA,TS,TBM,TBP,m121,m211,m12,m21=params
+    xx=dadi.Numerics.default_grid(pts)
+    phi=dadi.PhiManip.phi_1D(xx)
+    nuA_func=lambda t: nuA0*(nuA1/nuA0)**(t/TA)
+    phi=dadi.Integration.one_pop(phi,xx,TA,nu=nuA_func)
+    phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
+    nuM0=s*nuA1
+    nuP0=(1-s)*nuA1
+    nuP_d_func=lambda t: nuP0*(nuP1/nuP0)**(t/(TS+TBM))
+    phi=dadi.Integration.two_pops(phi,xx,TS,nu1=nuM0,nu2=nuP_d_func,m12=m121,m21=m211)
+    nuP0=nuP_d_func(TS)
+    nuP_d_func=lambda t: nuP0*(nuP1/nuP0)**(t/(TBM))
+    phi=dadi.Integration.two_pops(phi,xx,TBM,nu1=nuM,nu2=nuP_d_func,m12=m12,m21=m21)
+    nuP_i_func=lambda t: nuPb*(nuP/nuPb)**(t/(TBP))
+    phi=dadi.Integration.two_pops(phi,xx,TBP,nu1=nuM,nu2=nuP_i_func,m12=m12,m21=m21)
+    fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
+    return fs
+def split_domDecrease_bottle_increase_wildbottle_IM(params,ns,pts):
+    nuA,s,nuM,nuP1,nuPb,nuP,TA,TS,TBM,TBP,m121,m211,m12,m21=params
+    xx=dadi.Numerics.default_grid(pts)
+    phi=dadi.PhiManip.phi_1D(xx)
+    phi=dadi.Integration.one_pop(phi,xx,TA,nu=nuA)
+    phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
+    nuM0=s*nuA
+    nuP0=(1-s)*nuA
+    nuP_d_func=lambda t: nuP0*(nuP1/nuP0)**(t/(TS+TBM))
+    phi=dadi.Integration.two_pops(phi,xx,TS,nu1=nuM0,nu2=nuP_d_func,m12=m121,m21=m211)
+    nuP0=nuP_d_func(TS)
+    nuP_d_func=lambda t: nuP0*(nuP1/nuP0)**(t/(TBM))
+    phi=dadi.Integration.two_pops(phi,xx,TBM,nu1=nuM,nu2=nuP_d_func,m12=m12,m21=m21)
+    nuP_i_func=lambda t: nuPb*(nuP/nuPb)**(t/(TBP))
+    phi=dadi.Integration.two_pops(phi,xx,TBP,nu1=nuM,nu2=nuP_i_func,m12=m12,m21=m21)
+    fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
+    return fs
 def splitdom_domlinerDecrease_IncreaseAfterBottle_wildbottle_mig_1_IM(params,ns,pts):
     nuA,s,nuP1,nuP,TA,Td,Ti,m12,m21=params
 
@@ -84,12 +119,61 @@ def splitdom_domlinerDecrease_IncreaseAfterBottle_wildbottle_mig_1_IM(params,ns,
     
     phi=dadi.Integration.two_pops(phi,xx,Td,nu1=nuM0,nu2=nuP_d_func,m12=m12,m21=m21)
 #     nuP0=nuP_d_func(TS+TBP-TBM)
-    nuP_d_func = lambda t: nuP1 * (nuP/nuP1)**(t/Ti)
+    nuP_i_func = lambda t: nuP1 * (nuP/nuP1)**(t/Ti)
 
 #     T1=TS+TBP-TBM
 #     phi=dadi.Integration.two_pops(phi,xx,TBP,nu1=nuM0,nu2=nuP)
 #     nuP_g_func= lambda t: nuP2 + (nuP-nuP2)*t/(TBP)
-    phi=dadi.Integration.two_pops(phi,xx,Ti,nu1=nuM0,nu2=nuP_d_func,m12=m12,m21=m21)
+    phi=dadi.Integration.two_pops(phi,xx,Ti,nu1=nuM0,nu2=nuP_i_func,m12=m12,m21=m21)
+    fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
+    return fs
+def splitdom_domlinerDecrease_bottledom_mig_1_IM(params,ns,pts):
+    nuA,s,nuP1,nuP,TA,TS,TBP,m12,m21=params
+
+
+    xx=dadi.Numerics.default_grid(pts)
+    phi=dadi.PhiManip.phi_1D(xx)
+    phi=dadi.Integration.one_pop(phi,xx,TA,nu=nuA)
+    phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
+    nuM0=s*nuA
+    nuP0=(1-s)*nuA
+    nuP_d_func = lambda t: nuP0 + (nuP1-nuP0)*t/(TS)
+    
+    phi=dadi.Integration.two_pops(phi,xx,TS,nu1=nuM0,nu2=nuP_d_func,m12=m12,m21=m21)
+    phi=dadi.Integration.two_pops(phi,xx,TBP,nu1=nuM0,nu2=nuP,m12=m12,m21=m21)
+    fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
+    return fs
+def splitdom_domlinerDecrease_bottledom_expIncrease_mig_1_IM(params,ns,pts):
+    nuA,s,nuP1,nuP,TA,TS,TBP,m12,m21=params
+
+
+    xx=dadi.Numerics.default_grid(pts)
+    phi=dadi.PhiManip.phi_1D(xx)
+    phi=dadi.Integration.one_pop(phi,xx,TA,nu=nuA)
+    phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
+    nuM0=s*nuA
+    nuP0=(1-s)*nuA
+    nuP_d_func = lambda t: nuP0 + (nuP1-nuP0)*t/(TS)
+    
+    phi=dadi.Integration.two_pops(phi,xx,TS,nu1=nuM0,nu2=nuP_d_func,m12=m12,m21=m21)
+    nuP_i_func = lambda t: nuP1 * (nuP/nuP1)**(t/TBP)
+    phi=dadi.Integration.two_pops(phi,xx,TBP,nu1=nuM0,nu2=nuP_i_func,m12=m12,m21=m21)
+    fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
+    return fs
+def splitdom_domlinerDecrease_mig_1_IM(params,ns,pts):
+    nuA,s,nuP1,TA,TS,m12,m21=params
+
+
+    xx=dadi.Numerics.default_grid(pts)
+    phi=dadi.PhiManip.phi_1D(xx)
+    phi=dadi.Integration.one_pop(phi,xx,TA,nu=nuA)
+    phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
+    nuM0=s*nuA
+    nuP0=(1-s)*nuA
+    nuP_d_func = lambda t: nuP0 + (nuP1-nuP0)*t/(TS)
+    
+    phi=dadi.Integration.two_pops(phi,xx,TS,nu1=nuM0,nu2=nuP_d_func,m12=m12,m21=m21)
+
     fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
     return fs
 def splitdom_splitwild_3d(params,ns,pts):
@@ -191,6 +275,16 @@ elif options.model=="IM_2":
     func=IM_2
 elif options.model=="IM_3":
     func=IM_3
+elif options.model=="splitdom_domlinerDecrease_mig_1_IM":
+    func=splitdom_domlinerDecrease_mig_1_IM
+elif options.model=="splitdom_domlinerDecrease_bottledom_mig_1_IM":
+    func=splitdom_domlinerDecrease_bottledom_mig_1_IM
+elif options.model=="splitdom_domlinerDecrease_bottledom_expIncrease_mig_1_IM":
+    func=splitdom_domlinerDecrease_bottledom_expIncrease_mig_1_IM
+elif options.model=="split_domDecrease_bottle_increase_wildbottle_IM":
+    func=split_domDecrease_bottle_increase_wildbottle_IM
+elif options.model=="increader_split_domDecrease_bottle_increase_wildbottle_IM":
+    func=increader_split_domDecrease_bottle_increase_wildbottle_IM
 paramslist=[]
 upper_boundlist=[]
 lower_boundlist=[]

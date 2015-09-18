@@ -194,7 +194,7 @@ class MakeMhtGraph(object):
         os.system("cd "+self.olddir)
         print(ylim,xlim)     
     def makeMhtplots_compareInOnePicture_withgeneName(self, outputnamewithpath,positive_winfiles,negtive_winfiles,fillvalue=0,columnname="zvalue"):
-        scriptfile=open("stripts.R",'w')
+        scriptfile=open("stripts_withgene.R",'w')
         print(outputnamewithpath,file=scriptfile)
         print(positive_winfiles,negtive_winfiles)
         if re.search(r"^.*/", outputnamewithpath)!=None:
