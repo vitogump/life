@@ -26,6 +26,7 @@ pekingduckchromtable=cfparser.get("mysqldatabase","pekingduckchromtable")
 ghostdbname=cfparser.get("mysqldatabase","ghostdbname")
 vcfdbname=cfparser.get("mysqldatabase","vcfdbname")
 TranscriptGenetable=cfparser.get("mysqldatabase","TranscriptGenetable")
+D2Bduckchromtable=cfparser.get("mysqldatabase","D2Bduckchromtable")
 KB743256_1=cfparser.get("mysqldatabase","KB743256_1")
 
 def alinmultPopSnpPos(vcfMaplist,jointmode="i"):

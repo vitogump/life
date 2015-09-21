@@ -16,13 +16,30 @@ dd=dadi.Misc.make_data_dict(options.fsfile)
 print(options.popname)
 fsdata=dadi.Spectrum.from_data_dict(dd,pop_ids=options.popname,polarized=True,projections=[26]*len(options.popname))
 def split_mig_1_w_bottleneck(params,ns,pts):
-    nuA,nuM,nuB,TA,TS,m12,m21=params
+    nuA,nuM,nuP,TA,TS,m12,m21=params
     xx=dadi.Numerics.default_grid(pts)
     phi=dadi.PhiManip.phi_1D(xx)
-    phi=dadi.Integration.one_pop(phi,xx,TA-TS,nu=nuA)
+    phi=dadi.Integration.one_pop(phi,xx,TA,nu=nuA)
     phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
 
-    phi=dadi.Integration.two_pops(phi,xx,TS,nu1=nuM,nu2=nuB,m12=m12,m21=m21)
+    phi=dadi.Integration.two_pops(phi,xx,TS,nu1=nuM,nu2=nuP,m12=m12,m21=m21)
+    fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
+    return fs
+def split_mig_1_w_bottleneck_split_domDecrease_bottle_increase_wildbottle_IM(params,ns,pts):
+    nuA,nuM0,nuP0,nuP1,nuPb,nuP,nuM,TA,TS,TBM,TBP,m12,m21=params
+    xx=dadi.Numerics.default_grid(pts)
+    phi=dadi.PhiManip.phi_1D(xx)
+    phi=dadi.Integration.one_pop(phi,xx,TA,nu=nuA)
+    phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
+#     nuM0=s*nuA
+#     nuP0=(1-s)*nuA
+    nuP_d_func=lambda t: nuP0*(nuP1/nuP0)**(t/(TS+TBM))
+    phi=dadi.Integration.two_pops(phi,xx,TS,nu1=nuM0,nu2=nuP_d_func,m12=m12,m21=m21)
+    nuP0=nuP_d_func(TS)
+    nuP_d_func=lambda t: nuP0*(nuP1/nuP0)**(t/(TBM))
+    phi=dadi.Integration.two_pops(phi,xx,TBM,nu1=nuM,nu2=nuP_d_func,m12=m12,m21=m21)
+    nuP_i_func=lambda t: nuPb*(nuP/nuPb)**(t/(TBP))
+    phi=dadi.Integration.two_pops(phi,xx,TBP,nu1=nuM,nu2=nuP_i_func,m12=m12,m21=m21)
     fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
     return fs
 def split_mig_1_IM(params,ns,pts):
@@ -192,6 +209,11 @@ def splitdom_splitwild_3d(params,ns,pts):
     phi=dadi.Integration.three_pops(phi,xx,TS2,nu1=nuM,nu3=nuB,nu2=nuP,m12=mMP,m21=mPM,m13=mMB,m31=mBM,m23=mPB,m32=mBP)
     fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx,xx))
     return fs
+def split_mig_1_w_bottleneck_split_domedcrease_increaseAfterBottle_wild_bottle_split_3d(params,ns,pts):
+    nuA,nuP,nuW0,nuWb,nuM,nuS,nuP0,nuP1,nuPb,nuP,nuS,TA,TS1,TBW,TS2,TBP,m12,m21,mMB,mBM,mBP,mPB,mMP,mPM=params
+    xx=dadi.Numerics.default_grid(pts)
+    phi=dadi.PhiManip.phi_1D(xx)
+    unfinished
 def splitdom_splitwild_bottledom_3d(params,ns,pts):
     nuA,nuP,s1,s2,TA,TS1,TS2,TBP,m12,m21,mMB,mBM,mBP,mPB,mMP,mPM=params
     xx=dadi.Numerics.default_grid(pts)
@@ -257,6 +279,8 @@ ns=fsdata.sample_sizes
 pts_1=[40,50,60]
 if options.model=="split_mig_1_w_bottleneck":
     func=split_mig_1_w_bottleneck
+elif options.model=="split_mig_1_w_bottleneck_split_domDecrease_bottle_increase_wildbottle_IM":
+    func=split_mig_1_w_bottleneck_split_domDecrease_bottle_increase_wildbottle_IM
 elif options.model=="split_mig_2":
     func=split_mig_2
 elif options.model=="split_mig_1_IM":

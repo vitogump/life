@@ -14,8 +14,7 @@ Created on 2013-6-30
 @author: rui
 '''
 parser = OptionParser()
-# parser.add_option("-c", "--chromtable", dest="chromtable",# action="callback",type="string",callback=useoptionvalue_previous2,
-#                   help="write report to FILE")
+parser.add_option("-c", "--chromtable", dest="chromtable",default="1",help="1 pekingduck,2 D2Bduck")
 parser.add_option("-v","--vcffile",dest="vcffile_withdepth",action="append",nargs=2,help="vcftablename filerecord_allname_in_depthfiletitle_belongtothisvcfpop")
 parser.add_option("-t","--fsttype",dest="fsttype",help="R(r)/G(g)")
 parser.add_option("-w","--winwidth",dest="winwidth",help="default infile1_infile2")#
@@ -41,7 +40,10 @@ minlength=options.minlength
 windowWidth=int(options.winwidth)
 slideSize=int(options.slideSize)
 tttttt=False  
-chromtable = Util.pekingduckchromtable
+if options.chromtable=="1":
+    chromtable = Util.pekingduckchromtable
+elif options.chromtable=="2":
+    chromtable = Util.D2Bduckchromtable
 fsttype=options.fsttype
 primaryID = "chrID"
 
@@ -167,7 +169,7 @@ class Fst():
                         currentchrLen=int(row[1])
                         if currentchrID in FstMapByChrom:
                             for i in range(len(FstMapByChrom[currentchrID])):
-                                if FstMapByChrom[currentchrID][i][2][1] != "NA":
+                                if FstMapByChrom[currentchrID][i][2][1] != "NA" and FstMapByChrom[currentchrID][i][3] != "NA":
                                     print(currentchrID + "\t" + str(i) + "\t" + str(FstMapByChrom[currentchrID][i][0]) + "\t" + str(FstMapByChrom[currentchrID][i][1]) +"\t" + str(FstMapByChrom[currentchrID][i][2][1]) + "\t" + '%.15f'%(FstMapByChrom[currentchrID][i][2][1]/currentchrLen) + "\t" + 'NA', file=outfilefixdif)
                                 else:
                                     print(currentchrID + "\t" + str(i) + "\t" + str(FstMapByChrom[currentchrID][i][0]) + "\t" + str(FstMapByChrom[currentchrID][i][1]) +"\t" + str(FstMapByChrom[currentchrID][i][2][1]) + "\t" + 'NA' + "\t" + 'NA', file=outfilefixdif)
@@ -312,7 +314,7 @@ class Fst():
                             if currentchrID in self.globalFstMapByChrom:                                
     #                for chrom in sorted(globalFstMapByChrom.keys()):
                                 for i in range(len(self.globalFstMapByChrom[currentchrID])):
-                                    if self.globalFstMapByChrom[currentchrID][i][2][1] != "NA":
+                                    if self.globalFstMapByChrom[currentchrID][i][2][1] != "NA" and self.globalFstMapByChrom[currentchrID][i][3] != "NA":
                                         print(currentchrID + "\t" + str(i) + "\t" + str(self.globalFstMapByChrom[currentchrID][i][0]) + "\t" + str(self.globalFstMapByChrom[currentchrID][i][1]) +"\t" + str(self.globalFstMapByChrom[currentchrID][i][2][1]) + "\t" + '%.15f'%(self.globalFstMapByChrom[currentchrID][i][2][1]/currentchrLen) + "\t" + 'NA', file=outfilefixdif)
                                     else:
                                         print(currentchrID + "\t" + str(i) + "\t" + str(self.globalFstMapByChrom[currentchrID][i][0]) + "\t" + str(self.globalFstMapByChrom[currentchrID][i][1]) +"\t" + str(self.globalFstMapByChrom[currentchrID][i][2][1]) + "\t" + 'NA' + "\t" + 'NA', file=outfilefixdif)
@@ -330,7 +332,7 @@ class Fst():
     def caculateFstAccordingdb(self,FstMapByChrom,dbtools,chromstable,vcfNAME_POP1,vcfNAME_POP2,fst_caculator,winwidth,slideSize,minlengthOfchrom):
         pop1 = VCFutil.VCF_Data(vcfNAME_POP1)  # new a class
         pop2 = VCFutil.VCF_Data(vcfNAME_POP2)  # new a class
-        print("select count(*) from "+chromstable+" where chrlength>="+minlengthOfchrom)
+#         print("select count(*) from "+chromstable+" where chrlength>="+minlengthOfchrom)
         totalChroms = dbtools.operateDB("select","select count(*) from "+chromstable+" where chrlength>="+minlengthOfchrom)[0][0]
         ########################### caculate Fst across all vcf file and fill in self.FstMapByChrom 
         for i in range(0,totalChroms,20):
