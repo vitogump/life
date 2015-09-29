@@ -169,12 +169,12 @@ class VCF_Data():
                 pedmap[outName] = []
 
         currentChromSome = None
-        print("exclude those sites which ref is not N ,INDEL ,or multiple alleles")
+        
         for line in vcffile:
             linelist = re.split(r"\s+", line)
-            if linelist[3].strip().upper() == 'N' or len(linelist[3].strip()) > 1 or len(linelist[4].strip()) > 1:  # when ref is N ,or INDEL ,or multiple allels 
-                continue
-            
+            if linelist[3].strip().upper() == 'N' :#or len(linelist[3].strip()) > 1 or len(linelist[4].strip()) > 1:  # when ref is N ,or INDEL ,or multiple allels 
+                print("exclude those sites which ref is not N ,INDEL ,or multiple alleles")
+                continue     
             positionlist.append((linelist[0].replace("scaffold", ""), linelist[0] + "_" + linelist[1], 0, linelist[1]))
             if software.upper() == "GATK":
                 GT_idx = (re.split(":", linelist[8])).index("GT")  # gatk GT:AD:DP:GQ:PL
@@ -260,12 +260,13 @@ class VCF_Data():
             pos = int(linelist[1].strip())
             REF = linelist[3].strip()
             ALT = linelist[4].strip()
-            if considerINDEL and len(REF) > 1 and len(ALT) > 1:
+            recidx += 1#line = vcfFile.readline();
+            if not considerINDEL and len(REF) > 1 and len(ALT) > 1:
                 continue
             INFO = linelist[7]
             FORMAT = linelist[8]
-            recidx += 1#line = vcfFile.readline();
-            if posUniq and VcfList_A_Chrom and pos == VcfList_A_Chrom[0]:
+           # recidx += 1#line = vcfFile.readline();
+            if posUniq and VcfList_A_Chrom and pos == VcfList_A_Chrom[-1][0]:
                 print("VCFutil unique the vcf pos", line, VcfList_A_Chrom[-1])
                 continue
             VcfList_A_Chrom.append((pos, REF, ALT, INFO, FORMAT, samples))

@@ -27,7 +27,7 @@ parser.add_option("-g", "--gotablefile", dest="gotablefile", help="gotable title
 parser.add_option("-x", "--threshold_percentage", dest="threshold_percentage",help="t / p", metavar="FILE")
 
 parser.add_option("-f", "--trscptfound", dest="trscptfound",action="store_true",default=False, help="outfileprename")
-
+parser.add_option("-S", "--splitintopart", dest="splitintopart",default=1, help="split winfile into part")
 parser.add_option("-u", "--upextend", dest="upextend", help="upextend")
 parser.add_option("-d", "--downextend", dest="downextend", help="downextend")
 parser.add_option("-s","--slideSize",dest="slideSize",default="20000",help="win slide size")
@@ -46,51 +46,58 @@ if __name__ == '__main__':
     outfileNameWINwithGENE_Plist=[];outfileNameWIN_Plist=[]
     outfileNameWINwithGENE_Nlist=[];outfileNameWIN_Nlist=[]
     uniontpidlist=[]
-    if options.multiple_positive_winfiles!=[]:
-        for p_inputfileName,threshold,outbedfilename in options.multiple_positive_winfiles[:]:
-            outfileNameWIN_Plist.append(p_inputfileName)
-            outfileNameWINwithGENE_Plist.append((geneUtil.findTrscpt(p_inputfileName, outbedfilename, int(options.upextend), int(options.downextend), int(options.winWidth), int(options.slideSize), options.winType, "m", threshold, None, options.mergeNA, int(options.numberofoutlier_to_NearestGene),options.trscptfound),threshold))
-            makeMhtGraph.makeHistonPicture(p_inputfileName, "Fst")#,"c(0,2000)","c(0,45)"
-            makeMhtGraph.makeHistonPicture(outfileNameWINwithGENE_Plist[-1][0], "Fst")
-            print("awk 'NR!=1{print $6}' "+outbedfilename+".bed.selectedgene"+"|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"+outbedfilename+".trscptIDlist")
-            os.system("awk 'NR!=1{print $6}' "+outbedfilename+".bed.selectedgene"+"|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"+outbedfilename+".trscptIDlist")
-            f=open(outbedfilename+".trscptIDlist",'r')
-            for line in f:
-                uniontpidlist.append(line.strip())
-            f.close()
-            print("grep -wFf "+outbedfilename+".trscptIDlist"+""" /home/bioinfo/databases/ensembleIDconvert.txt|awk '{FS="\t";print $3}'|sort|uniq>"""+outbedfilename+""".Homologs_human""")
-            os.system("grep -wFf "+outbedfilename+".trscptIDlist"+""" /home/bioinfo/databases/ensembleIDconvert.txt|awk '{FS="\t";print $3}'|sort|uniq>"""+outbedfilename+""".Homologs_human""")
-            print("grep -wFf "+outbedfilename+".Homologs_human /home/bioinfo/databases/humangenesymbl.txt|awk '{print $3}'|sort|uniq>"+outbedfilename+"Homologs_human_genesymbl")
-            os.system("grep -wFf "+outbedfilename+".Homologs_human /home/bioinfo/databases/humangenesymbl.txt|awk '{print $3}'|sort|uniq>"+outbedfilename+"Homologs_human_genesymbl")
-    if options.multiple_negtive_winfiles!=[]:
-        for n_inputfileName,threshold,outbedfilename in options.multiple_negtive_winfiles[:]:
-            outfileNameWIN_Nlist.append(n_inputfileName)
-            outfileNameWINwithGENE_Nlist.append((geneUtil.findTrscpt(n_inputfileName,outbedfilename, int(options.upextend), int(options.downextend), int(options.winWidth), int(options.slideSize), options.winType, "l", threshold, None, options.mergeNA, int(options.numberofoutlier_to_NearestGene),options.trscptfound),threshold))
-            makeMhtGraph.makeHistonPicture(n_inputfileName, "Hp")#,"c(0,2000)","c(0,45)"
-            makeMhtGraph.makeHistonPicture(outfileNameWINwithGENE_Nlist[-1][0], "Hp")#,"c(0,2000)","c(0,45)"
-            print("awk 'NR!=1{print $6}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"""+outbedfilename+".trscptIDlist")
-            os.system("awk 'NR!=1{print $6}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"""+outbedfilename+".trscptIDlist")
-            f=open(outbedfilename+".trscptIDlist",'r')
-            for line in f:
-                uniontpidlist.append(line.strip())
-            f.close()
-            print("grep -wFf "+outbedfilename+".trscptIDlist"+""" /home/bioinfo/databases/ensembleIDconvert.txt|awk '{FS="\t";print $3}'|sort|uniq>"""+outbedfilename+""".Homologs_human""")
-            os.system("grep -wFf "+outbedfilename+".trscptIDlist"+""" /home/bioinfo/databases/ensembleIDconvert.txt|awk '{FS="\t";print $3}'|sort|uniq>"""+outbedfilename+""".Homologs_human""")
-            print("grep -wFf "+outbedfilename+".Homologs_human /home/bioinfo/databases/humangenesymbl.txt|awk '{print $3}'|sort|uniq>"+outbedfilename+"Homologs_human_genesymbl")
-            os.system("grep -wFf "+outbedfilename+".Homologs_human /home/bioinfo/databases/humangenesymbl.txt|awk '{print $3}'|sort|uniq>"+outbedfilename+"Homologs_human_genesymbl")
-#     if (options.multiple_negtive_winfiles_withgenename!=[] or options.multiple_positive_winfiles_withgenename!=[]):
-    print("outfileNameWINwithGENE_Plist",outfileNameWINwithGENE_Plist)
-    print("outfileNameWINwithGENE_Nlist",outfileNameWINwithGENE_Nlist)
-    genelist,interlist=makeMhtGraph.makeMhtplots_compareInOnePicture_withgeneName(options.pathoutputfilename+".withgene", outfileNameWINwithGENE_Plist, outfileNameWINwithGENE_Nlist, 0,columnname)
-    f=open(options.pathoutputfilename+".u."+str(len(genelist)),"w")
-    for gene in genelist:
-        print(gene,file=f)
-    f.close()
-    f=open(options.pathoutputfilename+".i."+str(len(interlist)),"w")
-    for gene in interlist:
-        print(gene,file=f)
-    f.close()
-#     else:
-    print()
-    makeMhtGraph.makeMhtplots_compareInOnePicture(options.pathoutputfilename, outfileNameWIN_Plist, outfileNameWIN_Nlist, 0,columnname)
-    geneUtil.GOenrichment(options.gotablefile,options.pathoutputfilename,None,list(set(uniontpidlist)))
+    if options.splitintopart==1:
+        if options.multiple_positive_winfiles!=[]:
+            for p_inputfileName,threshold,outbedfilename in options.multiple_positive_winfiles[:]:
+                outfileNameWIN_Plist.append(p_inputfileName)
+                outfileNameWINwithGENE_Plist.append((geneUtil.findTrscpt(p_inputfileName, outbedfilename, int(options.upextend), int(options.downextend), int(options.winWidth), int(options.slideSize), options.winType, "m", threshold, None, options.mergeNA, int(options.numberofoutlier_to_NearestGene),options.trscptfound),threshold))
+                makeMhtGraph.makeHistonPicture(p_inputfileName, "Fst")#,"c(0,2000)","c(0,45)"
+                makeMhtGraph.makeHistonPicture(outfileNameWINwithGENE_Plist[-1][0], "Fst")
+                print("awk 'NR!=1{print $6}' "+outbedfilename+".bed.selectedgene"+"|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"+outbedfilename+".trscptIDlist")
+                os.system("awk 'NR!=1{print $6}' "+outbedfilename+".bed.selectedgene"+"|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"+outbedfilename+".trscptIDlist")
+                f=open(outbedfilename+".trscptIDlist",'r')
+                for line in f:
+                    uniontpidlist.append(line.strip())
+                f.close()
+                print("grep -wFf "+outbedfilename+".trscptIDlist"+""" /home/bioinfo/databases/ensembleIDconvert.txt|awk '{FS="\t";print $3}'|sort|uniq>"""+outbedfilename+""".Homologs_human""")
+                os.system("grep -wFf "+outbedfilename+".trscptIDlist"+""" /home/bioinfo/databases/ensembleIDconvert.txt|awk '{FS="\t";print $3}'|sort|uniq>"""+outbedfilename+""".Homologs_human""")
+                print("grep -wFf "+outbedfilename+".Homologs_human /home/bioinfo/databases/humangenesymbl.txt|awk '{print $3}'|sort|uniq>"+outbedfilename+"Homologs_human_genesymbl")
+                os.system("grep -wFf "+outbedfilename+".Homologs_human /home/bioinfo/databases/humangenesymbl.txt|awk '{print $3}'|sort|uniq>"+outbedfilename+"Homologs_human_genesymbl")
+        if options.multiple_negtive_winfiles!=[]:
+            for n_inputfileName,threshold,outbedfilename in options.multiple_negtive_winfiles[:]:
+                outfileNameWIN_Nlist.append(n_inputfileName)
+                outfileNameWINwithGENE_Nlist.append((geneUtil.findTrscpt(n_inputfileName,outbedfilename, int(options.upextend), int(options.downextend), int(options.winWidth), int(options.slideSize), options.winType, "l", threshold, None, options.mergeNA, int(options.numberofoutlier_to_NearestGene),options.trscptfound),threshold))
+                makeMhtGraph.makeHistonPicture(n_inputfileName, "Hp")#,"c(0,2000)","c(0,45)"
+                makeMhtGraph.makeHistonPicture(outfileNameWINwithGENE_Nlist[-1][0], "Hp")#,"c(0,2000)","c(0,45)"
+                print("awk 'NR!=1{print $6}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"""+outbedfilename+".trscptIDlist")
+                os.system("awk 'NR!=1{print $6}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"""+outbedfilename+".trscptIDlist")
+                f=open(outbedfilename+".trscptIDlist",'r')
+                for line in f:
+                    uniontpidlist.append(line.strip())
+                f.close()
+                print("grep -wFf "+outbedfilename+".trscptIDlist"+""" /home/bioinfo/databases/ensembleIDconvert.txt|awk '{FS="\t";print $3}'|sort|uniq>"""+outbedfilename+""".Homologs_human""")
+                os.system("grep -wFf "+outbedfilename+".trscptIDlist"+""" /home/bioinfo/databases/ensembleIDconvert.txt|awk '{FS="\t";print $3}'|sort|uniq>"""+outbedfilename+""".Homologs_human""")
+                print("grep -wFf "+outbedfilename+".Homologs_human /home/bioinfo/databases/humangenesymbl.txt|awk '{print $3}'|sort|uniq>"+outbedfilename+"Homologs_human_genesymbl")
+                os.system("grep -wFf "+outbedfilename+".Homologs_human /home/bioinfo/databases/humangenesymbl.txt|awk '{print $3}'|sort|uniq>"+outbedfilename+"Homologs_human_genesymbl")
+        print("outfileNameWINwithGENE_Plist",outfileNameWINwithGENE_Plist)
+        print("outfileNameWINwithGENE_Nlist",outfileNameWINwithGENE_Nlist)
+        genelist,interlist=makeMhtGraph.makeMhtplots_compareInOnePicture_withgeneName(options.pathoutputfilename+".withgene", outfileNameWINwithGENE_Plist, outfileNameWINwithGENE_Nlist, 0,columnname)
+        f=open(options.pathoutputfilename+".u."+str(len(genelist)),"w")
+        for gene in genelist:
+            print(gene,file=f)
+        f.close()
+        f=open(options.pathoutputfilename+".i."+str(len(interlist)),"w")
+        for gene in interlist:
+            print(gene,file=f)
+        f.close()
+        geneUtil.GOenrichment(options.gotablefile,options.pathoutputfilename,None,list(set(uniontpidlist)))
+        splitinto=int(options.splitintopart)
+    else:
+        splitinto=int(options.splitintopart)
+    outfileNameWIN_Nlist=[];outfileNameWIN_Plist=[]
+    for p_inputfileName,threshold,outbedfilename in options.multiple_positive_winfiles[:]:
+        outfileNameWIN_Plist.append(p_inputfileName)
+    for n_inputfileName,threshold,outbedfilename in options.multiple_negtive_winfiles[:]:
+        outfileNameWIN_Nlist.append(n_inputfileName)
+    makeMhtGraph.makeMhtplots_compareInOnePicture(options.pathoutputfilename, outfileNameWIN_Plist, outfileNameWIN_Nlist, 0,columnname,splitinto)
+    

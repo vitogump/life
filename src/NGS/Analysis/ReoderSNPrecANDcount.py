@@ -92,15 +92,16 @@ for fname in domesticcdsfilenames:
 print("AF_idxlistdomestic",AF_idxlistdomestic)
 #     domesticcdsfilelist.append(open(fname,'r'))
 #merge and uniq ,when there is only one file for wild or domestic,the for loop below don't excute
-for f_idx in range(1,len(wildcdsfilenames)):
-    os.system("cat "+wildcdsfilenames[f_idx-1]+"_chrom "+wildcdsfilenames[f_idx]+"_chrom|sort|uniq|sort > temp_chrom")
-    os.system("rm "+wildcdsfilenames[f_idx-1]+"_chrom ")
-    os.system("mv temp_chrom "+wildcdsfilenames[f_idx]+"_chrom")
-for f_idx in range(1,len(domesticcdsfilenames)):
-    os.system("cat "+domesticcdsfilenames[f_idx-1]+"_chrom "+domesticcdsfilenames[f_idx]+"_chrom|sort|uniq|sort > temp_chrom")
-    os.system("rm "+domesticcdsfilenames[f_idx-1]+"_chrom ")
-    os.system("mv temp_chrom "+domesticcdsfilenames[f_idx]+"_chrom")
 randomstr=Util.random_str()
+for f_idx in range(1,len(wildcdsfilenames)):
+    os.system("cat "+wildcdsfilenames[f_idx-1]+"_chrom "+wildcdsfilenames[f_idx]+"_chrom|sort|uniq|sort > temp_chrom"+randomstr)
+    os.system("rm "+wildcdsfilenames[f_idx-1]+"_chrom ")
+    os.system("mv temp_chrom"+randomstr+" "+wildcdsfilenames[f_idx]+"_chrom")
+for f_idx in range(1,len(domesticcdsfilenames)):
+    os.system("cat "+domesticcdsfilenames[f_idx-1]+"_chrom "+domesticcdsfilenames[f_idx]+"_chrom|sort|uniq|sort > temp_chrom"+randomstr)
+    os.system("rm "+domesticcdsfilenames[f_idx-1]+"_chrom ")
+    os.system("mv temp_chrom"+randomstr+" "+domesticcdsfilenames[f_idx]+"_chrom")
+
 os.system("comm -12 "+domesticcdsfilenames[-1]+"_chrom "+wildcdsfilenames[-1]+"_chrom > chromtable_containbothwildanddomestic"+randomstr)
 os.system("rm "+domesticcdsfilenames[-1]+"_chrom");os.system("rm "+wildcdsfilenames[-1]+"_chrom")
 

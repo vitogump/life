@@ -34,10 +34,10 @@ temppath=re.search(r"temppath=(.*)",cline).group(1).strip()
 configure.readline()
 chromlisttosub=configure.readlines()
 print(chromlisttosub)
-
+chrmapfile=open("chrommaplistfile",'w')
 software=options.software.strip()
 outputprefix=options.outputpre.strip()
-tempvcffile=open(outputprefix+".vcf","w");tempvcffile.close()
+tempvcffile=open(outputprefix+".vcf","w")#;tempvcffile.close()
 dilute =float(options.dilute.strip())
 if dilute >1 or dilute <0:
     dilute =1
@@ -48,13 +48,14 @@ if __name__ == '__main__':
     os.chdir(temppath)
     i=0;outputfilepart=0;sumRecOfVCF=0
     for chrom in vcfdata.chromOrder:
-        vcfRecOfAChrom=vcfdata.getVcfListByChrom(chrom,dilute)
+        vcfRecOfAChrom=vcfdata.getVcfListByChrom(chrom,dilute,dilutetodensity="noofsnpperkb", posUniq=True,considerINDEL=True)
         if len(vcfRecOfAChrom)<100:
             print("skip chrom with snps less than 100")
             continue
         else:
             sumRecOfVCF+=len(vcfRecOfAChrom)
         chrom_sub=chromlisttosub[i%len(chromlisttosub)].strip()
+        
         if(i%len(chromlisttosub))==0 and i!=0:
             if sumRecOfVCF<100*len(chromlisttosub):
                 print("skip the first times,constraint  total snps ,but program never get here,under the constrant above except the last server chrom")
@@ -65,15 +66,24 @@ if __name__ == '__main__':
                 tempvcffile.close()
                 VCFutil.VCF_Data.Vcf2Ped(outputprefix+".vcf",outputprefix,software,vcfdata.VcfIndexMap)
                 print("plink",i)
+                
                 os.system(pathtoplink+" --file "+outputprefix +" --r2 --ld-window-kb "+options.ldwinkb+" --ld-window "+options.ldwin)
                 os.system("mv plink.ld plink_part"+str(outputfilepart)+".ld")
                 os.system("rm "+outputprefix+"*")
                 tempvcffile=open(outputprefix+".vcf","w")
                 outputfilepart+=1
+        print("plink_part"+str(outputfilepart)+".ld",chrom_sub,chrom,file=chrmapfile)
         for pos, REF, ALT, INFO,FORMAT,samples in vcfRecOfAChrom:
             print(chrom_sub,pos,".", REF, ALT,"100",".", INFO,FORMAT,*samples,sep="\t",end="\n",file=tempvcffile)
         i+=1
+    else:
+        if (i%len(chromlisttosub))>1:
+            tempvcffile.close()
+            VCFutil.VCF_Data.Vcf2Ped(outputprefix+".vcf",outputprefix,software,vcfdata.VcfIndexMap)
+            os.system(pathtoplink+" --file "+outputprefix +" --r2 --ld-window-kb "+options.ldwinkb+" --ld-window "+options.ldwin)
+            os.system("mv plink.ld plink_part"+str(outputfilepart)+".ld")
+#             os.system("rm "+outputprefix+"*")
         
                
-               
+    chrmapfile.close()           
     configure.close()

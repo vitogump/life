@@ -561,8 +561,10 @@ class Caculate_Fst(Caculator):
         if (refdep_1==0 and altalleledep_2==0 and altalleledep_1>=self.pop1_indvds and refdep_2>=self.pop2_indvds) or (altalleledep_1==0 and refdep_2==0 and refdep_1>=self.pop1_indvds and altalleledep_2>=self.pop2_indvds):#fixed difference
             self.COUNTED[1]+=1
             if self.considerfixdiffinfst:
+                print(T,"fixdifferent in Fst")
                 pass
             else:
+                print(T,"fixdiffernet not in Fst")
                 return
         self.COUNTED[0] += 1
         h_1 = refdep_1 * altalleledep_1 / ((refdep_1 + altalleledep_1 - 1) * (refdep_1 + altalleledep_1))

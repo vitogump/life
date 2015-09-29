@@ -1390,7 +1390,7 @@ class Window():
                     self.winValueL.append((startPos, lastPos, noofsnps, value))
                 except:
                     print("no snp in first win", len(L), currentIdx, value, L[currentIdx])
-                    self.winValueL.append((0, 0, 0, value))
+                    self.winValueL.append((0, 0, noofsnps, value))
                     winStart += slideSize
                     continue
 #                 self.winValueL.append((0, 0, value))
