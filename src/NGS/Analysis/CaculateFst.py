@@ -22,7 +22,7 @@ parser.add_option("-s","--slideSize",dest="slideSize",help="default infile2_infi
 parser.add_option("-m","--minlength",dest="minlength")
 parser.add_option("-j","--outjoin_innerjoin",dest="outjoin_innerjoin",default="o")
 parser.add_option("-o","--outputpath",dest="outputpath")
-parser.add_option("-d","--mindepth",dest="mindepth",help="mindepth to judge fixed")
+# parser.add_option("-d","--mindepth",dest="mindepth",help="mindepth to judge fixed")
 parser.add_option("-F","--considerFixdifferentinFSTcaculate",dest="considerFixdifferentinFSTcaculate",action="store_true",default=False)
 parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", default=True,
@@ -139,8 +139,7 @@ class Fst():
                 elif re.search(r"pool[^/]+",fstpaire[1])!=None:
                     MethodToSeqpop2="pool"
                 fst_caculator = Caculators.Caculate_Fst(MethodToSeqpop1=MethodToSeqpop1, MethodToSeqpop2=MethodToSeqpop2)
-                fst_caculator.pop1_indvds=int(options.mindepth)
-                fst_caculator.pop2_indvds=int(options.mindepth)
+
                 if options.considerFixdifferentinFSTcaculate:
                     fst_caculator.considerfixdiffinfst=True
 #                 fst = Fst() 
@@ -258,8 +257,7 @@ class Fst():
                         MethodToSeqpop2="pool"
                     FstMapByChrom={}
                     fst_caculator = Caculators.Caculate_Fst(MethodToSeqpop1=MethodToSeqpop1, MethodToSeqpop2=MethodToSeqpop2)
-                    fst_caculator.pop2_indvds=int(options.mindepth)
-                    fst_caculator.pop1_indvds=int(options.mindepth)
+
                     if options.considerFixdifferentinFSTcaculate:
                         fst_caculator.considerfixdiffinfst=True
                     fstlist.append(self.caculateFstAccordingdb(FstMapByChrom,self.dbtools, self.chromtable, majorpop, othrpop, fst_caculator, self.windowWidth,self.slideSize,self.minlength))    
@@ -332,6 +330,18 @@ class Fst():
     def caculateFstAccordingdb(self,FstMapByChrom,dbtools,chromstable,vcfNAME_POP1,vcfNAME_POP2,fst_caculator,winwidth,slideSize,minlengthOfchrom):
         pop1 = VCFutil.VCF_Data(vcfNAME_POP1)  # new a class
         pop2 = VCFutil.VCF_Data(vcfNAME_POP2)  # new a class
+        if fst_caculator.MethodToSeqpop1=="indvd":
+            fst_caculator.pop1_indvdsormediandepth=2*(len(pop1.VcfIndexMap["title"])-9)
+        elif fst_caculator.MethodToSeqpop1=="pool":
+#             tempf=open(self.depthfilenames[vcfNAME_POP1][0]+".sample_summary","r")
+#             for templine in tempf:
+#                 if 
+#             tempf.
+            fst_caculator.pop1_indvdsormediandepth=20
+        if fst_caculator.MethodToSeqpop2=="indvd":
+            fst_caculator.pop2_indvdsormediandepth=2*(len(pop2.VcfIndexMap["title"])-9)
+        elif fst_caculator.MethodToSeqpop2=="pool":
+            fst_caculator.pop2_indvdsormediandepth=20
 #         print("select count(*) from "+chromstable+" where chrlength>="+minlengthOfchrom)
         totalChroms = dbtools.operateDB("select","select count(*) from "+chromstable+" where chrlength>="+minlengthOfchrom)[0][0]
         ########################### caculate Fst across all vcf file and fill in self.FstMapByChrom 

@@ -436,8 +436,8 @@ class Caculate_Fst(Caculator):
         self.depthobjmap=None
         self.species_idx_map=None
         self.currentchrID=None
-        self.pop1_indvds=6#when pop1 is none at a pos,and no depth information
-        self.pop2_indvds=6
+        self.pop1_indvdsormediandepth=None#=6#when pop1 is none at a pos,and no depth information
+        self.pop2_indvdsormediandepth=None#=6
     def process(self, T, seqerrorrate=0.01):
         """T=[pos,ref,alt,pop1,pop2]"""
         if len(T[1]) != len(T[2]) or len(T[2])!=1  or len(T[2])!=1:
@@ -460,15 +460,15 @@ class Caculate_Fst(Caculator):
         if self.MethodToSeqpop1 == "pool":              
             if pop1==None:
                 if self.depthobjmap==None:
-                    refdep_1=self.pop1_indvds
+                    refdep_1=self.pop1_indvdsormediandepth
                     altalleledep_1=0
                 else:
                     depth_linelist=self.depthobjmap["vcfpop1_ref"].getdepthByPos_optimized(self.currentchrID,T[0])#  re.split(r"\t",self.depthforcurrentchrom["vcfpop1_ref"][int(T[0])-1])
                     sum_depth=0
                     for idx in self.species_idx_map["vcfpop1_ref"]:
                         sum_depth+=int(depth_linelist[idx])
-                    if sum_depth>=self.pop1_indvds:
-                        refdep_1=self.pop1_indvds
+                    if sum_depth>=self.pop1_indvdsormediandepth:
+                        refdep_1=self.pop1_indvdsormediandepth
                         altalleledep_1=0
                     else:
                         return
@@ -486,18 +486,20 @@ class Caculate_Fst(Caculator):
         elif self.MethodToSeqpop1 == "indvd":
             if pop1==None:
                 if self.depthobjmap==None:
-                    refdep_1=self.pop1_indvds
+                    refdep_1=self.pop1_indvdsormediandepth
                     altalleledep_1=0
                 else:
                     depth_linelist=self.depthobjmap["vcfpop1_ref"].getdepthByPos_optimized(self.currentchrID,int(T[0]))#re.split(r"\t",self.depthforcurrentchrom["vcfpop1_ref"][int(T[0])-1])
                     sum_depth=0
                     for idx in self.species_idx_map["vcfpop1_ref"]:
-                        sum_depth+=int(depth_linelist[idx])
-                    if sum_depth>=self.pop1_indvds:
-                        refdep_1=self.pop1_indvds
-                        altalleledep_1=0
-                    else:
-                        return
+                        if int(depth_linelist[idx])>4:
+                            sum_depth+=1
+#                         sum_depth+=int(depth_linelist[idx])
+#                     if sum_depth>=self.pop1_indvdsormediandepth:
+                    refdep_1=sum_depth*2
+                    altalleledep_1=0
+#                     else:
+#                         return
             else:
                 AN = int(re.search(r"AN=(\d+);", pop1[0]).group(1))
                 AC = int(re.search(r"AC=(\d+);", pop1[0]).group(1))
@@ -507,15 +509,15 @@ class Caculate_Fst(Caculator):
             
             if pop2==None:
                 if self.depthobjmap==None:
-                    refdep_2=self.pop2_indvds
+                    refdep_2=self.pop2_indvdsormediandepth
                     altalleledep_2=0
                 else:
                     depth_linelist=self.depthobjmap["vcfpop2"].getdepthByPos_optimized(self.currentchrID,int(T[0]))#re.split(r"\t",self.depthforcurrentchrom["vcfpop2"][int(T[0])-1])
                     sum_depth=0
                     for idx in self.species_idx_map["vcfpop2"]:
                         sum_depth+=int(depth_linelist[idx])
-                    if sum_depth>=self.pop2_indvds:
-                        refdep_2=self.pop2_indvds
+                    if sum_depth>=self.pop2_indvdsormediandepth:
+                        refdep_2=self.pop2_indvdsormediandepth
                         altalleledep_2=0
                     else:
                         return
@@ -533,19 +535,21 @@ class Caculate_Fst(Caculator):
         elif self.MethodToSeqpop2 == "indvd":
             if pop2==None:
                 if self.depthobjmap==None:
-                    refdep_2=self.pop2_indvds
+                    refdep_2=self.pop2_indvdsormediandepth
                     altalleledep_2=0
                 else:
                     depth_linelist=self.depthobjmap["vcfpop2"].getdepthByPos_optimized(self.currentchrID,int(T[0]))#re.split(r"\t",self.depthforcurrentchrom["vcfpop2"][int(T[0])-1])
 
                     sum_depth=0
                     for idx in self.species_idx_map["vcfpop2"]:
-                        sum_depth+=int(depth_linelist[idx])
-                    if sum_depth>=self.pop2_indvds:
-                        refdep_2=self.pop2_indvds
-                        altalleledep_2=0
-                    else:
-                        return
+                        if int(depth_linelist[idx])>4:
+                            sum_depth+=1
+#                         sum_depth+=int(depth_linelist[idx])
+#                     if sum_depth>=self.pop2_indvdsormediandepth:
+                    refdep_2=sum_depth*2
+                    altalleledep_2=0
+#                     else:
+#                         return
             else:
                 AN = int(re.search(r"AN=(\d+);", pop2[0]).group(1))
                 AC = int(re.search(r"AC=(\d+);", pop2[0]).group(1))
@@ -558,7 +562,9 @@ class Caculate_Fst(Caculator):
 #             return  # NOTICT HERE
         if refdep_1==0 and refdep_2==0:#skip both fixed as alt
             return
-        if (refdep_1==0 and altalleledep_2==0 and altalleledep_1>=self.pop1_indvds and refdep_2>=self.pop2_indvds) or (altalleledep_1==0 and refdep_2==0 and refdep_1>=self.pop1_indvds and altalleledep_2>=self.pop2_indvds):#fixed difference
+        if ((refdep_1 + altalleledep_1 - 1) * (refdep_1 + altalleledep_1))==0 or  ((refdep_2 + altalleledep_2 - 1) * (refdep_2 + altalleledep_2))==0:
+            return
+        if (refdep_1==0 and altalleledep_2==0 and altalleledep_1>=self.pop1_indvdsormediandepth and refdep_2>=self.pop2_indvdsormediandepth) or (altalleledep_1==0 and refdep_2==0 and refdep_1>=self.pop1_indvdsormediandepth and altalleledep_2>=self.pop2_indvdsormediandepth):#fixed difference
             self.COUNTED[1]+=1
             if self.considerfixdiffinfst:
                 print(T,"fixdifferent in Fst")

@@ -67,7 +67,7 @@ if __name__ == '__main__':
                 VCFutil.VCF_Data.Vcf2Ped(outputprefix+".vcf",outputprefix,software,vcfdata.VcfIndexMap)
                 print("plink",i)
                 
-                os.system(pathtoplink+" --file "+outputprefix +" --r2 --ld-window-kb "+options.ldwinkb+" --ld-window "+options.ldwin)
+                os.system(pathtoplink+" --file "+outputprefix +" --ld-window-r2 0 --r2 --ld-window-kb "+options.ldwinkb+" --ld-window "+options.ldwin)
                 os.system("mv plink.ld plink_part"+str(outputfilepart)+".ld")
                 os.system("rm "+outputprefix+"*")
                 tempvcffile=open(outputprefix+".vcf","w")
@@ -80,7 +80,7 @@ if __name__ == '__main__':
         if (i%len(chromlisttosub))>1:
             tempvcffile.close()
             VCFutil.VCF_Data.Vcf2Ped(outputprefix+".vcf",outputprefix,software,vcfdata.VcfIndexMap)
-            os.system(pathtoplink+" --file "+outputprefix +" --r2 --ld-window-kb "+options.ldwinkb+" --ld-window "+options.ldwin)
+            os.system(pathtoplink+" --file "+outputprefix +" --ld-window-r2 0 --r2 --ld-window-kb "+options.ldwinkb+" --ld-window "+options.ldwin)
             os.system("mv plink.ld plink_part"+str(outputfilepart)+".ld")
 #             os.system("rm "+outputprefix+"*")
         
