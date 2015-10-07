@@ -86,13 +86,13 @@ class AncestralAlleletabletools():
         elif re.search(r"pool[^/]+",vcffilename)!=None:
             print("pool")
 #             colslist=vcfChromIndex["title"][9:]
-            colslist=["AF"]
+            colslist=["AF","DP"]
             for col in colslist:
                 print("col name",col,"adding to mysql databases")
                 self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, tablename, col, "char(128)", "default null"))
-            a=os.system("""awk '$0!~/#/&&length($5)==1{OFS="\t";print $1,$2,$3,$4,$5,$10}' """+vcffilename+""" |awk '{OFS="\t";split($6,myarr,":");split(myarr[2],mydep,",");print $1,$2,$3,$4,$5,mydep[2]/(mydep[1]+mydep[2])}'>"""+vcffilename+"tempstep1")
+            a=os.system("""awk '$0!~/#/&&length($5)==1{OFS="\t";print $1,$2,$3,$4,$5,$10}' """+vcffilename+""" |awk '{OFS="\t";split($6,myarr,":");split(myarr[2],mydep,",");print $1,$2,$3,$4,$5,mydep[2]/(mydep[1]+mydep[2]),(myarr[3])}'>"""+vcffilename+"tempstep1")
             if a!=0:
-                print("""awk '$0!~/#/&&length($5)==1{OFS="\t";print $1,$2,$3,$4,$5,$10}' """+vcffilename+""" |awk '{OFS="\t";split($6,myarr,":");split(myarr[2],mydep,",");print $1,$2,$3,$4,$5,mydep[2]/(mydep[1]+mydep[2])}'>"""+vcffilename+"tempstep1")    
+                print("""awk '$0!~/#/&&length($5)==1{OFS="\t";print $1,$2,$3,$4,$5,$10}' """+vcffilename+""" |awk '{OFS="\t";split($6,myarr,":");split(myarr[2],mydep,",");print $1,$2,$3,$4,$5,mydep[2]/(mydep[1]+mydep[2]),(myarr[3])}'>"""+vcffilename+"tempstep1")    
         else:
             print("skip",vcffilename)
             return

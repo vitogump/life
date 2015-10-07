@@ -15,6 +15,8 @@ import src.NGS.BasicUtil.DBManager as dbm
 parser = OptionParser()
 parser.add_option("-t","--toplevelsnptable",dest="toplevelsnptable",default="ducksnp_toplevel",help="depth of the folder to output")
 parser.add_option("-m","--minlength",dest="minlength",help="require least chrom length")
+parser.add_option("-q","--quantizing",dest="quantizing",action="append",help="select from some first param of -v ")
+parser.add_option("-n","--noofindvds2quantizing",dest="noofindvds2quantizing",help="together with -q ")
 parser.add_option("-C","--countsnpnumberfromvcf",dest="countsnpnumberfromvcf",default=None)
 parser.add_option("-d","--snpperkb",dest="snpperkb")
 parser.add_option("-o","--outputfilename",dest="outputfilename")
@@ -22,25 +24,37 @@ parser.add_option("-v", "--vcftablelist", dest="vcftablelist",action="append",de
 (options, args) = parser.parse_args()
 minlength=options.minlength;toplevelsnptable=options.toplevelsnptable;snpperkb=float(options.snpperkb);vcftableslist=options.vcftablelist#minAN=options.minAN
 dadisnpfile=open(options.outputfilename+"dilutetodensity"+options.snpperkb.strip(),'w')
-outgroupidx_in_topleveltable=[6,8];minoutgroupdepth=30
+outgroupidx_in_topleveltable=[8];minoutgroupdepth=35
 randomnamefile_recordchr=Util.random_str(8)
 randomnamef_recchr=open(randomnamefile_recordchr,"w")
-# if os.countsnpnumberfromvcf !=None:
-#     vcftocount=open()
+noofindvds2quantizing=int(options.noofindvds2quantizing)
 if __name__ == '__main__':
     genomedbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname)
     dbvariantstools=dbm.DBTools(Util.ip, Util.username,Util.password, Util.vcfdbname)
     toplevelsnptable_titlelist=[a[0].strip() for a in dbvariantstools.operateDB("select", "select column_name  from information_schema.columns where table_schema='" + "ninglabvariantdata" + "' and table_name='" + toplevelsnptable + "'")]
     selectedchroms=genomedbtools.operateDB("select","select * from "+Util.pekingduckchromtable+" where chrlength>="+minlength)
     ######################## title print ##############################
-    print(Util.pekingduckchromtable[:9],toplevelsnptable_titlelist[outgroupidx_in_topleveltable[0]][:6]+toplevelsnptable_titlelist[outgroupidx_in_topleveltable[1]][:6],"Allele1",sep="\t",end="\t",file=dadisnpfile)
+#     print(Util.pekingduckchromtable[:9],toplevelsnptable_titlelist[outgroupidx_in_topleveltable[0]][:6]+toplevelsnptable_titlelist[outgroupidx_in_topleveltable[1]][:6],"Allele1",sep="\t",end="\t",file=dadisnpfile)
+    print(Util.pekingduckchromtable[:9],toplevelsnptable_titlelist[outgroupidx_in_topleveltable[0]][:8],"Allele1",sep="\t",end="\t",file=dadisnpfile)
+    vcftablesidxlist_toquantizing=[]
+    idx=0
     for vcftable_name,minAN in vcftableslist:
+        if options.quantizing!=None:
+            for quantizingvcftable in options.quantizing:
+                if quantizingvcftable.strip()==vcftable_name.strip():
+                    vcftablesidxlist_toquantizing.append(idx)
+        idx+=1
         popName=re.split(r'_',vcftable_name)[0]
         print(popName,end="\t",file=dadisnpfile)
+    print("vcftablesidxlist_toquantizing",vcftablesidxlist_toquantizing)
+    if options.quantizing!=None:
+        print("quantizpool",end="\t",file=dadisnpfile)
     print("Allele2",end="\t",file=dadisnpfile)
     for vcftable_name,minAN in vcftableslist:
         popName=re.split(r'_',vcftable_name)[0]
         print(popName,end="\t",file=dadisnpfile)
+    if options.quantizing!=None:
+        print("quantizpool",end="\t",file=dadisnpfile)
     print("Gene\tPosition",file=dadisnpfile)
     ############               finish title print ##################################
     totallength=0
@@ -55,14 +69,39 @@ if __name__ == '__main__':
         sqlselectstatementpart="select t.*"
 #         sqlfromstatementpart=" from "+toplevelsnptable+" as t "
         for vcftable,minAN in vcftableslist:
-            sqlselectstatementpart=sqlselectstatementpart+","+vcftable.strip()+".AC as "+vcftable+"_AC,"+vcftable.strip()+".AN as "+vcftable+"_AN"
+            if re.search(r"indvd[^/]+",vcftable)!=None:
+                sqlselectstatementpart=sqlselectstatementpart+","+vcftable.strip()+".AC as "+vcftable+"_AC,"+vcftable.strip()+".AN as "+vcftable+"_AN"
+            elif re.search(r"pool[^/]+",vcftable)!=None:
+                sqlselectstatementpart=sqlselectstatementpart+",floor("+vcftable.strip()+".AF*"+minAN+") as "+vcftable+"_AC,"+minAN+" as "+vcftable+"_AN"
         sqlselectstatementpart+=" from "+toplevelsnptable+" as t "
         for vcftable,minAN in vcftableslist:
-            sqlselectstatementpart=sqlselectstatementpart+" inner join "+vcftable.strip()+" using(chrID,snp_pos)"
-        sqlselectstatementpart=sqlselectstatementpart+" where chrID='"+currentchrID+"' and t.context is not null and length(t.ref_base)=length(t.alt_base)  and (t."+toplevelsnptable_titlelist[outgroupidx_in_topleveltable[0]+1] +" regexp '^0,[1234567890]+' or t."+toplevelsnptable_titlelist[outgroupidx_in_topleveltable[0]+1] +" regexp '[1234567890]+,0$' or t."+toplevelsnptable_titlelist[outgroupidx_in_topleveltable[1]+1]+" regexp '^0,[1234567890]+' or t."+toplevelsnptable_titlelist[outgroupidx_in_topleveltable[1]+1]+" regexp '[1234567890]+,0$')"
+            sqlselectstatementpart=sqlselectstatementpart+" left join "+vcftable.strip()+" using(chrID,snp_pos)"
+#         print("either fanya or weigeon are fixed")
+#         sqlselectstatementpart=sqlselectstatementpart+" where chrID='"+currentchrID+"' and t.context is not null and length(t.ref_base)=length(t.alt_base)  and (t."+toplevelsnptable_titlelist[outgroupidx_in_topleveltable[0]+1] +" regexp '^0,[1234567890]+' or t."+toplevelsnptable_titlelist[outgroupidx_in_topleveltable[0]+1] +" regexp '[1234567890]+,0$' or t."+toplevelsnptable_titlelist[outgroupidx_in_topleveltable[1]+1]+" regexp '^0,[1234567890]+' or t."+toplevelsnptable_titlelist[outgroupidx_in_topleveltable[1]+1]+" regexp '[1234567890]+,0$')"
+        sqlselectstatementpart=sqlselectstatementpart+" where chrID='"+currentchrID+"' and t.context is not null and length(t.ref_base)=length(t.alt_base)  and (t."+toplevelsnptable_titlelist[outgroupidx_in_topleveltable[0]+1] +" regexp '^0,[1234567890]+' or t."+toplevelsnptable_titlelist[outgroupidx_in_topleveltable[0]+1] +" regexp '[1234567890]+,0$')"# or t."+toplevelsnptable_titlelist[outgroupidx_in_topleveltable[1]+1]+" regexp '^0,[1234567890]+' or t."+toplevelsnptable_titlelist[outgroupidx_in_topleveltable[1]+1]+" regexp '[1234567890]+,0$')"
         for vcftable,minAN in vcftableslist:
-            sqlselectstatementpart=sqlselectstatementpart+" and "+vcftable+".AN >="+minAN
-        
+            if re.search(r"indvd[^/]+",vcftable)!=None:
+                sqlselectstatementpart=sqlselectstatementpart+" and ("+vcftable+".AN >="+minAN+" or "+vcftable+".AN is NULL) "
+            elif re.search(r"pool[^/]+",vcftable)!=None:
+                sqlselectstatementpart=sqlselectstatementpart+" and ("+vcftable+".DP >="+str(int(minAN)*1.5) +" or "+vcftable+".DP is NULL) "
+        sqlselectstatementpart=sqlselectstatementpart+" and ( 0 "
+        for idx in vcftablesidxlist_toquantizing:
+            if re.search(r"indvd[^/]+",vcftableslist[idx][0])!=None:
+                sqlselectstatementpart=sqlselectstatementpart+" or "+vcftableslist[idx][0]+".AN is not NULL"
+            elif re.search(r"pool[^/]+",vcftableslist[idx][0])!=None:
+                sqlselectstatementpart=sqlselectstatementpart+" or "+vcftableslist[idx][0]+".AF is not NULL"
+        sqlselectstatementpart+=") and (0 "
+        idx=0
+        for vcftable,minAN in vcftableslist:
+            if idx in vcftablesidxlist_toquantizing:
+                idx+=1
+                continue
+            idx+=1
+            if re.search(r"indvd[^/]+",vcftable)!=None:
+                sqlselectstatementpart=sqlselectstatementpart+" or "+vcftable+".AN is not NULL"
+            elif re.search(r"pool[^/]+",vcftable)!=None:
+                sqlselectstatementpart=sqlselectstatementpart+" or "+vcftable+".AF is not NULL"
+        sqlselectstatementpart+=")"
         allsnpOfJoinTableinAchr=dbvariantstools.operateDB("select",sqlselectstatementpart)
         if len(allsnpOfJoinTableinAchr)>int(currentchrLen*snpperkb)/1000:
             
@@ -105,7 +144,7 @@ if __name__ == '__main__':
                     sampled_idx_find_satisfied=sampled_idx
                 else:
 #                     firstoutgroupbase=allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][outgroupidx_in_topleveltable[0]].upper().strip();firstoutgroupdepthlist=re.split(r",",allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][outgroupidx_in_topleveltable[0]+1])
-                    secondoutgroupbase=allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][outgroupidx_in_topleveltable[1]].upper().strip();secondoutgroupdepthlist=re.split(r",",allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][outgroupidx_in_topleveltable[1]+1])
+                    secondoutgroupbase=allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][outgroupidx_in_topleveltable[0]].upper().strip();secondoutgroupdepthlist=re.split(r",",allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][outgroupidx_in_topleveltable[0]+1])
                     ALT=allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][4].upper().strip()                    
                 if len(secondoutgroupdepthlist)==2 and int(secondoutgroupdepthlist[1])>=minoutgroupdepth and secondoutgroupdepthlist[0].strip()=="0":
                     A_base_idx=1;continuesearch=2
@@ -123,12 +162,7 @@ if __name__ == '__main__':
                     print("skip this snp,coverage not sufficent or different direction",allsnpOfJoinTableinAchr[sampled_idx_find_satisfied])
                     sampled_idx_find_satisfied+=direction
                 #########
-         
-
-                            
-             
             else:#find
-                
                 duiltedsnpcountforcurrentchr+=1
                 print("find",allsnpOfJoinTableinAchr[sampled_idx_find_satisfied])
                 contextwithinspeces=allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][5].upper()
@@ -138,11 +172,31 @@ if __name__ == '__main__':
                 REF=allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][3].upper()
                 postion=allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][1]
                 print(contextwithinspeces,contextoutgroup,REF,sep="\t",end="\t",file=dadisnpfile)
+                k=0;l=0
                 for vcftable_idx in range(len(vcftableslist)):
-                    print(str(int(allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][len(toplevelsnptable_titlelist)+vcftable_idx*2+1])-int(allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][len(toplevelsnptable_titlelist)+vcftable_idx*2])),end="\t",file=dadisnpfile)
+                    if allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][len(toplevelsnptable_titlelist)+vcftable_idx*2]!=None:#AC IS NOT NULL
+                        print(str(int(allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][len(toplevelsnptable_titlelist)+vcftable_idx*2+1])-int(allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][len(toplevelsnptable_titlelist)+vcftable_idx*2])),end="\t",file=dadisnpfile)#AN - AC
+                        if options.quantizing!=None and vcftable_idx in vcftablesidxlist_toquantizing:
+                            k+=int(round((int(allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][len(toplevelsnptable_titlelist)+vcftable_idx*2+1])-int(allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][len(toplevelsnptable_titlelist)+vcftable_idx*2]))*(round(noofindvds2quantizing/len(options.quantizing))/int(allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][len(toplevelsnptable_titlelist)+vcftable_idx*2+1]))))#(AN-AC)*()
+                    else:#FIXED AS REF,the no of ref alle is vcftableslist[vcftable_idx][1] that is arbitrarily assigned,but dadi will projection it into 26,so any no greater than 26 is ok
+                        print(vcftableslist[vcftable_idx][1],end="\t",file=dadisnpfile)
+                        if options.quantizing!=None and vcftable_idx in vcftablesidxlist_toquantizing:
+                            k+=int(round(int(vcftableslist[vcftable_idx][1])*(round(noofindvds2quantizing/len(options.quantizing))/int(vcftableslist[vcftable_idx][1]))))
+                if options.quantizing!=None:
+                    print(str(k),end="\t",file=dadisnpfile)
+                        
                 print(ALT,end="\t",file=dadisnpfile)
                 for vcftable_idx in range(len(vcftableslist)):
-                    print(allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][len(toplevelsnptable_titlelist)+vcftable_idx*2],end="\t",sep="\t",file=dadisnpfile)
+                    if allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][len(toplevelsnptable_titlelist)+vcftable_idx*2]!=None:
+                        print(str(int(allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][len(toplevelsnptable_titlelist)+vcftable_idx*2])),end="\t",sep="\t",file=dadisnpfile)
+                        if options.quantizing!=None and vcftable_idx in vcftablesidxlist_toquantizing:
+                            l+=int(round(int(allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][len(toplevelsnptable_titlelist)+vcftable_idx*2])*(round(noofindvds2quantizing/len(options.quantizing))/int(allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][len(toplevelsnptable_titlelist)+vcftable_idx*2+1]))))  
+                    else:
+                        print("0",end="\t",file=dadisnpfile)
+                        if options.quantizing!=None and vcftable_idx in vcftablesidxlist_toquantizing:
+                            l+=0
+                if options.quantizing!=None:
+                    print(str(l),end="\t",file=dadisnpfile)
                 print(currentchrID.replace(".","_"),postion,sep="\t",file=dadisnpfile)
         if options.countsnpnumberfromvcf!=None:
             totalduiltsnp+=duiltedsnpcountforcurrentchr

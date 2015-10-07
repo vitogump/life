@@ -2,7 +2,7 @@ import dadi,numpy,pylab,re
 from numpy import array
 from optparse import OptionParser
 parser = OptionParser()
-parser.add_option("-n", "--popname", dest="popname",action="append",help="fs file name ")
+parser.add_option("-n", "--popname", dest="popname",action="append",nargs=2,help="fs file name ")
 parser.add_option("-f", "--fsfile", dest="fsfile",help="fs file name ")
 parser.add_option("-m", "--model", dest="model",help="1,model1 2,model2 ....")
 parser.add_option("-p","--parameters",dest="parameters",action="append",nargs=4,help="""parametername initvalue lower upper
@@ -13,8 +13,13 @@ parser.add_option("-t", "--tag",
 (options, args) = parser.parse_args()
 # fsdata=dadi.Spectrum.from_file(options.fsfile)
 dd=dadi.Misc.make_data_dict(options.fsfile)
+popnamelist=[]
+projectionlist=[]
+for popname,projection in options.popname:
+    popnamelist.append(popname)
+    projectionlist.append(int(projection))
 print(options.popname)
-fsdata=dadi.Spectrum.from_data_dict(dd,pop_ids=options.popname,polarized=True,projections=[26]*len(options.popname))
+fsdata=dadi.Spectrum.from_data_dict(dd,pop_ids=popnamelist,polarized=True,projections=projectionlist)
 def split_mig_1_w_bottleneck(params,ns,pts):
     nuA,nuM,nuP,TA,TS,m12,m21=params
     xx=dadi.Numerics.default_grid(pts)
@@ -352,10 +357,10 @@ print 'title:theta,ll_opt',paramsname
 print 'Optimized parameters', repr([theta,ll_opt,popt])
  
 namestr=""
-for name in options.popname:
+for name in popnamelist:
     namestr+=name
 
-if len(options.popname)==2:
+if len(popnamelist)==2:
     pylab.figure()
     dadi.Plotting.plot_single_2d_sfs(fsdata,vmin=1)
     pylab.show()
@@ -374,7 +379,7 @@ if len(options.popname)==2:
     dadi.Plotting.plot_2d_comp_Poisson(model,fsdata,vmin=1)
     pylab.show()
     pylab.savefig('compare_Poisson_split'+namestr+options.tag+options.model+'.png', dpi=100)
-elif len(options.popname)==3:
+elif len(popnamelist)==3:
     pylab.figure()
     dadi.Plotting.plot_3d_comp_Poisson(model,fsdata,vmin=1)
     pylab.show()

@@ -12,9 +12,9 @@ from NGS.BasicUtil import Util, VCFutil
 parser = OptionParser()
 parser.add_option("-i", "--interval", dest="interval", nargs=3,
                   help="minvalue maxvalue breaks", metavar="FILE")
-parser.add_option("-v", "--vcffilename", dest="vcffilename",action="append",nargs=2,help="vcffilename multiple")
+# parser.add_option("-v", "--vcffilename", dest="vcffilename",action="append",nargs=2,help="vcffilename multiple")
 parser.add_option("-o","--outfileprename",dest="outfileprename",help="outfilepreName with path")
-parser.add_option("-b","--bedlikefile",dest="bedlikefile",action="append",help="mindepth for both archicpop and ancestralallel")#
+parser.add_option("-b","--bedlikefile",dest="bedlikefile",action="append",nargs=3,help="bedlikefile vcffilename depthfile")#
 parser.add_option("-C","--cdsfile",action="append",dest="cdsfiles",nargs=2,default=[],help="file depthfile")#
 parser.add_option("-U","--utrfile",action="append",dest="utrfiles",nargs=2,default=[],help="file depthfile")#
 parser.add_option("-I","--intronfile",action="append",dest="intronfiles",nargs=2,default=[],help="file depthfile")#
