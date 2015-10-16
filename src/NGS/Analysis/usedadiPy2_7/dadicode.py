@@ -2,8 +2,9 @@ import dadi,numpy,pylab,re
 from numpy import array
 from optparse import OptionParser
 parser = OptionParser()
-parser.add_option("-n", "--popname", dest="popname",action="append",nargs=2,help="fs file name ")
+parser.add_option("-n", "--popname", dest="popname",action="append",nargs=2,help="fs_file_name projection")
 parser.add_option("-f", "--fsfile", dest="fsfile",help="fs file name ")
+parser.add_option("-b", "--bootstrap", dest="bootstrap",default=False,help="fs file name ")
 parser.add_option("-m", "--model", dest="model",help="1,model1 2,model2 ....")
 parser.add_option("-p","--parameters",dest="parameters",action="append",nargs=4,help="""parametername initvalue lower upper
                                                                                                                 red   blue""")
@@ -214,11 +215,11 @@ def splitdom_splitwild_3d(params,ns,pts):
     phi=dadi.Integration.three_pops(phi,xx,TS2,nu1=nuM,nu3=nuB,nu2=nuP,m12=mMP,m21=mPM,m13=mMB,m31=mBM,m23=mPB,m32=mBP)
     fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx,xx))
     return fs
-def split_mig_1_w_bottleneck_split_domedcrease_increaseAfterBottle_wild_bottle_split_3d(params,ns,pts):
-    nuA,nuP,nuW0,nuWb,nuM,nuS,nuP0,nuP1,nuPb,nuP,nuS,TA,TS1,TBW,TS2,TBP,m12,m21,mMB,mBM,mBP,mPB,mMP,mPM=params
-    xx=dadi.Numerics.default_grid(pts)
-    phi=dadi.PhiManip.phi_1D(xx)
-    unfinished
+# def split_mig_1_w_bottleneck_split_domedcrease_increaseAfterBottle_wild_bottle_split_3d(params,ns,pts):
+#     nuA,nuP,nuW0,nuWb,nuM,nuS,nuP0,nuP1,nuPb,nuP,nuS,TA,TS1,TBW,TS2,TBP,m12,m21,mMB,mBM,mBP,mPB,mMP,mPM=params
+#     xx=dadi.Numerics.default_grid(pts)
+#     phi=dadi.PhiManip.phi_1D(xx)
+#     unfinished
 def splitdom_splitwild_bottledom_3d(params,ns,pts):
     nuA,nuP,s1,s2,TA,TS1,TS2,TBP,m12,m21,mMB,mBM,mBP,mPB,mMP,mPM=params
     xx=dadi.Numerics.default_grid(pts)
@@ -337,6 +338,47 @@ print 'upper_bound',repr(upper_bound)
 print 'lower_bound',repr(lower_bound)
 print 'params',repr(params)
 print 'paramsname',paramsname
+ll_param_MAPlist={}
+namestr=""
+for name in popnamelist:
+    namestr+=name
+if options.bootstrap>=10:
+    of=open(namestr+options.tag+".bootstrap","w")
+    for name in paramsname:
+        ll_param_MAPlist[name]=[]
+    ll_param_MAPlist["likelihood"]=[]
+    for i in range(int(options.bootstrap)):
+        print  "cycly ",i
+        try:
+            func_ex=dadi.Numerics.make_extrap_func(func)
+            p0=dadi.Misc.perturb_params(params,lower_bound=lower_bound,upper_bound=upper_bound)
+            popt=dadi.Inference.optimize_log(p0,fsdata,func_ex,pts_1,lower_bound=lower_bound,upper_bound=upper_bound,verbose=len(params))
+            model=func_ex(popt,ns,pts_1)
+            theta=dadi.Inference.optimal_sfs_scaling(model,fsdata)
+            ll_opt=dadi.Inference.ll_multinom(model,fsdata)
+            Nref=theta/(4*9.97e-10*480650.4721472733)
+            for i in range(len(popt)):
+                if re.search(r"^T",paramsname[i])!=None:
+                    ll_param_MAPlist[paramsname[i]].append(Nref*popt[i]*2)
+                elif re.search(r"^m",paramsname[i])!=None:
+                    ll_param_MAPlist[paramsname[i]].append(popt[i]/(Nref*2))
+                else:
+                    ll_param_MAPlist[paramsname[i]].append(popt[i]/(Nref*2))
+            ll_param_MAPlist["likelihood"].append(ll_opt)
+        except:
+            continue
+    for a in sorted(ll_param_MAPlist.keys()):
+        print >>of,a,
+    else:
+        print >>of,""
+    for i in range(len(ll_param_MAPlist["likelihood"])):
+        for a in sorted(ll_param_MAPlist.keys()):
+            print >>of,ll_param_MAPlist[a],
+        else:
+            print >>of,""
+
+    of.close()
+    exit()
 func_ex=dadi.Numerics.make_extrap_func(func)
 p0=dadi.Misc.perturb_params(params,lower_bound=lower_bound,upper_bound=upper_bound)
 popt=dadi.Inference.optimize_log(p0,fsdata,func_ex,pts_1,lower_bound=lower_bound,upper_bound=upper_bound,verbose=len(params))
@@ -344,7 +386,7 @@ model=func_ex(popt,ns,pts_1)
 theta=dadi.Inference.optimal_sfs_scaling(model,fsdata)
 print theta
 ll_opt=dadi.Inference.ll_multinom(model,fsdata)
-Nref=theta/(4*9.97e-10*277919.59937328956)
+Nref=theta/(4*9.97e-10*480650.4721472733)
 print 'Nref',Nref
 for i in range(len(popt)):
     if re.search(r"^T",paramsname[i])!=None :
@@ -356,9 +398,7 @@ for i in range(len(popt)):
 print 'title:theta,ll_opt',paramsname
 print 'Optimized parameters', repr([theta,ll_opt,popt])
  
-namestr=""
-for name in popnamelist:
-    namestr+=name
+
 
 if len(popnamelist)==2:
     pylab.figure()

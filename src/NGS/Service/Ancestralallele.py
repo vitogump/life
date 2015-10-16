@@ -84,7 +84,7 @@ class AncestralAlleletabletools():
                 print("error",""" awk '$0!~/#/&&length($5)==1 {OFS="\t";print $1,$2,$3,$4,$5,$8}' """+vcffilename+""" |awk '{OFS="\t";split($6,myarr,";");print $1,$2,$3,$4,$5,myarr[1],myarr[2],myarr[3]}' |sed 's/AC=//g'|sed 's/AF=//g'|sed 's/AN=//g'|awk '{OFS="\t";if($7==1){$7=1};print $0}' > """+vcffilename+"tempstep1")
         
         elif re.search(r"pool[^/]+",vcffilename)!=None:
-            print("pool")
+            print("pool if NF>10 need recode the programm")
 #             colslist=vcfChromIndex["title"][9:]
             colslist=["AF","DP"]
             for col in colslist:

@@ -19,9 +19,11 @@ parser.add_option("-q","--quantizing",dest="quantizing",action="append",help="se
 parser.add_option("-n","--noofindvds2quantizing",dest="noofindvds2quantizing",help="together with -q ")
 parser.add_option("-C","--countsnpnumberfromvcf",dest="countsnpnumberfromvcf",default=None)
 parser.add_option("-d","--snpperkb",dest="snpperkb")
+parser.add_option("-j","--joinmanner",dest="joinmanner")
 parser.add_option("-o","--outputfilename",dest="outputfilename")
 parser.add_option("-v", "--vcftablelist", dest="vcftablelist",action="append",default=[],nargs=2,help="")
 (options, args) = parser.parse_args()
+joinmanner=" "+options.joinmanner+" join "
 minlength=options.minlength;toplevelsnptable=options.toplevelsnptable;snpperkb=float(options.snpperkb);vcftableslist=options.vcftablelist#minAN=options.minAN
 dadisnpfile=open(options.outputfilename+"dilutetodensity"+options.snpperkb.strip(),'w')
 outgroupidx_in_topleveltable=[8];minoutgroupdepth=35
@@ -67,30 +69,47 @@ if __name__ == '__main__':
         currentchrLen=int(row[1])
         totallength+=currentchrLen
         sqlselectstatementpart="select t.*"
+        sqlselectstatementpart_count="select count(*) "
 #         sqlfromstatementpart=" from "+toplevelsnptable+" as t "
         for vcftable,minAN in vcftableslist:
             if re.search(r"indvd[^/]+",vcftable)!=None:
                 sqlselectstatementpart=sqlselectstatementpart+","+vcftable.strip()+".AC as "+vcftable+"_AC,"+vcftable.strip()+".AN as "+vcftable+"_AN"
+#                 sqlselectstatementpart_count=sqlselectstatementpart_count+","+vcftable.strip()+".AC as "+vcftable+"_AC,"+vcftable.strip()+".AN as "+vcftable+"_AN"
             elif re.search(r"pool[^/]+",vcftable)!=None:
                 sqlselectstatementpart=sqlselectstatementpart+",floor("+vcftable.strip()+".AF*"+minAN+") as "+vcftable+"_AC,"+minAN+" as "+vcftable+"_AN"
+#                 sqlselectstatementpart_count=sqlselectstatementpart_count+",floor("+vcftable.strip()+".AF*"+minAN+") as "+vcftable+"_AC,"+minAN+" as "+vcftable+"_AN"
         sqlselectstatementpart+=" from "+toplevelsnptable+" as t "
+        sqlselectstatementpart_count+= " from "+vcftableslist[0][0]
         for vcftable,minAN in vcftableslist:
-            sqlselectstatementpart=sqlselectstatementpart+" left join "+vcftable.strip()+" using(chrID,snp_pos)"
+            sqlselectstatementpart=sqlselectstatementpart+joinmanner+vcftable.strip()+" using(chrID,snp_pos)"
+#             sqlselectstatementpart_count=sqlselectstatementpart_count+" outer join "+vcftable.strip()+" using(chrID,snp_pos)"
+        sqlselectstatementpart_count_left=sqlselectstatementpart_count
+        sqlselectstatementpart_count_right=sqlselectstatementpart_count
+        for vcftable,minAN in vcftableslist[1:]:
+            sqlselectstatementpart_count_left=sqlselectstatementpart_count_left+" left join "+vcftable.strip()+" using(chrID,snp_pos)"
+            sqlselectstatementpart_count_right=sqlselectstatementpart_count_right+" right join "+vcftable.strip()+" using(chrID,snp_pos)"
 #         print("either fanya or weigeon are fixed")
 #         sqlselectstatementpart=sqlselectstatementpart+" where chrID='"+currentchrID+"' and t.context is not null and length(t.ref_base)=length(t.alt_base)  and (t."+toplevelsnptable_titlelist[outgroupidx_in_topleveltable[0]+1] +" regexp '^0,[1234567890]+' or t."+toplevelsnptable_titlelist[outgroupidx_in_topleveltable[0]+1] +" regexp '[1234567890]+,0$' or t."+toplevelsnptable_titlelist[outgroupidx_in_topleveltable[1]+1]+" regexp '^0,[1234567890]+' or t."+toplevelsnptable_titlelist[outgroupidx_in_topleveltable[1]+1]+" regexp '[1234567890]+,0$')"
         sqlselectstatementpart=sqlselectstatementpart+" where chrID='"+currentchrID+"' and t.context is not null and length(t.ref_base)=length(t.alt_base)  and (t."+toplevelsnptable_titlelist[outgroupidx_in_topleveltable[0]+1] +" regexp '^0,[1234567890]+' or t."+toplevelsnptable_titlelist[outgroupidx_in_topleveltable[0]+1] +" regexp '[1234567890]+,0$')"# or t."+toplevelsnptable_titlelist[outgroupidx_in_topleveltable[1]+1]+" regexp '^0,[1234567890]+' or t."+toplevelsnptable_titlelist[outgroupidx_in_topleveltable[1]+1]+" regexp '[1234567890]+,0$')"
+        sqlselectstatementpart_count_left=sqlselectstatementpart_count_left+" where chrID='"+currentchrID+"' and (length("+vcftableslist[0][0].strip()+".ref_base)=1 and length("+vcftableslist[0][0].strip()+".alt_base)=1) or ("+vcftableslist[0][0].strip()+".alt_base regexp '[ATCG],[ATCG]' and length("+vcftableslist[0][0].strip()+".ref_base)=1) "
+        sqlselectstatementpart_count_right=sqlselectstatementpart_count_right+" where chrID='"+currentchrID+"' and (length("+vcftableslist[0][0].strip()+".ref_base)=1 and length("+vcftableslist[0][0].strip()+".alt_base)=1) or ("+vcftableslist[0][0].strip()+".alt_base regexp '[ATCG],[ATCG]' and length("+vcftableslist[0][0].strip()+".ref_base)=1) "
         for vcftable,minAN in vcftableslist:
             if re.search(r"indvd[^/]+",vcftable)!=None:
                 sqlselectstatementpart=sqlselectstatementpart+" and ("+vcftable+".AN >="+minAN+" or "+vcftable+".AN is NULL) "
             elif re.search(r"pool[^/]+",vcftable)!=None:
                 sqlselectstatementpart=sqlselectstatementpart+" and ("+vcftable+".DP >="+str(int(minAN)*1.5) +" or "+vcftable+".DP is NULL) "
         sqlselectstatementpart=sqlselectstatementpart+" and ( 0 "
+
+        #variants exist in vcftablesidxlist_toquantizing
         for idx in vcftablesidxlist_toquantizing:
             if re.search(r"indvd[^/]+",vcftableslist[idx][0])!=None:
-                sqlselectstatementpart=sqlselectstatementpart+" or "+vcftableslist[idx][0]+".AN is not NULL"
+                sqlselectstatementpart=sqlselectstatementpart+" or ("+vcftableslist[idx][0]+".AF is not NULL and "+vcftableslist[idx][0]+".AF <1 )"
+
             elif re.search(r"pool[^/]+",vcftableslist[idx][0])!=None:
-                sqlselectstatementpart=sqlselectstatementpart+" or "+vcftableslist[idx][0]+".AF is not NULL"
+                sqlselectstatementpart=sqlselectstatementpart+" or ("+vcftableslist[idx][0]+".AF is not NULL and "+vcftableslist[idx][0]+".AF <1 )"
+
         sqlselectstatementpart+=") and (0 "
+        #variants exist in non vcftablesidxlist_toquantizing
         idx=0
         for vcftable,minAN in vcftableslist:
             if idx in vcftablesidxlist_toquantizing:
@@ -98,21 +117,29 @@ if __name__ == '__main__':
                 continue
             idx+=1
             if re.search(r"indvd[^/]+",vcftable)!=None:
-                sqlselectstatementpart=sqlselectstatementpart+" or "+vcftable+".AN is not NULL"
+                sqlselectstatementpart=sqlselectstatementpart+" or ("+vcftable+".AF is not NULL and "+vcftable+".AF <1 )"
             elif re.search(r"pool[^/]+",vcftable)!=None:
-                sqlselectstatementpart=sqlselectstatementpart+" or "+vcftable+".AF is not NULL"
+                sqlselectstatementpart=sqlselectstatementpart+" or ("+vcftable+".AF is not NULL and "+vcftable+".AF <1 )"
         sqlselectstatementpart+=")"
+#         sqlselectstatementpart_count+=")"
         allsnpOfJoinTableinAchr=dbvariantstools.operateDB("select",sqlselectstatementpart)
+        print(sqlselectstatementpart_count_left+" union "+sqlselectstatementpart_count_right)
+        total_no_of_snpinAchrlist=dbvariantstools.operateDB("select",sqlselectstatementpart_count_left+" union "+sqlselectstatementpart_count_right)
+        print(total_no_of_snpinAchrlist)
+        total_no_of_snpinAchr=total_no_of_snpinAchrlist[0][0]+total_no_of_snpinAchrlist[1][0]
+        print(total_no_of_snpinAchr)
         if len(allsnpOfJoinTableinAchr)>int(currentchrLen*snpperkb)/1000:
             
-            dilute = snpperkb*(currentchrLen) / (1000 * len(allsnpOfJoinTableinAchr))
+            dilute = snpperkb*(currentchrLen) / (1000 * total_no_of_snpinAchr)
             totallengthduilt=totallengthduilt+currentchrLen*dilute
             allsnpOfJoinTableinAchr_sampled_idxlist=random.sample([j for j in range(len(allsnpOfJoinTableinAchr))],int(dilute*len(allsnpOfJoinTableinAchr))+1)
             allsnpOfJoinTableinAchr_sampled_idxlist.sort()
         elif len(allsnpOfJoinTableinAchr)>0:
+            print("all snp in ",currentchrID)
             totallengthduilt+=currentchrLen
             allsnpOfJoinTableinAchr_sampled_idxlist=[j for j in range(len(allsnpOfJoinTableinAchr))]
         else:
+            print("no snp in ",currentchrID)
             totallength-=currentchrLen
             continue
 #         if options.countsnpnumberfromvcf!=None:
@@ -207,11 +234,12 @@ if __name__ == '__main__':
 
     dadisnpfile.close()
     randomnamef_recchr.close()
-    a=os.popen("grep -wFf "+randomnamefile_recordchr+" "+options.countsnpnumberfromvcf+"|grep ^[^#] - |less -S|wc -l")
+    a=os.popen("awk '$0~/#/ || length($4)==length($5) {print $0}' "+options.countsnpnumberfromvcf+" |grep -wFf "+randomnamefile_recordchr+"  - |grep ^[^#] - |less -S|wc -l")
     totalsnpforcount=int(a.readline().strip())
     print("should be none",a.readline())
     a.close()
     
-    os.system("rm "+randomnamefile_recordchr)
+    
     dulttimes=totalduiltsnp/totalsnpforcount
     print("totalduiltsnp",totalduiltsnp,"totalsnpforcount",totalsnpforcount,totallength,"real totallengthduilt",dulttimes*totallength,"totallengthduilt",totallengthduilt,"finsih")
+    os.system("rm "+randomnamefile_recordchr)

@@ -14,7 +14,7 @@ parser.add_option("-i", "--interval", dest="interval", nargs=3,
                   help="minvalue maxvalue breaks", metavar="FILE")
 # parser.add_option("-v", "--vcffilename", dest="vcffilename",action="append",nargs=2,help="vcffilename multiple")
 parser.add_option("-o","--outfileprename",dest="outfileprename",help="outfilepreName with path")
-parser.add_option("-b","--bedlikefile",dest="bedlikefile",action="append",nargs=3,help="bedlikefile vcffilename depthfile")#
+parser.add_option("-b","--bedlikefile",dest="bedlikefile",action="append",nargs=3,help="bedlikefile vcffilename minANforindvd_or_minDPforpool")#
 parser.add_option("-C","--cdsfile",action="append",dest="cdsfiles",nargs=2,default=[],help="file depthfile")#
 parser.add_option("-U","--utrfile",action="append",dest="utrfiles",nargs=2,default=[],help="file depthfile")#
 parser.add_option("-I","--intronfile",action="append",dest="intronfiles",nargs=2,default=[],help="file depthfile")#
@@ -24,7 +24,7 @@ parser.add_option("-t","--topleveltablename",dest="topleveltablename",help="spec
 pathtovcftools="/pub/tool/vcftools_0.1.12b/bin/vcftools "
 dbvariantstools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.vcfdbname)
 topleveltablename=options.topleveltablename
-mindeptojudgefix=15
+mindeptojudgefix_forancestral=30
 #####################
 VCFobj={};vcfnameKEY_depthfilename_titlenameVALUE_tojudgeancestrall={};vcfnameKEY_depthobjVALUE_tojudgeancestral={}
 VCFobj["wigeon"]=VCFutil.VCF_Data("/home/bioinfo/liurui/data/vcffiles/uniqmap/wegeon/wegeon._pool.withindel.vcf")
@@ -63,114 +63,81 @@ if __name__ == '__main__':
         MAFintervalMap_SNPcounts_template[float(linelist[0]),float(linelist[1])]=0
         AFintervalMap_SNPcounts_template[float(linelist[0]),float(linelist[1])]=0
     ######start caculate #########################
-    for bedfilename in options.bedlikefile:#each col
+    for bedfilename,vcffilename,minAN in options.bedlikefile:#each col
         DAFintervalMap_SNPcounts=copy.deepcopy(DAFintervalMap_SNPcounts_template)
         MAFintervalMap_SNPcounts=copy.deepcopy(MAFintervalMap_SNPcounts_template)
         AFintervalMap_SNPcounts=copy.deepcopy(AFintervalMap_SNPcounts_template)
         bedfilenamewithoutpath=re.search(r"[^/]*$",bedfilename).group(0)
-        filteredvcffilenamelist=[]
-        methodlist=[]
-        vcfnameKEY_depthobjVALUE={}
-        vcfnameKEY_depthfilename_titlenameVALUE={}#{ vcftablename1:[depthfilename1,name1,name2] , vcftablename2:[depthfilename2,name1,name2] } or {vcftablename1:None, vcftablename2:None}
-        for vcffilename,depthconfig in options.vcffilename:
-            if re.search(r"indvd[^/]+",vcffilename)!=None:
-                methodlist.append("indvd")
-                a=os.system(pathtovcftools+" --remove-indels --min-alleles 2 --max-alleles 2 --recode --recode-INFO AF --recode-INFO AN --bed "+bedfilename+" --vcf "+vcffilename+" --out "+vcffilename+bedfilenamewithoutpath)
-            elif re.search(r"pool[^/]+",vcffilename)!=None:
-                methodlist.append("pool")
-                a=os.system(pathtovcftools+" --remove-indels --min-alleles 2 --max-alleles 2 --recode --bed "+bedfilename+" --vcf "+vcffilename+" --out "+vcffilename+bedfilenamewithoutpath)
-            filteredvcffilenamelist.append(vcffilename+bedfilenamewithoutpath+".recode.vcf")
-            
-            if a!=0:
-                print("error")
-                exit(-1)
-            if depthconfig.lower()!="none":
-                vcfnameKEY_depthfilename_titlenameVALUE[vcffilename+bedfilenamewithoutpath+".recode.vcf"]=[]
-                fp=open(depthconfig,'r')
-                for line in fp:
-                    depthfilename_obj=re.search(r"depthfilename=(.*)",line.strip())
-                    if depthfilename_obj!=None:
-                        vcfnameKEY_depthfilename_titlenameVALUE[vcffilename+bedfilenamewithoutpath+".recode.vcf"].append(depthfilename_obj.group(1).strip())#append depthfilename1
-                        vcfnameKEY_depthobjVALUE[vcffilename+bedfilenamewithoutpath+".recode.vcf"]=Util.GATK_depthfile(vcfnameKEY_depthfilename_titlenameVALUE[vcffilename+bedfilenamewithoutpath+".recode.vcf"][0],vcfnameKEY_depthfilename_titlenameVALUE[vcffilename+bedfilenamewithoutpath+".recode.vcf"][0]+".index")
-                    elif line.split():
-                        titlename=line.strip()
-                        idx=vcfnameKEY_depthobjVALUE[vcffilename+bedfilenamewithoutpath+".recode.vcf"].title.index("Depth_for_"+titlename)
-                        vcfnameKEY_depthfilename_titlenameVALUE[vcffilename+bedfilenamewithoutpath+".recode.vcf"].append(idx)#append idxname
-                fp.close()
-        vcfobjlist=[]
+
+        if re.search(r"indvd[^/]+",vcffilename)!=None:
+            a=os.system(pathtovcftools+" --remove-indels --min-alleles 2 --max-alleles 2 --recode --recode-INFO AF --recode-INFO AN --bed "+bedfilename+" --vcf "+vcffilename+" --out "+vcffilename+bedfilenamewithoutpath)
+        elif re.search(r"pool[^/]+",vcffilename)!=None:
+            a=os.system(pathtovcftools+" --remove-indels --min-alleles 2 --max-alleles 2 --recode  --bed "+bedfilename+" --vcf "+vcffilename+" --out "+vcffilename+bedfilenamewithoutpath)
+#         filteredvcffilenamelist.append(vcffilename+bedfilenamewithoutpath+".recode.vcf")
+        
+        if a!=0:
+            print("error")
+            exit(-1)
+
         chromset=[]
-        VCFlistmapBycurchr=[]
-        for filterdvcf in filteredvcffilenamelist:#produce myindex file,vcfobj
-            vcfobjlist.append(VCFutil.VCF_Data(filterdvcf))
-            chromset+=vcfobjlist[-1].chromOrder
-            VCFlistmapBycurchr.append({})
-        chromset=list(set(chromset))
+#         VCFlistmapBycurchr=[]
+#         for filterdvcf in filteredvcffilenamelist:#produce myindex file,vcfobj
+#             vcfobjlist.append(VCFutil.VCF_Data(filterdvcf))
+#             chromset+=vcfobjlist[-1].chromOrder
+#             VCFlistmapBycurchr.append({})
+        vcfobj=VCFutil.VCF_Data(vcffilename+bedfilenamewithoutpath+".recode.vcf")
+        chromset=vcfobj.chromOrder
+#         chromset=list(set(chromset))
         for currentchrID in chromset:
             allsnprecinAchr_mapbyvcfname={}
-            for vcfobj_idx in range(len(vcfobjlist)):
-                VCFlistmapBycurchr[vcfobj_idx]={}
-                VCFlistmapBycurchr[vcfobj_idx][currentchrID]=vcfobjlist[vcfobj_idx].getVcfListByChrom(currentchrID)
-#                 VCFlistmapBycurchr.append({currentchrID:vcfobj})
-            print(VCFlistmapBycurchr,file=open("aaaaa.txt",'a'))
-            alignedSNP_onechr=Util.alinmultPopSnpPos(VCFlistmapBycurchr, "o")
-            for snp_aligned in alignedSNP_onechr[currentchrID]:
+#             for vcfobj_idx in range(len(vcfobjlist)):
+#                 VCFlistmapBycurchr[vcfobj_idx]={}
+#                 VCFlistmapBycurchr[vcfobj_idx][currentchrID]=vcfobjlist[vcfobj_idx].getVcfListByChrom(currentchrID)
+# #                 VCFlistmapBycurchr.append({currentchrID:vcfobj})
+#             print(VCFlistmapBycurchr,file=open("aaaaa.txt",'a'))
+#             alignedSNP_onechr=Util.alinmultPopSnpPos(VCFlistmapBycurchr, "o")
+            alignedSNP_onechr=vcfobj.getVcfListByChrom(currentchrID)
+#             countedAF=0
+            for snp_aligned in alignedSNP_onechr:
                 curpos=int(snp_aligned[0])
                 ######caculate AF###############
-                countedAF=0;AF_sum=0
-                for i in range(3,len(snp_aligned)):
-                    if snp_aligned[i]==None:
-                        if vcfnameKEY_depthobjVALUE==None:
-                            print("no depth file")
-                            continue
-                        else:
-                            depth_linelist=vcfnameKEY_depthobjVALUE[filteredvcffilenamelist[i-3]].getdepthByPos_optimized(currentchrID,curpos)
-                            sum_depth=0
-                            for idx in vcfnameKEY_depthfilename_titlenameVALUE[filteredvcffilenamelist[i-3]][1:]:
-                                sum_depth+=int(depth_linelist[idx])
-                            if sum_depth>=mindeptojudgefix:
-                                AF=0
-                            else:
-                                continue
-                    else:
-                        if methodlist[i-3]=="indvd":
-                            AF = float(re.search(r"AF=([\d\.]+)", snp_aligned[i][0]).group(1))
-                            AN = float(re.search(r"AN=([\d]+)", snp_aligned[i][0]).group(1))
-                            if AN<5:
-                                continue
-                        elif methodlist[i-3]=="pool":
-                            refdep = 0;altalleledep = 0
-                            AD_idx = (re.split(":", snp_aligned[i][1])).index("AD")  # gatk GT:AD:DP:GQ:PL
-                            for sample in snp_aligned[i][2]:
-                                if len(re.split(":", sample)) == 1:  # ./.
-                                    continue
-                                AD_depth = re.split(",", re.split(":", sample)[AD_idx])
-                                try :
-                                    refdep += int(AD_depth[0])
-                                    altalleledep += int(AD_depth[1])
-                                except ValueError:
-                                    print(sample, end="|")
-                            if (refdep==altalleledep and altalleledep==0) or altalleledep+ refdep<10:
-                                print("no sample available in this pop")
-                                continue
-                            AF=altalleledep/(altalleledep+refdep)
-                    AF_sum+=AF;countedAF+=1
-                if countedAF==0:
-                    print("skip this snp ,because no sufficent covered in all vcf")
-                    continue
-                if (AF_sum/countedAF)>=0.5:
-                    MAF=(AF_sum/countedAF)
+                if re.search(r"indvd[^/]+",vcffilename+bedfilenamewithoutpath+".recode.vcf")!=None:
+                    AF = float(re.search(r"AF=([\d\.]+)", snp_aligned[3]).group(1))
+                    AN = float(re.search(r"AN=([\d]+)", snp_aligned[3]).group(1))
+                    if AN<minAN:
+                        continue
+                elif re.search(r"pool[^/]+",vcffilename+bedfilenamewithoutpath+".recode.vcf")!=None:
+                    refdep = 0;altalleledep = 0
+                    DP_idx=(re.split(":", snp_aligned[4])).index("DP")
+                    AD_idx = (re.split(":", snp_aligned[4])).index("AD")  # gatk GT:AD:DP:GQ:PL   
+                    for sample in snp_aligned[5]:
+                        if len(re.split(":", sample)) == 1:  # ./.
+                            continue                        
+                        AD_depth = re.split(",", re.split(":", sample)[AD_idx])
+                        try :
+                            refdep += int(AD_depth[0])
+                            altalleledep += int(AD_depth[1])
+                        except ValueError:
+                            print(sample, end="|")
+                    if (refdep==altalleledep and altalleledep==0) or altalleledep+ refdep<minAN:
+                        print("no sample available in this pop")
+                        continue
+                    AF=altalleledep/(altalleledep+refdep)
+# +++++++++++++++++++++++++++++++++++++++++++++==
+
+                if AF>=0.5:
+                    MAF=AF
                 else:
-                    MAF=1-(AF_sum/countedAF)
+                    MAF=1-AF
                 for a,b in MAFintervalMap_SNPcounts.keys():
-                    if MAF>=a and MAF<b:
+                    if MAF>=a and MAF<b and MAF!=0:
                         MAFintervalMap_SNPcounts[a,b]+=1
                         break
-                ##################judge ancestrall allele################
                 snp=dbvariantstools.operateDB("select","select * from "+topleveltablename+" where chrID='"+currentchrID+"' and snp_pos='"+str(curpos)+"'")
                 if not snp:
                     if allsnprecinAchr_mapbyvcfname=={}:
-                        allsnprecinAchr_mapbyvcfname["wigeon"]=VCFobj["wigeon"].getVcfListByChrom(currentchrID)
-                        allsnprecinAchr_mapbyvcfname["fanya"]=VCFobj["wigeon"].getVcfListByChrom(currentchrID)
+#                         allsnprecinAchr_mapbyvcfname["wigeon"]=VCFobj["wigeon"].getVcfListByChrom(currentchrID)
+                        allsnprecinAchr_mapbyvcfname["fanya"]=VCFobj["fanya"].getVcfListByChrom(currentchrID)
                     low0=0
                     high0=len(allsnprecinAchr_mapbyvcfname["fanya"])-1
                     while low0<=high0:
@@ -192,7 +159,7 @@ if __name__ == '__main__':
                                     altalleledep+=int(AD_depth[1])
                                 except ValueError:
                                     print("Ancestralallele.fillAncestral except ValueError",sample,end="")
-                            if refdep!=0  or altalleledep<mindeptojudgefix:
+                            if refdep!=0  or altalleledep<mindeptojudgefix_forancestral:
                                 A_base_idx=-1#alt_allele is the ancestral allele
                                 low0=high0+1
                             elif refdep==0 and altalleledep>=mindeptojudgefix:
@@ -205,38 +172,7 @@ if __name__ == '__main__':
                             A_base_idx=0
                         else:
                             A_base_idx=-1
-    #                 low1=0
-    #                 high1=len(allsnprecinAchr_mapbyvcfname["wigeon"])-1
-    #                 while low1<=high1:
-    #                     mid1=(low1+high1)>>1
-    #                     if allsnprecinAchr_mapbyvcfname["wigeon"][mid1][0]<curpos:
-    #                         low1=mid1+1
-    #                     elif allsnprecinAchr_mapbyvcfname["wigeon"][mid1][0]>curpos:
-    #                         high1=mid1-1
-    #                     else:
-    #                         pos, REF, archicpop_ALT, INFO,FORMAT,samples = allsnprecinAchr_mapbyvcfname["wigeon"][mid1]
-    #                         refdep=0;altalleledep=0
-    #                         AD_idx=(re.split(":",FORMAT)).index("AD")#gatk GT:AD:DP:GQ:PL
-    #                         for sample in samples:
-    #                             if len(re.split(":",sample))==1:# ./.
-    #                                 continue
-    #                             AD_depth=re.split(",",re.split(":",sample)[AD_idx])
-    #                             try :
-    #                                 refdep+=int(AD_depth[0])
-    #                                 altalleledep+=int(AD_depth[1])
-    #                             except ValueError:
-    #                                 print("Ancestralallele.fillAncestral except ValueError",sample,end="")
-    #                         if  refdep!=0:
-    #                             pass
-    # #                             A_base_idx=-1
-    #                         elif refdep==0 and altalleledep>=mindeptojudgefix and A_base_idx==1:
-    #                             A_base_idx=1
-    #                         break
-    #                 else:
-    #                     if A_base_idx==1:
-    #                         A_base_idx=-1
-    #                     else:
-    #                         A_base_idx=0
+
                     if A_base_idx==-1:
                         print(currentchrID,curpos,"snp not find in db and not sufficent in fanya,skip")
                         continue
@@ -250,32 +186,41 @@ if __name__ == '__main__':
                             A_base_idx=0
                         else:
                             print("never get here")
-                    elif (len(fanyadepthlist)==2  and int(fanyadepthlist[0]) + int(fanyadepthlist[1])>=mindeptojudgefix+5 and (fanyadepthlist[0].strip()=="0" or fanyadepthlist[1].strip()=="0" )):#   or (snp[0][7]=="no covered" and len(depthlist2)==2 and int(depthlist2[0]) + int(depthlist2[1])>=mindeptojudgefix and (depthlist2[1].strip()=="0" or depthlist2[0].strip()=="0")):
+                    elif (len(fanyadepthlist)==2  and int(fanyadepthlist[0]) + int(fanyadepthlist[1])>=mindeptojudgefix and (fanyadepthlist[0].strip()=="0" or fanyadepthlist[1].strip()=="0" )):#   or (snp[0][7]=="no covered" and len(depthlist2)==2 and int(depthlist2[0]) + int(depthlist2[1])>=mindeptojudgefix and (depthlist2[1].strip()=="0" or depthlist2[0].strip()=="0")):
                         if  fanyadepthlist[0].strip()=="0":
                             A_base_idx=1
                         elif fanyadepthlist[1].strip()=="0":
                             A_base_idx=0
                     else:
                         print("skip snp",snp)
-                        continue
+                        A_base_idx=-1
+                        continue                    
+                                     
+
+
+
+                if A_base_idx==-1:
+                    print(currentchrID,curpos,"snp not find in db and not sufficent in fanya,skip")
+                    continue
+
                 #######ancestrall allele judged ,average DAF ################
 
                 if A_base_idx==0:
-                    DAF=1-(AF_sum/countedAF)
+                    DAF=1-AF
                 else:
-                    DAF=(AF_sum/countedAF)
+                    DAF=AF
                 ##### count ########
                 for a,b in AFintervalMap_SNPcounts.keys():
-                    if AF_sum/countedAF>=a and AF_sum/countedAF<b and AF_sum/countedAF!=0:
+                    if AF>=a and AF<b and AF!=0:#
                         AFintervalMap_SNPcounts[a,b]+=1
                         break
                 for a,b in DAFintervalMap_SNPcounts.keys():
                     if DAF>=a and DAF<b and DAF!=0:
                         DAFintervalMap_SNPcounts[a,b]+=1
                         break
-        AFsMapByFileName[bedfilenamewithoutpath]=copy.deepcopy(AFintervalMap_SNPcounts)
-        DAFsMapByFileName[bedfilenamewithoutpath]=copy.deepcopy(DAFintervalMap_SNPcounts)
-        MAFsMapByFileName[bedfilenamewithoutpath]=copy.deepcopy(MAFintervalMap_SNPcounts)
+        AFsMapByFileName[bedfilenamewithoutpath+vcffilename]=copy.deepcopy(AFintervalMap_SNPcounts)
+        DAFsMapByFileName[bedfilenamewithoutpath+vcffilename]=copy.deepcopy(DAFintervalMap_SNPcounts)
+        MAFsMapByFileName[bedfilenamewithoutpath+vcffilename]=copy.deepcopy(MAFintervalMap_SNPcounts)
     outfile=open(options.outfileprename+"bedfilenameAAF","w")
     print("AFbin",end="\t",file=outfile)
     for tag in sorted(AFsMapByFileName.keys()):
@@ -298,8 +243,8 @@ if __name__ == '__main__':
             print(str(DAFsMapByFileName[tag][a,b]),end="\t",file=outfile)
         print("",file=outfile)
     outfile.close()
-    for filteredvcffilename in filteredvcffilenamelist:
-        os.system("rm "+filteredvcffilename+" "+filteredvcffilename+".myindex")
+
+    os.system("rm "+vcffilename+bedfilenamewithoutpath+".recode.vcf"+" "+vcffilename+bedfilenamewithoutpath+".recode.vcf"+".myindex")
     #################cds######################################
     if options.cdsfiles!=[]:
         cdsfilenameslist=[];cds_depthfileconfig={};AF_idxlist_cds=[]
