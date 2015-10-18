@@ -30,6 +30,7 @@ outgroupidx_in_topleveltable=[8];minoutgroupdepth=35
 randomnamefile_recordchr=Util.random_str(8)
 randomnamef_recchr=open(randomnamefile_recordchr,"w")
 noofindvds2quantizing=int(options.noofindvds2quantizing)
+allsnps=0
 if __name__ == '__main__':
     genomedbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname)
     dbvariantstools=dbm.DBTools(Util.ip, Util.username,Util.password, Util.vcfdbname)
@@ -124,9 +125,13 @@ if __name__ == '__main__':
 #         sqlselectstatementpart_count+=")"
         allsnpOfJoinTableinAchr=dbvariantstools.operateDB("select",sqlselectstatementpart)
         print(sqlselectstatementpart_count_left+" union "+sqlselectstatementpart_count_right)
-        total_no_of_snpinAchrlist=dbvariantstools.operateDB("select",sqlselectstatementpart_count_left+" union "+sqlselectstatementpart_count_right)
-        print(total_no_of_snpinAchrlist)
-        total_no_of_snpinAchr=total_no_of_snpinAchrlist[0][0]+total_no_of_snpinAchrlist[1][0]
+        if options.countsnpnumberfromvcf==None:
+            total_no_of_snpinAchrlist=dbvariantstools.operateDB("select",sqlselectstatementpart_count_left+" union "+sqlselectstatementpart_count_right)
+            print(total_no_of_snpinAchrlist)
+            total_no_of_snpinAchr=total_no_of_snpinAchrlist[0][0]+total_no_of_snpinAchrlist[1][0]
+            allsnps=+total_no_of_snpinAchr
+        else:
+            total_no_of_snpinAchr=len(allsnpOfJoinTableinAchr)
         print(total_no_of_snpinAchr)
         if len(allsnpOfJoinTableinAchr)>int(currentchrLen*snpperkb)/1000:
             
@@ -234,12 +239,16 @@ if __name__ == '__main__':
 
     dadisnpfile.close()
     randomnamef_recchr.close()
-    a=os.popen("awk '$0~/#/ || length($4)==length($5) {print $0}' "+options.countsnpnumberfromvcf+" |grep -wFf "+randomnamefile_recordchr+"  - |grep ^[^#] - |less -S|wc -l")
-    totalsnpforcount=int(a.readline().strip())
-    print("should be none",a.readline())
-    a.close()
+    if options.countsnpnumberfromvcf!=None:
+        a=os.popen("awk '$0~/#/ || length($4)==length($5) {print $0}' "+options.countsnpnumberfromvcf+" |grep -wFf "+randomnamefile_recordchr+"  - |grep ^[^#] - |less -S|wc -l")
+        totalsnpforcount=int(a.readline().strip())
+        print("should be none",a.readline())
+        a.close()
+    else:
+        totalsnpforcount=allsnps
     
     
     dulttimes=totalduiltsnp/totalsnpforcount
+    print(options.outputfilename)
     print("totalduiltsnp",totalduiltsnp,"totalsnpforcount",totalsnpforcount,totallength,"real totallengthduilt",dulttimes*totallength,"totallengthduilt",totallengthduilt,"finsih")
     os.system("rm "+randomnamefile_recordchr)

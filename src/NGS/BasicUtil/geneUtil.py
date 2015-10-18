@@ -1,0 +1,287 @@
+import os
+import re
+import time
+
+from scipy import stats
+
+from NGS.BasicUtil import Util
+import src.NGS.BasicUtil.DBManager as dbm
+
+SLEEP_FOR_NEXT_TRY=3
+def GOenrichment(gotablefile,outpre,genelist=None,trscptlist=None):
+    gotablefile=open(gotablefile,'r')
+    title = gotablefile.readline()
+    titlelist= [e.strip().lower() for e in re.split(r"\t",title)]
+    geneididx=titlelist.index("ensembl gene id")
+    tpididx=titlelist.index("ensembl transcript id")
+    gotermaccessionidx=titlelist.index("go term accession")
+    gotermNameidx=titlelist.index("go term name")
+    godomainidx=titlelist.index("go domain")
+    goternDefinition=titlelist.index("go term definition")
+    genenameidx=titlelist.index("associated gene name")    
+    
+    if genelist!=None:
+        sampledIDlist=genelist
+#         ensemblIDlistfile=open(genelist,"r")
+        IDidx=geneididx
+    elif trscptlist!=None:
+        sampledIDlist=trscptlist
+#         ensemblIDlistfile=open(trscptlist,'r')
+        IDidx=tpididx
+    
+#     sampledIDlist=ensemblIDlistfile.readlines()
+    print(sampledIDlist,sep="\n")
+    
+#     ensemblIDlistfile.close()
+    
+
+    gotable={}
+    """
+    gotable={tp_id1:(geneID,geneName,bp,cc,mf),tp_id2:(geneID,geneName,bp,cc,mf),,,,,,}
+    """
+    oneGO2manyID={}
+    """
+    oneGO2manyID={go_Accession1:[tp1,tp2,...],go_Accession2:[],....}
+    """
+    goTermMap={}
+    """
+    goTermMap={go_Accession1:[go term name,go domain],go_Accession2:[],,,,}
+    """
+    
+    bp="";cc="";mf="";geneName="";geneID=""
+    genelist=[]
+    for termline in  gotablefile:
+        termlist=re.split(r"\t",termline)
+        if termlist[gotermaccessionidx].strip() in oneGO2manyID:
+            goTermMap[termlist[gotermaccessionidx].strip()]+=[termlist[gotermNameidx],termlist[godomainidx]]
+            oneGO2manyID[termlist[gotermaccessionidx].strip()].append(termlist[IDidx].strip())
+        else:
+            goTermMap[termlist[gotermaccessionidx].strip()]=[termlist[gotermNameidx],termlist[godomainidx]]
+            oneGO2manyID[termlist[gotermaccessionidx].strip()]=[termlist[IDidx].strip()]
+        if termlist[geneididx].strip() not in genelist:
+            genelist.append(termlist[geneididx].strip())
+        if termlist[tpididx].strip() in gotable:
+            if termlist[godomainidx].lower().strip()=="biological_process":
+                bp+=termlist[gotermaccessionidx]+";"+termlist[gotermNameidx]+";"
+            elif termlist[godomainidx].lower().strip()=="cellular_component":
+                cc+=termlist[gotermaccessionidx]+";"+termlist[gotermNameidx]+";"                 
+            elif termlist[godomainidx].lower().strip()=="molecular_function":
+                mf+=termlist[gotermaccessionidx]+";"+termlist[gotermNameidx]+";"
+           
+        else:#new gene start
+
+            geneID=termlist[geneididx]
+            geneName=termlist[genenameidx]
+            print(geneName,file=open("test.txt",'a'))
+            bp="";cc="";mf=""
+            if termlist[godomainidx].lower().strip()=="biological_process":
+                bp+=termlist[gotermaccessionidx]+";"+termlist[gotermNameidx]+";"
+            elif termlist[godomainidx].lower().strip()=="cellular_component":
+                cc+=termlist[gotermaccessionidx]+";"+termlist[gotermNameidx]+";"            
+            elif termlist[godomainidx].lower().strip()=="molecular_function":
+                mf+=termlist[gotermaccessionidx]+";"+termlist[gotermNameidx]+";"
+            if geneName.split():
+                gotable[termlist[IDidx].strip()]=(geneID,geneName,bp,cc,mf)
+            else:
+                gotable[termlist[IDidx].strip()]=(geneID,"unknow",bp,cc,mf)            
+    GOAnnationForGene_out_fileName=outpre.strip()+".GO_annotion"
+    GOenrichment_fileName=outpre.strip()+".GO_enrichment"
+    annf=open(GOAnnationForGene_out_fileName,'w')
+    enrichfile=open(GOenrichment_fileName,'w')
+    all_IDlist=list(gotable.keys());m_n=len(genelist);del genelist
+    for id in sampledIDlist:
+        id=id.strip()
+        if id not in gotable:
+            print(id,"don't have go annotion")
+            continue
+        print(id,gotable[id][0].strip(),gotable[id][1].strip(),gotable[id][2].strip(),gotable[id][3].strip(),gotable[id][4].strip(),sep="\t",file=annf)
+    outlist=[]
+    """
+    outlist=[(go_Accession1,go_term_name,go_domain,p-value,FDR,sampled_inTerm,termsize),(),,,,]
+    """
+    testGOONETOMANY=open("GOONETOmany.txt",'w')
+    for goID in oneGO2manyID.keys():
+        print(goID,*oneGO2manyID[goID],sep="\t",file=testGOONETOMANY)
+    testGOONETOMANY.close()
+    k=len(sampledIDlist)
+    for goassecesion in sorted(oneGO2manyID.keys()):
+        x=0
+        containingtrscript=[]
+        genetermlist=[]
+        for id in sampledIDlist:
+            id=id.strip()
+            if id in oneGO2manyID[goassecesion]:
+                containingtrscript.append(id)
+                genetermlist.append(gotable[id][1])
+                x+=1
+        m=len(oneGO2manyID[goassecesion])
+        n=m_n - m
+        pvalue=stats.hypergeom.sf(x-1,m_n,m,k)
+        if len(goTermMap[goassecesion])<2:
+            continue
+        outlist.append((goassecesion,goTermMap[goassecesion][0],goTermMap[goassecesion][1],pvalue,"FDR",x,len(oneGO2manyID[goassecesion]),containingtrscript,genetermlist))
+    outlist.sort(key=lambda listRec:listRec[3])
+    for e in outlist:
+        print(*e,sep="\t",file=enrichfile)
+    enrichfile.close()
+    os.system("""awk 'BEGIN{FS="\t"}$3~/biological_process/{print $0}' """+GOenrichment_fileName+">"+GOenrichment_fileName+"_biological_process")
+    os.system("""awk 'BEGIN{FS="\t"}$3~/cellular_component/{print $0}' """+GOenrichment_fileName+">"+GOenrichment_fileName+"_cellular_component")
+    os.system("""awk 'BEGIN{FS="\t"}$3~/molecular_function/{print $0}' """+GOenrichment_fileName+">"+GOenrichment_fileName+"_molecular_function")
+    annf.close()
+    gotablefile.close()
+def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,winType,morethan_lessthan,threshold=None,percentage=None,mergeNA=False,numberofoutlier_to_NearestGene=0,found=False):
+
+    if percentage!=None and threshold!=None:
+        print("-t conflict with -p")
+        exit(-1)
+    winFileName7Field = winfile
+    re.search(r"[^/]*$",winFileName7Field).group(0)
+    if re.search(r'^.*/',outbedfilename)!=None:
+        path=re.search(r'^.*/',outbedfilename).group(0)
+    else:
+        a = os.popen("pwd")
+        path=a.readline().strip()+"/"
+        a.close()
+    if found:
+        outfileNameWINwithGENE=path+re.search(r"[^/]*$",winFileName7Field).group(0)+".wincopywithgene"
+        return outfileNameWINwithGENE   
+    outfile=open(outbedfilename+".bed.selectedgene",'w')
+    print("chrNo\tRegion_start\tRegion_end\tNoofWin\textram"+winType+"\ttranscpt\tgeneID",file=outfile)
+    outfileNameWINwithGENE=path+re.search(r"[^/]*$",winFileName7Field).group(0)+".wincopywithgene"
+    genomedbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname) 
+    winGenome = Util.WinInGenome(Util.ghostdbname, winFileName7Field)
+    time.sleep(SLEEP_FOR_NEXT_TRY)
+    winGenome.appendGeneName(Util.TranscriptGenetable, genomedbtools, winwidth, slideSize, outfileNameWINwithGENE,upextend,downextend,(numberofoutlier_to_NearestGene,morethan_lessthan))
+    selectWinNos="threshold method"
+    if percentage!=None:
+        totalWin = winGenome.windbtools.operateDB("select", "select count(*) from " + winGenome.wintablewithoutNA)[0][0]
+        selectWinNos = int(float(percentage) * totalWin)
+        if morethan_lessthan == "m" or morethan_lessthan == "M":
+            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintablewithoutNA + " where 1 order by "+winType+" desc limit 0," + str(selectWinNos))
+            print("select * from "+winGenome.wintablewithoutNA + " where 1 order by zvalue desc limit 0," + str(selectWinNos))
+        elif morethan_lessthan == "l" or morethan_lessthan == "L":
+            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintablewithoutNA + " where 1 order by "+winType+" asc limit 0," + str(selectWinNos))
+            print("select * from " + winGenome.wintablewithoutNA + " where 1 order by "+winType+" asc limit 0," + str(selectWinNos))
+    elif threshold!=None:
+        if morethan_lessthan=="m" or morethan_lessthan=="M":
+            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintablewithoutNA + " where 1 and "+winType+">=" + threshold)
+        elif morethan_lessthan=="l" or morethan_lessthan=="L":
+            print("select", "select * from " + winGenome.wintablewithoutNA + " where "+winType+"!= 'NA' and "+winType+"<=" + threshold)
+            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintablewithoutNA + " where 1 and "+winType+"<=" + threshold)
+        selectWinNos=len(selectedWins)
+    selectedWins.sort(key=lambda listRec:float(listRec[5]))
+    if selectWinNos==0:
+        outfile.close()
+        print("selectWinNos==0")
+        exit(0)
+                
+    print(outbedfilename+".bed.selectgene",selectWinNos,"~=",len(selectedWins),selectedWins[0],selectedWins[-1])
+    selectedWinMap={}
+    for win in selectedWins:
+        if win[0] in selectedWinMap:
+            selectedWinMap[win[0]].append(win)
+        else:
+            selectedWinMap[win[0]]=[win]
+
+    selectedRegion={}
+
+    for chrom in selectedWinMap:
+        selectedWinMap[chrom].sort(key=lambda listRec: int(listRec[1]))
+        selectedRegion[chrom]=[]
+        mergedRegion=[selectedWinMap[chrom][0]]
+        i=1
+        while i < len(selectedWinMap[chrom]):
+#             print(chrom,selectedWinMap[chrom][i])
+#             try:
+            if int(selectedWinMap[chrom][i-1][1])+1==int(selectedWinMap[chrom][i][1]):#continues win
+                mergedRegion.append(selectedWinMap[chrom][i])
+            else:#not continues
+                #process last region
+                Region_start=int(mergedRegion[0][1])*slideSize
+                Region_end=int(mergedRegion[-1][1])*slideSize+winwidth
+                Nwin=len(mergedRegion)
+                extremeValues=[]
+                for e in mergedRegion:
+                    if winType=="winvalue":
+                        extremeValues.append(float(e[5]))
+                    elif winType=="zvalue": 
+                        extremeValues.append(float(e[6]))
+                if morethan_lessthan == "m" or morethan_lessthan == "M":
+                    extremeValue=min(extremeValues)
+                elif morethan_lessthan == "l" or morethan_lessthan == "L":
+                    extremeValue=max(extremeValues)
+                selectedRegion[chrom].append((chrom,Region_start,Region_end,Nwin,extremeValue))
+                #process this win
+                mergedRegion=[selectedWinMap[chrom][i]]
+            i+=1
+#             except IndexError:
+#                 print(i,len(selectedWinMap[chrom]),selectedWinMap[chrom])
+#                 exit(-1)
+        else:
+            Region_start=int(mergedRegion[0][1])*slideSize
+            Region_end=int(mergedRegion[-1][1])*slideSize+winwidth
+            Nwin=len(mergedRegion)
+            extremeValues=[]
+            for e in mergedRegion:
+                if winType=="winvalue":
+                    extremeValues.append(float(e[5]))
+                elif winType=="zvalue": 
+                    extremeValues.append(float(e[6]))
+            if morethan_lessthan == "m" or morethan_lessthan == "M":
+                extremeValue=min(extremeValues)
+            elif morethan_lessthan == "l" or morethan_lessthan == "L":
+                extremeValue=max(extremeValues)            
+            selectedRegion[chrom].append((chrom,Region_start,Region_end,Nwin,extremeValue))
+    if mergeNA!=False and int(mergeNA)>0:
+        for chrom in selectedRegion:
+            selectedRegion[chrom].sort(key=lambda listRec: int(listRec[1]))
+            i=1
+            idxlist_to_pop=[]
+            while i <len(selectedRegion[chrom]):
+                winNo_end=str(int(selectedRegion[chrom][i][1]/slideSize))
+                winNo_start=str(int((selectedRegion[chrom][i-1][2]-winwidth)/slideSize))
+                print("select * from "+ winGenome.wintablewithoutNA + " where "+" chrID='"+chrom+"' and winNo>"+winNo_start+" and  winNo<"+winNo_end)
+                wincount_to_determine=winGenome.windbtools.operateDB("select","select * from "+ winGenome.wintablewithoutNA + " where "+" chrID='"+chrom+"' and winNo>"+winNo_start+" and winNo<"+winNo_end)
+                wincount_to_add=winGenome.windbtools.operateDB("select","select * from "+ winGenome.wintabletextvalueallwin + " where "+" chrID='"+chrom+"' and winNo>"+winNo_start+" and winNo<"+winNo_end)
+                if len(wincount_to_determine)==0 and len(wincount_to_add)<= int(mergeNA):
+                    if morethan_lessthan == "m" or morethan_lessthan == "M":
+                        extremeValue=min(selectedRegion[chrom][i][4],selectedRegion[chrom][i-1][4])
+                    elif morethan_lessthan == "l" or morethan_lessthan == "L":
+                        extremeValue=max(selectedRegion[chrom][i][4],selectedRegion[chrom][i-1][4])
+                    selectedRegion[chrom][i]=(chrom,selectedRegion[chrom][i-1][1],selectedRegion[chrom][i][2],selectedRegion[chrom][i-1][3]+selectedRegion[chrom][i][3]+len(wincount_to_add),extremeValue)
+                    idxlist_to_pop.append(i-1)
+                i+=1
+            else:
+                idxlist_to_pop.reverse()
+                for idx_to_pop in idxlist_to_pop:
+                    selectedRegion[chrom].pop(idx_to_pop)
+    else:
+        for chrom in selectedRegion:
+            selectedRegion[chrom].sort(key=lambda listRec: int(listRec[1]))
+#    get final table
+    final_table={}
+    for chrom in selectedRegion:
+        for region in selectedRegion[chrom]:
+            if numberofoutlier_to_NearestGene>0:
+                final_table[region]=winGenome.collectTrscptInWin(genomedbtools,Util.TranscriptGenetable,region,upextend,downextend,True)
+            else:
+                final_table[region]=winGenome.collectTrscptInWin(genomedbtools,Util.TranscriptGenetable,region,upextend,downextend)
+#process top outlier values
+
+    for chrom in winGenome.chromOrder:
+        if chrom not in selectedRegion:
+            continue
+        for region in selectedRegion[chrom]:
+            if chrom.strip()==region[0].strip():
+                tcpts=""
+                gnames=""
+                for tcpt in final_table[region]:
+                    tcpts+=(tcpt[0]+",")
+                    if tcpt[2].strip()!="":
+                        gnames+=(tcpt[2]+",")
+                print("\t".join(map(str,region)),tcpts[:-1],gnames[:-1],sep="\t",file=outfile)                  
+
+    winGenome.windbtools.drop_table(winGenome.wintabletextvalueallwin)
+    winGenome.windbtools.drop_table(winGenome.wintablewithoutNA)
+    outfile.close()
+    return outfileNameWINwithGENE

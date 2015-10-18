@@ -1,18 +1,23 @@
-import dadi,numpy,pylab,re
-from numpy import array
 from optparse import OptionParser
+
+from numpy import array
+
+import dadi, numpy, pylab, re,signal
+
+
 parser = OptionParser()
 parser.add_option("-n", "--popname", dest="popname",action="append",nargs=2,help="fs_file_name projection")
 parser.add_option("-f", "--fsfile", dest="fsfile",help="fs file name ")
-parser.add_option("-b", "--bootstrap", dest="bootstrap",default=False,help="fs file name ")
+parser.add_option("-l", "--genomelengthwhichsnpfrom", dest="genomelengthwhichsnpfrom",help="fs file name ")
+parser.add_option("-b", "--bootstrap", dest="bootstrap",default=False,nargs=2,help="randomstr timetoout")
 parser.add_option("-m", "--model", dest="model",help="1,model1 2,model2 ....")
 parser.add_option("-p","--parameters",dest="parameters",action="append",nargs=4,help="""parametername initvalue lower upper
                                                                                                                 red   blue""")
-parser.add_option("-t", "--tag",
-                   dest="tag", default="TAG",
-                  help="don't print status messages to stdout")
+parser.add_option("-T", "--tag",
+                   dest="tag", default="TAG",help="don't print status messages to stdout")
 (options, args) = parser.parse_args()
 # fsdata=dadi.Spectrum.from_file(options.fsfile)
+print float(options.genomelengthwhichsnpfrom) 
 dd=dadi.Misc.make_data_dict(options.fsfile)
 popnamelist=[]
 projectionlist=[]
@@ -76,11 +81,13 @@ def bottleneckafter_split_mig_1_IM(params,ns,pts):
     fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
     return fs
 def IM_2(params,ns,pts):
-    s,TS,m12,m21=params
+    s,nu1,nu2,TS,m12,m21=params
     xx=dadi.Numerics.default_grid(pts)
     phi=dadi.PhiManip.phi_1D(xx)
     phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
-    phi=dadi.Integration.two_pops(phi,xx,TS,nu1=s,nu2=1-s,m12=m12,m21=m21)
+    nu1_func=lambda t: s *(nu1/s)**(t/TS)
+    nu2_func=lambda t: (1-s) *(nu2/(1-s))**(t/TS)
+    phi=dadi.Integration.two_pops(phi,xx,TS,nu1=nu1_func,nu2=nu2_func,m12=m12,m21=m21)
     fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
     return fs
 def IM_3(params,ns,pts):
@@ -215,6 +222,25 @@ def splitdom_splitwild_3d(params,ns,pts):
     phi=dadi.Integration.three_pops(phi,xx,TS2,nu1=nuM,nu3=nuB,nu2=nuP,m12=mMP,m21=mPM,m13=mMB,m31=mBM,m23=mPB,m32=mBP)
     fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx,xx))
     return fs
+def splitdom_splitwild_3d_domlineDecrease(params,ns,pts):
+    nuA,nu2,s1,s2,TA,TS1,TS2,m12,m21,mMB,mBM,mBP,mPB,mMP,mPM=params
+    xx=dadi.Numerics.default_grid(pts)
+    phi=dadi.PhiManip.phi_1D(xx)
+
+    phi=dadi.Integration.one_pop(phi,xx,TA,nu=nuA)
+    phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
+    nuW=nuA*s1
+    nuP0=nuA*(1-s1)
+    nuP_d_func = lambda t: nuP0 + (nu2-nuP0)*t/(TS1+TS2)
+    phi=dadi.Integration.two_pops(phi,xx,TS1,nu1=nuW,nu2=nuP_d_func,m12=m12,m21=m21)
+    phi=dadi.PhiManip.phi_2D_to_3D_split_1(xx,phi)
+    nuM=nuW*s2
+    nuB=nuW*(1-s2)
+    nuP0=nuP_d_func(TS1)
+    nuP_d_func = lambda t: nuP0 + (nu2-nuP0)*t/(TS2)
+    phi=dadi.Integration.three_pops(phi,xx,TS2,nu1=nuM,nu3=nuB,nu2=nuP_d_func,m12=mMP,m21=mPM,m13=mMB,m31=mBM,m23=mPB,m32=mBP)
+    fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx,xx))
+    return fs
 # def split_mig_1_w_bottleneck_split_domedcrease_increaseAfterBottle_wild_bottle_split_3d(params,ns,pts):
 #     nuA,nuP,nuW0,nuWb,nuM,nuS,nuP0,nuP1,nuPb,nuP,nuS,TA,TS1,TBW,TS2,TBP,m12,m21,mMB,mBM,mBP,mPB,mMP,mPM=params
 #     xx=dadi.Numerics.default_grid(pts)
@@ -315,6 +341,8 @@ elif options.model=="split_domDecrease_bottle_increase_wildbottle_IM":
     func=split_domDecrease_bottle_increase_wildbottle_IM
 elif options.model=="increader_split_domDecrease_bottle_increase_wildbottle_IM":
     func=increader_split_domDecrease_bottle_increase_wildbottle_IM
+elif options.model=="splitdom_splitwild_3d_domlineDecrease":
+    func=splitdom_splitwild_3d_domlineDecrease
 paramslist=[]
 upper_boundlist=[]
 lower_boundlist=[]
@@ -338,98 +366,104 @@ print 'upper_bound',repr(upper_bound)
 print 'lower_bound',repr(lower_bound)
 print 'params',repr(params)
 print 'paramsname',paramsname
-ll_param_MAPlist={}
+ll_param_MAP={}
 namestr=""
 for name in popnamelist:
     namestr+=name
-if options.bootstrap>=10:
-    of=open(namestr+options.tag+".bootstrap","w")
+if options.bootstrap!=False:
+    def myHandler(signum, frame):
+        print("Now, it's the time")
+        exit(-1)
+    #######
+    signal.signal(signal.SIGALRM, myHandler)
+    signal.alarm(int(options.bootstrap[1]))
+    of=open(namestr+options.tag+options.bootstrap[0]+".parameter","w")
     for name in paramsname:
-        ll_param_MAPlist[name]=[]
-    ll_param_MAPlist["likelihood"]=[]
-    for i in range(int(options.bootstrap)):
-        print  "cycly ",i
-        try:
-            func_ex=dadi.Numerics.make_extrap_func(func)
-            p0=dadi.Misc.perturb_params(params,lower_bound=lower_bound,upper_bound=upper_bound)
-            popt=dadi.Inference.optimize_log(p0,fsdata,func_ex,pts_1,lower_bound=lower_bound,upper_bound=upper_bound,verbose=len(params))
-            model=func_ex(popt,ns,pts_1)
-            theta=dadi.Inference.optimal_sfs_scaling(model,fsdata)
-            ll_opt=dadi.Inference.ll_multinom(model,fsdata)
-            Nref=theta/(4*9.97e-10*480650.4721472733)
-            for i in range(len(popt)):
-                if re.search(r"^T",paramsname[i])!=None:
-                    ll_param_MAPlist[paramsname[i]].append(Nref*popt[i]*2)
-                elif re.search(r"^m",paramsname[i])!=None:
-                    ll_param_MAPlist[paramsname[i]].append(popt[i]/(Nref*2))
-                else:
-                    ll_param_MAPlist[paramsname[i]].append(popt[i]/(Nref*2))
-            ll_param_MAPlist["likelihood"].append(ll_opt)
-        except:
-            continue
-    for a in sorted(ll_param_MAPlist.keys()):
-        print >>of,a,
-    else:
-        print >>of,""
-    for i in range(len(ll_param_MAPlist["likelihood"])):
-        for a in sorted(ll_param_MAPlist.keys()):
-            print >>of,ll_param_MAPlist[a],
+        ll_param_MAP[name]=[]
+    ll_param_MAP["likelihood"]=[]
+    func_ex=dadi.Numerics.make_extrap_func(func)
+    p0=dadi.Misc.perturb_params(params,lower_bound=lower_bound,upper_bound=upper_bound)
+    popt=dadi.Inference.optimize_log(p0,fsdata,func_ex,pts_1,lower_bound=lower_bound,upper_bound=upper_bound,verbose=len(params))
+    model=func_ex(popt,ns,pts_1)
+    theta=dadi.Inference.optimal_sfs_scaling(model,fsdata)
+    ll_opt=dadi.Inference.ll_multinom(model,fsdata)
+    Nref=theta/(4*9.97e-10*float(options.genomelengthwhichsnpfrom))
+    for i in range(len(popt)):
+        if re.search(r"^T",paramsname[i])!=None:
+            ll_param_MAP[paramsname[i]]=Nref*popt[i]*2
+        elif re.search(r"^m",paramsname[i])!=None:
+            ll_param_MAP[paramsname[i]]=popt[i]/(Nref*2)
+        elif re.search(r"^nu",paramsname[i])!=None:
+            ll_param_MAP[paramsname[i]]=popt[i]*Nref
         else:
-            print >>of,""
+            ll_param_MAP[paramsname[i]]=popt[i]
+    ll_param_MAP["likelihood"]=ll_opt
+
+    for a in sorted(ll_param_MAP.keys()):
+        print >>of,a,ll_param_MAP[a]
+    else:
+        pass
+#         print >>of,""
+#     for i in range(len(ll_param_MAP["likelihood"])):
+#         for a in sorted(ll_param_MAP.keys()):
+#             print >>of,ll_param_MAP[a],
+#         else:
+#             print >>of,""
 
     of.close()
-    exit()
-func_ex=dadi.Numerics.make_extrap_func(func)
-p0=dadi.Misc.perturb_params(params,lower_bound=lower_bound,upper_bound=upper_bound)
-popt=dadi.Inference.optimize_log(p0,fsdata,func_ex,pts_1,lower_bound=lower_bound,upper_bound=upper_bound,verbose=len(params))
-model=func_ex(popt,ns,pts_1)
-theta=dadi.Inference.optimal_sfs_scaling(model,fsdata)
-print theta
-ll_opt=dadi.Inference.ll_multinom(model,fsdata)
-Nref=theta/(4*9.97e-10*480650.4721472733)
-print 'Nref',Nref
-for i in range(len(popt)):
-    if re.search(r"^T",paramsname[i])!=None :
-        print "paramname",paramsname[i],popt[i],"generation",Nref*popt[i]*2
-    elif re.search(r"^m",paramsname[i])!=None:
-        print "paramname",paramsname[i],popt[i],"migration rate",popt[i]/(Nref*2)
-    else:
-        print "paramname",paramsname[i],popt[i],"effective pop size",Nref*popt[i]
-print 'title:theta,ll_opt',paramsname
-print 'Optimized parameters', repr([theta,ll_opt,popt])
- 
-
-
-if len(popnamelist)==2:
-    pylab.figure()
-    dadi.Plotting.plot_single_2d_sfs(fsdata,vmin=1)
-    pylab.show()
-    pylab.savefig('fsdata_split'+namestr+options.tag+options.model+'.png', dpi=100)
+#     exit()
+else:
+    func_ex=dadi.Numerics.make_extrap_func(func)
+    p0=dadi.Misc.perturb_params(params,lower_bound=lower_bound,upper_bound=upper_bound)
+    popt=dadi.Inference.optimize_log(p0,fsdata,func_ex,pts_1,lower_bound=lower_bound,upper_bound=upper_bound,verbose=len(params))
+    model=func_ex(popt,ns,pts_1)
+    theta=dadi.Inference.optimal_sfs_scaling(model,fsdata)
+    print theta
+    ll_opt=dadi.Inference.ll_multinom(model,fsdata)
+    Nref=theta/(4*9.97e-10*float(options.genomelengthwhichsnpfrom))
+    print 'Nref',Nref
+    for i in range(len(popt)):
+        if re.search(r"^T",paramsname[i])!=None :
+            print "paramname",paramsname[i],popt[i],"generation",Nref*popt[i]*2
+        elif re.search(r"^m",paramsname[i])!=None:
+            print "paramname",paramsname[i],popt[i],"migration rate",popt[i]/(Nref*2)
+        else:
+            print "paramname",paramsname[i],popt[i],"effective pop size",Nref*popt[i]
+    print 'title:theta,ll_opt',paramsname
+    print 'Optimized parameters', repr([theta,ll_opt,popt])
+     
     
-    pylab.figure()
-    dadi.Plotting.plot_single_2d_sfs(model,vmin=1)
-    pylab.show()
-    pylab.savefig('model_split'+namestr+options.tag+options.model+'.png', dpi=100)
     
-    pylab.figure()
-    dadi.Plotting.plot_2d_comp_multinom(model,fsdata,vmin=1)
-    pylab.show()
-    pylab.savefig('compare_split'+namestr+options.tag+options.model+'.png', dpi=100)
-    pylab.figure()
-    dadi.Plotting.plot_2d_comp_Poisson(model,fsdata,vmin=1)
-    pylab.show()
-    pylab.savefig('compare_Poisson_split'+namestr+options.tag+options.model+'.png', dpi=100)
-elif len(popnamelist)==3:
-    pylab.figure()
-    dadi.Plotting.plot_3d_comp_Poisson(model,fsdata,vmin=1)
-    pylab.show()
-    pylab.savefig('compare_Poisson_split'+namestr+options.tag+options.model+'.png', dpi=100)
-    pylab.figure()
-    dadi.Plotting.plot_3d_comp_multinom(model,fsdata,vmin=1)
-    pylab.show()
-    pylab.savefig('compare_multinom_split'+namestr+options.tag+options.model+'.png', dpi=100)
-    pylab.figure()
-    dadi.Plotting.plot_3d_spectrum(fsdata,vmin=1)
-    pylab.show()
-    pylab.savefig('fsdata_split'+namestr+options.tag+options.model+'.png', dpi=100)
+    if len(popnamelist)==2:
+        pylab.figure()
+        dadi.Plotting.plot_single_2d_sfs(fsdata,vmin=1)
+        pylab.show()
+        pylab.savefig('fsdata_split'+namestr+options.tag+options.model+'.png', dpi=100)
+        
+        pylab.figure()
+        dadi.Plotting.plot_single_2d_sfs(model,vmin=1)
+        pylab.show()
+        pylab.savefig('model_split'+namestr+options.tag+options.model+'.png', dpi=100)
+        
+        pylab.figure()
+        dadi.Plotting.plot_2d_comp_multinom(model,fsdata,vmin=1)
+        pylab.show()
+        pylab.savefig('compare_split'+namestr+options.tag+options.model+'.png', dpi=100)
+        pylab.figure()
+        dadi.Plotting.plot_2d_comp_Poisson(model,fsdata,vmin=1)
+        pylab.show()
+        pylab.savefig('compare_Poisson_split'+namestr+options.tag+options.model+'.png', dpi=100)
+    elif len(popnamelist)==3:
+        pylab.figure()
+        dadi.Plotting.plot_3d_comp_Poisson(model,fsdata,vmin=1)
+        pylab.show()
+        pylab.savefig('compare_Poisson_split'+namestr+options.tag+options.model+'.png', dpi=100)
+        pylab.figure()
+        dadi.Plotting.plot_3d_comp_multinom(model,fsdata,vmin=1)
+        pylab.show()
+        pylab.savefig('compare_multinom_split'+namestr+options.tag+options.model+'.png', dpi=100)
+        pylab.figure()
+        dadi.Plotting.plot_3d_spectrum(fsdata,vmin=1)
+        pylab.show()
+        pylab.savefig('fsdata_split'+namestr+options.tag+options.model+'.png', dpi=100)
     
