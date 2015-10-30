@@ -327,7 +327,7 @@ if __name__ == '__main__':
                         background_branch_value = branch_value_obj.group(1)
                         foreground_branch_value = branch_value_obj.group(2)
                         processB_result_collection[firstofhomotrscpts].append(foreground_branch_value)
-                        print(firstofhomotrscpts,processB_result_collection[firstofhomotrscpts],file=open("test.txt",'a'))
+#                         print(firstofhomotrscpts,processB_result_collection[firstofhomotrscpts],file=open("test.txt",'a'))
                         break
                     mlcline_idx+=1
     #                 if re.search(r"^tree length\s*=",mlclines[mlcline_idx])!=None:
@@ -453,11 +453,11 @@ if __name__ == '__main__':
                 while mlcline_idx < len(mlclines):
                     if re.search(r"^lnL", mlclines[mlcline_idx]) != None:
                         lnL_1 = float(re.search(r":\s+([-\.\d]+)",mlclines[mlcline_idx]).group(1))
-                        if (processA_result_collection_lnL[curspecies] - lnL_1) * 2>chitesttable[0.01][2]:
+                        if (processA_result_collection_lnL[curspecies] - lnL_1) * 2>chitesttable[0.05][2]:
                             significant=True
                         else:
                             significant=False
-                        print(processA_result_collection_lnL,significant,lnL_1,chitesttable[0.01][2])
+                        print(processA_result_collection_lnL,significant,lnL_1,chitesttable[0.05][2])
                     elif significant and re.search(r"Bayes Empirical Bayes \(BEB\)",mlclines[mlcline_idx])!=None:
                         while True:
                             if re.search(r"\s+\d+\s+\w\s+[\.\d]+",mlclines[mlcline_idx])!=None or mlcline_idx==len(mlclines)-2:
@@ -472,7 +472,7 @@ if __name__ == '__main__':
                             break
                     elif re.search(r"Bayes Empirical Bayes \(BEB\)",mlclines[mlcline_idx])!=None:#just for test
                         print(firstofhomotrscpts,curspecies,processA_result_collection[firstofhomotrscpts][curspecies],file=mytesttempfile)
-                        print("significant judgement lnL:",lnL_1,"null hypothesis lnL:",processA_result_collection_lnL[curspecies],"(lnL_1 - lnL_1(null)) * 2",(processA_result_collection_lnL[curspecies] - lnL_1) * 2,"chitesttable",chitesttable[0.01][2],file=mytesttempfile)
+                        print("significant judgement lnL:",lnL_1,"null hypothesis lnL:",processA_result_collection_lnL[curspecies],"(lnL_1 - lnL_1(null)) * 2",(processA_result_collection_lnL[curspecies] - lnL_1) * 2,"chitesttable",chitesttable[0.05][2],file=mytesttempfile)
                         while True:
                             if re.search(r"\s+\d+\s+\w\s+[\.\d]+",mlclines[mlcline_idx])!=None or mlcline_idx==len(mlclines)-2:
                                 break

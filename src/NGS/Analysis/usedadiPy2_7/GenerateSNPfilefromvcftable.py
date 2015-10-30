@@ -4,10 +4,9 @@ Created on 2015-5-7
 
 @author: liurui
 '''
-import copy,random,re,os
+import copy, random, re, os
 from optparse import OptionParser
-
-
+import sys
 from src.NGS.BasicUtil import Util
 import src.NGS.BasicUtil.DBManager as dbm
 
@@ -26,12 +25,13 @@ parser.add_option("-v", "--vcftablelist", dest="vcftablelist",action="append",de
 joinmanner=" "+options.joinmanner+" join "
 minlength=options.minlength;toplevelsnptable=options.toplevelsnptable;snpperkb=float(options.snpperkb);vcftableslist=options.vcftablelist#minAN=options.minAN
 dadisnpfile=open(options.outputfilename+"dilutetodensity"+options.snpperkb.strip(),'w')
-outgroupidx_in_topleveltable=[8];minoutgroupdepth=35
+outgroupidx_in_topleveltable=[8,12];minoutgroupdepth=30
 randomnamefile_recordchr=Util.random_str(8)
 randomnamef_recchr=open(randomnamefile_recordchr,"w")
 noofindvds2quantizing=int(options.noofindvds2quantizing)
 allsnps=0
 if __name__ == '__main__':
+    print(sys.argv)
     genomedbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname)
     dbvariantstools=dbm.DBTools(Util.ip, Util.username,Util.password, Util.vcfdbname)
     toplevelsnptable_titlelist=[a[0].strip() for a in dbvariantstools.operateDB("select", "select column_name  from information_schema.columns where table_schema='" + "ninglabvariantdata" + "' and table_name='" + toplevelsnptable + "'")]
@@ -175,24 +175,43 @@ if __name__ == '__main__':
                     print("direction",direction)
                     sampled_idx_find_satisfied=sampled_idx
                 else:
-#                     firstoutgroupbase=allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][outgroupidx_in_topleveltable[0]].upper().strip();firstoutgroupdepthlist=re.split(r",",allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][outgroupidx_in_topleveltable[0]+1])
+                    firstoutgroupbase=allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][outgroupidx_in_topleveltable[1]].upper().strip();firstoutgroupdepthlist=re.split(r",",allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][outgroupidx_in_topleveltable[1]+1])
                     secondoutgroupbase=allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][outgroupidx_in_topleveltable[0]].upper().strip();secondoutgroupdepthlist=re.split(r",",allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][outgroupidx_in_topleveltable[0]+1])
                     ALT=allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][4].upper().strip()                    
-                if len(secondoutgroupdepthlist)==2 and int(secondoutgroupdepthlist[1])>=minoutgroupdepth and secondoutgroupdepthlist[0].strip()=="0":
-                    A_base_idx=1;continuesearch=2
-                elif len(secondoutgroupdepthlist)==2 and int(secondoutgroupdepthlist[0])>=minoutgroupdepth and secondoutgroupdepthlist[1].strip()=="0":
-                    A_base_idx=0;continuesearch=2
-#                 if len(firstoutgroupdepthlist)==2 and len(secondoutgroupdepthlist)==2 and (int(firstoutgroupdepthlist[0])+int(firstoutgroupdepthlist[1])>=minoutgroupdepth or int(secondoutgroupdepthlist[0])+int(secondoutgroupdepthlist[1])>=minoutgroupdepth):
-#                     if (firstoutgroupdepthlist[0].strip()=="0" and secondoutgroupdepthlist[0].strip()=="0") :
-#                         A_base_idx=1;continuesearch=3
-#                     elif (firstoutgroupdepthlist[1].strip()=="0" and secondoutgroupdepthlist[1].strip()=="0"):
-#                         A_base_idx=0;continuesearch=3
-#                     else:
-#                         print("skip this snp ",allsnpOfJoinTableinAchr[sampled_idx_find_satisfied])
-#                         sampled_idx_find_satisfied+=direction
+#                 wigeondepthlist1=re.split(r",",snp[0][13])
+#                 fanyadepthlist=re.split(r",",snp[0][9])
+                if len(firstoutgroupdepthlist)==2 and len(secondoutgroupdepthlist)==2 and (int(firstoutgroupdepthlist[0]) + int(firstoutgroupdepthlist[1])>=minoutgroupdepth or int(secondoutgroupdepthlist[0]) + int(secondoutgroupdepthlist[1])>=minoutgroupdepth) and ((firstoutgroupdepthlist[0].strip()=="0" and secondoutgroupdepthlist[0].strip()=="0") or (firstoutgroupdepthlist[1].strip()=="0" and secondoutgroupdepthlist[1].strip()=="0") ):
+                    if firstoutgroupdepthlist[0].strip()=="0" and secondoutgroupdepthlist[0].strip()=="0":
+                        A_base_idx=1;continuesearch=2
+                    elif firstoutgroupdepthlist[1].strip()=="0" and secondoutgroupdepthlist[1].strip()=="0":
+                        A_base_idx=0;continuesearch=2
+                    else:
+                        print("never get here")
+                elif (len(secondoutgroupdepthlist)==2  and int(secondoutgroupdepthlist[0]) + int(secondoutgroupdepthlist[1])>=minoutgroupdepth and (secondoutgroupdepthlist[0].strip()=="0" or secondoutgroupdepthlist[1].strip()=="0" )):#   or (snp[0][7]=="no covered" and len(depthlist2)==2 and int(depthlist2[0]) + int(depthlist2[1])>=mindeptojudgefix and (depthlist2[1].strip()=="0" or depthlist2[0].strip()=="0")):
+                    if  secondoutgroupdepthlist[0].strip()=="0":
+                        A_base_idx=1;continuesearch=2
+                    elif secondoutgroupdepthlist[1].strip()=="0":
+                        A_base_idx=0;continuesearch=2
                 else:
                     print("skip this snp,coverage not sufficent or different direction",allsnpOfJoinTableinAchr[sampled_idx_find_satisfied])
-                    sampled_idx_find_satisfied+=direction
+#                     print("skip snp",snp)
+#                     A_base_idx=-1
+                    sampled_idx_find_satisfied+=direction  
+#                 if len(secondoutgroupdepthlist)==2 and int(secondoutgroupdepthlist[1])>=minoutgroupdepth and secondoutgroupdepthlist[0].strip()=="0":
+#                     A_base_idx=1;continuesearch=2
+#                 elif len(secondoutgroupdepthlist)==2 and int(secondoutgroupdepthlist[0])>=minoutgroupdepth and secondoutgroupdepthlist[1].strip()=="0":
+#                     A_base_idx=0;continuesearch=2
+# #                 if len(firstoutgroupdepthlist)==2 and len(secondoutgroupdepthlist)==2 and (int(firstoutgroupdepthlist[0])+int(firstoutgroupdepthlist[1])>=minoutgroupdepth or int(secondoutgroupdepthlist[0])+int(secondoutgroupdepthlist[1])>=minoutgroupdepth):
+# #                     if (firstoutgroupdepthlist[0].strip()=="0" and secondoutgroupdepthlist[0].strip()=="0") :
+# #                         A_base_idx=1;continuesearch=3
+# #                     elif (firstoutgroupdepthlist[1].strip()=="0" and secondoutgroupdepthlist[1].strip()=="0"):
+# #                         A_base_idx=0;continuesearch=3
+# #                     else:
+# #                         print("skip this snp ",allsnpOfJoinTableinAchr[sampled_idx_find_satisfied])
+# #                         sampled_idx_find_satisfied+=direction
+#                 else:
+#                     print("skip this snp,coverage not sufficent or different direction",allsnpOfJoinTableinAchr[sampled_idx_find_satisfied])
+#                     sampled_idx_find_satisfied+=direction
                 #########
             else:#find
                 duiltedsnpcountforcurrentchr+=1

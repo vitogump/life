@@ -80,7 +80,7 @@ class VCF_Data():
             exit(-1)
         b = chromOrder.pop(i)
         a = NumOfRecbychromOrder.pop(i)
-        print(i, a, b)
+#         print(i, a, b)
         vcfChromIndex["chromOrder"] = chromOrder
         
         vcfChromIndex["NumOfRecbychromOrder"] = NumOfRecbychromOrder
@@ -267,7 +267,7 @@ class VCF_Data():
             FORMAT = linelist[8]
            # recidx += 1#line = vcfFile.readline();
             if posUniq and VcfList_A_Chrom and pos == VcfList_A_Chrom[-1][0]:
-                print("VCFutil unique the vcf pos", line[:110].replace("\t"," "), VcfList_A_Chrom[-1][0:3],VcfList_A_Chrom[-1][3][:30])
+#                 print("VCFutil unique the vcf pos", line[:110].replace("\t"," "), VcfList_A_Chrom[-1][0:3],VcfList_A_Chrom[-1][3][:30])
                 continue
             VcfList_A_Chrom.append((pos, REF, ALT, INFO, FORMAT, samples))
         vcfFile.close()

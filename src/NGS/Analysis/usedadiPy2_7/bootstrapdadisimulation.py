@@ -45,6 +45,7 @@ if __name__ == '__main__':
         namestr+=name        
     pythonpath_pre=pythonpath_pre+" -f "+options.fsfile+" -l "+options.genomelengthwhichsnpfrom+" -m "+options.model+" -T "+options.tag
     ll_param_MAPlist["likelihood"]=[]
+    ll_param_MAPlist["theta"]=[]
     for n,v,l,u in options.parameters:
         ll_param_MAPlist[n]=[]
     print(options.bootstrap[0])
@@ -84,8 +85,9 @@ if __name__ == '__main__':
             linelist=re.split(r"\s+",resultline.strip())
             if len(linelist)>=2:
                 name=linelist[0]
-                value=linelist[1]
-                ll_param_MAPlist[name].append(value)
+                convert_value=linelist[1]
+                value=linelist[2]
+                ll_param_MAPlist[name].append((convert_value,value))
         inf.close()
         print(ll_param_MAPlist)
 ##################
@@ -96,7 +98,7 @@ if __name__ == '__main__':
         print("",file=of)
     for i in range(len(ll_param_MAPlist["likelihood"])):
         for a in sorted(ll_param_MAPlist.keys()):
-            print(ll_param_MAPlist[a][i],end="\t",file=of)
+            print(ll_param_MAPlist[a][i][0],ll_param_MAPlist[a][i][1],end="\t",file=of)
         else:
             print("",file=of)
     of.close()

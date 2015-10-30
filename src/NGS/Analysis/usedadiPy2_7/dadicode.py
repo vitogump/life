@@ -381,6 +381,7 @@ if options.bootstrap!=False:
     for name in paramsname:
         ll_param_MAP[name]=[]
     ll_param_MAP["likelihood"]=[]
+    ll_param_MAP["theta"]=[]
     func_ex=dadi.Numerics.make_extrap_func(func)
     p0=dadi.Misc.perturb_params(params,lower_bound=lower_bound,upper_bound=upper_bound)
     popt=dadi.Inference.optimize_log(p0,fsdata,func_ex,pts_1,lower_bound=lower_bound,upper_bound=upper_bound,verbose=len(params))
@@ -390,17 +391,17 @@ if options.bootstrap!=False:
     Nref=theta/(4*9.97e-10*float(options.genomelengthwhichsnpfrom))
     for i in range(len(popt)):
         if re.search(r"^T",paramsname[i])!=None:
-            ll_param_MAP[paramsname[i]]=Nref*popt[i]*2
+            ll_param_MAP[paramsname[i]]=[Nref*popt[i]*2,popt[i]]
         elif re.search(r"^m",paramsname[i])!=None:
-            ll_param_MAP[paramsname[i]]=popt[i]/(Nref*2)
+            ll_param_MAP[paramsname[i]]=[popt[i]/(Nref*2),popt[i]]
         elif re.search(r"^nu",paramsname[i])!=None:
-            ll_param_MAP[paramsname[i]]=popt[i]*Nref
+            ll_param_MAP[paramsname[i]]=[popt[i]*Nref,popt[i]]
         else:
-            ll_param_MAP[paramsname[i]]=popt[i]
-    ll_param_MAP["likelihood"]=ll_opt
-
+            ll_param_MAP[paramsname[i]]=[popt[i],popt[i]]
+    ll_param_MAP["likelihood"]=[ll_opt,ll_opt]
+    ll_param_MAP["theta"]=[theta,theta]
     for a in sorted(ll_param_MAP.keys()):
-        print >>of,a,ll_param_MAP[a]
+        print >>of,a,ll_param_MAP[a][0],ll_param_MAP[a][1]
     else:
         pass
 #         print >>of,""
@@ -435,6 +436,7 @@ else:
     
     
     if len(popnamelist)==2:
+        print("print figure")
         pylab.figure()
         dadi.Plotting.plot_single_2d_sfs(fsdata,vmin=1)
         pylab.show()
