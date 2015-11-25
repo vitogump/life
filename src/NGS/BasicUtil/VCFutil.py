@@ -219,7 +219,7 @@ class VCF_Data():
         mapfile.close()
         pedfile.close()   
         vcffile.close()
-    def getVcfListByChrom(self, chrom, dilute=1, dilutetodensity="noofsnpperkb", posUniq=True, considerINDEL=False):
+    def getVcfListByChrom(self, chrom, dilute=1, dilutetodensity="noofsnpperkb", posUniq=True, considerINDEL=False,MQfilter=28):
         """
             although dilute and dilutetodensity can present at the same time,but it not make sense.
             return a list that contain all vcf record of a chrom
@@ -265,6 +265,13 @@ class VCF_Data():
                 continue
             INFO = linelist[7]
             FORMAT = linelist[8]
+            if linelist[6].strip()=="LowQual":
+                continue
+            aaaa=re.search(r"MQ=([\d\.]+);",INFO)
+            if aaaa!=None:
+                MQvalue=float(re.search(r"MQ=([\d\.]+);",INFO).group(1))
+                if MQvalue<MQfilter:
+                    continue
            # recidx += 1#line = vcfFile.readline();
             if posUniq and VcfList_A_Chrom and pos == VcfList_A_Chrom[-1][0]:
 #                 print("VCFutil unique the vcf pos", line[:110].replace("\t"," "), VcfList_A_Chrom[-1][0:3],VcfList_A_Chrom[-1][3][:30])

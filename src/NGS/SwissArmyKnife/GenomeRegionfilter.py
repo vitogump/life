@@ -13,7 +13,7 @@ parser.add_option("-m", "--minlength", dest="minlength")
 parser.add_option("-g", "--gtffile", dest="gtffile",default=None, help="gtffile")
 (options, args) = parser.parse_args()
 if options.gtffile !=None:
-    gtfMap = Util.getGtfMap(options.gtffile)
+    gtfMap,utrMap,allgeneSetMap = Util.getGtfMap(options.gtffile)
 minlength = options.minlength
 chromtable = Util.pekingduckchromtable#options.chromtablename
 dbchromtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname)

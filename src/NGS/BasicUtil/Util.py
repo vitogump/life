@@ -31,7 +31,7 @@ KB743256_1=cfparser.get("mysqldatabase","KB743256_1")
 
 def alinmultPopSnpPos(vcfMaplist,jointmode="i"):
     """input:
-    two map fomart like this {chrNo:[(pos,REF,ALT,INFO,FORMAT,sample,...),(pos,REF,ALT,INFO,FORMAT,sample,...),,,,,],chrNo:[],,,,,,}
+    two map fomart like this [chrNo:[(pos,REF,ALT,INFO,FORMAT,sample,...),(pos,REF,ALT,INFO,FORMAT,sample,...),,,,,],{chrNo:[]},,,,,,]
     output:
     one map like this {chrNo:[(pos,REF,ALT,(INFO,FORMAT,sample,...),(INFO,FORMAT,sample,...)),(,,,(),()),,,,,],chrNo:[],,,}
                                             from pop1                        from pop2
@@ -456,6 +456,27 @@ def generateIndexByChrom(refFastaFileName, indexFileName, mapname=None,startchar
         refline = refFastaFile.readline()
     pickle.dump(refChromIndex, open(indexFileName, 'wb'))
     refFastaFile.close()
+def generateFasterRefIndex(refFastaFileName, indexFileName,mapname=None,startchar=">"):
+    refFastaFile = open(refFastaFileName, 'r')
+    refChromIndex = {}
+    refline = refFastaFile.readline()
+    while refline:
+        if re.search(r'^['+startchar+']', refline) != None:
+            basecount=1
+            m=1
+            if mapname == "transcript:":
+                currentChromNo = re.search(r'transcript:(.*?)\s+', refline).group(1).strip()
+            else:
+                currentChromNo = re.search(r'[^'+startchar+']+', (re.split(r'\s+', refline))[0]).group(0)
+            refChromIndex[currentChromNo] = [(basecount,int(refFastaFile.tell()))]# (no of base befor,cur file pos)
+        else:
+            basecount+=len(refline.strip())
+            if basecount>=6000*m:
+                refChromIndex[currentChromNo].append((basecount,int(refFastaFile.tell())))
+                m+=1
+        refline = refFastaFile.readline()
+    pickle.dump(refChromIndex,open(indexFileName, 'wb'))
+    refFastaFile.close()
 def generateIndexByChromForFQ(refFastaFileName, indexFileName, mapname=None,startchar=">"):
     refFastaFile = open(refFastaFileName, 'r')
     refChromIndex = {}
@@ -479,11 +500,22 @@ def getGtfMap(gtfFileName, elementTypes=["CDS", "stop_codon"]):
                chromNo:[],,,,,,,,,,,,,,}
         chrtranscrpitididxMap{chromNo:{transcript_id:ttanscript_id_idx,transcript_id:ttanscript_id_idx,,,,,},
                                 chromNo:{},chromNo:{},,,,}
+        utrMap={chromNo:{{transcript_id:[("UTR",start,end),(),()],}}}
+        allgeneSetMap={chromNo:{transcript_order:[],transcript_id:(strand,startpos,endpos),transcript_id:(strand,startpos,endpos),,,},chromNo:{transcript_id:(strand,startpos,endpos),,,,,},,,,}
     """
+    try:
+        
+        protein_codingMap=pickle.load(open(gtfFileName+".protein_codingMap.landmine","rb"))
+        utrMap=pickle.load(open(gtfFileName+".utrMap.landmine","rb"))
+        allgeneSetMap=pickle.load(open(gtfFileName+".allgeneSetMap.landmine","rb"))
+        return protein_codingMap,utrMap,allgeneSetMap
+    except IOError:
+        print("getGtfMap")
     gtfFileHandler = open(gtfFileName, 'r')
     protein_codingMap = {}
     chrtranscrpitididxMap = {}
     utrMap={}
+    allgeneSetlist={}
 #     gtfline = gtfFileHandler.readline()
     jumpout = False
     for getfirstcds in gtfFileHandler:
@@ -500,7 +532,12 @@ def getGtfMap(gtfFileName, elementTypes=["CDS", "stop_codon"]):
             continue
         print("transcript_id_idx", transcript_id_idx)
         transcript_id = re.search(r'\"(.*)\";', gtfColList[transcript_id_idx].strip()).group(1)
-        countInChrom = 0        
+        countInChrom = 0
+        if gtfColList[2].strip()=="transcript":
+            if chromNo in allgeneSetlist:
+                allgeneSetlist[chromNo].append((transcript_id,gtfColList[6],int(gtfColList[3]), int(gtfColList[4])))
+            else:
+                allgeneSetlist[chromNo]=[(transcript_id,gtfColList[6],int(gtfColList[3]), int(gtfColList[4]))]
         for elementType in elementTypes:
             if elementType == gtfColList[2].strip():
                 jumpout = True
@@ -517,6 +554,11 @@ def getGtfMap(gtfFileName, elementTypes=["CDS", "stop_codon"]):
     for gtfline in gtfFileHandler:
         gtfColList = re.split(r'\s+', gtfline)
         transcript_id = re.search(r'\"(.*)\";', gtfColList[transcript_id_idx].strip()).group(1)
+        if gtfColList[2].strip()=="transcript":
+            if chromNo in allgeneSetlist:
+                allgeneSetlist[chromNo].append((transcript_id,gtfColList[6],int(gtfColList[3]), int(gtfColList[4])))
+            else:
+                allgeneSetlist[chromNo]=[(transcript_id,gtfColList[6],int(gtfColList[3]), int(gtfColList[4]))]
         for elementType in elementTypes:
             if elementType == gtfColList[2].strip():
                 break
@@ -546,7 +588,15 @@ def getGtfMap(gtfFileName, elementTypes=["CDS", "stop_codon"]):
     else:
         pass                 
     gtffilepath = re.search(r"^.*[/]", gtfFileName).group(0)
-    testfile = open(gtffilepath + "protein_codingMap.sort.txt", 'w')    
+    testfile = open(gtffilepath + "protein_codingMap.sort.txt", 'w')
+    allgeneSetMap={}
+    for chromNo in allgeneSetlist.keys():
+        allgeneSetMap[chromNo]={"transcript_order":[]}
+        allgeneSetlist[chromNo].sort(key=lambda listRec:listRec[2])
+        for tp_id,strand,startpos,endpos in allgeneSetlist[chromNo]:
+            allgeneSetMap[chromNo]["transcript_order"].append(tp_id)
+            allgeneSetMap[chromNo][tp_id]=(strand,startpos,endpos)
+        
     for chromNo in protein_codingMap.keys():
         protein_codingMap[chromNo].sort(key=lambda listRec:listRec[2])
         # 先按照转录本起始坐标排序，下面是对转录本内元件排序，不过是什么排序方法忘记了，仔细读一下吧
@@ -575,7 +625,10 @@ def getGtfMap(gtfFileName, elementTypes=["CDS", "stop_codon"]):
 #             print(tpid,file=testutr)
 #             print(utrMap[chrom][tpid],file=testutr)
 #     testutr.close()
-    return protein_codingMap,utrMap
+    pickle.dump(protein_codingMap,open(gtfFileName+".protein_codingMap.landmine", 'wb'))
+    pickle.dump(utrMap,open(gtfFileName+".utrMap.landmine", 'wb'))
+    pickle.dump(allgeneSetMap,open(gtfFileName+".allgeneSetMap.landmine", 'wb'))
+    return protein_codingMap,utrMap,allgeneSetMap
 def getNearestGenegroup(gtfList, pos):
     """
     input:for a chrom,contain all transcript of this chrom
@@ -646,6 +699,92 @@ def getGeneGrouplist(gtfList):
         geneGrouplist.append(geneGroup)
         
     return geneGrouplist
+def getRefSeqBypos_faster(refFastahandle, refindex, currentChromNO, startpos, endpos, currentChromNOlen=None, seektuple=()):
+    '''
+    pos start at 1
+    seektuple=(filepos,basesbeforefilepos)
+    the refSeqMap has only one chromosome's sequence
+    There is no restriction on refFastahander
+    '''    
+    refSeqMap = {}
+    if startpos <= 0:
+        startpos = 1
+    print("getRefSeqBypos", currentChromNO, startpos, endpos)
+    if currentChromNOlen != None and endpos > currentChromNOlen:
+        endpos = currentChromNOlen
+
+    filehandle = refFastahandle
+    if not seektuple or seektuple[1] > startpos:
+        refSeqMap[currentChromNO] = [startpos - 1]
+        low=0;high=len(refindex[currentChromNO])-1
+        while low<=high:
+            mid=(low + high)>>1
+            if refindex[currentChromNO][mid][0]<startpos:
+                low=mid+1
+            elif refindex[currentChromNO][mid][0]>startpos:
+                high=mid-1
+            else:
+                perivouspos_idx=mid
+#                 filehandle.seek(refindex[currentChromNO][mid][1])
+                break
+        else:
+            if refindex[currentChromNO][high][0]>startpos:
+                high-=1
+                perivouspos_idx=high
+            else:
+                perivouspos_idx=high
+        filehandle.seek(refindex[currentChromNO][perivouspos_idx][1])
+          # seekmap is empty so go to the first bases of the currentChromNO
+        if refindex[currentChromNO][perivouspos_idx][0]<startpos:
+            preseq = filehandle.read(startpos- refindex[currentChromNO][perivouspos_idx][0])
+            dn = preseq.count('\n')
+            while dn != 0:
+                preseq = filehandle.read(dn)
+                dn = preseq.count('\n')
+        elif refindex[currentChromNO][perivouspos_idx][0]==(startpos- refindex[currentChromNO][perivouspos_idx][0]):
+            pass
+        else:
+            print("getRefSeqBypos_faster ERROR error")
+            
+        # now filehander is right stay at the startpos
+        myseqline = filehandle.read(endpos - startpos + 1)
+        myseqn = myseqline.count('\n')
+#        if len(myseqline)>200:
+#            print(myseqn)
+#            exit(-1)
+#        print("myseqline=",myseqline,"myseqn", myseqn)
+        while myseqn != 0:  # fill the same number of \n with bases
+            myseqline = myseqline.replace('\n', '')
+            myseqline += filehandle.read(myseqn)
+            myseqn = myseqline.count('\n')
+            
+#            print(currentChromNO,myseqline, myseqn)
+        if myseqline.count('>') >= 1:
+            print(currentChromNO, myseqline, myseqn)
+            exit(-1)
+        refSeqMap[currentChromNO].extend(list(myseqline))
+    else:
+        filehandle.seek(seektuple[0])  # seekmap is not empty
+        refSeqMap[currentChromNO] = [startpos - 1]
+        preseq = filehandle.read(startpos - seektuple[1] - 1)
+        dn = preseq.count('\n')
+        while dn != 0:
+            preseq = filehandle.read(dn)
+            dn = preseq.count('\n')
+        # now filehander is right stay at the startpos
+        myseqline = filehandle.read(endpos - startpos + 1)
+        myseqn = myseqline.count('\n')
+        while myseqn != 0:  # fill the same number of \n with bases
+            myseqline = myseqline.replace('\n', '')
+            myseqline += filehandle.read(myseqn)
+            myseqn = myseqline.count('\n')
+        refSeqMap[currentChromNO].extend(list(myseqline))
+    plus = myseqline.count('>')
+    if plus != 0:
+        print("getRefSeqBypos", currentChromNO, startpos, endpos)
+        return -1
+    
+    return refSeqMap 
 def getRefSeqBypos(refFastahandle, refindex, currentChromNO, startpos, endpos, currentChromNOlen=None, seektuple=()):
     '''
     pos start at 1
@@ -1612,8 +1751,8 @@ class WinInGenome():
         outfile.close()
 
     def collectTrscptInWin(self, genomedbtools, trscptableName, region, upextend=0, downextend=0,findNearestGene=False):
-        """select region overlaped with the trscpt
-        reture a list of trscpts [tp_generecord1,tp_generecord2,,,]
+        """select trscpt overlaped with the region
+        reture a list of trscpts [tp_generecord1+overlapcode,tp_generecord2+overlapcode,,,]
         """
         trscptlist = []
         transcripttable = trscptableName
@@ -1664,7 +1803,7 @@ class WinInGenome():
             row += tuple([6])
             trscptlist.append(row)
         if trscptlist==[] and findNearestGene:
-            result=genomedbtools.operateDB("select","select * from "+ transcripttable + " where chrID='" + chrID +  "' and trscpt_end_pos < "+str(Region_start) + " order by trscpt_end_pos")
+            result=genomedbtools.operateDB("select","select * from "+ transcripttable + " where chrID='" + chrID +  "' and trscpt_end_pos < "+str(Region_start) + " order by trscpt_end_pos desc")
             if len(result)!=0:#result is a list
                 row=list(result[-1])
                 if Region_start-int(row[6])<180000:

@@ -169,7 +169,11 @@ class Fst():
                         if currentchrID in FstMapByChrom:
                             for i in range(len(FstMapByChrom[currentchrID])):
                                 if FstMapByChrom[currentchrID][i][2][1] != "NA" and FstMapByChrom[currentchrID][i][3] != "NA":
-                                    print(currentchrID + "\t" + str(i) + "\t" + str(FstMapByChrom[currentchrID][i][0]) + "\t" + str(FstMapByChrom[currentchrID][i][1]) +"\t" + str(FstMapByChrom[currentchrID][i][2][1]) + "\t" + '%.15f'%(FstMapByChrom[currentchrID][i][2][1]/currentchrLen) + "\t" + 'NA', file=outfilefixdif)
+#                                     if i+1==len(FstMapByChrom[currentchrID]):
+#                                         lastlength=currentchrLen-(self.windowWidth+self.slideSize*(i-1))
+#                                         print(currentchrID + "\t" + str(i) + "\t" + str(FstMapByChrom[currentchrID][i][0]) + "\t" + str(FstMapByChrom[currentchrID][i][1]) +"\t" + str(FstMapByChrom[currentchrID][i][2][1]) + "\t" + 'NA' + "\t" + '%.15f'%(FstMapByChrom[currentchrID][i][2][1]/lastlength), file=outfilefixdif)
+#                                     else:
+                                    print(currentchrID + "\t" + str(i) + "\t" + str(FstMapByChrom[currentchrID][i][0]) + "\t" + str(FstMapByChrom[currentchrID][i][1]) +"\t" + str(FstMapByChrom[currentchrID][i][2][1]) + "\t" + 'NA' + "\t" + '%.15f'%(FstMapByChrom[currentchrID][i][2][1]/self.windowWidth), file=outfilefixdif)
                                 else:
                                     print(currentchrID + "\t" + str(i) + "\t" + str(FstMapByChrom[currentchrID][i][0]) + "\t" + str(FstMapByChrom[currentchrID][i][1]) +"\t" + str(FstMapByChrom[currentchrID][i][2][1]) + "\t" + 'NA' + "\t" + 'NA', file=outfilefixdif)
                                 if FstMapByChrom[currentchrID][i][3] != "NA":
@@ -313,7 +317,11 @@ class Fst():
     #                for chrom in sorted(globalFstMapByChrom.keys()):
                                 for i in range(len(self.globalFstMapByChrom[currentchrID])):
                                     if self.globalFstMapByChrom[currentchrID][i][2][1] != "NA" and self.globalFstMapByChrom[currentchrID][i][3] != "NA":
-                                        print(currentchrID + "\t" + str(i) + "\t" + str(self.globalFstMapByChrom[currentchrID][i][0]) + "\t" + str(self.globalFstMapByChrom[currentchrID][i][1]) +"\t" + str(self.globalFstMapByChrom[currentchrID][i][2][1]) + "\t" + '%.15f'%(self.globalFstMapByChrom[currentchrID][i][2][1]/currentchrLen) + "\t" + 'NA', file=outfilefixdif)
+#                                         if i+1==len(self.globalFstMapByChrom[currentchrID]):
+#                                             lastlength=currentchrLen-(self.windowWidth+self.slideSize*(i-1))
+#                                             print(currentchrID + "\t" + str(i) + "\t" + str(self.globalFstMapByChrom[currentchrID][i][0]) + "\t" + str(self.globalFstMapByChrom[currentchrID][i][1]) +"\t" + str(self.globalFstMapByChrom[currentchrID][i][2][1]) + "\t" + 'NA' + "\t" + '%.15f'%(self.globalFstMapByChrom[currentchrID][i][2][1]/lastlength), file=outfilefixdif)
+#                                         else:
+                                        print(currentchrID + "\t" + str(i) + "\t" + str(self.globalFstMapByChrom[currentchrID][i][0]) + "\t" + str(self.globalFstMapByChrom[currentchrID][i][1]) +"\t" + str(self.globalFstMapByChrom[currentchrID][i][2][1]) + "\t" + 'NA' + "\t" + '%.15f'%(self.globalFstMapByChrom[currentchrID][i][2][1]/self.windowWidth), file=outfilefixdif)
                                     else:
                                         print(currentchrID + "\t" + str(i) + "\t" + str(self.globalFstMapByChrom[currentchrID][i][0]) + "\t" + str(self.globalFstMapByChrom[currentchrID][i][1]) +"\t" + str(self.globalFstMapByChrom[currentchrID][i][2][1]) + "\t" + 'NA' + "\t" + 'NA', file=outfilefixdif)
                                     if self.globalFstMapByChrom[currentchrID][i][3] != "NA":

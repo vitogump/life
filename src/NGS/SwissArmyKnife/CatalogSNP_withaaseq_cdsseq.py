@@ -42,7 +42,7 @@ dbchromtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinf
 variantstablename = options.variantstable.strip()
 dbvariantstools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.vcfdbname)
 
-gtfMap,utrMap = Util.getGtfMap(options.gtffile)
+gtfMap,utrMap,allgeneSetMap = Util.getGtfMap(options.gtffile)
 bedfileNames = options.bedfiles
 
 outputpath = options.outputpath.strip()
@@ -109,7 +109,7 @@ if __name__ == '__main__':
             if currentchrID not in gtfMap:
                 snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>=" + str(0) + " and snp_pos<" + str(currentchrLen) + " order by snp_pos")
                 for snp in snps:
-                    print(*(snp+tuple(["nogene"])), sep="\t", file=intergenicVF)            
+                    print(*(snp+tuple(["nogene"])), sep="\t", file=intergenicVF)
                 print("no gene in the chrom:", currentchrID)
                 continue
             ####################### 
@@ -189,7 +189,7 @@ if __name__ == '__main__':
                                         print("intergenicVF","select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(utrMap[currentchrID][i-1][2]) + " and snp_pos<" + str(utr_s) + " order by snp_pos")
                                         snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(utrMap[currentchrID][i-1][2]) + " and snp_pos<" + str(utr_s) + " order by snp_pos")
                                         for snp in snps:
-                                            print(*snp, sep="\t", file=intergenicVF)
+                                            print(*(snp+tuple(["betweenutr"+tscptID])), sep="\t", file=intergenicVF)
                                     elif i+1==len(utrMap[currentchrID][tscptID]) and False:
                                         print("unfinished")
                                         
@@ -321,7 +321,7 @@ if __name__ == '__main__':
                                     if i>=1:
                                         snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(utrMap[currentchrID][i-1][2]) + " and snp_pos<" + str(utr_s) + " order by snp_pos")
                                         for snp in snps:
-                                            print(*snp, sep="\t", file=intergenicVF)
+                                            print(*(snp+tuple(["betweenutr"+tscptID])), sep="\t", file=intergenicVF)
                                     elif i+1==len(utrMap[currentchrID][tscptID]) and False:
                                         snps=dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(utrMap[currentchrID][i-1][2]) + " and snp_pos<" + str(geneGroup[gene_idx][2]) + " order by snp_pos")
                                         print("unfinished")

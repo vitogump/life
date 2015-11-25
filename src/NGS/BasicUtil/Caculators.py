@@ -42,7 +42,7 @@ class Caculate_SNPsPerBIN(Caculator):
                     return
             elif self.MethodToSeq == "indvd":
                 AN = int(re.search(r"AN=(\d+);", T[3]).group(1))
-                AF = int(float(re.search(r"AF=([\d\.]+);", T[3]).group(1)))
+                AF = int(float(re.search(r"AF=([\d\.e-]+);", T[3]).group(1)))
                 if AF == 1:
                     return
 #                 refdep=AN-AC
@@ -128,18 +128,78 @@ class Caculate_Dstatistics(Caculator):
         self.numerator_snp = 0;self.denominator_snp = 0;noofsnps = copy.deepcopy(self.COUNTEDforSNP_notonlyfixed);self.COUNTEDforSNP_notonlyfixed = 0
         return ABBAcount, BABAcount, D_fixed, D_snp, noofsnps
         
-        
+class Caculate_df(Caculator):
+    def __init__(self,pop1idxlist,pop2idxlist):
+        super().__init__()
+        self.pop1idxlist=pop1idxlist
+        self.pop2idxlist=pop2idxlist
+        self.COUNTED = 0# nooffixdiff
+        self.COUNTEDadditional=[0,[0,0]]#noofheterozygosity (pop1recs,pop2recs)
+        self.unsufficentfixediff=0
+        self.pop1_indvds=None#=6#when pop1 is none at a pos,and no depth information
+        self.pop2_indvds=None#=6
+    def process(self,T):
+        #no matter the present of the multiple allele or not,it's still work correct.
+        pop1reffixed=0;pop1altfixed=0;pop2reffixed=0;pop2altfixed=0
+        pop1het=0;pop2het=0
+        pop1recs=0;pop2recs=0
+        GT_idx = (re.split(":", T[3 + 0][1])).index("GT")  # gatk GT:AD:DP:GQ:PL
+        for pop1idx in self.pop1idxlist:
+            sample=T[3+0][2][pop1idx]
+            if len(re.split(":", sample)) == 1:  # ./.
+                continue
+            pop1recs+=1
+            if re.split(":", sample)[GT_idx]=="0/0":
+                pop1reffixed+=1
+            elif re.split(":", sample)[GT_idx]=="1/1":
+                pop1altfixed+=1
+            elif re.split(":", sample)[GT_idx]=="0/1":
+                pop1het+=1
+        for pop2idx in self.pop2idxlist:
+            sample=T[3+0][2][pop2idx]
+            if len(re.split(":", sample)) == 1:  # ./.
+                continue
+            pop2recs+=1
+            if re.split(":", sample)[GT_idx]=="0/0":
+                pop2reffixed+=1
+            elif re.split(":", sample)[GT_idx]=="1/1":
+                pop2altfixed+=1
+            elif re.split(":", sample)[GT_idx]=="0/1":
+                pop2het+=1
+#                                  pop1 fixed as alt ,pop2 fixed as ref                                                      pop1 fixed as ref ,pop2 fixed as alt
+#         print(self.pop2_indvds,pop2reffixed+pop2altfixed,pop2reffixed*pop2altfixed,self.pop1_indvds,pop1altfixed+pop1reffixed,pop1reffixed*pop1altfixed)
+#         print(pop1reffixed,"==0",pop1altfixed,"==",self.pop1_indvds,pop2reffixed,"==",self.pop2_indvds,pop2altfixed,"==0",(pop1reffixed==0 and pop1altfixed==self.pop1_indvds and pop2reffixed==self.pop2_indvds and pop2altfixed==0 ),pop1reffixed,"==",self.pop1_indvds,pop1altfixed,"==0",pop2reffixed,"==0",pop2altfixed,"==",self.pop2_indvds,(pop1reffixed==self.pop1_indvds and pop1altfixed==0 and pop2reffixed==0 and pop2altfixed==self.pop2_indvds))
+        if (pop1reffixed==0 and pop1altfixed==self.pop1_indvds and pop2reffixed==self.pop2_indvds and pop2altfixed==0 ) or (pop1reffixed==self.pop1_indvds and pop1altfixed==0 and pop2reffixed==0 and pop2altfixed==self.pop2_indvds):
+            self.COUNTED+=1
+#             print("bingle",file=open("tttttt.txt",'a'))
+        elif (pop1reffixed*pop1altfixed!=0 or pop1het!=0) or (pop2reffixed*pop2altfixed!=0 or pop2het!=0 ) :
+            self.COUNTEDadditional[0]+=1
+        elif (pop1reffixed*pop1altfixed==0 and pop1het==0) and (pop2reffixed*pop2altfixed==0 and pop2het==0 ) :
+            self.COUNTEDadditional[1][0]+=pop1recs/self.pop1_indvds;self.COUNTEDadditional[1][1]+=pop2recs/self.pop2_indvds;self.unsufficentfixediff+=1
+    def getResult(self):
+        if self.unsufficentfixediff!=0:
+            pop1unsufficentfixed=self.COUNTEDadditional[1][0]/self.unsufficentfixediff
+            pop2unsufficentfixed=self.COUNTEDadditional[1][1]/self.unsufficentfixediff
+        else:
+            pop1unsufficentfixed=0;pop2unsufficentfixed=0
+        noofhet=self.COUNTEDadditional[0]
+        nooffixediff=self.COUNTED
+        self.COUNTED=0
+        self.COUNTEDadditional=[0,[0,0]]
+        self.unsufficentfixediff=0
+        return [noofhet,(pop1unsufficentfixed,pop2unsufficentfixed)],nooffixediff #self.COUNTEDadditional,self.COUNTED
 
 class Caculate_Hp(Caculator):
-    def __init__(self, SeqMethodlist=["pool"], minsnps=10):
+    def __init__(self, SeqMethodlist=["pool"], minsnps=10,depth=10):
         super().__init__()
         self.minsnps = minsnps
+        self.depth=depth
         self.COUNTED = [0] * len(SeqMethodlist)
         self.CNMI = [0] * len(SeqMethodlist)
         self.CNMA = [0] * len(SeqMethodlist)
         self.sum_mean_2pq = 0
         self.SeqMethodlist = SeqMethodlist     
-    def process(self, T, seqerrorrate=0.005, mode=1):
+    def process(self, T, seqerrorrate=0.008, mode=1):
         if len(T[1]) != len(T[2]) or len(T[2])!=1 or len(T[2])!=1:
             return
         for MethodToSeq_idx in range(len(self.SeqMethodlist)):
@@ -159,14 +219,14 @@ class Caculate_Hp(Caculator):
                     except ValueError:
                         print(sample, end="|")
             elif MethofToSeq == "indvd":
-                AF = float(re.search(r"AF=([\d\.]+);", T[3 + MethodToSeq_idx][0]).group(1))
+                AF = float(re.search(r"AF=([\d\.e-]+);", T[3 + MethodToSeq_idx][0]).group(1))
                 AN = int(re.search(r"AN=(\d+);", T[3 + MethodToSeq_idx][0]).group(1))
                 AC = int(re.search(r"AC=(\d+);", T[3 + MethodToSeq_idx][0]).group(1))
                 refdep = AN - AC
                 altalleledep = AC
             if refdep <= seqerrorrate * (refdep + altalleledep):  # skip fixed as altallele ,ie refdep == 0
                 continue
-            if refdep + altalleledep < 10:
+            if refdep + altalleledep < self.depth:
                 continue
             self.COUNTED[MethodToSeq_idx] += 1
             if refdep < altalleledep:
@@ -323,7 +383,7 @@ class Caculate_S_ObsExp_difference(Caculator):
                         continue
             else:
                 if self.MethodToSeqpoplist[tpopidx-3]=="indvd":
-                    AF=float(re.search(r"AF=([\d\.]+);", T[tpopidx][0]).group(1))
+                    AF=float(re.search(r"AF=([\d\.e-]+);", T[tpopidx][0]).group(1))
                     AN = float(re.search(r"AN=([\d]+);", T[tpopidx][0]).group(1))
                     if AN<5:
                         continue
@@ -542,14 +602,12 @@ class Caculate_Fst(Caculator):
 
                     sum_depth=0
                     for idx in self.species_idx_map["vcfpop2"]:
-                        if int(depth_linelist[idx])>4:
+                        if int(depth_linelist[idx])>1:
                             sum_depth+=1
-#                         sum_depth+=int(depth_linelist[idx])
-#                     if sum_depth>=self.pop2_indvdsormediandepth:
+
                     refdep_2=sum_depth*2
                     altalleledep_2=0
-#                     else:
-#                         return
+
             else:
                 AN = int(re.search(r"AN=(\d+);", pop2[0]).group(1))
                 AC = int(re.search(r"AC=(\d+);", pop2[0]).group(1))

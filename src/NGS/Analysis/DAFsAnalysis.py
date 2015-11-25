@@ -40,6 +40,7 @@ breaks = int(options.interval[2])
 d_increase = (maxvalue - minvalue) / breaks
 if __name__ == '__main__':
     ########## prepare ##########
+    print("depthfile is not used currently")
     intervalFileName=options.outfileprename+".interval"
     intervalfile=open(intervalFileName,"w")
     while minvalue + d_increase<= maxvalue-d_increase :
@@ -142,6 +143,7 @@ if __name__ == '__main__':
                         depth_linelist=depthobjmap[cdsfilenameslist[wf_idx]].getdepthByPos_optimized(curchrom,curpos)
                         sum_depth=0
                         for idx in species_idx_map[cdsfilenameslist[wf_idx]]:
+                            print("should never reach here")
                             sum_depth+=int(depth_linelist[idx])
                         wild_CurPosRecs.append(["unknow"]*(AF_idxlist_cds[wf_idx]+1))
                         if sum_depth>mindeptojudgefix_forancestral:
@@ -161,8 +163,8 @@ if __name__ == '__main__':
                 snp=dbvariantstools.operateDB("select","select * from "+topleveltablename+" where chrID='"+curchrom+"' and snp_pos='"+str(curpos)+"'")
                 if not snp:
                     if allsnprecinAchr_mapbyvcfname=={}:
-                        allsnprecinAchr_mapbyvcfname["wigeon"]=VCFobj["wigeon"].getVcfListByChrom(curchrom)
-                        allsnprecinAchr_mapbyvcfname["fanya"]=VCFobj["wigeon"].getVcfListByChrom(curchrom)
+#                         allsnprecinAchr_mapbyvcfname["wigeon"]=VCFobj["wigeon"].getVcfListByChrom(curchrom)
+                        allsnprecinAchr_mapbyvcfname["fanya"]=VCFobj["fanya"].getVcfListByChrom(curchrom)
                     low0=0
                     high0=len(allsnprecinAchr_mapbyvcfname["fanya"])-1
                     while low0<=high0:
@@ -281,6 +283,28 @@ if __name__ == '__main__':
                 os.system("rm "+filename)
         AFsMapByFileName[tag]=copy.deepcopy(AFintervalMap_SNPcounts)
         DAFsMapByFileName[tag]=copy.deepcopy(DAFintervalMap_SNPcounts)
+    outfile=open(options.outfileprename+"gtfAAF","w")
+    print("AFbin",end="\t",file=outfile)
+    for tag in sorted(AFsMapByFileName.keys()):
+        print(tag,end="\t",file=outfile)
+    print("",file=outfile)
+    for a,b in AFintervalMap_SNPcounts_template.keys():
+        print(str(a),str(b),end="\t",file=outfile)
+        for tag in sorted(AFsMapByFileName.keys()):
+            print(str(AFsMapByFileName[tag][a,b]),end="\t",file=outfile)
+        print("",file=outfile)
+    outfile.close()
+    outfile=open(options.outfileprename+"gtfDAF","w")
+    print("DAFbin",end="\t",file=outfile)
+    for tag in sorted(DAFsMapByFileName.keys()):
+        print(tag,end="\t",file=outfile)
+    print("",file=outfile)
+    for a,b in sorted(DAFintervalMap_SNPcounts_template.keys()):
+        print(str(a),str(b),end="\t",file=outfile)
+        for tag in sorted(DAFsMapByFileName.keys()):
+            print(str(DAFsMapByFileName[tag][a,b]),end="\t",file=outfile)
+        print("",file=outfile)
+    outfile.close()
     ################################bed##############
     print("start caculate bedfiles")
     for bedfilename,vcffilename,minAN in options.bedlikefile:#each col
@@ -289,16 +313,26 @@ if __name__ == '__main__':
         AFintervalMap_SNPcounts=copy.deepcopy(AFintervalMap_SNPcounts_template)
         bedfilenamewithoutpath=re.search(r"[^/]*$",bedfilename).group(0)
         vcffilenamewithoutpath=re.search(r"[^/]*$",vcffilename).group(0)
+        os.system("rm "+vcffilename+bedfilenamewithoutpath+".recode.vcf"+" "+vcffilename+bedfilenamewithoutpath+".recode.vcf.myindex")
 
         if re.search(r"indvd[^/]+",vcffilename)!=None:
             a=os.system(pathtovcftools+" --remove-indels --min-alleles 2 --max-alleles 2 --recode --recode-INFO AF --recode-INFO AN --bed "+bedfilename+" --vcf "+vcffilename+" --out "+vcffilename+bedfilenamewithoutpath)
         elif re.search(r"pool[^/]+",vcffilename)!=None:
             a=os.system(pathtovcftools+" --remove-indels --min-alleles 2 --max-alleles 2 --recode  --bed "+bedfilename+" --vcf "+vcffilename+" --out "+vcffilename+bedfilenamewithoutpath)
-#         filteredvcffilenamelist.append(vcffilename+bedfilenamewithoutpath+".recode.vcf")
-        
+    #         filteredvcffilenamelist.append(vcffilename+bedfilenamewithoutpath+".recode.vcf")
+        if a!=0:
+            print("Polypolidy")
+            print("""awk '{OFS="\\t";print $1,$2,$3,$4,$5,$6,$7,$8}' """+vcffilename+" > "+vcffilename+"cut.vcf")
+            b=os.system("""awk '{OFS="\\t";print $1,$2,$3,$4,$5,$6,$7,$8}' """+vcffilename+" > "+vcffilename+"cut.vcf")
+            if b!=0:
+                print("error b")
+                exit(-1)
+            treatPolypolidyasindvd=True
+            a=os.system(pathtovcftools+" --remove-indels --min-alleles 2 --max-alleles 2 --recode --recode-INFO AF --recode-INFO AN --bed "+bedfilename+" --vcf "+vcffilename+"cut.vcf --out "+vcffilename+bedfilenamewithoutpath)
         if a!=0:
             print("error")
             exit(-1)
+            os.system("rm "+vcffilename+"cut.vcf")
 
         chromset=[]
 #         VCFlistmapBycurchr=[]
@@ -322,12 +356,12 @@ if __name__ == '__main__':
             for snp_aligned in alignedSNP_onechr:
                 curpos=int(snp_aligned[0])
                 ######caculate AF###############
-                if re.search(r"indvd[^/]+",vcffilename+bedfilenamewithoutpath+".recode.vcf")!=None:
+                if re.search(r"indvd[^/]+",vcffilename+bedfilenamewithoutpath+".recode.vcf")!=None or treatPolypolidyasindvd:
                     AF = float(re.search(r"AF=([\d\.]+)", snp_aligned[3]).group(1))
                     AN = float(re.search(r"AN=([\d]+)", snp_aligned[3]).group(1))
                     if AN<int(minAN):
                         continue
-                elif re.search(r"pool[^/]+",vcffilename+bedfilenamewithoutpath+".recode.vcf")!=None:
+                elif (not treatPolypolidyasindvd) and re.search(r"pool[^/]+",vcffilename+bedfilenamewithoutpath+".recode.vcf")!=None:
                     refdep = 0;altalleledep = 0
                     DP_idx=(re.split(":", snp_aligned[4])).index("DP")
                     AD_idx = (re.split(":", snp_aligned[4])).index("AD")  # gatk GT:AD:DP:GQ:PL   
@@ -442,28 +476,7 @@ if __name__ == '__main__':
         AFsMapByFileName[bedfilenamewithoutpath+vcffilenamewithoutpath]=copy.deepcopy(AFintervalMap_SNPcounts)
         DAFsMapByFileName[bedfilenamewithoutpath+vcffilenamewithoutpath]=copy.deepcopy(DAFintervalMap_SNPcounts)
         MAFsMapByFileName[bedfilenamewithoutpath+vcffilenamewithoutpath]=copy.deepcopy(MAFintervalMap_SNPcounts)
-    outfile=open(options.outfileprename+"bedfilenameAAF","w")
-    print("AFbin",end="\t",file=outfile)
-    for tag in sorted(AFsMapByFileName.keys()):
-        print(tag,end="\t",file=outfile)
-    print("",file=outfile)
-    for a,b in AFintervalMap_SNPcounts_template.keys():
-        print(str(a),str(b),end="\t",file=outfile)
-        for tag in sorted(AFsMapByFileName.keys()):
-            print(str(AFsMapByFileName[tag][a,b]),end="\t",file=outfile)
-        print("",file=outfile)
-    outfile.close()
-    outfile=open(options.outfileprename+"bedfilenameDAF","w")
-    print("DAFbin",end="\t",file=outfile)
-    for tag in sorted(DAFsMapByFileName.keys()):
-        print(tag,end="\t",file=outfile)
-    print("",file=outfile)
-    for a,b in sorted(DAFintervalMap_SNPcounts_template.keys()):
-        print(str(a),str(b),end="\t",file=outfile)
-        for tag in sorted(DAFsMapByFileName.keys()):
-            print(str(DAFsMapByFileName[tag][a,b]),end="\t",file=outfile)
-        print("",file=outfile)
-    outfile.close()
+    
 
     os.system("rm "+vcffilename+bedfilenamewithoutpath+".recode.vcf"+" "+vcffilename+bedfilenamewithoutpath+".recode.vcf.myindex")
     #################cds######################################
@@ -560,8 +573,8 @@ if __name__ == '__main__':
                 snp=dbvariantstools.operateDB("select","select * from "+topleveltablename+" where chrID='"+curchrom+"' and snp_pos='"+str(curpos)+"'")
                 if not snp:
                     if allsnprecinAchr_mapbyvcfname=={}:
-                        allsnprecinAchr_mapbyvcfname["wigeon"]=VCFobj["wigeon"].getVcfListByChrom(curchrom)
-                        allsnprecinAchr_mapbyvcfname["fanya"]=VCFobj["wigeon"].getVcfListByChrom(curchrom)
+#                         allsnprecinAchr_mapbyvcfname["wigeon"]=VCFobj["wigeon"].getVcfListByChrom(curchrom)
+                        allsnprecinAchr_mapbyvcfname["fanya"]=VCFobj["fanya"].getVcfListByChrom(curchrom)
                     low0=0
                     high0=len(allsnprecinAchr_mapbyvcfname["fanya"])-1
                     while low0<=high0:
@@ -669,19 +682,20 @@ if __name__ == '__main__':
                     if AAF>=a and AAF<b and AAF!=0 and len(wild_CurPosRecs[0])>=14:
                         if wild_CurPosRecs[0][-3]==wild_CurPosRecs[0][-1]:
                             AFintervalMap_SNPcounts_sys[a,b]+=1
-                        elif wild_CurPosRecs[0][-3]!=wild_CurPosRecs[0][-1]:
-                            AFintervalMap_SNPcounts_nonsys[a,b]+=1
                         elif wild_CurPosRecs[0][-3].find("*")!=-1 or wild_CurPosRecs[0][-1].find("*")!=-1:
                             AFintervalMap_SNPcounts_nonsense[a,b]+=1
+                        elif wild_CurPosRecs[0][-3]!=wild_CurPosRecs[0][-1]:
+                            AFintervalMap_SNPcounts_nonsys[a,b]+=1
                         break
                 for a,b in DAFintervalMap_SNPcounts_nonsys.keys():
                     if DAF>=a and DAF<b and DAF!=0 and len(wild_CurPosRecs[0])>=14:
                         if wild_CurPosRecs[0][-3]==wild_CurPosRecs[0][-1]:
                             DAFintervalMap_SNPcounts_sys[a,b]+=1
+                        elif wild_CurPosRecs[0][-3].find("*")!=-1 or wild_CurPosRecs[0][-1].find("*")!=-1:
+                            DAFintervalMap_SNPcounts_nonsense[a,b]+=1                            
                         elif wild_CurPosRecs[0][-3]!=wild_CurPosRecs[0][-1]:
                             DAFintervalMap_SNPcounts_nonsys[a,b]+=1
-                        elif wild_CurPosRecs[0][-3].find("*")!=-1 or wild_CurPosRecs[0][-1].find("*")!=-1:
-                            DAFintervalMap_SNPcounts_nonsense[a,b]+=1
+
                         break
             for f in wildcdsfilelist:
                 f.close()

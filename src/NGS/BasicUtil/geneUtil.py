@@ -1,11 +1,14 @@
+import copy
 import os
 import re
 import time
 
+from Bio import SeqIO
 from scipy import stats
 
 from NGS.BasicUtil import Util
 import src.NGS.BasicUtil.DBManager as dbm
+
 
 SLEEP_FOR_NEXT_TRY=3
 def GOenrichment(gotablefile,outpre,genelist=None,trscptlist=None):
@@ -129,6 +132,35 @@ def GOenrichment(gotablefile,outpre,genelist=None,trscptlist=None):
     os.system("""awk 'BEGIN{FS="\t"}$3~/molecular_function/{print $0}' """+GOenrichment_fileName+">"+GOenrichment_fileName+"_molecular_function")
     annf.close()
     gotablefile.close()
+def collectSNP_locatInRegion(MultipleVcfMap,chrom,startpos,endpos):
+    """
+    return [[pos,ref,alt,(),(),()],[],[],,,]
+    """
+    low=0;high=len(MultipleVcfMap[chrom])-1
+    while low<=high:
+        mid=(low + high)>>1
+        if MultipleVcfMap[chrom][mid][0]<endpos:
+            low=mid+1
+        elif MultipleVcfMap[chrom][mid][0]>endpos:
+            high=mid-1
+        else:
+            start_idx=mid
+    else:
+        if low>=len(MultipleVcfMap[chrom]):
+            low=len(MultipleVcfMap[chrom])-1
+        end_idx=low
+    low=0;high=len(MultipleVcfMap[chrom])-1
+    while low<=high:
+        mid=(low + high)>>1
+        if MultipleVcfMap[chrom][mid][0]<startpos:
+            low=mid+1
+        elif MultipleVcfMap[chrom][mid][0]>startpos:
+            high=mid-1
+        else:
+            start_idx=mid
+    else:
+        start_idx=high
+    return copy.deepcopy(MultipleVcfMap[chrom][start_idx:end_idx+1])
 def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,winType,morethan_lessthan,threshold=None,percentage=None,mergeNA=False,numberofoutlier_to_NearestGene=0,found=False):
 
     if percentage!=None and threshold!=None:
@@ -285,3 +317,84 @@ def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,win
     winGenome.windbtools.drop_table(winGenome.wintablewithoutNA)
     outfile.close()
     return outfileNameWINwithGENE
+def make_getElemBed(elementfold,targetseqnamesubstr,pathtoblastn,reffa):
+    """
+    targetseqnamesubstr is the str before the first space ,after the >
+    """
+    allseqtobed={}#{chrID:[(sstart,send,elem,qstart,qend,revcom,len),(sstart,send,elem,qstart,qend,revcom,len),,,],,,,}
+    if elementfold.endswith("/") or elementfold.endswith("\\"):
+        elementfold=elementfold[:-1]
+    if os.path.isfile(elementfold+"/"+targetseqnamesubstr+".bed"):
+        bedfile=open(elementfold+"/"+targetseqnamesubstr+".bed","r")
+        bedfile.readline()#title
+        for bedline in  bedfile:
+            bedlinelist=re.split(r"\t+",bedline)
+            if bedlinelist[0].strip() in allseqtobed:
+                allseqtobed[bedlinelist[0].strip()].append((int(bedlinelist[1]),int(bedlinelist[2]),bedlinelist[3],int(bedlinelist[4]),int(bedlinelist[5]),bedlinelist[6],int(bedlinelist[7]),int(bedlinelist[8])))
+            else:
+                allseqtobed[bedlinelist[0].strip()]=[(int(bedlinelist[1]),int(bedlinelist[2]),bedlinelist[3],int(bedlinelist[4]),int(bedlinelist[5]),bedlinelist[6],int(bedlinelist[7]),int(bedlinelist[8]))]
+        bedfile.close()
+        return allseqtobed
+    
+    randomstr="UrZTOpSJ"#Util.random_str()
+    targetseqnamesubstr_lenmap={}
+    queryfafile=open(elementfold+"/"+randomstr+"_"+targetseqnamesubstr+".fa",'w')
+    for elem in os.listdir(path=elementfold):
+        path = elementfold + "/" + elem
+        if (not os.path.isdir(path)) and (path.endswith("fa") or path.endswith("fasta")):#True is fa file
+            muscleout_seqgenerator=SeqIO.parse(path,"fasta")
+            for seq_rec in muscleout_seqgenerator:
+                if seq_rec.id==targetseqnamesubstr:
+                    seqstr="".join(seq_rec.seq).replace("-", "")
+                    print(">"+elem,file=queryfafile)
+#                     allseqtobed[elem]=[]
+                    targetseqnamesubstr_lenmap[elem]=len(seqstr)
+                    print(seqstr,file=queryfafile)
+                    break
+            else:
+                print(targetseqnamesubstr,"dosenot exist",elem)
+    queryfafile.close()
+    shellstatment=pathtoblastn+" -query "+elementfold+"/"+randomstr+"_"+targetseqnamesubstr+".fa"+" -task blastn -db "+reffa+" -out "+elementfold+"/"+randomstr+"_"+targetseqnamesubstr+".blastout -outfmt 7 -num_alignments 10 -num_threads 6"
+    print(shellstatment)
+#     a=os.system(shellstatment)
+#     if a!=0:
+#         print("error")
+#         exit(-1)
+    blastout=open(elementfold+"/"+randomstr+"_"+targetseqnamesubstr+".blastout","r")
+    for line in blastout:
+        if re.search(r"^#",line)!=None:
+            lastblastlen=None
+            continue
+        linelist=re.split(r"\s+",line)
+        blastlen=int(linelist[3])
+        if lastblastlen==None or (blastlen>lastblastlen-10 or  blastlen*0.95>=lastblastlen):
+            fafilename=linelist[0]
+            chrom = linelist[1]
+            sstartpos = int(linelist[8])
+            sendpos = int(linelist[9])
+            revcom="forward"
+            if sstartpos > sendpos:
+                temp = sstartpos
+                sstartpos = sendpos
+                sendpos = temp
+                revcom="revcom"
+            qstartpos=int(linelist[6])
+            qendpos=int(linelist[7])
+            total_bases=targetseqnamesubstr_lenmap[fafilename]
+            gap_open=int(linelist[5])
+            if chrom in allseqtobed:
+                allseqtobed[chrom].append((sstartpos,sendpos,fafilename,qstartpos,qendpos,revcom,total_bases,gap_open))
+            else:
+                allseqtobed[chrom]=[(sstartpos,sendpos,fafilename,qstartpos,qendpos,revcom,total_bases,gap_open)]
+            lastblastlen=blastlen
+    bedfile=open(elementfold+"/"+targetseqnamesubstr+".bed","w")
+    print("chrNo","Region_start","Region_end","fastafilename","startbase","endbase","revcom_forward","total_bases","gap_open",sep="\t",file=bedfile)
+    for chrom in allseqtobed.keys():
+        allseqtobed[chrom].sort(key=lambda listRec:listRec[1])
+        for startpos,endpos,fafilename,qs,qe,revcom,total_bases,gap_open in allseqtobed[chrom]:
+            print(chrom,startpos,endpos,fafilename,qs,qe,revcom,total_bases,gap_open,sep="\t",file=bedfile)
+    blastout.close()
+    bedfile.close()
+    return allseqtobed
+    os.system("rm "+elementfold+"/"+randomstr+"_"+targetseqnamesubstr+".fa "+elementfold+"/"+randomstr+"_"+targetseqnamesubstr+".blastout")
+    
