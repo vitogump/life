@@ -25,7 +25,7 @@ parser.add_option("-n","--negtive",dest="multiple_negtive_winfiles",action="appe
 parser.add_option("-g", "--gotablefile", dest="gotablefile", help="gotable title with :Ensembl Gene ID    Ensembl Transcript ID    GO Term Accession    GO Term Evidence Code    GO domain    GO Term Name    GO Term Definition,order and upper/lower case is arbitrarily")
 
 parser.add_option("-x", "--threshold_percentage", dest="threshold_percentage",help="t / p", metavar="FILE")
-
+parser.add_option("-e", "--distalextend", dest="distalextend",default="180000",help="t / p", metavar="FILE")
 parser.add_option("-f", "--trscptfound", dest="trscptfound",action="store_true",default=False, help="outfileprename")
 parser.add_option("-S", "--splitintopart", dest="splitintopart",default=1, help="split winfile into part")
 parser.add_option("-u", "--upextend", dest="upextend", help="upextend")
@@ -34,7 +34,7 @@ parser.add_option("-s","--slideSize",dest="slideSize",default="20000",help="win 
 parser.add_option("-w","--winWidth",dest="winWidth",default="40000",help="win width ")
 parser.add_option("-X","--winType",dest="winType",default="zvalue",help="winvalue or zvalue")
 parser.add_option("-N","--mergeNA",dest="mergeNA",default=False,help="winvalue or zvalue")
-parser.add_option("-t","--numberofoutlier_to_NearestGene",dest="numberofoutlier_to_NearestGene",default=0,help="number of outlier value,for example top 10")
+# parser.add_option("-t","--numberofoutlier_to_NearestGene",dest="numberofoutlier_to_NearestGene",default=0,help="number of outlier value,for example top 10")
 
 (options, args) = parser.parse_args()
 
@@ -50,7 +50,7 @@ if __name__ == '__main__':
         if options.multiple_positive_winfiles!=[]:
             for p_inputfileName,threshold,outbedfilename in options.multiple_positive_winfiles[:]:
                 outfileNameWIN_Plist.append(p_inputfileName)
-                outfileNameWINwithGENE_Plist.append((geneUtil.findTrscpt(p_inputfileName, outbedfilename, int(options.upextend), int(options.downextend), int(options.winWidth), int(options.slideSize), options.winType, "m", threshold, None, options.mergeNA, int(options.numberofoutlier_to_NearestGene),options.trscptfound),threshold))
+                outfileNameWINwithGENE_Plist.append((geneUtil.findTrscpt(p_inputfileName, outbedfilename, int(options.upextend), int(options.downextend), int(options.winWidth), int(options.slideSize), options.winType, "m", threshold, None, options.mergeNA, int(options.distalextend),options.trscptfound),threshold))
                 makeMhtGraph.makeHistonPicture(p_inputfileName, "Fst")#,"c(0,2000)","c(0,45)"
                 makeMhtGraph.makeHistonPicture(outfileNameWINwithGENE_Plist[-1][0], "Fst")
                 print("awk 'NR!=1{print $6}' "+outbedfilename+".bed.selectedgene"+"|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"+outbedfilename+".trscptIDlist")
@@ -72,7 +72,7 @@ if __name__ == '__main__':
         if options.multiple_negtive_winfiles!=[]:
             for n_inputfileName,threshold,outbedfilename in options.multiple_negtive_winfiles[:]:
                 outfileNameWIN_Nlist.append(n_inputfileName)
-                outfileNameWINwithGENE_Nlist.append((geneUtil.findTrscpt(n_inputfileName,outbedfilename, int(options.upextend), int(options.downextend), int(options.winWidth), int(options.slideSize), options.winType, "l", threshold, None, options.mergeNA, int(options.numberofoutlier_to_NearestGene),options.trscptfound),threshold))
+                outfileNameWINwithGENE_Nlist.append((geneUtil.findTrscpt(n_inputfileName,outbedfilename, int(options.upextend), int(options.downextend), int(options.winWidth), int(options.slideSize), options.winType, "l", threshold, None, options.mergeNA, int(options.distalextend),options.trscptfound),threshold))
                 makeMhtGraph.makeHistonPicture(n_inputfileName, "Hp")#,"c(0,2000)","c(0,45)"
                 makeMhtGraph.makeHistonPicture(outfileNameWINwithGENE_Nlist[-1][0], "Hp")#,"c(0,2000)","c(0,45)"
                 print("awk 'NR!=1{print $6}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"""+outbedfilename+".trscptIDlist")

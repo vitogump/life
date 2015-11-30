@@ -144,7 +144,8 @@ def collectSNP_locatInRegion(MultipleVcfMap,chrom,startpos,endpos):
         elif MultipleVcfMap[chrom][mid][0]>endpos:
             high=mid-1
         else:
-            start_idx=mid
+            end_idx=mid
+            break
     else:
         if low>=len(MultipleVcfMap[chrom]):
             low=len(MultipleVcfMap[chrom])-1
@@ -152,16 +153,18 @@ def collectSNP_locatInRegion(MultipleVcfMap,chrom,startpos,endpos):
     low=0;high=len(MultipleVcfMap[chrom])-1
     while low<=high:
         mid=(low + high)>>1
+        print(chrom,startpos,mid)
         if MultipleVcfMap[chrom][mid][0]<startpos:
             low=mid+1
         elif MultipleVcfMap[chrom][mid][0]>startpos:
             high=mid-1
         else:
             start_idx=mid
+            break
     else:
         start_idx=high
     return copy.deepcopy(MultipleVcfMap[chrom][start_idx:end_idx+1])
-def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,winType,morethan_lessthan,threshold=None,percentage=None,mergeNA=False,numberofoutlier_to_NearestGene=0,found=False):
+def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,winType,morethan_lessthan,threshold=None,percentage=None,mergeNA=False,extendtodistal=0,found=False):
 
     if percentage!=None and threshold!=None:
         print("-t conflict with -p")
@@ -178,12 +181,12 @@ def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,win
         outfileNameWINwithGENE=path+re.search(r"[^/]*$",winFileName7Field).group(0)+".wincopywithgene"
         return outfileNameWINwithGENE   
     outfile=open(outbedfilename+".bed.selectedgene",'w')
-    print("chrNo\tRegion_start\tRegion_end\tNoofWin\textram"+winType+"\ttranscpt\tgeneID",file=outfile)
+    print("chrNo\tRegion_start\tRegion_end\tNoofWin\textram"+winType+"\ttranscpt\toverlapcode\tgeneID",file=outfile)
     outfileNameWINwithGENE=path+re.search(r"[^/]*$",winFileName7Field).group(0)+".wincopywithgene"
     genomedbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname) 
     winGenome = Util.WinInGenome(Util.ghostdbname, winFileName7Field)
     time.sleep(SLEEP_FOR_NEXT_TRY)
-    winGenome.appendGeneName(Util.TranscriptGenetable, genomedbtools, winwidth, slideSize, outfileNameWINwithGENE,upextend,downextend,(numberofoutlier_to_NearestGene,morethan_lessthan))
+    winGenome.appendGeneName(Util.TranscriptGenetable, genomedbtools, winwidth, slideSize, outfileNameWINwithGENE,upextend,downextend,(10,morethan_lessthan))
     selectWinNos="threshold method"
     if percentage!=None:
         totalWin = winGenome.windbtools.operateDB("select", "select count(*) from " + winGenome.wintablewithoutNA)[0][0]
@@ -206,7 +209,6 @@ def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,win
         outfile.close()
         print("selectWinNos==0")
         exit(0)
-                
     print(outbedfilename+".bed.selectgene",selectWinNos,"~=",len(selectedWins),selectedWins[0],selectedWins[-1])
     selectedWinMap={}
     for win in selectedWins:
@@ -294,8 +296,8 @@ def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,win
     final_table={}
     for chrom in selectedRegion:
         for region in selectedRegion[chrom]:
-            if numberofoutlier_to_NearestGene>0:
-                final_table[region]=winGenome.collectTrscptInWin(genomedbtools,Util.TranscriptGenetable,region,upextend,downextend,True)
+            if extendtodistal>0:
+                final_table[region]=winGenome.collectTrscptInWin(genomedbtools,Util.TranscriptGenetable,region,upextend,downextend,extendtodistal)
             else:
                 final_table[region]=winGenome.collectTrscptInWin(genomedbtools,Util.TranscriptGenetable,region,upextend,downextend)
 #process top outlier values
@@ -306,12 +308,14 @@ def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,win
         for region in selectedRegion[chrom]:
             if chrom.strip()==region[0].strip():
                 tcpts=""
+                tpcode=""
                 gnames=""
                 for tcpt in final_table[region]:
                     tcpts+=(tcpt[0]+",")
+                    tpcode+=(str(tcpt[-1])+",")
                     if tcpt[2].strip()!="":
                         gnames+=(tcpt[2]+",")
-                print("\t".join(map(str,region)),tcpts[:-1],gnames[:-1],sep="\t",file=outfile)                  
+                print("\t".join(map(str,region)),tcpts[:-1],tpcode[:-1],gnames[:-1],sep="\t",file=outfile)                  
 
     winGenome.windbtools.drop_table(winGenome.wintabletextvalueallwin)
     winGenome.windbtools.drop_table(winGenome.wintablewithoutNA)

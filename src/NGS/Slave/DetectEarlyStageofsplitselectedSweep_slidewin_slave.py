@@ -109,6 +109,14 @@ if __name__ == '__main__':
         win.slidWindowOverlap(target_ref_SNPs[currentchrID], currentchrLen, windowWidth, slideSize, obsexpcaculator)
         obsexpsignalmapbychrom[currentchrID]=copy.deepcopy(win.winValueL)
 #     for i in range(0,totalChroms,20):
+    winCrossGenome=[]
+    for chrom in obsexpsignalmapbychrom.keys():
+        for i in range(len(obsexpsignalmapbychrom[chrom])):
+            if obsexpsignalmapbychrom[chrom][i][3]!="NA":
+                winCrossGenome.append(obsexpsignalmapbychrom[chrom][i][3][0])
+    exception =numpy.mean(winCrossGenome)
+    std0=numpy.std(winCrossGenome,ddof=0)
+    std1=numpy.std(winCrossGenome,ddof=1)
     for currentchrID,currentchrLen in chromlist:
 #         currentsql="select * from " + Util.pekingduckchromtable+" where chrlength>="+options.minlength+" order by "+primaryID+" limit "+str(i)+",20"
 #         result=genomedbtools.operateDB("select",currentsql)
@@ -119,7 +127,8 @@ if __name__ == '__main__':
                 if obsexpsignalmapbychrom[currentchrID][i][3]=="NA":
                     print(currentchrID + "\t" + str(i) + "\t" + str(obsexpsignalmapbychrom[currentchrID][i][0]) + "\t" + str(obsexpsignalmapbychrom[currentchrID][i][1]) + "\t"+str(obsexpsignalmapbychrom[currentchrID][i][2])+"\t" + "NA" + "\t" + "NA", file=outfile)
                 else:
-                    print(currentchrID + "\t" + str(i) + "\t" + str(obsexpsignalmapbychrom[currentchrID][i][0]) + "\t" + str(obsexpsignalmapbychrom[currentchrID][i][1]) + "\t" +str(obsexpsignalmapbychrom[currentchrID][i][2])+"\t"+ '%.15f'%(obsexpsignalmapbychrom[currentchrID][i][3][0]) + "\t" + '%.12f'%(obsexpsignalmapbychrom[currentchrID][i][3][1]), file=outfile)
+                    zS=(obsexpsignalmapbychrom[currentchrID][i][3][0]-exception)/std1
+                    print(currentchrID + "\t" + str(i) + "\t" + str(obsexpsignalmapbychrom[currentchrID][i][0]) + "\t" + str(obsexpsignalmapbychrom[currentchrID][i][1]) + "\t" +str(obsexpsignalmapbychrom[currentchrID][i][2])+"\t"+ '%.15f'%(obsexpsignalmapbychrom[currentchrID][i][3][0]) + "\t" + '%.12f'%(zS), file=outfile)
     outfile.close()
     chromlistfile.close()
     dbvariantstools.disconnect()

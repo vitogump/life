@@ -466,7 +466,7 @@ class Caculate_S_ObsExp_difference(Caculator):
         S2="NA"
         try:
             S1=math.log(numpy.sum(self.obsseq)/self.CEXP)
-            S2=(numpy.sum(self.obsseq)-self.CEXP)/numpy.std(self.obsseq,ddof=1)
+            S2=0#(numpy.sum(self.obsseq)-self.CEXP)/numpy.std(self.obsseq,ddof=1)
         except:
             S1="NA"
             S2="NA"

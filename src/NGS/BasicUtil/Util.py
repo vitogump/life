@@ -554,6 +554,7 @@ def getGtfMap(gtfFileName, elementTypes=["CDS", "stop_codon"]):
     for gtfline in gtfFileHandler:
         gtfColList = re.split(r'\s+', gtfline)
         transcript_id = re.search(r'\"(.*)\";', gtfColList[transcript_id_idx].strip()).group(1)
+        chromNo = gtfColList[0].strip()
         if gtfColList[2].strip()=="transcript":
             if chromNo in allgeneSetlist:
                 allgeneSetlist[chromNo].append((transcript_id,gtfColList[6],int(gtfColList[3]), int(gtfColList[4])))
@@ -563,7 +564,7 @@ def getGtfMap(gtfFileName, elementTypes=["CDS", "stop_codon"]):
             if elementType == gtfColList[2].strip():
                 break
         else:
-            if gtfColList[2].strip()=="UTR" and int(gtfColList[3])==int(gtfColList[4]):#ensembl's bug
+            if gtfColList[2].strip()=="UTR" and int(gtfColList[3])!=int(gtfColList[4]):#ensembl's bug
                 if chromNo in utrMap:
                     if transcript_id in utrMap[chromNo]:
                         utrMap[chromNo][transcript_id].append(("UTR",int(gtfColList[3]), int(gtfColList[4])))
@@ -572,7 +573,7 @@ def getGtfMap(gtfFileName, elementTypes=["CDS", "stop_codon"]):
                 else:
                     utrMap[chromNo]={transcript_id:[("UTR",int(gtfColList[3]), int(gtfColList[4]))]}
             continue
-        chromNo = gtfColList[0].strip()
+        
         if chromNo in protein_codingMap:
             if transcript_id in chrtranscrpitididxMap[chromNo].keys():
                 tanscript_id_idx = chrtranscrpitididxMap[chromNo][transcript_id]
@@ -1638,10 +1639,14 @@ class WinInGenome():
         self.winContainTrscptMap = {}
     def loadWinDataIntoDB(self, dbname, winFileName7Field, tableNamewithoutNA=None):
         chromOrder = []
+        
+        tempdbtools = dbm.DBTools("10.2.48.140", "root", "1234567", dbname)
         if tableNamewithoutNA == None:
             tableNamewithoutNA = random_str()
+            
+#             return chromOrder, tempdbtools, tableNamewithoutNA, tableNametextValueForappendGeneName 
         tableNametextValueForappendGeneName = tableNamewithoutNA + "textField"
-        tempdbtools = dbm.DBTools("10.2.48.140", "root", "1234567", dbname)
+        
         TABLES = {}
         TABLES[tableNamewithoutNA] = (
             "CREATE TABLE " + tableNamewithoutNA + " ("
@@ -1750,7 +1755,7 @@ class WinInGenome():
                 print(*win, sep="\t", file=outfile)
         outfile.close()
 
-    def collectTrscptInWin(self, genomedbtools, trscptableName, region, upextend=0, downextend=0,findNearestGene=False):
+    def collectTrscptInWin(self, genomedbtools, trscptableName, region, upextend=0, downextend=0,extendtodistal=0):
         """select trscpt overlaped with the region
         reture a list of trscpts [tp_generecord1+overlapcode,tp_generecord2+overlapcode,,,]
         """
@@ -1763,9 +1768,6 @@ class WinInGenome():
         region=(chrom,Region_start,Region_end,Nwin,extremeValue)
         
         """
-        strandidx = 7
-#         titlelist = [a[0].strip() for a in genomedbtools.operateDB("select", "select column_name  from information_schema.columns where table_schema='" + "ninglabvariantdata" + "' and table_name='" + trscptableName + "'")]
-#         "select * from " + transcripttable + " where chrID='" + chrID + "' and trscpt_end_pos >= " + str(Region_start) + " and trscpt_start_pos <= " + str(Region_end)
         selectType1OverlapGenesql = "select * from " + transcripttable + " where chrID='" + chrID + "' and trscpt_start_pos >= " + str(Region_start) + " and trscpt_end_pos <= " + str(Region_end)
         selectType2OverlapGenesql = "select * from " + transcripttable + " where chrID='" + chrID + "' and trscpt_start_pos < " + str(Region_start) + " and trscpt_end_pos > " + str(Region_end)
         selectType3OverlapGenesql = "select * from " + transcripttable + " where chrID='" + chrID + "' and trscpt_start_pos < " + str(Region_start) + " and trscpt_end_pos > " + str(Region_start) + " and trscpt_end_pos < " + str(Region_end)
@@ -1802,19 +1804,19 @@ class WinInGenome():
         for row in result:
             row += tuple([6])
             trscptlist.append(row)
-        if trscptlist==[] and findNearestGene:
-            result=genomedbtools.operateDB("select","select * from "+ transcripttable + " where chrID='" + chrID +  "' and trscpt_end_pos < "+str(Region_start) + " order by trscpt_end_pos desc")
+        if trscptlist==[] and extendtodistal>max(upextend,downextend):
+            result=genomedbtools.operateDB("select","select * from "+ transcripttable + " where chrID='" + chrID +  "' and trscpt_end_pos < "+str(Region_start) + " order by trscpt_end_pos ")
             if len(result)!=0:#result is a list
                 row=list(result[-1])
-                if Region_start-int(row[6])<180000:
-                    row[2]=(str(Region_start-int(row[6]))+"<"+row[7])+row[2]
-                    trscptlist.append(tuple(row))
-            result=genomedbtools.operateDB("select","select * from "+ transcripttable + " where chrID='" + chrID +  "' and trscpt_start_pos > "+ str(Region_end)+" order by trscpt_start_pos")
+                if Region_start-int(row[6])<extendtodistal:
+                    row[2]=("<"+str(Region_start-int(row[6])))+row[7]+row[2]
+                    trscptlist.append(tuple(row)+tuple([7]))
+            result=genomedbtools.operateDB("select","select * from "+ transcripttable + " where chrID='" + chrID +  "' and trscpt_start_pos > "+ str(Region_end)+" order by trscpt_start_pos desc")
             if len(result)!=0:#result is a list
                 row=list(result[-1])
-                if int(row[6])-Region_end<180000:
-                    row[2]+=(">"+row[7]+str(int(row[6])-Region_end))
-                    trscptlist.append(tuple(row))
+                if int(row[5])-Region_end<extendtodistal:
+                    row[2]=(">"+str(int(row[5])-Region_end))+row[7]+row[2]
+                    trscptlist.append(tuple(row)+tuple([8]))
         return trscptlist
 
 class BinDepth():

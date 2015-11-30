@@ -24,9 +24,9 @@ parser.add_option("-2","--ancenstral_or_derived",dest="ancenstral_or_derived",de
 mindeptojudgefix=15
 #####################
 VCFobj={};vcfnameKEY_depthfilename_titlenameVALUE_tojudgeancestrall={};vcfnameKEY_depthobjVALUE_tojudgeancestral={}
-VCFobj["wigeon"]=VCFutil.VCF_Data("/home/bioinfo/liurui/data/vcffiles/uniqmap/wegeon/wegeon._pool.withindel.vcf")
+VCFobj["wigeon"]=VCFutil.VCF_Data("/home/bioinfo/liurui/data/vcffiles/uniqmap/taihudomesticgoose/taihudomesticgoose.pool.withindel.vcf")
 VCFobj["fanya"]=VCFutil.VCF_Data("/home/bioinfo/liurui/data/vcffiles/uniqmap/fanya/fanya._pool.withindel.vcf")
-vcfnameKEY_depthfilename_titlenameVALUE_tojudgeancestrall["wigeon"]=Util.GATK_depthfile("/home/bioinfo/liurui/data/depth/g_j_sm_k_l_y_f_w_pool/gjsmklyfw_gatk.depth","/home/bioinfo/liurui/data/depth/g_j_sm_k_l_y_f_w_pool/gjsmklyfw_gatk.depth.index")
+vcfnameKEY_depthfilename_titlenameVALUE_tojudgeancestrall["wigeon"]=Util.GATK_depthfile("/home/bioinfo/liurui/data/depth/g_j_sm_k_l_y_f_w_pool/gjsmklyfw_gatk.depth","/home/bioinfo/liurui/data/depth/g_j_sm_k_l_y_f_w_pool/gjsmklyfw_gatk.depth.index")#here is a temp trick not a error
 vcfnameKEY_depthfilename_titlenameVALUE_tojudgeancestrall["fanya"]=Util.GATK_depthfile("/home/bioinfo/liurui/data/depth/g_j_sm_k_l_y_f_w_pool/gjsmklyfw_gatk.depth","/home/bioinfo/liurui/data/depth/g_j_sm_k_l_y_f_w_pool/gjsmklyfw_gatk.depth.index")
 vcfnameKEY_depthobjVALUE_tojudgeancestral["wigeon"]=["/home/bioinfo/liurui/data/depth/g_j_sm_k_l_y_f_w_pool/gjsmklyfw_gatk.depth",9]
 vcfnameKEY_depthobjVALUE_tojudgeancestral["fanya"]=["/home/bioinfo/liurui/data/depth/g_j_sm_k_l_y_f_w_pool/gjsmklyfw_gatk.depth",3]
@@ -338,7 +338,7 @@ if __name__ == '__main__':
             else:
 #                 if snp[0][11]==None or snp[0][7]==None:
 #                     continue
-                wigeondepthlist1=re.split(r",",snp[0][7])
+                wigeondepthlist1=re.split(r",",snp[0][13])
                 fanyadepthlist=re.split(r",",snp[0][9])
 #                 barheaddepthlist=re.split(r",",snp[0][11])
 #                 if len(fanyadepthlist)==2 and int(fanyadepthlist[1]) >=mindeptojudgefix and fanyadepthlist[0].strip()=="0":

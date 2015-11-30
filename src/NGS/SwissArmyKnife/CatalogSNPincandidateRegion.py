@@ -16,6 +16,7 @@ import src.NGS.BasicUtil.DBManager as dbm
 
 parser = OptionParser()
 parser.add_option("-r", "--reffa", dest="reffa", help="reference.fa")
+parser.add_option("-t", "--topleveltable", dest="topleveltable", help="reference.fa")
 parser.add_option("-g", "--gtffile", dest="gtffile",nargs=3, help="gtffile upextend downextend")
 parser.add_option("-c", "--catalogVariantfold", dest="catalogVariantfold", help="catalogVariantfold")
 parser.add_option("-d", "--domesticsnptable", dest="domesticsnptable",action="append", help="variants")
@@ -84,7 +85,7 @@ if __name__ == '__main__':
             else:
                 w_cds_map[cdslinelist[0]]=[(int(cdslinelist[1]),cdslinelist[3],cdslinelist[4],";".join(cdslinelist[tp_idx:]),float(cdslinelist[af_idx]),cdslinelist[dp_an_idx])]
         w_cdf_file.close();w_cds_map_list.append(copy.deepcopy(w_cds_map))
-        
+         
         w_intron_file=open(catalogVariantfold+"/"+wild_table+".intron","r");w_intron_map={} ;titlelist=re.split(r"\s+",w_intron_file.readline().strip());af_idx=titlelist.index("AF");tp_idx=titlelist.index("trscptID")
         if "DP" in titlelist:
             dp_an_idx=titlelist.index("DP")
@@ -168,7 +169,7 @@ if __name__ == '__main__':
     for wild_domtable in options.wildsnptable[1:]+options.domesticsnptable[:]:
         sqlselectstatementpart_count_left+=(","+wild_domtable+ ".AF")
         sqlselectstatementpart_count_right+=(","+wild_domtable+".AF")
-    sqlselectstatementpart_count_left+=" from "+options.wildsnptable[0];sqlselectstatementpart_count_right+=" from "+options.wildsnptable[0]
+    sqlselectstatementpart_count_left+=" from "+options.topleveltable+" left join "+options.wildsnptable[0]+" using(chrID,snp_pos) ";sqlselectstatementpart_count_right+=" from "+options.topleveltable+" left join "+options.wildsnptable[0]+" using(chrID,snp_pos) "
     for wild_domtable in options.wildsnptable[1:]+options.domesticsnptable[:]:
         sqlselectstatementpart_count_left+=(" left join "+wild_domtable+" using(chrID,snp_pos) ")
         sqlselectstatementpart_count_right+=(" right join "+wild_domtable+" using(chrID,snp_pos) ")
@@ -190,6 +191,7 @@ if __name__ == '__main__':
     print("delta_AF\tsnppos\tref_base\talt_base\tw_af\tsnp_idx_in_seq\t",file=outfile)
 #     for speciese in sorted(muscleout_seqmap.keys()):
 #         print(speciese,end="\t",file=outfile) 
+    print(utrMap)
     for bedlikeselectedgenefile in options.candidateRegion:
         candidateRegionbed={}
         f=open(bedlikeselectedgenefile,'r')
@@ -199,75 +201,119 @@ if __name__ == '__main__':
             chrom=linelist[0].strip();regionstart=int(linelist[1]);regionend=int(linelist[2])
             snplist_posdeltaAFrefalt=[]#for every region,that is every line   [(pos,deltaAF,REF,ALT),{}]
                     #overlapwithgene
-            if len(linelist)==6 or (len(linelist)==7 and linelist[6].find(">")==linelist[6].find("<")):
+            if len(linelist)>=7 and (linelist[6].find("8")==linelist[6].find("9")):#only return -1 the equal are
                 trscpts=re.split(r",",linelist[5])
 #                 print("overlapwithgene",regionline,file=testf)
                 print(regionline.strip(),file=utroutfile)
                 print(regionline.strip(),file=cdsoutfile)
                 print(regionline.strip(),file=intronoutfile)
-                allutrsnps=[];allcdssnps=[];allintronsnps=[]
+                allutrsnps_fromfile=[];allutrsnps_fromsql=[];allcdssnps=[];allintronsnps=[]
                 for tpID in trscpts:
-                    if chrom in utrMap and (tpID  in utrMap[chrom]):
-                        vcflist_A_chrom_container=[]
-                        if chrom not in (d_utr_map_list+w_utr_map_list):
-                            continue
-                        for snpmap in d_utr_map_list+w_utr_map_list:
-                            tempmap={}
-                            tempmap[chrom]=snpmap[chrom]
-                            vcflist_A_chrom_container.append(copy.deepcopy(tempmap))
-                        MultipleVcfMap=Util.alinmultPopSnpPos(vcflist_A_chrom_container, "o")
-                        
-                        for a,utrstart,utrend in utrMap[chrom][tpID]:
-                            if (utrend>regionstart and utrend<regionend) or (utrstart>regionstart and utrstart<regionend):
-                                overlap_start=max(regionstart,utrstart)
-                                overlap_end=min(regionend,utrend)
-                                allutrsnps+=geneUtil.collectSNP_locatInRegion(MultipleVcfMap, chrom, overlap_start, overlap_end)
-                        sql_file="file"
-                    elif chrom in allgeneSetMap and (tpID in allgeneSetMap[chrom]):
-                        overlap_start=max(regionstart,(allgeneSetMap[chrom][tpID][1]-upextend))
-                        overlap_end=min(regionend,(allgeneSetMap[chrom][tpID][1]))
-                        allutrsnps+=dbvariantstools.operateDB("select",sqlselectstatementpart_count_left+" where chrID='"+chrom+"' and snp_pos>"+str(overlap_start) + " and snp_pos< "+str(overlap_end)+" union "+sqlselectstatementpart_count_right+" where chrID='"+chrom+"' and snp_pos>"+str(overlap_start) + " and snp_pos< "+str(overlap_end))
-                        overlap_start=max(regionstart,(allgeneSetMap[chrom][tpID][2]))
-                        overlap_end=min(regionend,(allgeneSetMap[chrom][tpID][2]+downextend))
-                        allutrsnps+=dbvariantstools.operateDB("select",sqlselectstatementpart_count_left+" where chrID='"+chrom+"' and snp_pos>"+str(overlap_start) + " and snp_pos< "+str(overlap_end)+" union "+sqlselectstatementpart_count_right+" where chrID='"+chrom+"' and snp_pos>"+str(overlap_start) + " and snp_pos< "+str(overlap_end))
-                        sql_file="sql"
-                    else:
-                        sql_file="notfound"
+                    tpIDidx=-1
                     IngtfMap=False#tpID not in grfMap,that means no cds
                     if chrom in gtfMap :
                         for  tplist  in gtfMap[chrom]:
+                            tpIDidx+=1
                             if tplist[0]==tpID:
                                 vcflist_A_chrom_container=[]
                                 regionstart
                                 regionend
                                 overlap_start=max(tplist[2],regionstart)
                                 overlap_end=min(tplist[3],regionend)
-                                if chrom  in (d_cds_map_list+w_cds_map_list):
-                                    
-                                    for snpmap in d_cds_map_list+w_cds_map_list:
-                                        tempmap={}
+                                for snpmap in d_cds_map_list+w_cds_map_list:
+                                    tempmap={}
+                                    if chrom not in snpmap:
+                                        tempmap[chrom]=[]
+                                    else:
                                         tempmap[chrom]=snpmap[chrom]
-                                        vcflist_A_chrom_container.append(copy.deepcopy(tempmap))
-                                    MultipleVcfMap_cds=Util.alinmultPopSnpPos(vcflist_A_chrom_container,"o")
-                                    allcdssnps+=geneUtil.collectSNP_locatInRegion(MultipleVcfMap_cds,chrom,overlap_start,overlap_end)
+                                    vcflist_A_chrom_container.append(copy.deepcopy(tempmap))
+                                print(len(vcflist_A_chrom_container))
+                                MultipleVcfMap_cds=Util.alinmultPopSnpPos(vcflist_A_chrom_container,"o")
+                                print(len(MultipleVcfMap_cds))
+                                allcdssnps+=geneUtil.collectSNP_locatInRegion(MultipleVcfMap_cds,chrom,overlap_start,overlap_end)
                                 vcflist_A_chrom_container_intron=[]
-                                if chrom in (d_intron_map_list+w_intron_map_list):
-                                    for snpmap in d_intron_map_list+w_intron_map_list:
-                                        tempmap={}
+                                for snpmap in d_intron_map_list+w_intron_map_list:
+                                    tempmap={}
+                                    if chrom not in snpmap:
+                                        tempmap[chrom]=[]
+                                    else:
                                         tempmap[chrom]=snpmap[chrom]
-                                        vcflist_A_chrom_container_intron.append(copy.deepcopy(tempmap))
-                                    
-                                    MultipleVcfMap_intron=Util.alinmultPopSnpPos(vcflist_A_chrom_container_intron,"o")
-
-                                    allintronsnps+=geneUtil.collectSNP_locatInRegion(MultipleVcfMap_intron,chrom,overlap_start,overlap_end)
+                                    vcflist_A_chrom_container_intron.append(copy.deepcopy(tempmap))
+                                 
+                                MultipleVcfMap_intron=Util.alinmultPopSnpPos(vcflist_A_chrom_container_intron,"o")
+ 
+                                allintronsnps+=geneUtil.collectSNP_locatInRegion(MultipleVcfMap_intron,chrom,overlap_start,overlap_end)
                                 IngtfMap=True
                                 break
                         else:
                             print("search all gtf,no found",tpID)
                             IngtfMap=False
-                        
+                         
                     elif not IngtfMap and (chrom in allgeneSetMap) and (tpID in allgeneSetMap[chrom]):
                         print("exon,unknown cds gene,collect snp from mysql ")
+                    
+                    
+                    
+                    ####################
+                    sql_file=""
+                    if chrom in utrMap and (tpID  in utrMap[chrom]):
+                        vcflist_A_chrom_container=[]
+#                         if chrom not in (d_utr_map_list+w_utr_map_list):
+#                             print(chrom,tpID,"give up")
+#                             continue
+                        for snpmap in d_utr_map_list+w_utr_map_list:
+                            tempmap={}
+                            if chrom not in snpmap:
+                                tempmap[chrom]=[]
+                            else:
+                                tempmap[chrom]=snpmap[chrom]
+                            vcflist_A_chrom_container.append(copy.deepcopy(tempmap))
+                        MultipleVcfMap=Util.alinmultPopSnpPos(vcflist_A_chrom_container, "o")
+                        if utrMap[chrom][tpID][0][1]<(allgeneSetMap[chrom][tpID][1]+allgeneSetMap[chrom][tpID][2])/2:
+                            sql_file="u"
+                        if utrMap[chrom][tpID][-1][2]>(allgeneSetMap[chrom][tpID][1]+allgeneSetMap[chrom][tpID][2])/2:
+                            sql_file+="d"
+                        for a,utrstart,utrend in utrMap[chrom][tpID]:
+                            if (utrend>regionstart and utrend<regionend) or (utrstart>regionstart and utrstart<regionend):
+                                overlap_start=max(regionstart,utrstart)
+                                overlap_end=min(regionend,utrend)
+                                print(chrom,overlap_start, overlap_end)
+                                allutrsnps_fromfile+=geneUtil.collectSNP_locatInRegion(MultipleVcfMap, chrom, overlap_start, overlap_end)
+#                         sql_file="file"
+                    if chrom in gtfMap and (tpID == gtfMap[chrom][tpIDidx][0]):
+                        if sql_file.find("u")==-1:
+                            overlap_start=max(regionstart,(gtfMap[chrom][tpID][2]-upextend))
+                            overlap_end=min(regionend,gtfMap[chrom][tpID][2])
+                            temp=geneUtil.collectSNP_locatInRegion(MultipleVcfMap, chrom, overlap_start, overlap_end)
+                            
+                            if len(temp)>1:
+                                sql_file+="u"
+                                allutrsnps_fromfile+=temp
+                        if sql_file.find("d")==-1:
+                            overlap_start=max(regionstart,(gtfMap[chrom][tpID][3]))
+                            overlap_end=min(regionend,(gtfMap[chrom][tpID][3]+downextend))
+                            temp=geneUtil.collectSNP_locatInRegion(MultipleVcfMap, chrom, overlap_start, overlap_end)
+                            if len(temp)>1:
+                                allutrsnps_fromfile+=temp
+                                sql_file+="d"    
+                    elif chrom in allgeneSetMap and (tpID in allgeneSetMap[chrom]):
+
+                        if sql_file.find("u")==-1 : 
+                            overlap_start=max(regionstart,(allgeneSetMap[chrom][tpID][1]-upextend))
+                            overlap_end=min(regionend,(allgeneSetMap[chrom][tpID][1]))                            
+                            print(sqlselectstatementpart_count_left+" where chrID='"+chrom+"' and snp_pos>"+str(overlap_start) + " and snp_pos< "+str(overlap_end)+" union "+sqlselectstatementpart_count_right+" where chrID='"+chrom+"' and snp_pos>"+str(overlap_start) + " and snp_pos< "+str(overlap_end))#+" union "+sqlselectstatementpart_count_right+" where chrID='"+chrom+"' and snp_pos>"+str(overlap_start) + " and snp_pos< "+str(overlap_end)
+                            allutrsnps_fromsql+=dbvariantstools.operateDB("select",sqlselectstatementpart_count_left+" where chrID='"+chrom+"' and snp_pos>"+str(overlap_start) + " and snp_pos< "+str(overlap_end))
+ 
+                        if sql_file.find("d")==-1:
+                            overlap_start=max(regionstart,(allgeneSetMap[chrom][tpID][2]))
+                            overlap_end=min(regionend,(allgeneSetMap[chrom][tpID][2]+downextend))                            
+                            print(sqlselectstatementpart_count_left+" where chrID='"+chrom+"' and snp_pos>"+str(overlap_start) + " and snp_pos< "+str(overlap_end)+" union "+sqlselectstatementpart_count_right+" where chrID='"+chrom+"' and snp_pos>"+str(overlap_start) + " and snp_pos< "+str(overlap_end))#+" union "+sqlselectstatementpart_count_right+" where chrID='"+chrom+"' and snp_pos>"+str(overlap_start) + " and snp_pos< "+str(overlap_end)
+                            allutrsnps_fromsql+=dbvariantstools.operateDB("select",sqlselectstatementpart_count_left+" where chrID='"+chrom+"' and snp_pos>"+str(overlap_start) + " and snp_pos< "+str(overlap_end))
+                        sql_file+="sql"
+                    else:
+                        pass
+#                         sql_file="notfound"
+
 #                     allcdssnps=list(set(allcdssnps));allintronsnps=list(set(allintronsnps));allutrsnps=list(set(allutrsnps))
                     snplist_posdeltaAFrefalt=[]
                     for snp in allcdssnps:
@@ -276,7 +322,7 @@ if __name__ == '__main__':
                             if snp[3+w_idx]==None:
                                 w_af+=0
                             else:
-
+ 
                                 w_af+=snp[3+w_idx][1]
                         for d_idx in range(len(options.domesticsnptable)):
                             if snp[3+len(options.wildsnptable)+d_idx]==None:
@@ -287,14 +333,15 @@ if __name__ == '__main__':
                         d_af=d_af/len(options.domesticsnptable)
                         delta_af=abs(w_af-d_af)
 #                                 print(snp,"======",delta_af,w_af,d_af,ref_base,w_base)
-                        
+                         
                         snplist_posdeltaAFrefalt.append((delta_af,w_af,d_af,copy.deepcopy(snp)))
                     snplist_posdeltaAFrefalt.sort(key=lambda  listRec:listRec[0],reverse=True)
                     for delta_af,w_af,d_af,snp in snplist_posdeltaAFrefalt:
                         print('%.5f'%delta_af,w_af,d_af,*snp,sep="\t",file=cdsoutfile)
                     snplist_posdeltaAFrefalt=[]
-                    if sql_file=="file":
-                        for snp in allutrsnps:
+                    if sql_file.find("u")!=-1 or sql_file.find("d")!=-1:
+                        for snp in allutrsnps_fromfile:
+                            print(snp)
                             w_af=0;d_af=0;delta_af=0
                             for w_idx in range(len(options.wildsnptable)):
                                 if snp[3+w_idx]==None:
@@ -316,8 +363,8 @@ if __name__ == '__main__':
                         snplist_posdeltaAFrefalt.sort(key=lambda  listRec:listRec[0],reverse=True)
                         for delta_af,w_af,d_af,snp in snplist_posdeltaAFrefalt:
                             print('%.5f'%delta_af,w_af,d_af,*snp,sep="\t",file=utroutfile)
-                    elif sql_file=="sql":
-                        for snp in allutrsnps:
+                    if sql_file.find("sql")!=-1:
+                        for snp in allutrsnps_fromsql:
                             w_af=0;d_af=0;delta_af=0
                             for w_idx in range(len(options.wildsnptable)):
                                 if snp[2+len(options.wildsnptable+options.domesticsnptable)*2+w_idx]==None:
@@ -342,7 +389,10 @@ if __name__ == '__main__':
                         for snp_pos,delta_af,ref_base,w_base,w_af,d_af,tpID in snplist_posdeltaAFrefalt:
                             print('%.5f'%delta_af,w_af,d_af,snp_pos,ref_base,w_base,tpID,sep="\t",file=utroutfile)
                     else:
-                        print(sql_file,file=utroutfile)
+                        pass
+#                         print(sql_file,file=utroutfile)
+
+                
                     snplist_posdeltaAFrefalt=[]
                     for snp in allintronsnps:
                         w_af=0;d_af=0;delta_af=0
@@ -381,8 +431,8 @@ if __name__ == '__main__':
                         muscleout_seqmap={}
                         for seq_rec in muscleout_seqgenerator:
                             muscleout_seqmap[seq_rec.id]=seq_rec.seq
-                        print(sqlselectstatementpart_count_left+" where chrID='"+chrom+"' and snp_pos>"+str(overlap_start) + " and snp_pos< "+str(overlap_end)+" union "+sqlselectstatementpart_count_right+" where chrID='"+chrom+"' and snp_pos>"+str(overlap_start) + " and snp_pos< "+str(overlap_end))                      
-                        allsnps=dbvariantstools.operateDB("select",sqlselectstatementpart_count_left+" where chrID='"+chrom+"' and snp_pos>"+str(overlap_start) + " and snp_pos< "+str(overlap_end)+" union "+sqlselectstatementpart_count_right+" where chrID='"+chrom+"' and snp_pos>"+str(overlap_start) + " and snp_pos< "+str(overlap_end))
+                        print(sqlselectstatementpart_count_left+" where chrID='"+chrom+"' and snp_pos>"+str(overlap_start) + " and snp_pos< "+str(overlap_end))#+" union "+sqlselectstatementpart_count_right+" where chrID='"+chrom+"' and snp_pos>"+str(overlap_start) + " and snp_pos< "+str(overlap_end))                      
+                        allsnps=dbvariantstools.operateDB("select",sqlselectstatementpart_count_left+" where chrID='"+chrom+"' and snp_pos>"+str(overlap_start) + " and snp_pos< "+str(overlap_end))
                         snplist_posdeltaAFrefalt=[]
                         for snp in allsnps:
                             w_af=0;d_af=0;delta_af=0
@@ -508,7 +558,7 @@ if __name__ == '__main__':
 #                             print(targetspecies_baseidx,len(targetspecies_baseidx))
 #                             print(snplist_posdeltaAFrefalt,mapsnppos_valueidx,len(snplist_posdeltaAFrefalt),len(mapsnppos_valueidx))
                         for snp_pos,delta_af,ref_base,w_base,w_af,d_af in snplist_posdeltaAFrefalt:
-                            print('%.5f'%delta_af,snp_pos,ref_base,w_af,d_af,sep='\t',file=outfile)
+                            print('%.5f'%delta_af,snp_pos,ref_base,w_base,w_af,d_af,sep='\t',file=outfile)
 #                                 for speciese in sorted(muscleout_seqmap.keys()):
 #                                     tempseqlist=list(muscleout_seqmap[speciese])
 #                                     print(tempseqlist[mapsnppos_valueidx[snp_pos]],end="\t",file=outfile)
