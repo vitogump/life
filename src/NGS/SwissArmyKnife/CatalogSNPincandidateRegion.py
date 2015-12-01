@@ -219,7 +219,7 @@ if __name__ == '__main__':
 
                                 overlap_start=max(tplist[2],regionstart)
                                 overlap_end=min(tplist[3],regionend)
-                                for snpmap in d_cds_map_list+w_cds_map_list:
+                                for snpmap in w_cds_map_list+d_cds_map_list:
                                     tempmap={}
                                     if chrom not in snpmap:
                                         tempmap[chrom]=[]
@@ -230,7 +230,7 @@ if __name__ == '__main__':
                                 MultipleVcfMap_cds=Util.alinmultPopSnpPos(vcflist_A_chrom_container,"o")
                                 allcdssnps+=geneUtil.collectSNP_locatInRegion(MultipleVcfMap_cds,chrom,overlap_start,overlap_end)
                                 vcflist_A_chrom_container_intron=[]
-                                for snpmap in d_intron_map_list+w_intron_map_list:
+                                for snpmap in w_intron_map_list+d_intron_map_list:
                                     tempmap={}
                                     if chrom not in snpmap:
                                         tempmap[chrom]=[]
@@ -254,58 +254,51 @@ if __name__ == '__main__':
                     
                     ####################
                     sql_file=""
-                    if chrom in utrMap and (tpID  in utrMap[chrom]):
-                        vcflist_A_chrom_container=[]
-#                         if chrom not in (d_utr_map_list+w_utr_map_list):
-#                             print(chrom,tpID,"give up")
-#                             continue
-                        for snpmap in d_utr_map_list+w_utr_map_list:
-                            tempmap={}
-                            if chrom not in snpmap:
-                                tempmap[chrom]=[]
-                            else:
-                                tempmap[chrom]=snpmap[chrom]
-                            vcflist_A_chrom_container.append(copy.deepcopy(tempmap))
-                        MultipleVcfMap=Util.alinmultPopSnpPos(vcflist_A_chrom_container, "o")
-                        if utrMap[chrom][tpID][0][1]<(allgeneSetMap[chrom][tpID][1]+allgeneSetMap[chrom][tpID][2])/2:
-                            sql_file="u"
-                        if utrMap[chrom][tpID][-1][2]>(allgeneSetMap[chrom][tpID][1]+allgeneSetMap[chrom][tpID][2])/2:
-                            sql_file+="d"
-                        for a,utrstart,utrend in utrMap[chrom][tpID]:
-                            if (utrend>regionstart and utrend<regionend) or (utrstart>regionstart and utrstart<regionend):
-                                overlap_start=max(regionstart,utrstart)
-                                overlap_end=min(regionend,utrend)
-                                print("chrom",chrom,"overlap_start",overlap_start,"overlap_end", overlap_end)
-                                allutrsnps_fromfile+=geneUtil.collectSNP_locatInRegion(MultipleVcfMap, chrom, overlap_start, overlap_end)
+#                     if chrom in utrMap and (tpID  in utrMap[chrom]):
+#                         vcflist_A_chrom_container=[]
+# #                         if chrom not in (d_utr_map_list+w_utr_map_list):
+# #                             print(chrom,tpID,"give up")
+# #                             continue
+#                         for snpmap in w_utr_map_list+d_utr_map_list:
+#                             tempmap={}
+#                             if chrom not in snpmap:
+#                                 tempmap[chrom]=[]
+#                             else:
+#                                 tempmap[chrom]=snpmap[chrom]
+#                             vcflist_A_chrom_container.append(copy.deepcopy(tempmap))
+#                         MultipleVcfMap=Util.alinmultPopSnpPos(vcflist_A_chrom_container, "o")
+#                         if utrMap[chrom][tpID][0][1]<(allgeneSetMap[chrom][tpID][1]+allgeneSetMap[chrom][tpID][2])/2:
+#                             sql_file="u"
+#                         if utrMap[chrom][tpID][-1][2]>(allgeneSetMap[chrom][tpID][1]+allgeneSetMap[chrom][tpID][2])/2:
+#                             sql_file+="d"
+#                         for a,utrstart,utrend in utrMap[chrom][tpID]:
+#                             if (utrend>regionstart and utrend<regionend) or (utrstart>regionstart and utrstart<regionend):
+#                                 overlap_start=max(regionstart,utrstart)
+#                                 overlap_end=min(regionend,utrend)
+#                                 print("chrom",chrom,"overlap_start",overlap_start,"overlap_end", overlap_end)
+#                                 allutrsnps_fromfile+=geneUtil.collectSNP_locatInRegion(MultipleVcfMap, chrom, overlap_start, overlap_end)
 #                         sql_file="file"
                     if chrom in gtfMap and (tpID == gtfMap[chrom][tpIDidx][0]):
                         vcflist_A_chrom_container=[]
-#                         if chrom not in (d_utr_map_list+w_utr_map_list):
+#                         if chrom not in (w_utr_map_list+d_utr_map_list):
 #                             print(chrom,tpID,"give up")
 #                             continue
-                        for snpmap in d_utr_map_list+w_utr_map_list:
-                            tempmap={}
-                            if chrom not in snpmap:
-                                tempmap[chrom]=[]
-                            else:
-                                tempmap[chrom]=snpmap[chrom]
-                            vcflist_A_chrom_container.append(copy.deepcopy(tempmap))
-                        MultipleVcfMap=Util.alinmultPopSnpPos(vcflist_A_chrom_container, "o")
+
                         if sql_file.find("u")==-1:
                             overlap_start=max(regionstart,(gtfMap[chrom][tpIDidx][2]-upextend))
                             overlap_end=min(regionend,gtfMap[chrom][tpIDidx][2])
-                            temp=geneUtil.collectSNP_locatInRegion(MultipleVcfMap, chrom, overlap_start, overlap_end)
-                            
-                            if len(temp)>1:
-                                sql_file+="u"
-                                allutrsnps_fromfile+=temp
+                            allutrsnps_fromsql+=dbvariantstools.operateDB("select",sqlselectstatementpart_count_left+" where chrID='"+chrom+"' and snp_pos>"+str(overlap_start) + " and snp_pos< "+str(overlap_end))
+#                             if len(temp)>1:
+#                                 sql_file+="u"
+#                                 allutrsnps_fromfile+=temp
                         if sql_file.find("d")==-1:
                             overlap_start=max(regionstart,(gtfMap[chrom][tpIDidx][3]))
                             overlap_end=min(regionend,(gtfMap[chrom][tpIDidx][3]+downextend))
-                            temp=geneUtil.collectSNP_locatInRegion(MultipleVcfMap, chrom, overlap_start, overlap_end)
-                            if len(temp)>1:
-                                allutrsnps_fromfile+=temp
-                                sql_file+="d"    
+                            allutrsnps_fromsql+=dbvariantstools.operateDB("select",sqlselectstatementpart_count_left+" where chrID='"+chrom+"' and snp_pos>"+str(overlap_start) + " and snp_pos< "+str(overlap_end))
+#                             temp=geneUtil.collectSNP_locatInRegion(MultipleVcfMap, chrom, overlap_start, overlap_end)
+#                             if len(temp)>1:
+#                                 allutrsnps_fromfile+=temp
+#                                 sql_file+="d"    
                     elif chrom in allgeneSetMap and (tpID in allgeneSetMap[chrom]):
 
                         if sql_file.find("u")==-1 : 
