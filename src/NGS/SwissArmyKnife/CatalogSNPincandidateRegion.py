@@ -216,8 +216,7 @@ if __name__ == '__main__':
                             tpIDidx+=1
                             if tplist[0]==tpID:
                                 vcflist_A_chrom_container=[]
-                                regionstart
-                                regionend
+
                                 overlap_start=max(tplist[2],regionstart)
                                 overlap_end=min(tplist[3],regionend)
                                 for snpmap in d_cds_map_list+w_cds_map_list:
@@ -227,9 +226,8 @@ if __name__ == '__main__':
                                     else:
                                         tempmap[chrom]=snpmap[chrom]
                                     vcflist_A_chrom_container.append(copy.deepcopy(tempmap))
-                                print(len(vcflist_A_chrom_container))
+
                                 MultipleVcfMap_cds=Util.alinmultPopSnpPos(vcflist_A_chrom_container,"o")
-                                print(len(MultipleVcfMap_cds))
                                 allcdssnps+=geneUtil.collectSNP_locatInRegion(MultipleVcfMap_cds,chrom,overlap_start,overlap_end)
                                 vcflist_A_chrom_container_intron=[]
                                 for snpmap in d_intron_map_list+w_intron_map_list:
@@ -277,21 +275,33 @@ if __name__ == '__main__':
                             if (utrend>regionstart and utrend<regionend) or (utrstart>regionstart and utrstart<regionend):
                                 overlap_start=max(regionstart,utrstart)
                                 overlap_end=min(regionend,utrend)
-                                print(chrom,overlap_start, overlap_end)
+                                print("chrom",chrom,"overlap_start",overlap_start,"overlap_end", overlap_end)
                                 allutrsnps_fromfile+=geneUtil.collectSNP_locatInRegion(MultipleVcfMap, chrom, overlap_start, overlap_end)
 #                         sql_file="file"
                     if chrom in gtfMap and (tpID == gtfMap[chrom][tpIDidx][0]):
+                        vcflist_A_chrom_container=[]
+#                         if chrom not in (d_utr_map_list+w_utr_map_list):
+#                             print(chrom,tpID,"give up")
+#                             continue
+                        for snpmap in d_utr_map_list+w_utr_map_list:
+                            tempmap={}
+                            if chrom not in snpmap:
+                                tempmap[chrom]=[]
+                            else:
+                                tempmap[chrom]=snpmap[chrom]
+                            vcflist_A_chrom_container.append(copy.deepcopy(tempmap))
+                        MultipleVcfMap=Util.alinmultPopSnpPos(vcflist_A_chrom_container, "o")
                         if sql_file.find("u")==-1:
-                            overlap_start=max(regionstart,(gtfMap[chrom][tpID][2]-upextend))
-                            overlap_end=min(regionend,gtfMap[chrom][tpID][2])
+                            overlap_start=max(regionstart,(gtfMap[chrom][tpIDidx][2]-upextend))
+                            overlap_end=min(regionend,gtfMap[chrom][tpIDidx][2])
                             temp=geneUtil.collectSNP_locatInRegion(MultipleVcfMap, chrom, overlap_start, overlap_end)
                             
                             if len(temp)>1:
                                 sql_file+="u"
                                 allutrsnps_fromfile+=temp
                         if sql_file.find("d")==-1:
-                            overlap_start=max(regionstart,(gtfMap[chrom][tpID][3]))
-                            overlap_end=min(regionend,(gtfMap[chrom][tpID][3]+downextend))
+                            overlap_start=max(regionstart,(gtfMap[chrom][tpIDidx][3]))
+                            overlap_end=min(regionend,(gtfMap[chrom][tpIDidx][3]+downextend))
                             temp=geneUtil.collectSNP_locatInRegion(MultipleVcfMap, chrom, overlap_start, overlap_end)
                             if len(temp)>1:
                                 allutrsnps_fromfile+=temp
