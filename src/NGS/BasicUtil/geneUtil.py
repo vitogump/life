@@ -134,9 +134,12 @@ def GOenrichment(gotablefile,outpre,genelist=None,trscptlist=None):
     gotablefile.close()
 def collectSNP_locatInRegion(MultipleVcfMap,chrom,startpos,endpos):
     """
-    return [[pos,ref,alt,(),(),()],[],[],,,]
+    return [[pos1,ref,alt,(),(),()],[POS2],[],,,]
     """
     low=0;high=len(MultipleVcfMap[chrom])-1
+    if MultipleVcfMap[chrom]==[] or startpos>=MultipleVcfMap[chrom][-1][0] or endpos<=MultipleVcfMap[chrom][0][0]:
+        print("collectSNP_locatInRegion",chrom,startpos,endpos,"empty")
+        return []
     while low<=high:
         mid=(low + high)>>1
         if MultipleVcfMap[chrom][mid][0]<endpos:
@@ -153,7 +156,6 @@ def collectSNP_locatInRegion(MultipleVcfMap,chrom,startpos,endpos):
     low=0;high=len(MultipleVcfMap[chrom])-1
     while low<=high:
         mid=(low + high)>>1
-        print(chrom,startpos,mid)
         if MultipleVcfMap[chrom][mid][0]<startpos:
             low=mid+1
         elif MultipleVcfMap[chrom][mid][0]>startpos:
@@ -163,7 +165,12 @@ def collectSNP_locatInRegion(MultipleVcfMap,chrom,startpos,endpos):
             break
     else:
         start_idx=high
-    return copy.deepcopy(MultipleVcfMap[chrom][start_idx:end_idx+1])
+    if MultipleVcfMap[chrom][start_idx][0]>=startpos and MultipleVcfMap[chrom][start_idx][0]<=endpos and len(MultipleVcfMap[chrom])>(end_idx+1) and MultipleVcfMap[chrom][end_idx+1][0]>=startpos and MultipleVcfMap[chrom][end_idx+1][0]<=endpos:
+        return copy.deepcopy(MultipleVcfMap[chrom][start_idx:end_idx+1])
+    elif MultipleVcfMap[chrom][end_idx][0]>=startpos and MultipleVcfMap[chrom][end_idx][0]<=endpos:
+        return copy.deepcopy(MultipleVcfMap[chrom][start_idx:end_idx])
+    else:
+        return []
 def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,winType,morethan_lessthan,threshold=None,percentage=None,mergeNA=False,extendtodistal=0,found=False):
 
     if percentage!=None and threshold!=None:
