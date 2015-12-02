@@ -145,13 +145,18 @@ def collectSNP_locatInRegion(MultipleVcfMap,chrom,startpos,endpos):
         if MultipleVcfMap[chrom][mid][0]<endpos:
             low=mid+1
         elif MultipleVcfMap[chrom][mid][0]>endpos:
+
             high=mid-1
         else:
             end_idx=mid
             break
     else:
         if low>=len(MultipleVcfMap[chrom]):
+            
             low=len(MultipleVcfMap[chrom])-1
+        if MultipleVcfMap[chrom][low][0]>endpos and low>0:
+            low-=1
+        print(MultipleVcfMap[chrom][low][0])
         end_idx=low
     low=0;high=len(MultipleVcfMap[chrom])-1
     while low<=high:
@@ -165,6 +170,9 @@ def collectSNP_locatInRegion(MultipleVcfMap,chrom,startpos,endpos):
             break
     else:
         start_idx=high
+        if MultipleVcfMap[chrom][high][0]<startpos and len(MultipleVcfMap[chrom])>high+1:
+            start_idx+=1
+    
     if MultipleVcfMap[chrom][start_idx][0]>=startpos and MultipleVcfMap[chrom][start_idx][0]<=endpos and len(MultipleVcfMap[chrom])>(end_idx+1) and MultipleVcfMap[chrom][end_idx+1][0]>=startpos and MultipleVcfMap[chrom][end_idx+1][0]<=endpos:
         return copy.deepcopy(MultipleVcfMap[chrom][start_idx:end_idx+1])
     elif MultipleVcfMap[chrom][end_idx][0]>=startpos and MultipleVcfMap[chrom][end_idx][0]<=endpos:
