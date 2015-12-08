@@ -5,10 +5,11 @@ Created on 2015-11-13
 '''
 import copy
 from optparse import OptionParser
+import os
 import pickle
 import re
 
-from Bio import SeqIO,pairwise2
+from Bio import SeqIO, pairwise2
 
 from src.NGS.BasicUtil import geneUtil, Util
 import src.NGS.BasicUtil.DBManager as dbm
@@ -23,7 +24,7 @@ parser.add_option("-d", "--domesticsnptable", dest="domesticsnptable",action="ap
 parser.add_option("-w", "--wildsnptable", dest="wildsnptable",action="append", help="variants")
 parser.add_option("-R", "--candidateRegion", dest="candidateRegion", action="append", default=[], help="bedfiles")
 parser.add_option("-o", "--outputpath", dest="outputpath", help="default infile1_infile2")
-
+parser.add_option("-f","--filterfreq",dest="filterfreq",default="0",help="filterfreq ")
 parser.add_option("-E", "--elementfold", dest="elementfold",action="append",nargs=2,help="fold targetseqnamesubstr")
 
                                                                                                                                                           
@@ -179,7 +180,7 @@ if __name__ == '__main__':
 #         outputpath=outputpath[:-1]
     outfile=open(options.outputpath+".conserved","w")
     utroutfile=open(options.outputpath+".utr","w")
-    print("delta_AF\tw_af\td_af\tsnp_pos\tref_base\talt_base",file=utroutfile)
+    print("delta_AF\tw_af\td_af\tsnp_pos\tref_base\talt_base\tpID",file=utroutfile)
     cdsoutfile=open(options.outputpath+".cds","w")
     print("delta_AF\tw_af\td_af\tsnp_pos\tref_base\talt_base",file=cdsoutfile)
     intronoutfile=open(options.outputpath+".intron","w")
@@ -344,7 +345,7 @@ if __name__ == '__main__':
                         d_af=d_af/len(options.domesticsnptable)
                         delta_af=abs(w_af-d_af)
 #                                 print(snp,"======",delta_af,w_af,d_af,ref_base,w_base)
-                        if delta_af>0.1:                         
+                        if delta_af>=float(options.filterfreq):                         
                             snplist_posdeltaAFrefalt.append((delta_af,w_af,d_af,copy.deepcopy(snp)))
                     snplist_posdeltaAFrefalt.sort(key=lambda  listRec:listRec[0],reverse=True)
                     for delta_af,w_af,d_af,snp in snplist_posdeltaAFrefalt:
@@ -369,7 +370,7 @@ if __name__ == '__main__':
                             d_af=d_af/len(options.domesticsnptable)
                             delta_af=abs(w_af-d_af)
     #                                 print(snp,"======",delta_af,w_af,d_af,ref_base,w_base)
-                            if delta_af>0.1:                            
+                            if delta_af>float(options.filterfreq):                            
                                 snplist_posdeltaAFrefalt.append((delta_af,w_af,d_af,copy.deepcopy(snp)))
                         snplist_posdeltaAFrefalt.sort(key=lambda  listRec:listRec[0],reverse=True)
                         for delta_af,w_af,d_af,snp in snplist_posdeltaAFrefalt:
@@ -395,7 +396,7 @@ if __name__ == '__main__':
                             d_af=d_af/len(options.domesticsnptable)
                             delta_af=abs(w_af-d_af)
 #                                 print(snp,"======",delta_af,w_af,d_af,ref_base,w_base)
-                            if delta_af>0.1:
+                            if delta_af>float(options.filterfreq):
                                 snplist_posdeltaAFrefalt.append((int(snp[1]),delta_af,ref_base,w_base,w_af,d_af,tpID))
                         snplist_posdeltaAFrefalt.sort(key=lambda  listRec:listRec[1],reverse=True)
                         for snp_pos,delta_af,ref_base,w_base,w_af,d_af,tpID in snplist_posdeltaAFrefalt:
@@ -423,7 +424,7 @@ if __name__ == '__main__':
                         d_af=d_af/len(options.domesticsnptable)
                         delta_af=abs(w_af-d_af)
 #                                 print(snp,"======",delta_af,w_af,d_af,ref_base,w_base)
-                        if delta_af>0.1:
+                        if delta_af>float(options.filterfreq):
                             snplist_posdeltaAFrefalt.append((delta_af,w_af,d_af,copy.deepcopy(snp)))
                     snplist_posdeltaAFrefalt.sort(key=lambda  listRec:listRec[0],reverse=True)
                     for delta_af,w_af,d_af,snp in snplist_posdeltaAFrefalt:
@@ -457,12 +458,12 @@ if __name__ == '__main__':
                     d_af=d_af/len(options.domesticsnptable)
                     delta_af=abs(w_af-d_af)
 #                                 print(snp,"======",delta_af,w_af,d_af,ref_base,w_base)
-                    if delta_af>0.1:
+                    if delta_af>float(options.filterfreq):
                         snplist_posdeltaAFrefalt.append((int(snp[1]),delta_af,ref_base,w_base,w_af,d_af))
                 snplist_posdeltaAFrefalt.sort(key=lambda  listRec:listRec[1],reverse=True)
                 print("region:",regionline.strip(),file=intergenic)
                 for snp_pos,delta_af,ref_base,w_base,w_af,d_af in snplist_posdeltaAFrefalt:
-                    print(snp_pos,delta_af,ref_base,w_base,w_af,d_af,sep="\t",file=intergenic)
+                    print(delta_af,snp_pos,ref_base,w_base,w_af,d_af,sep="\t",file=intergenic)
             if chrom in allseqtobed:
                 for sstartpos,sendpos,fafilename,qs,qe,revcom,total_bases,gap_open in allseqtobed[chrom]:
                     if (sendpos>regionstart and sendpos<regionend) or (sstartpos>regionstart and sstartpos<regionend):
@@ -497,7 +498,8 @@ if __name__ == '__main__':
                             d_af=d_af/len(options.domesticsnptable)
                             delta_af=abs(w_af-d_af)
 #                                 print(snp,"======",delta_af,w_af,d_af,ref_base,w_base)
-                            snplist_posdeltaAFrefalt.append((int(snp[1]),delta_af,ref_base,w_base,w_af,d_af))
+                            if delta_af>=float(options.filterfreq):
+                                snplist_posdeltaAFrefalt.append((int(snp[1]),delta_af,ref_base,w_base,w_af,d_af))
 #                             targetspecies_baseidx=[];
 #                             targetspecies_mutseq=[]
 #                             slah_count_before_q=0
@@ -595,7 +597,7 @@ if __name__ == '__main__':
 #                                         targetspecies_mutseq.append("-")
 #                                         targetspecies_baseidx.append(0)
                         snplist_posdeltaAFrefalt.sort(key=lambda tp:tp[1],reverse=True)
-                        print(regionline.strip(),fafilename,file=outfile)
+                        print("region:",regionline.strip(),fafilename,file=outfile)
 #                             print(targetspecies_seq,len(targetspecies_baseidx))
 #                             print(targetspecies_mutseq,len(targetspecies_baseidx))
 #                             print(targetspecies_baseidx,len(targetspecies_baseidx))
@@ -615,7 +617,22 @@ if __name__ == '__main__':
     utroutfile.close()
     cdsoutfile.close()
     intronoutfile.close()
+
 #     testf.close()
 #     testff.close()
-                                
-                            
+    os.system("awk '$1!~/region/&& $1 !~/notfound/{print $0}' "+options.outputpath+".utr>"+options.outputpath+".utr_")
+    os.system("awk '$1!~/region/&& $1 !~/notfound/{print $0}' "+options.outputpath+".conserved>"+options.outputpath+".conserved_")
+    os.system("awk '$1!~/region/&& $1 !~/notfound/{print $0}' "+options.outputpath+".intergenic>"+options.outputpath+".intergenic_")
+    os.system("""awk '$1!~/region/{OFS="\\t";print $1,$2,$3,$4,$5,$6}' """+options.outputpath+".cds>"+options.outputpath+".cds_")
+    os.system("""awk '$1!~/region/{OFS="\\t";print $1,$2,$3,$4,$5,$6}' """+options.outputpath+".intron>"+options.outputpath+".intron_")
+    print(options.outputpath+".conserved<-read.delim('"+options.outputpath+".conserved_',header=T)")
+    print(options.outputpath+".utr<-read.delim('"+options.outputpath+".utr_',header=T)")
+    print(options.outputpath+".intergenic<-read.delim('"+options.outputpath+".intergenic_',header=T)")
+    print(options.outputpath+".cds<-read.delim('"+options.outputpath+".cds_',header=T)")
+    print(options.outputpath+".intron<-read.delim('"+options.outputpath+".intron_',header=T)")
+    print("plot(density("+options.outputpath+".conserved$delta_AF),main="+"'"+options.outputpath+" conserved',xlim=c(0,1))")
+    print("plot(density("+options.outputpath+".utr$delta_AF),main="+"'"+options.outputpath+" utr',xlim=c(0,1))")
+    print("plot(density("+options.outputpath+".intron$delta_AF),main="+"'"+options.outputpath+" intron',xlim=c(0,1))")
+    print("plot(density("+options.outputpath+".cds$delta_AF),main="+"'"+options.outputpath+" cds',xlim=c(0,1))")
+    print("plot(density("+options.outputpath+".intergenic$delta_AF),main="+"'"+options.outputpath+" intergenic',xlim=c(0,1))")
+    

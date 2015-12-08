@@ -88,6 +88,8 @@ if __name__ == '__main__':
             print(len(parameterstuples_list[-1]),parameterstuples_list[-1])
         print(len(parameterstuples_list),parameterstuples_list)
 #         exit()
+        f=open(options.outfileprewithpath+".freqcorrelationfilenamelist",'w')
+        f.close()
         pool.map(runSlave_makecorrelationfile,parameterstuples_list)
         pool.close()
         pool.join()
@@ -141,6 +143,7 @@ if __name__ == '__main__':
     pool.map(runSlave_slidewin,parameterstuples_list)
     pool.close()
     pool.join()
+    f.close()
     print("finished")
 
     

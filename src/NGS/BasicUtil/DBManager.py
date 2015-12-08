@@ -73,17 +73,18 @@ class DBTools():
             print('query error!{}'.format(e))
             print("DBManager operateDB","may be the file name is wrong")
             print(sqls,data)
-            cursor.close()
+
             self.disconnect()
             
             a=self.operateDB(sqltype,sqls,data)
-            if a==0:
-                return 0
+            if a!=-1:
+                return a
             print('query error!{}'.format(e))
             print("DBManager operateDB","may be the file name is wrong")
             
             exit(-1)
         finally:
+            print(sqls,"DBManager operateDB with exception but still ok")
             cursor.close()
         return 0
     
