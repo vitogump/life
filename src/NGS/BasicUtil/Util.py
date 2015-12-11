@@ -1632,12 +1632,12 @@ def distributionfuncdraft(intervalFileName,dataFileNames,col_to_bined1,col_to_bi
                 intervalMap_mean[a,b]=intervalMap_sum[a,b]/intervalMap_count[a,b]
     return copy.deepcopy(intervalMap_count),copy.deepcopy(intervalMap_mean)
 class WinInGenome():           
-    def __init__(self, dbname, winFileName6Field, tableName=None):
+    def __init__(self, dbname, winFileName6Field,Nocol, tableName=None):
         super().__init__()
         self.dbname = dbname
-        self.chromOrder, self.windbtools, self.wintablewithoutNA, self.wintabletextvalueallwin = self.loadWinDataIntoDB(dbname, winFileName6Field, tableName)
+        self.chromOrder, self.windbtools, self.wintablewithoutNA, self.wintabletextvalueallwin = self.loadWinDataIntoDB(dbname, winFileName6Field,Nocol, tableName)
         self.winContainTrscptMap = {}
-    def loadWinDataIntoDB(self, dbname, winFileName7Field, tableNamewithoutNA=None):
+    def loadWinDataIntoDB(self, dbname, winFileName7Field,Nocol="7", tableNamewithoutNA=None):
         chromOrder = []
         
         tempdbtools = dbm.DBTools("10.2.48.140", "root", "1234567", dbname)
@@ -1678,11 +1678,11 @@ class WinInGenome():
         for chromNo in a:
             chromOrder.append(chromNo.strip())
         a.close()
-        a = os.system("awk '$0!~/NA/ && NR!=1{print $0}' " + winFileName7Field + ">" + winFileName7Field + "_tmpfile")
+        a = os.system("awk '$"+str(Nocol)+"!~/NA/ && NR!=1{print $0}' " + winFileName7Field + ">" + winFileName7Field + "_tmpfile")
         if a != 0:
-            print("awk '$0!~/NA/ && NR!=1{print $0}' " + winFileName7Field + ">" + winFileName7Field + "_tmpfile" + ": failed")
+            print("awk '$"+str(Nocol)+"!~/NA/ && NR!=1{print $0}' " + winFileName7Field + ">" + winFileName7Field + "_tmpfile" + ": failed")
             exit(-1)
-        print("awk '$0!~/NA/ && NR!=1{print $0}' " + winFileName7Field + ">" + winFileName7Field + "_tmpfile" + ": ok")
+        print("awk '$"+str(Nocol)+"!~/NA/ && NR!=1{print $0}' " + winFileName7Field + ">" + winFileName7Field + "_tmpfile" + ": ok")
         loaddatasql = "load data local infile '" + winFileName7Field + "_tmpfile' into table " + tableNamewithoutNA + " fields terminated by '\\t'"
         
         shellstatment = "mysql -uroot -p1234567 -D" + dbname.strip() + ' -e "' + loaddatasql + '"'

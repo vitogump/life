@@ -3,8 +3,9 @@ Created on 2015-8-21
 
 @author: liurui
 '''
-import fractions, re,os, copy
+import fractions, re, os, copy
 from optparse import OptionParser
+from os.path import sys
 
 from NGS.BasicUtil import Util, VCFutil
 import src.NGS.BasicUtil.DBManager as dbm
@@ -96,8 +97,8 @@ def make_freq_xaxisKEY_yaxisseqVALUERelation(a):
                 print("multple allele",snp_aligned)
                 continue
             curpos=int(snp_aligned[0])
-            snp=dbvariantstools.operateDB("select","select * from "+topleveltablename+" where chrID='"+currentchrID+"' and snp_pos='"+str(curpos)+"'")
-            if not snp:
+            snp=dbvariantstools.operateDB("select","select * from "+topleveltablename+" where chrID='"+currentchrID+"' and snp_pos="+str(curpos)+"")
+            if not snp or snp==0:
                 print(currentchrID,curpos,"snp not find in db,skip")
                 continue
             else:#judge the ancenstrall allele
@@ -217,7 +218,7 @@ def make_freq_xaxisKEY_yaxisseqVALUERelation(a):
 if __name__ == '__main__':
     filenamelistfilename=options.outfileprewithpath+".freqcorrelationfilenamelist"
     parameterstuples=(options.chromlistfilename,options.topleveltablejudgeancestral,options.targetpopvcffile_withdepth,options.refpopvcffile_withdepth,options.numberofindvdoftargetpop_todividintobin)
-    print(parameterstuples)
+    print(parameterstuples,options.outfileprewithpath)
     freq_xaxisKEY_yaxisVALUE_seq_list=make_freq_xaxisKEY_yaxisseqVALUERelation(parameterstuples)
     outfilename=options.outfileprewithpath+"_part_"+str(os.getpid())+Util.random_str()
     outfile=open(outfilename,'w')
@@ -226,6 +227,7 @@ if __name__ == '__main__':
         print(str(a),str(b),*freq_xaxisKEY_yaxisVALUE_seq_list[(a,b)],sep="\t",file=outfile)
     outfile.close()
     print(outfilename,file=filenamelistfile)
+    print(sys.argv,outfilename)
     filenamelistfile.close()
     print("process ID:",os.getpid(),"finished")
     exit(0)

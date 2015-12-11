@@ -154,10 +154,10 @@ class MakeMhtGraph(object):
         if not fillvalue.isnumeric():
             fillvalue='"'+fillvalue+'"'
         if positive_negtive == "positive":
-            os.system(""" awk '{OFS="\\t";if(NR!=1 && ($6=="NA" || $7<0)){$6=""" + fillvalue + """;$7=""" + fillvalue + """};print $0}' """ + inputfileName + ">" + pathtoOutFileName_new)
+            os.system(""" awk '{OFS="\\t";if(NR!=1 && ($7=="NA" || $7<0)){$6=""" + fillvalue + """;$7=""" + fillvalue + """};print $0}' """ + inputfileName + ">" + pathtoOutFileName_new)
         elif positive_negtive == "negtive":
-            print(""" awk '{OFS="\\t";if(NR!=1 && ($6=="NA" || $7>0)){$6=""" + fillvalue + """;$7=""" + fillvalue + """};print $0}' """ + inputfileName + ">" + pathtoOutFileName_new)
-            os.system(""" awk '{OFS="\\t";if(NR!=1 && ($6=="NA" || $7>0)){$6=""" + fillvalue + """;$7=""" + fillvalue + """};print $0}' """ + inputfileName + ">" + pathtoOutFileName_new)
+            print(""" awk '{OFS="\\t";if(NR!=1 && ($7=="NA" || $7>0)){$6=""" + fillvalue + """;$7=""" + fillvalue + """};print $0}' """ + inputfileName + ">" + pathtoOutFileName_new)
+            os.system(""" awk '{OFS="\\t";if(NR!=1 && ($7=="NA" || $7>0)){$6=""" + fillvalue + """;$7=""" + fillvalue + """};print $0}' """ + inputfileName + ">" + pathtoOutFileName_new)
         return re.search(r"[^/]*$", pathtoOutFileName_new).group(0),pathtoOutFileName_new  # for linux
     
     def makeHistonPicture(self,inputfileName, dataType,ylim=None,xlim=None,columnnames=("winvalue","zvalue")):
@@ -186,13 +186,16 @@ class MakeMhtGraph(object):
             print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
             for columnname in columnnames:
                 r("CairoPNG('" + namewithoutpath + "histon_"+columnname+"_" + dataType + ".png',width=1600,height=800)")
-                r("hist(x$"+columnname+",breaks=1000,main='" + namewithoutpath + "')")
-                sd=r("sd(x$"+columnname+",na.rm=TRUE)")
-                mean=r("mean(x$"+columnname+",na.rm=TRUE)")
+                try:
+                    r("hist(x$"+columnname+",breaks=1000,main='" + namewithoutpath + "')")
+                    sd=r("sd(x$"+columnname+",na.rm=TRUE)")
+                    mean=r("mean(x$"+columnname+",na.rm=TRUE)")
+                except:
+                    pass
 #                 print(inputfileName,columnname,sd,mean,file=open(dir+"/test.txt",'a'))
                 r('dev.off()')
         os.system("cd "+self.olddir)
-        print(ylim,xlim)     
+        print(ylim,xlim,"mkmht done")     
     def makeMhtplots_compareInOnePicture_withgeneName(self, outputnamewithpath,positive_winfiles,negtive_winfiles,fillvalue=0,columnname="zvalue"):
         scriptfile=open("stripts_withgene.R",'w')
         print(outputnamewithpath,file=scriptfile)

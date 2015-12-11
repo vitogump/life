@@ -47,7 +47,9 @@ class DBTools():
         if not self.conn:
             self.connect()
         try:
+            cursorAssigned=False
             cursor=self.conn.cursor()
+            cursorAssigned=True
             result=[]
             if sqltype=='select':
                 cursor.execute(sqls[0])
@@ -76,16 +78,16 @@ class DBTools():
 
             self.disconnect()
             
-            a=self.operateDB(sqltype,sqls,data)
+            a=self.operateDB(sqltype,sqls[0],data)
             if a!=-1:
                 return a
             print('query error!{}'.format(e))
-            print("DBManager operateDB","may be the file name is wrong")
+            print("DBManager operateDB","may be the file name is wrong2")
             
             exit(-1)
         finally:
-            print(sqls,"DBManager operateDB with exception but still ok")
-            cursor.close()
+            if cursorAssigned  :
+                cursor.close()
         return 0
     
     def create_table(self,table):

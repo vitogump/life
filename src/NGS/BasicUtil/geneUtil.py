@@ -185,6 +185,10 @@ def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,win
         print("-t conflict with -p")
         exit(-1)
     winFileName7Field = winfile
+    f=open(winFileName7Field,"r")
+    title=re.split(r"\s+",f.readline().strip())
+    f.close()
+    Nocol=title.index(winType)+1
     re.search(r"[^/]*$",winFileName7Field).group(0)
     if re.search(r'^.*/',outbedfilename)!=None:
         path=re.search(r'^.*/',outbedfilename).group(0)
@@ -199,7 +203,7 @@ def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,win
     print("chrNo\tRegion_start\tRegion_end\tNoofWin\textram"+winType+"\ttranscpt\toverlapcode\tgeneID",file=outfile)
     outfileNameWINwithGENE=path+re.search(r"[^/]*$",winFileName7Field).group(0)+".wincopywithgene"
     genomedbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname) 
-    winGenome = Util.WinInGenome(Util.ghostdbname, winFileName7Field)
+    winGenome = Util.WinInGenome(Util.ghostdbname, winFileName7Field,Nocol)
     time.sleep(SLEEP_FOR_NEXT_TRY)
     winGenome.appendGeneName(Util.TranscriptGenetable, genomedbtools, winwidth, slideSize, outfileNameWINwithGENE,upextend,downextend,(10,morethan_lessthan))
     selectWinNos="threshold method"
