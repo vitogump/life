@@ -33,7 +33,7 @@ if __name__ == '__main__':
     obsexpcaculator=Caculators.Caculate_S_ObsExp_difference(mindeptojudgefix,N_of_targetpop,N_of_refpop,dbvariantstools,options.topleveltablejudgeancestral)
     for vcf,depthconfig in options.targetpopvcffile_withdepth[:]+options.refpopvcffile_withdepth[:]:
         listofpopvcfmapOfAChr.append({})
-        outputname+=("_"+re.split(r"\.",re.search(r"[^/]*$",vcf).group(0))[0])
+        outputname+=("_"+re.split(r"\.",re.search(r"[^/]*$",vcf).group(0))[0])[:2]
         poplist.append(VCFutil.VCF_Data(vcf))  # new a class
         if depthconfig.lower()!="none":
 
@@ -63,13 +63,18 @@ if __name__ == '__main__':
             print("vcfname must with 'pool' or 'indvd'")
             exit(-1)   
     chrlistfilewithoutpath=re.search(r"[^/]*$",options.chromlistfilename).group(0)
+    plainname=re.search(r"[^/]*$",outputname).group(0)
+    if len(plainname)>=250:
+        outputname=outputname[:-(len(plainname)-250)]
     outfile = open(outputname + ".earlypostiveselected"+str(windowWidth)+"_"+str(slideSize)+chrlistfilewithoutpath, 'w')
 
     
     
     print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnp\twinvalue\tzvalue",file=outfile)
     freq_correlation_configFileName=options.outfileprewithpath+".freq_correlation_merged"
-    freq_correlation_config=open(freq_correlation_configFileName,"r")
+    if options.correlationfile!=freq_correlation_configFileName:
+        print("what's wrong??",freq_correlation_configFileName,options.correlationfile)
+    freq_correlation_config=open(options.correlationfile,"r")
     final_freq_xaxisKEY_yaxisVALUERelation={}
     for line in freq_correlation_config:
         if line.split():

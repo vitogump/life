@@ -121,8 +121,9 @@ if __name__ == '__main__':
         
     else:
         if len(options.chromlistfilename)!=1:
-            print("need only one chromlistfilename")
-            exit(-1)
+            print("need only one chromlistfilename???")
+#             exit(-1)
+        freq_correlation_configFileName=options.outfileprewithpath+".freq_correlation_merged"
         correlationfile=open(options.correlationfile,'r')
         final_freq_xaxisKEY_yaxisVALUERelation={}
         for line in correlationfile:
