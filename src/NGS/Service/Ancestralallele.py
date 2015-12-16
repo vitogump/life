@@ -264,8 +264,8 @@ class AncestralAlleletabletools():
         archicpop_colname=re.search(r'[^/]*$',archicpopVcfFile).group(0)
         archicpop_colname=re.sub(r"[^\w^\d]","_",archicpop_colname)
         print(archicpop_colname+"_alt",archicpop_colname+"_dep")
-        self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, toplevelsnptablename, archicpop_colname+"_alt", "char(128)", "default null"))
-        self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, toplevelsnptablename, archicpop_colname+"_dep", "char(128)", "default null"))  
+#         self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, toplevelsnptablename, archicpop_colname+"_alt", "char(128)", "default null"))
+#         self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, toplevelsnptablename, archicpop_colname+"_dep", "char(128)", "default null"))  
         print("callproc", "mysql_sp_add_column","done",time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
         depthfile = Util.GATK_depthfile(depthFile, depthFile + ".index")
         print("Util.GATK_depthfile done",time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
@@ -287,6 +287,7 @@ class AncestralAlleletabletools():
             archicpopSeqOfAChr={}
             archicpopSeqOfAChr[currentchrID]=archicpop.getVcfListByChrom(currentchrID)
             allsnpsInAchr=self.dbvariant.operateDB("select","select snp_pos,alt_base from "+toplevelsnptablename+" where chrID='"+currentchrID+"'")
+            updatesql_statments=[]
             for snp in allsnpsInAchr:
                 snp_pos=int(snp[0])
                 ALT=snp[1]
@@ -333,7 +334,10 @@ class AncestralAlleletabletools():
                         popsdata_dep=str(sum_depth) + ",0"
                 #change to insert if exist skip
                 print(str(snp_pos),popsdata_alt,popsdata_dep)
-                self.dbvariant.operateDB("update", "update " + toplevelsnptablename + " set "+archicpop_colname+"_alt = '" + popsdata_alt+"',"+archicpop_colname+"_dep= '"+popsdata_dep+"' where chrID="+"'"+currentchrID+"' and snp_pos="+str(snp[0]))
+                updatesql_statments.append("update " + toplevelsnptablename + " set "+archicpop_colname+"_alt = '" + popsdata_alt+"',"+archicpop_colname+"_dep= '"+popsdata_dep+"' where chrID="+"'"+currentchrID+"' and snp_pos="+str(snp[0]))
+            if  updatesql_statments:
+                print("updatesql_statments",len(updatesql_statments))
+                self.dbvariant.operateDB("update", *updatesql_statments)
     def leftjoinSelectedTables(self,chromlist,outtable_file_Name,depthfilenames,vcftables=[],toplevelsnptable="ducksnp_toplevel"):
         depthobjmap={};lastposofdepthfilefp={}#
         for vcftablename in depthfilenames.keys():

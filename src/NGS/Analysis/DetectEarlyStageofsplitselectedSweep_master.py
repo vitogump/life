@@ -49,14 +49,14 @@ def runSlave_makecorrelationfile(a):
     chrlistfilewithoutpath=re.search(r"[^/]*$",chromlistfilename).group(0)
     b=os.system(command+" -n "+numberofindvdoftargetpop_todividintobin+" -o "+outfileprewithpath+" >>"+outfileprewithpath+chrlistfilewithoutpath+".runSlave_makecorrelationfile.out 2>&1")
 def runSlave_slidewin(a):
-    chromlistfilename=a[0];topleveltablename=a[1];targetpopvcffile_withdepthconfig=a[2];refpopvcffile_withdepthconfig=a[3];winwidth=a[4];slideSize=a[5];correlationfile=a[6];outfileprewithpath=a[7]
+    chromlistfilename=a[0];topleveltablename=a[1];targetpopvcffile_withdepthconfig=a[2];refpopvcffile_withdepthconfig=a[3];winwidth=a[4];slideSize=a[5];correlationfile=a[6];outfileprewithpath=a[7];masterpid=a[8]
     command=pathtoPython+options.pathtoslave_slidewin+" -c "+chromlistfilename+" -t "+topleveltablename
     for vcf,depthconfig in targetpopvcffile_withdepthconfig[:]:
         command+=(" -T "+vcf+" "+depthconfig)
     for vcf,depthconfig in refpopvcffile_withdepthconfig[:]:
         command+=(" -R "+vcf+" "+depthconfig)
     chrlistfilewithoutpath=re.search(r"[^/]*$",chromlistfilename).group(0)
-    b=os.system(command+" -w "+winwidth+" -s "+slideSize+" -o "+outfileprewithpath+" -C "+correlationfile+" >>"+outfileprewithpath+chrlistfilewithoutpath+".runSlave_slidewin.out 2>&1")
+    b=os.system(command+" -w "+winwidth+" -s "+slideSize+" -o "+outfileprewithpath+" -C "+correlationfile+" -p "+str(masterpid)+" >>"+outfileprewithpath+chrlistfilewithoutpath+".runSlave_slidewin.out 2>&1")
 if __name__ == '__main__':
     if options.correlationfile==None:
         d_increase=fractions.Fraction(1, (2*int(options.numberofindvdoftargetpop_todividintobin)))
@@ -134,17 +134,50 @@ if __name__ == '__main__':
 #         print('%.12f'%a,'%.12f'%(b),'%.12f'%(final_freq_xaxisKEY_yaxisVALUE_seq_list[(a,b)]),sep="\t")
     #slide window to caculate S
     print("all final_freq_xaxisKEY_yaxisVALUERelation done ,slide window now")
+    masterpid=os.getpid()
     pool=Pool(int(options.numberofthreads))
     parameterstuples_list=[]
     for chromlistfile in options.chromlistfilename:
-        parameterstuples_list.append((chromlistfile,options.topleveltablejudgeancestral,options.targetpopvcffile_withdepth,options.refpopvcffile_withdepth,options.winwidth,options.slideSize,freq_correlation_configFileName,options.outfileprewithpath))
+        parameterstuples_list.append((chromlistfile,options.topleveltablejudgeancestral,options.targetpopvcffile_withdepth,options.refpopvcffile_withdepth,options.winwidth,options.slideSize,freq_correlation_configFileName,options.outfileprewithpath,masterpid))
         print(len(parameterstuples_list[-1]),parameterstuples_list[-1])
     print(len(parameterstuples_list),parameterstuples_list)
 #         exit()
     pool.map(runSlave_slidewin,parameterstuples_list)
     pool.close()
     pool.join()
-    f.close()
+    if options.correlationfile==None:
+        f.close()
+    sf=open(options.outfileprewithpath+".slidwin_filelist"+masterpid,"r")
+    finalslidwinname=sf.readline()
+    outnameper=re.search(r"([\w\W]*).earlypostiveselected"+str(windowWidth)+"_"+str(slideSize)+"[\w\W]*",finalslidwinname).group(1)
+    for slidwinfilename in sf:
+        if slidwinfilename.split():
+            os.system("awk 'NR>1{print $0}' "+slidwinfilename+"|cat "+finalslidwinname+" - >tempfile"+masterpid)
+            finalslidwinname=outnameper+".earlypostiveselected.mergefile"+str(windowWidth)+"_"+str(slideSize)+masterpid
+            os.system("mv tempfile"+masterpid +" "+finalslidwinname)
+    sf.close()
+    sfm=open(finalslidwinname,"r")
+    print(sfm.readline())
+    winCrossGenome=[]
+    for line in sfm:
+        linelist=re.split(r"\t",line.strip())
+        if type(eval(linelist[5]))==float:
+            winCrossGenome.append(float(linelist[5]))
+    exception =numpy.mean(winCrossGenome)
+    std0=numpy.std(winCrossGenome,ddof=0)
+    std1=numpy.std(winCrossGenome,ddof=1)
+    sfm.seek(0)
+    testoutfile=open(outnameper+".earlypostiveselected.zscorefile"+str(windowWidth)+"_"+str(slideSize)+masterpid,"w")
+    print(sfm.readline().strip(),file=testoutfile)
+    for line in sfm:
+        linelist=re.split(r"\t",line.strip())
+        if type(eval(linelist[5]))==float:
+            zscore=(float(linelist[5])-exception)/std1
+            print(*linelist[:6]+[str(zscore)],sep="\t",file=testoutfile)
+        else:
+            print(line.strip(),file=testoutfile)
+    testoutfile.close()
+    sfm.close()
     print("finished")
 
     

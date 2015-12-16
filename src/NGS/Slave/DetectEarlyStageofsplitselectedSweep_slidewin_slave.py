@@ -18,6 +18,7 @@ parser.add_option("-w","--winwidth",dest="winwidth",help="default infile1_infile
 parser.add_option("-s","--slideSize",dest="slideSize",help="default infile2_infile1")#
 parser.add_option("-C","--correlationfile",dest="correlationfile",default=None,help="conflit with numberofindvdoftargetpop_todividintobin")
 parser.add_option("-o","--outfileprewithpath",dest="outfileprewithpath")
+parser.add_option("-p","--masterpid",dest="masterpid")
 (options, args) = parser.parse_args()
 mindeptojudgefix=20
 windowWidth=int(options.winwidth)
@@ -68,8 +69,9 @@ if __name__ == '__main__':
         outputname=outputname[:-(len(plainname)-250)]
     outfile = open(outputname + ".earlypostiveselected"+str(windowWidth)+"_"+str(slideSize)+chrlistfilewithoutpath, 'w')
 
-    
-    
+    aaaa=open(options.outfileprewithpath+".slidwin_filelist"+options.masterpid,'a')
+    print(outputname + ".earlypostiveselected"+str(windowWidth)+"_"+str(slideSize)+chrlistfilewithoutpath,file=aaaa)
+    aaaa.close()
     print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnp\twinvalue\tzvalue",file=outfile)
     freq_correlation_configFileName=options.outfileprewithpath+".freq_correlation_merged"
     if options.correlationfile!=freq_correlation_configFileName:
@@ -114,14 +116,14 @@ if __name__ == '__main__':
         win.slidWindowOverlap(target_ref_SNPs[currentchrID], currentchrLen, windowWidth, slideSize, obsexpcaculator)
         obsexpsignalmapbychrom[currentchrID]=copy.deepcopy(win.winValueL)
 #     for i in range(0,totalChroms,20):
-    winCrossGenome=[]
-    for chrom in obsexpsignalmapbychrom.keys():
-        for i in range(len(obsexpsignalmapbychrom[chrom])):
-            if obsexpsignalmapbychrom[chrom][i][3]!="NA":
-                winCrossGenome.append(obsexpsignalmapbychrom[chrom][i][3][0])
-    exception =numpy.mean(winCrossGenome)
-    std0=numpy.std(winCrossGenome,ddof=0)
-    std1=numpy.std(winCrossGenome,ddof=1)
+#     winCrossGenome=[]
+#     for chrom in obsexpsignalmapbychrom.keys():
+#         for i in range(len(obsexpsignalmapbychrom[chrom])):
+#             if obsexpsignalmapbychrom[chrom][i][3]!="NA":
+#                 winCrossGenome.append(obsexpsignalmapbychrom[chrom][i][3][0])
+#     exception =numpy.mean(winCrossGenome)
+#     std0=numpy.std(winCrossGenome,ddof=0)
+#     std1=numpy.std(winCrossGenome,ddof=1)
     for currentchrID,currentchrLen in chromlist:
 #         currentsql="select * from " + Util.pekingduckchromtable+" where chrlength>="+options.minlength+" order by "+primaryID+" limit "+str(i)+",20"
 #         result=genomedbtools.operateDB("select",currentsql)
@@ -132,8 +134,8 @@ if __name__ == '__main__':
                 if obsexpsignalmapbychrom[currentchrID][i][3]=="NA":
                     print(currentchrID + "\t" + str(i) + "\t" + str(obsexpsignalmapbychrom[currentchrID][i][0]) + "\t" + str(obsexpsignalmapbychrom[currentchrID][i][1]) + "\t"+str(obsexpsignalmapbychrom[currentchrID][i][2])+"\t" + "NA" + "\t" + "NA", file=outfile)
                 else:
-                    zS=(obsexpsignalmapbychrom[currentchrID][i][3][0]-exception)/std1
-                    print(currentchrID + "\t" + str(i) + "\t" + str(obsexpsignalmapbychrom[currentchrID][i][0]) + "\t" + str(obsexpsignalmapbychrom[currentchrID][i][1]) + "\t" +str(obsexpsignalmapbychrom[currentchrID][i][2])+"\t"+ '%.15f'%(obsexpsignalmapbychrom[currentchrID][i][3][0]) + "\t" + '%.12f'%(zS), file=outfile)
+#                     zS=(obsexpsignalmapbychrom[currentchrID][i][3][0]-exception)/std1
+                    print(currentchrID + "\t" + str(i) + "\t" + str(obsexpsignalmapbychrom[currentchrID][i][0]) + "\t" + str(obsexpsignalmapbychrom[currentchrID][i][1]) + "\t" +str(obsexpsignalmapbychrom[currentchrID][i][2])+"\t"+ '%.15f'%(obsexpsignalmapbychrom[currentchrID][i][3][0]) + "\t" + '%.12f'%(obsexpsignalmapbychrom[currentchrID][i][3][1]), file=outfile)
     outfile.close()
     chromlistfile.close()
     dbvariantstools.disconnect()
