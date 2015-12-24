@@ -11,10 +11,11 @@ import src.NGS.BasicUtil.DBManager as dbm
 
 
 SLEEP_FOR_NEXT_TRY=3
-def GOenrichment(gotablefile,outpre,genelist=None,trscptlist=None):
+def GOenrichment(gotablefile,outpre,genelist=None,trscptlist=None,UniProtlist=None):
     gotablefile=open(gotablefile,'r')
     title = gotablefile.readline()
     titlelist= [e.strip().lower() for e in re.split(r"\t",title)]
+    UniProtidx=titlelist.index("uniprot/trembl accession")
     geneididx=titlelist.index("ensembl gene id")
     tpididx=titlelist.index("ensembl transcript id")
     gotermaccessionidx=titlelist.index("go term accession")
@@ -31,6 +32,9 @@ def GOenrichment(gotablefile,outpre,genelist=None,trscptlist=None):
         sampledIDlist=trscptlist
 #         ensemblIDlistfile=open(trscptlist,'r')
         IDidx=tpididx
+    elif UniProtlist!=None:
+        sampledIDlist=UniProtlist
+        IDidx=UniProtidx
     
 #     sampledIDlist=ensemblIDlistfile.readlines()
     print(sampledIDlist,sep="\n")
@@ -70,12 +74,10 @@ def GOenrichment(gotablefile,outpre,genelist=None,trscptlist=None):
                 cc+=termlist[gotermaccessionidx]+";"+termlist[gotermNameidx]+";"                 
             elif termlist[godomainidx].lower().strip()=="molecular_function":
                 mf+=termlist[gotermaccessionidx]+";"+termlist[gotermNameidx]+";"
-           
         else:#new gene start
-
             geneID=termlist[geneididx]
             geneName=termlist[genenameidx]
-            print(geneName,file=open("test.txt",'a'))
+#             print(geneName,file=open("test.txt",'a'))
             bp="";cc="";mf=""
             if termlist[godomainidx].lower().strip()=="biological_process":
                 bp+=termlist[gotermaccessionidx]+";"+termlist[gotermNameidx]+";"
@@ -200,7 +202,7 @@ def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,win
         outfileNameWINwithGENE=path+re.search(r"[^/]*$",winFileName7Field).group(0)+".wincopywithgene"
         return outfileNameWINwithGENE   
     outfile=open(outbedfilename+".bed.selectedgene",'w')
-    print("chrNo\tRegion_start\tRegion_end\tNoofWin\textram"+winType+"\ttranscpt\toverlapcode\tgeneID",file=outfile)
+    print("chrNo\tRegion_start\tRegion_end\tNoofWin\textram"+winType+"\tminNoSNP\tmaxNoSNP\ttranscpt\toverlapcode\tgeneID",file=outfile)
     outfileNameWINwithGENE=path+re.search(r"[^/]*$",winFileName7Field).group(0)+".wincopywithgene"
     genomedbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname) 
     winGenome = Util.WinInGenome(Util.ghostdbname, winFileName7Field,Nocol)
@@ -246,7 +248,7 @@ def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,win
         while i < len(selectedWinMap[chrom]):
 #             print(chrom,selectedWinMap[chrom][i])
 #             try:
-            if int(selectedWinMap[chrom][i-1][1])+1==int(selectedWinMap[chrom][i][1]):#continues win
+            if int(selectedWinMap[chrom][i-1][1])+1==int(selectedWinMap[chrom][i][1]) or int(selectedWinMap[chrom][i-1][1])*slideSize+winwidth>=int(selectedWinMap[chrom][i][1])*slideSize:#continues win
                 mergedRegion.append(selectedWinMap[chrom][i])
             else:#not continues
                 #process last region
@@ -254,16 +256,21 @@ def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,win
                 Region_end=int(mergedRegion[-1][1])*slideSize+winwidth
                 Nwin=len(mergedRegion)
                 extremeValues=[]
+                noofsnps=[]
                 for e in mergedRegion:
                     if winType=="winvalue":
                         extremeValues.append(float(e[5]))
                     elif winType=="zvalue": 
                         extremeValues.append(float(e[6]))
+                    noofsnps.append(int(e[4]))    
+                        
                 if morethan_lessthan == "m" or morethan_lessthan == "M":
                     extremeValue=min(extremeValues)
                 elif morethan_lessthan == "l" or morethan_lessthan == "L":
                     extremeValue=max(extremeValues)
-                selectedRegion[chrom].append((chrom,Region_start,Region_end,Nwin,extremeValue))
+                maxNoSNP=max(noofsnps)
+                mixNoSNP=min(noofsnps)  
+                selectedRegion[chrom].append((chrom,Region_start,Region_end,Nwin,extremeValue,mixNoSNP,maxNoSNP))
                 #process this win
                 mergedRegion=[selectedWinMap[chrom][i]]
             i+=1
@@ -275,16 +282,20 @@ def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,win
             Region_end=int(mergedRegion[-1][1])*slideSize+winwidth
             Nwin=len(mergedRegion)
             extremeValues=[]
+            noofsnps=[]
             for e in mergedRegion:
                 if winType=="winvalue":
                     extremeValues.append(float(e[5]))
                 elif winType=="zvalue": 
                     extremeValues.append(float(e[6]))
+                noofsnps.append(int(e[4]))
             if morethan_lessthan == "m" or morethan_lessthan == "M":
                 extremeValue=min(extremeValues)
             elif morethan_lessthan == "l" or morethan_lessthan == "L":
-                extremeValue=max(extremeValues)            
-            selectedRegion[chrom].append((chrom,Region_start,Region_end,Nwin,extremeValue))
+                extremeValue=max(extremeValues)  
+            maxNoSNP=max(noofsnps)
+            mixNoSNP=min(noofsnps)                      
+            selectedRegion[chrom].append((chrom,Region_start,Region_end,Nwin,extremeValue,mixNoSNP,maxNoSNP))
     if mergeNA!=False and int(mergeNA)>0:
         for chrom in selectedRegion:
             selectedRegion[chrom].sort(key=lambda listRec: int(listRec[1]))
@@ -301,7 +312,9 @@ def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,win
                         extremeValue=min(selectedRegion[chrom][i][4],selectedRegion[chrom][i-1][4])
                     elif morethan_lessthan == "l" or morethan_lessthan == "L":
                         extremeValue=max(selectedRegion[chrom][i][4],selectedRegion[chrom][i-1][4])
-                    selectedRegion[chrom][i]=(chrom,selectedRegion[chrom][i-1][1],selectedRegion[chrom][i][2],selectedRegion[chrom][i-1][3]+selectedRegion[chrom][i][3]+len(wincount_to_add),extremeValue)
+                    maxNoSNP=max(selectedRegion[chrom][i][3],selectedRegion[chrom][i-1][3])
+                    mixNoSNP=min(selectedRegion[chrom][i][3],selectedRegion[chrom][i-1][3])
+                    selectedRegion[chrom][i]=(chrom,selectedRegion[chrom][i-1][1],selectedRegion[chrom][i][2],selectedRegion[chrom][i-1][3]+selectedRegion[chrom][i][3]+len(wincount_to_add),extremeValue,mixNoSNP,maxNoSNP)
                     idxlist_to_pop.append(i-1)
                 i+=1
             else:

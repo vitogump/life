@@ -338,7 +338,7 @@ class AncestralAlleletabletools():
             if  updatesql_statments:
                 print("updatesql_statments",len(updatesql_statments))
                 self.dbvariant.operateDB("update", *updatesql_statments)
-    def leftjoinSelectedTables(self,chromlist,outtable_file_Name,depthfilenames,vcftables=[],toplevelsnptable="ducksnp_toplevel"):
+    def leftjoinSelectedTables(self,chromlist,outtable_file_Name,depthfilenames,vcftables=[],toplevelsnptable="ducksnp_toplevel",drop=False):
         depthobjmap={};lastposofdepthfilefp={}#
         for vcftablename in depthfilenames.keys():
             if depthfilenames[vcftablename]!=None:
@@ -418,6 +418,11 @@ class AncestralAlleletabletools():
                     recToPrint=recToPrint+[popsdata]
                     NumOfColOftoplevel=NumOfColOftoplevel+2   #alt_base and AF col
                 print(*recToPrint,sep="\t",file=outfile)
+        if drop:
+            try:
+                self.dbtmp.drop_table(outtable_Name)
+            except:
+                print("except in drop table", outtable_Name)
         self.dbtmp.operateDB("copytableschema","create table "+outtable_Name+" like "+self.dbvariant_name.strip()+"."+toplevelsnptable.strip())
         for colname in outtable_titlelist[toplevellen-1:]:
             self.dbtmp.operateDB("callproc", "mysql_sp_add_column",data=(self.dbvariant_name, outtable_Name, colname, "char(128)", "default null"))

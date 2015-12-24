@@ -308,9 +308,9 @@ class MakeMhtGraph(object):
         NoOfcurchrom={}
         for winfile in positive_winfiles+negtive_winfiles:
             NoOfcurchrom[winfile]=0
-            os.system("awk 'NR>1{print $1}' "+winfile+"|sort|uniq|sort >"+winfile+"_chrom")
+            os.system("awk 'NR>1{print $1}' "+winfile+"|uniq >"+winfile+"_chrom")
         for winfile_idx in range(1,len(positive_winfiles+negtive_winfiles)):
-            os.system("comm -12 "+(positive_winfiles+negtive_winfiles)[winfile_idx-1]+"_chrom "+(positive_winfiles+negtive_winfiles)[winfile_idx]+"_chrom|sort|uniq|sort > temp_chrom"+randomstr)
+            os.system("comm -12 "+(positive_winfiles+negtive_winfiles)[winfile_idx-1]+"_chrom "+(positive_winfiles+negtive_winfiles)[winfile_idx]+"_chrom|uniq > temp_chrom"+randomstr)
             os.system("rm "+(positive_winfiles+negtive_winfiles)[winfile_idx-1]+"_chrom ")
             os.system("mv temp_chrom"+randomstr+" "+(positive_winfiles+negtive_winfiles)[winfile_idx]+"_chrom ")
         print((positive_winfiles+negtive_winfiles)[-1]+"_chrom ")
@@ -395,7 +395,7 @@ class MakeMhtGraph(object):
                     print('p_dataframe'+str(i)+'=read.delim("' + positive_filenameWithPaths[i] + '",header=T)',file=scriptfile)
                     r('p_dataframe'+str(i)+'=read.delim("' + positive_filenameWithPaths[i] + '",header=T)')
                     r('p_data'+str(i)+' <- with(p_dataframe'+str(i)+',cbind(chrNo,winNo,'+columnname+'))')
-                    os.system("rm "+positive_filenameWithPaths[i]+" "+positive_winfiles[i]+"part_"+str(part_i))
+#                     os.system("rm "+positive_filenameWithPaths[i]+" "+positive_winfiles[i]+"part_"+str(part_i))
                     print('p_data'+str(i)+' <- p_dataframe'+str(i)+'[,c("chrNo","winNo","'+columnname+'")]',file=scriptfile)
         #             r('p_data'+str(i)+' <- with(p_dataframe'+str(i)+',cbind(chrNo,winNo,zvalue))')
             if negtive_winfiles!=[]:
@@ -404,7 +404,7 @@ class MakeMhtGraph(object):
                     negtive_filenames[i],negtive_filenameWithPaths[i]=self.prepareMhtFile(negtive_winfiles[i]+"part_"+str(part_i), "Hp", "negtive", fillvalue)
                     r('n_dataframe'+str(i)+'=read.delim("' + negtive_filenameWithPaths[i] + '",header=T)')
                     r('n_data'+str(i)+' <- n_dataframe'+str(i)+'[,c("chrNo","winNo","'+columnname+'")]')
-                    os.system("rm "+negtive_filenameWithPaths[i]+" "+negtive_winfiles[i]+"part_"+str(part_i))
+#                     os.system("rm "+negtive_filenameWithPaths[i]+" "+negtive_winfiles[i]+"part_"+str(part_i))
     #                 'n_data'+str(i)+' <- with(n_dataframe'+str(i)+',cbind(chrNo,winNo,'+columnname+'))'
                     print('n_dataframe'+str(i)+'=read.delim("' + negtive_filenameWithPaths[i] + '",header=T)',file=scriptfile)
                     print('n_data'+str(i)+' <- n_dataframe'+str(i)+'[,c("chrNo","winNo","'+columnname+'")]',file=scriptfile)

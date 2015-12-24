@@ -202,8 +202,8 @@ if __name__ == '__main__':
             chrom=linelist[0].strip();regionstart=int(linelist[1]);regionend=int(linelist[2])
 #for every region,that is every line   [(pos,deltaAF,REF,ALT),{}]
                     #overlapwithgene
-            if len(linelist)>=7 and (linelist[6].find("8")==linelist[6].find("7")):#only return -1 the equal are
-                trscpts=re.split(r",",linelist[5])
+            if len(linelist)>=9 and (linelist[8].find("8")==linelist[8].find("7")):#only return -1 the equal are
+                trscpts=re.split(r",",linelist[7])
 #                 print("overlapwithgene",regionline,file=testf)
                 print("region:",regionline.strip(),file=utroutfile)
                 print("region:",regionline.strip(),file=cdsoutfile)

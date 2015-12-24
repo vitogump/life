@@ -63,19 +63,19 @@ if __name__ == '__main__':
         d_increase=round(d_increase,11)
         minvalue=0.000000000000
         final_freq_xaxisKEY_yaxisVALUE_seq_list={}
-        
+         
         for i in range(int(options.numberofindvdoftargetpop_todividintobin)*2-1):
             final_freq_xaxisKEY_yaxisVALUE_seq_list[(minvalue,minvalue+d_increase+0.00000000004)]=[]
             minvalue+=d_increase
         else:
             final_freq_xaxisKEY_yaxisVALUE_seq_list[(minvalue,1)]=[]
-
+ 
         print(final_freq_xaxisKEY_yaxisVALUE_seq_list)
 #     for a,b in sorted(freq_xaxisKEY_yaxisseqVALUERelation.keys()):
 #         print(a,b)
-
-
-    
+ 
+ 
+     
     if options.correlationfile==None:
         if int(options.numberofthreads)!=len(options.chromlistfilename):
             print("int(options.numberofthreads)!=len(options.chromlistfilename)")
@@ -118,7 +118,7 @@ if __name__ == '__main__':
             print('%.12f'%a,'%.12f'%b,'%.12f'%(final_freq_xaxisKEY_yaxisVALUERelation[(a,b)]),sep="\t",file=freq_correlation_config)
         freq_correlation_config.close()
         print("freq_correlation_config is produced")
-        
+         
     else:
         if len(options.chromlistfilename)!=1:
             print("need only one chromlistfilename???")
@@ -147,31 +147,33 @@ if __name__ == '__main__':
     pool.join()
     if options.correlationfile==None:
         f.close()
-    sf=open(options.outfileprewithpath+".slidwin_filelist"+masterpid,"r")
-    finalslidwinname=sf.readline()
+    sf=open(options.outfileprewithpath+".slidwin_filelist"+str(masterpid),"r")
+    finalslidwinname=sf.readline().strip()
     outnameper=re.search(r"([\w\W]*).earlypostiveselected"+str(windowWidth)+"_"+str(slideSize)+"[\w\W]*",finalslidwinname).group(1)
     for slidwinfilename in sf:
         if slidwinfilename.split():
-            os.system("awk 'NR>1{print $0}' "+slidwinfilename+"|cat "+finalslidwinname+" - >tempfile"+masterpid)
-            finalslidwinname=outnameper+".earlypostiveselected.mergefile"+str(windowWidth)+"_"+str(slideSize)+masterpid
-            os.system("mv tempfile"+masterpid +" "+finalslidwinname)
+#             print("awk 'NR>1{print $0}' "+slidwinfilename.strip()+"|cat "+finalslidwinname+" - >tempfile"+str(masterpid))
+            os.system("awk 'NR>1{print $0}' "+slidwinfilename.strip()+"|cat "+finalslidwinname+" - >tempfile"+str(masterpid))
+            finalslidwinname=outnameper+".earlypostiveselected.mergefile"+str(windowWidth)+"_"+str(slideSize)+str(masterpid)
+#             print("mv tempfile"+str(masterpid) +" "+finalslidwinname)
+            os.system("mv tempfile"+str(masterpid) +" "+finalslidwinname)
     sf.close()
     sfm=open(finalslidwinname,"r")
     print(sfm.readline())
     winCrossGenome=[]
     for line in sfm:
         linelist=re.split(r"\t",line.strip())
-        if type(eval(linelist[5]))==float:
+        if  re.search(r"^[1234567890\.e-]+$",linelist[5])!=None:
             winCrossGenome.append(float(linelist[5]))
     exception =numpy.mean(winCrossGenome)
     std0=numpy.std(winCrossGenome,ddof=0)
     std1=numpy.std(winCrossGenome,ddof=1)
     sfm.seek(0)
-    testoutfile=open(outnameper+".earlypostiveselected.zscorefile"+str(windowWidth)+"_"+str(slideSize)+masterpid,"w")
+    testoutfile=open(outnameper+".earlypostiveselected.zscorefile"+str(windowWidth)+"_"+str(slideSize)+str(masterpid),"w")
     print(sfm.readline().strip(),file=testoutfile)
     for line in sfm:
         linelist=re.split(r"\t",line.strip())
-        if type(eval(linelist[5]))==float:
+        if re.search(r"^[1234567890\.e-]+$",linelist[5])!=None:
             zscore=(float(linelist[5])-exception)/std1
             print(*linelist[:6]+[str(zscore)],sep="\t",file=testoutfile)
         else:

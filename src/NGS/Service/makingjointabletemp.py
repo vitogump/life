@@ -19,7 +19,7 @@ parser.add_option("-c", "--chromlistfilename", dest="chromlistfilename", help="i
 parser.add_option("-t","--toplevelsnptable",dest="toplevelsnptable",default="ducksnp_toplevel",help="depth of the folder to output")
 parser.add_option("-o","--outputtablename",dest="outputtablename",default="duckout",help="depth of the folder to output")
 
-# parser.add_option("-d", "--depthfiles",action="append", dest="depthfilenames",default=None)
+parser.add_option("-p", "--drop",action="store_true", dest="drop",default=False)
                                                                                                                                                           
 (options, args) = parser.parse_args()
 vcftablenames=[];depthfilenames={}#{ vcftablename1:[depthfilename1,gatkdepthfile,name1,name2] , vcftablename2:[depthfilename2,gatkdepthfile,name1,name2] } or {vcftablename1:None, vcftablename2:None}
@@ -50,4 +50,4 @@ for chrrow in chromlistfile:
 print(chromlistfile,outtable_filename,toplevelsnptable,depthfilenames)
 if __name__ == '__main__':
     atools=AncestralAlleletabletools(database=Util.vcfdbname, ip=Util.ip, usrname=Util.username, pw=Util.password,dbgenome=Util.genomeinfodbname)
-    atools.leftjoinSelectedTables(chromlist,outtable_filename,depthfilenames,vcftablenames,toplevelsnptable)
+    atools.leftjoinSelectedTables(chromlist,outtable_filename,depthfilenames,vcftablenames,toplevelsnptable,options.drop)

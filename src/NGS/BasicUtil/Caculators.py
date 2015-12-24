@@ -324,6 +324,7 @@ class Caculate_S_ObsExp_difference(Caculator):
         self.CEXP=0
         self.CfixedDerived=0
         self.freq_xaxisKEY_yaxisVALUERelation=None
+        self.minsnps=10
     def process(self,T):
         """T=[pos,ref,alt,pop1,pop2,.....,popn]"""
         if len(T[1]) != len(T[2]) or len(T[2])!=1  or len(T[2])!=1:
@@ -475,7 +476,7 @@ class Caculate_S_ObsExp_difference(Caculator):
         self.CEXP=0
         self.obsseq=[]
         self.CfixedDerived=0
-        if S1=="NA" and S2=="NA":
+        if S1=="NA" and S2=="NA" or noofsnp<self.minsnps:
             return noofsnp,"NA"
         return noofsnp,[S1,S2]
         

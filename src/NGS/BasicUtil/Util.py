@@ -1765,7 +1765,7 @@ class WinInGenome():
         Region_start = region[1]
         Region_end = region[2]
         """
-        region=(chrom,Region_start,Region_end,Nwin,extremeValue)
+        region=(chrom,Region_start,Region_end,Nwin,extremeValue,maxsnp,mixsnp)
         
         """
         selectType1OverlapGenesql = "select * from " + transcripttable + " where chrID='" + chrID + "' and trscpt_start_pos >= " + str(Region_start) + " and trscpt_end_pos <= " + str(Region_end)

@@ -34,6 +34,7 @@ parser.add_option("-s","--slideSize",dest="slideSize",default="20000",help="win 
 parser.add_option("-w","--winWidth",dest="winWidth",default="40000",help="win width ")
 parser.add_option("-X","--winType",dest="winType",default="zvalue",help="winvalue or zvalue")
 parser.add_option("-N","--mergeNA",dest="mergeNA",default=False,help="winvalue or zvalue")
+parser.add_option("-m", "--minmaxSNP", dest="minmaxSNP",default="0", help="upextend")
 # parser.add_option("-t","--numberofoutlier_to_NearestGene",dest="numberofoutlier_to_NearestGene",default=0,help="number of outlier value,for example top 10")
 
 (options, args) = parser.parse_args()
@@ -53,8 +54,8 @@ if __name__ == '__main__':
                 outfileNameWINwithGENE_Plist.append((geneUtil.findTrscpt(p_inputfileName, outbedfilename, int(options.upextend), int(options.downextend), int(options.winWidth), int(options.slideSize), options.winType, "m", threshold, None, options.mergeNA, int(options.distalextend),options.trscptfound),threshold))
                 makeMhtGraph.makeHistonPicture(p_inputfileName, "Fst")#,"c(0,2000)","c(0,45)"
                 makeMhtGraph.makeHistonPicture(outfileNameWINwithGENE_Plist[-1][0], "Fst")
-                print("awk 'NR!=1{print $6}' "+outbedfilename+".bed.selectedgene"+"|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"+outbedfilename+".trscptIDlist")
-                os.system("awk 'NR!=1{print $6}' "+outbedfilename+".bed.selectedgene"+"|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"+outbedfilename+".trscptIDlist")
+                print("awk 'NR!=1{print $8}' "+outbedfilename+".bed.selectedgene"+"|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"+outbedfilename+".trscptIDlist")
+                os.system("awk 'NR!=1 && $7>="+options.minmaxSNP +"{print $8}' "+outbedfilename+".bed.selectedgene"+"|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"+outbedfilename+".trscptIDlist")
                 f=open(outbedfilename+".trscptIDlist",'r')
                 curset=set()       
                 for line in f:
@@ -75,8 +76,8 @@ if __name__ == '__main__':
                 outfileNameWINwithGENE_Nlist.append((geneUtil.findTrscpt(n_inputfileName,outbedfilename, int(options.upextend), int(options.downextend), int(options.winWidth), int(options.slideSize), options.winType, "l", threshold, None, options.mergeNA, int(options.distalextend),options.trscptfound),threshold))
                 makeMhtGraph.makeHistonPicture(n_inputfileName, "Hp")#,"c(0,2000)","c(0,45)"
                 makeMhtGraph.makeHistonPicture(outfileNameWINwithGENE_Nlist[-1][0], "Hp")#,"c(0,2000)","c(0,45)"
-                print("awk 'NR!=1{print $6}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"""+outbedfilename+".trscptIDlist")
-                os.system("awk 'NR!=1{print $6}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"""+outbedfilename+".trscptIDlist")
+                print("awk 'NR!=1{print $8}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"""+outbedfilename+".trscptIDlist")
+                os.system("awk 'NR!=1 && $7>="+options.minmaxSNP +"{print $8}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"""+outbedfilename+".trscptIDlist")
                 f=open(outbedfilename+".trscptIDlist",'r')
                 curset=set()       
                 for line in f:
@@ -102,9 +103,8 @@ if __name__ == '__main__':
         for gene in interlist:
             print(gene,file=f)
         f.close()
-        geneUtil.GOenrichment(options.gotablefile,options.pathoutputfilename,None,list(set(uniontpidlist)))
-#         print(intertpidset)
-#         geneUtil.GOenrichment(options.gotablefile,options.pathoutputfilename+"intersection",None,list(intertpidset))
+        geneUtil.GOenrichment(options.gotablefile,options.pathoutputfilename,None,list(set(uniontpidlist)),None)
+
         splitinto=int(options.splitintopart)
     else:
         splitinto=int(options.splitintopart)
