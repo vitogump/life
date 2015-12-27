@@ -8,7 +8,7 @@ from optparse import OptionParser
 import pickle,re,sys
 
 import NGS.BasicUtil.DBManager as dbm
-from NGS.Service.Ancestralallele import AncestralAlleletabletools
+from src.NGS.Service.Ancestralallele import AncestralAlleletabletools
 from src.NGS.BasicUtil import Util
 
 

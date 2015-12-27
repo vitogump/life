@@ -36,11 +36,8 @@ parser.add_option("-X","--winType",dest="winType",default="zvalue",help="winvalu
 parser.add_option("-N","--mergeNA",dest="mergeNA",default=False,help="winvalue or zvalue")
 parser.add_option("-m", "--minmaxSNP", dest="minmaxSNP",default="0", help="upextend")
 # parser.add_option("-t","--numberofoutlier_to_NearestGene",dest="numberofoutlier_to_NearestGene",default=0,help="number of outlier value,for example top 10")
-
 (options, args) = parser.parse_args()
-
 columnname=options.winType.strip()
-
 if __name__ == '__main__':
 
     makeMhtGraph = Make_Picture.MakeMhtGraph()
@@ -57,19 +54,26 @@ if __name__ == '__main__':
                 print("awk 'NR!=1{print $8}' "+outbedfilename+".bed.selectedgene"+"|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"+outbedfilename+".trscptIDlist")
                 os.system("awk 'NR!=1 && $7>="+options.minmaxSNP +"{print $8}' "+outbedfilename+".bed.selectedgene"+"|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"+outbedfilename+".trscptIDlist")
                 f=open(outbedfilename+".trscptIDlist",'r')
-                curset=set()       
+                curset=set()
+                mylist=[]
                 for line in f:
                     curset.add(line.strip())
                     uniontpidlist.append(line.strip())
+                    mylist.append(line.strip())
                 f.close()
                 if intertpidset:
                     intertpidset=intertpidset.intersection(curset)
                 else:
                     intertpidset=curset
-                print("grep -wFf "+outbedfilename+".trscptIDlist"+""" /home/bioinfo/databases/ensembleIDconvert.txt|awk '{FS="\t";print $3}'|sort|uniq>"""+outbedfilename+""".Homologs_human""")
-                os.system("grep -wFf "+outbedfilename+".trscptIDlist"+""" /home/bioinfo/databases/ensembleIDconvert.txt|awk '{FS="\t";print $3}'|sort|uniq>"""+outbedfilename+""".Homologs_human""")
-                print("grep -wFf "+outbedfilename+".Homologs_human /home/bioinfo/databases/humangenesymbl.txt|awk '{print $3}'|sort|uniq>"+outbedfilename+"Homologs_human_genesymbl")
-                os.system("grep -wFf "+outbedfilename+".Homologs_human /home/bioinfo/databases/humangenesymbl.txt|awk '{print $3}'|sort|uniq>"+outbedfilename+"Homologs_human_genesymbl")
+                geneUtil.GOenrichment(options.gotablefile,outbedfilename,None,list(set(mylist)),None)
+
+                print("grep -wFf "+outbedfilename+".trscptIDlist"+""" /home/bioinfo/databases/ensembleIDconvert.txt|awk '{FS="\t";print $3}'|sort|uniq|sed '/^$/d'>"""+outbedfilename+""".Homologs_human""")
+                os.system("grep -wFf "+outbedfilename+".trscptIDlist"+""" /home/bioinfo/databases/ensembleIDconvert.txt|awk '{FS="\t";print $3}'|sort|uniq|sed '/^$/d'>"""+outbedfilename+""".Homologs_human""")
+                print("grep -wFf "+outbedfilename+".Homologs_human /home/bioinfo/databases/humangenesymbl.txt|awk '{print $3}'|sort|uniq|sed '/^$/d'>"+outbedfilename+"Homologs_human_genesymbl")
+                os.system("grep -wFf "+outbedfilename+".Homologs_human /home/bioinfo/databases/humangenesymbl.txt|awk '{print $3}'|sort|uniq|sed '/^$/d'>"+outbedfilename+"Homologs_human_genesymbl")
+                print("""grep -wFf """+outbedfilename+""".Homologs_human /home/bioinfo/databases/humanGO.table |awk '{FS="\t";print $3}'|sort|uniq|sed '/^$/d' > """+outbedfilename+".Homologs_humanEntrezGeneID")
+                os.system("""grep -wFf """+outbedfilename+""".Homologs_human /home/bioinfo/databases/humanGO.table |awk '{FS="\t";print $3}'|sort|uniq|sed '/^$/d' > """+outbedfilename+".Homologs_humanEntrezGeneID")
+        intersectionlist=[]
         if options.multiple_negtive_winfiles!=[]:
             for n_inputfileName,threshold,outbedfilename in options.multiple_negtive_winfiles[:]:
                 outfileNameWIN_Nlist.append(n_inputfileName)
@@ -77,21 +81,28 @@ if __name__ == '__main__':
                 makeMhtGraph.makeHistonPicture(n_inputfileName, "Hp")#,"c(0,2000)","c(0,45)"
                 makeMhtGraph.makeHistonPicture(outfileNameWINwithGENE_Nlist[-1][0], "Hp")#,"c(0,2000)","c(0,45)"
                 print("awk 'NR!=1{print $8}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"""+outbedfilename+".trscptIDlist")
-                os.system("awk 'NR!=1 && $7>="+options.minmaxSNP +"{print $8}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"""+outbedfilename+".trscptIDlist")
+                os.system("awk 'NR!=1 && $7>="+options.minmaxSNP +"{print $8}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq|sed '/^$/d'>"""+outbedfilename+".trscptIDlist")
                 f=open(outbedfilename+".trscptIDlist",'r')
-                curset=set()       
+                curset=set()
+                mylist=[];
                 for line in f:
                     curset.add(line.strip())
-                    uniontpidlist.append(line.strip())
+#                     uniontpidlist.append(line.strip())
+                    intersectionlist.append(line.strip())
+                    mylist.append(line.strip())
                 f.close()
+                
+                geneUtil.GOenrichment(options.gotablefile,outbedfilename,None,list(set(mylist)),None)
                 if intertpidset:
                     intertpidset=intertpidset.intersection(curset)
                 else:
                     intertpidset=curset
-                print("grep -wFf "+outbedfilename+".trscptIDlist"+""" /home/bioinfo/databases/ensembleIDconvert.txt|awk '{FS="\t";print $3}'|sort|uniq>"""+outbedfilename+""".Homologs_human""")
-                os.system("grep -wFf "+outbedfilename+".trscptIDlist"+""" /home/bioinfo/databases/ensembleIDconvert.txt|awk '{FS="\t";print $3}'|sort|uniq>"""+outbedfilename+""".Homologs_human""")
-                print("grep -wFf "+outbedfilename+".Homologs_human /home/bioinfo/databases/humangenesymbl.txt|awk '{print $3}'|sort|uniq>"+outbedfilename+"Homologs_human_genesymbl")
-                os.system("grep -wFf "+outbedfilename+".Homologs_human /home/bioinfo/databases/humangenesymbl.txt|awk '{print $3}'|sort|uniq>"+outbedfilename+"Homologs_human_genesymbl")
+                print("grep -wFf "+outbedfilename+".trscptIDlist"+""" /home/bioinfo/databases/ensembleIDconvert.txt|awk '{FS="\t";print $3}'|sort|uniq|sed '/^$/d'>"""+outbedfilename+""".Homologs_human""")
+                os.system("grep -wFf "+outbedfilename+".trscptIDlist"+""" /home/bioinfo/databases/ensembleIDconvert.txt|awk '{FS="\t";print $3}'|sort|uniq|sed '/^$/d'>"""+outbedfilename+""".Homologs_human""")
+                print("grep -wFf "+outbedfilename+".Homologs_human /home/bioinfo/databases/humangenesymbl.txt|awk '{print $3}'|sort|uniq|sed '/^$/d'>"+outbedfilename+"Homologs_human_genesymbl")
+                os.system("grep -wFf "+outbedfilename+".Homologs_human /home/bioinfo/databases/humangenesymbl.txt|awk '{print $3}'|sort|uniq|sed '/^$/d'>"+outbedfilename+"Homologs_human_genesymbl")
+                print("""grep -wFf """+outbedfilename+""".Homologs_human /home/bioinfo/databases/humanGO.table |awk '{FS="\t";print $3}'|sort|uniq|sed '/^$/d' > """+outbedfilename+".Homologs_humanEntrezGeneID")
+                os.system("""grep -wFf """+outbedfilename+""".Homologs_human /home/bioinfo/databases/humanGO.table |awk '{FS="\t";print $3}'|sort|uniq|sed '/^$/d' > """+outbedfilename+".Homologs_humanEntrezGeneID")            
         print("outfileNameWINwithGENE_Plist",outfileNameWINwithGENE_Plist)
         print("outfileNameWINwithGENE_Nlist",outfileNameWINwithGENE_Nlist)
         genelist,interlist=makeMhtGraph.makeMhtplots_compareInOnePicture_withgeneName(options.pathoutputfilename+".withgene", outfileNameWINwithGENE_Plist, outfileNameWINwithGENE_Nlist, 0,columnname)
@@ -103,8 +114,10 @@ if __name__ == '__main__':
         for gene in interlist:
             print(gene,file=f)
         f.close()
-        geneUtil.GOenrichment(options.gotablefile,options.pathoutputfilename,None,list(set(uniontpidlist)),None)
-
+        intersectionlist=set(intersectionlist).intersection(set(uniontpidlist))
+        geneUtil.GOenrichment(options.gotablefile,options.pathoutputfilename+"u",None,list(set(list(intersectionlist)+uniontpidlist)),None)
+        if intersectionlist!=list(set(uniontpidlist)):
+            geneUtil.GOenrichment(options.gotablefile,options.pathoutputfilename+"i",None,list(intersectionlist),None)
         splitinto=int(options.splitintopart)
     else:
         splitinto=int(options.splitintopart)
@@ -114,4 +127,3 @@ if __name__ == '__main__':
     for n_inputfileName,threshold,outbedfilename in options.multiple_negtive_winfiles[:]:
         outfileNameWIN_Nlist.append(n_inputfileName)
     makeMhtGraph.makeMhtplots_compareInOnePicture(options.pathoutputfilename, outfileNameWIN_Plist, outfileNameWIN_Nlist, 0,columnname,splitinto)
-    
