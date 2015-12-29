@@ -115,7 +115,7 @@ if __name__ == '__main__':
             print(gene,file=f)
         f.close()
         intersectionlist=set(intersectionlist).intersection(set(uniontpidlist))
-        geneUtil.GOenrichment(options.gotablefile,options.pathoutputfilename+"u",None,list(set(list(intersectionlist)+uniontpidlist)),None)
+        geneUtil.GOenrichment(options.gotablefile,options.pathoutputfilename+"u",None,list(set(list(mylist)+uniontpidlist)),None)
         if intersectionlist!=list(set(uniontpidlist)):
             geneUtil.GOenrichment(options.gotablefile,options.pathoutputfilename+"i",None,list(intersectionlist),None)
         splitinto=int(options.splitintopart)
