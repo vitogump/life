@@ -156,7 +156,7 @@ def make_freq_xaxisKEY_yaxisseqVALUERelation(a):
                 elif A_base_idx==1:
                     DAF=AF
                 target_DAF_sum+=DAF;countedAF+=1
-            if target_DAF_sum==0 or countedAF==0:
+            if countedAF==0:
                 print("skip this snp,because it fiexd as ancestral or no covered in this pos in target pops",snp_aligned,snp)
                 continue
             target_DAF=target_DAF_sum/countedAF
@@ -201,7 +201,7 @@ def make_freq_xaxisKEY_yaxisseqVALUERelation(a):
                 elif A_base_idx==1:
                     DAF=AF
                 rer_DAF_sum+=DAF;countedAF+=1
-            if countedAF==0:
+            if countedAF==0 or rer_DAF_sum==0:
                 print("skip this snp,because it  no covered in this pos in ref pops",snp_aligned,snp)
                 continue
             ######collect according bins

@@ -408,7 +408,7 @@ class Caculate_S_ObsExp_difference(Caculator):
             elif A_base_idx==1:
                 DAF=AF
             target_DAF_sum+=DAF;countedAF+=1
-        if target_DAF_sum==0 or countedAF==0:
+        if  countedAF==0:
 #             print("skip this snp,because it fiexd as ancestral or no covered in this pos in target pops",T,snp)
             return
         target_DAF=target_DAF_sum/countedAF
@@ -451,7 +451,7 @@ class Caculate_S_ObsExp_difference(Caculator):
                 elif A_base_idx==1:
                     DAF=AF
                 rer_DAF_sum+=DAF;countedAF+=1
-        if  countedAF==0:
+        if  countedAF==0 or rer_DAF_sum==0:
 #             print("skip this snp,because it  no covered in this pos in ref pops",T,snp)
             return
         for a,b in sorted(self.freq_xaxisKEY_yaxisVALUERelation.keys()):
