@@ -26,11 +26,14 @@ def make_freq_xaxisKEY_yaxisseqVALUERelation(a):
     d_increase=round(d_increase,11)
     minvalue=0.000000000000
     freq_xaxisKEY_yaxisVALUE_seq_list={}
+    xaxisKEYfreq_yaxisVALUEfixedcount_seq_list={}
     for i in range(numberofindvdoftargetpop_todividintobin*2-1):
         freq_xaxisKEY_yaxisVALUE_seq_list[(minvalue,minvalue+d_increase+0.00000000004)]=[]
+        xaxisKEYfreq_yaxisVALUEfixedcount_seq_list[(minvalue,minvalue+d_increase+0.00000000004)]=[]
         minvalue+=d_increase
     else:
         freq_xaxisKEY_yaxisVALUE_seq_list[(minvalue,1)]=[]
+        xaxisKEYfreq_yaxisVALUEfixedcount_seq_list[(minvalue,1)]=[]
     for a,b in sorted(freq_xaxisKEY_yaxisVALUE_seq_list.keys()):
         print(str(a),str(b))
 #     while minvalue+d_increase<=1:
@@ -156,7 +159,7 @@ def make_freq_xaxisKEY_yaxisseqVALUERelation(a):
                 elif A_base_idx==1:
                     DAF=AF
                 target_DAF_sum+=DAF;countedAF+=1
-            if countedAF==0:
+            if countedAF==0 or target_DAF_sum/countedAF==1 or target_DAF_sum==0:
                 print("skip this snp,because it fiexd as ancestral or no covered in this pos in target pops",snp_aligned,snp)
                 continue
             target_DAF=target_DAF_sum/countedAF
@@ -201,20 +204,23 @@ def make_freq_xaxisKEY_yaxisseqVALUERelation(a):
                 elif A_base_idx==1:
                     DAF=AF
                 rer_DAF_sum+=DAF;countedAF+=1
-            if countedAF==0 or rer_DAF_sum==0:
+            if countedAF==0 or rer_DAF_sum/countedAF!=1 or rer_DAF_sum/countedAF!=0:
                 print("skip this snp,because it  no covered in this pos in ref pops",snp_aligned,snp)
                 continue
             ######collect according bins
             for a,b in sorted(freq_xaxisKEY_yaxisVALUE_seq_list.keys()):
                 if target_DAF >a and target_DAF<=b:
+                    
                     freq_xaxisKEY_yaxisVALUE_seq_list[(a,b)].append(rer_DAF_sum/countedAF)
+                    zero_or_one=int(rer_DAF_sum/countedAF)
+                    xaxisKEYfreq_yaxisVALUEfixedcount_seq_list[(a,b)].append(zero_or_one)
                     break
 #     freq_xaxisKEY_yaxisVALUERelation={}
 #     for a,b in sorted(freq_xaxisKEY_yaxisVALUE_seq_list.keys()):
 #         freq_xaxisKEY_yaxisVALUERelation[(a,b)]=numpy.mean(freq_xaxisKEY_yaxisVALUE_seq_list[(a,b)])
 #         print('%.12f'%a,'%.12f'%(b),'%.12f'%(freq_xaxisKEY_yaxisVALUERelation[(a,b)]),"process ID:",os.getpid(),"done",sep="\t")
     print("process ID:",os.getpid(),"done")
-    return copy.deepcopy(freq_xaxisKEY_yaxisVALUE_seq_list)
+    return copy.deepcopy(xaxisKEYfreq_yaxisVALUEfixedcount_seq_list)
 if __name__ == '__main__':
     filenamelistfilename=options.outfileprewithpath+".freqcorrelationfilenamelist"
     parameterstuples=(options.chromlistfilename,options.topleveltablejudgeancestral,options.targetpopvcffile_withdepth,options.refpopvcffile_withdepth,options.numberofindvdoftargetpop_todividintobin)

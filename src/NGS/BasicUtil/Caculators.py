@@ -408,7 +408,7 @@ class Caculate_S_ObsExp_difference(Caculator):
             elif A_base_idx==1:
                 DAF=AF
             target_DAF_sum+=DAF;countedAF+=1
-        if  countedAF==0:
+        if  countedAF==0 or target_DAF_sum/countedAF==1 or target_DAF_sum==0:
 #             print("skip this snp,because it fiexd as ancestral or no covered in this pos in target pops",T,snp)
             return
         target_DAF=target_DAF_sum/countedAF
@@ -451,14 +451,14 @@ class Caculate_S_ObsExp_difference(Caculator):
                 elif A_base_idx==1:
                     DAF=AF
                 rer_DAF_sum+=DAF;countedAF+=1
-        if  countedAF==0 or rer_DAF_sum==0:
+        if  countedAF==0 or rer_DAF_sum/countedAF!=1 or rer_DAF_sum/countedAF!=0:
 #             print("skip this snp,because it  no covered in this pos in ref pops",T,snp)
             return
         for a,b in sorted(self.freq_xaxisKEY_yaxisVALUERelation.keys()):
             if target_DAF>a and target_DAF<=b:
                 self.CEXP+=self.freq_xaxisKEY_yaxisVALUERelation[(a,b)]
                 break
-        self.obsseq.append(rer_DAF_sum/countedAF)
+        self.obsseq.append(int(rer_DAF_sum/countedAF))
         self.COUNT+=1
         if rer_DAF_sum/countedAF==1:
             self.CfixedDerived+=1
@@ -466,7 +466,8 @@ class Caculate_S_ObsExp_difference(Caculator):
         S1="NA"
         S2="NA"
         try:
-            S1=math.log(numpy.sum(self.obsseq)/self.CEXP)
+#             S1=math.log(numpy.sum(self.obsseq)/self.CEXP)
+            S1=math.log((self.obsseq.count(1)/len(self.obsseq))/self.CEXP)
             S2=0#(numpy.sum(self.obsseq)-self.CEXP)/numpy.std(self.obsseq,ddof=1)
         except:
             S1="NA"

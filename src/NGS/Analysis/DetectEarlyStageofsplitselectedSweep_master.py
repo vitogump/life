@@ -81,6 +81,7 @@ if __name__ == '__main__':
             print("int(options.numberofthreads)!=len(options.chromlistfilename)")
             exit(-1)
         freq_xaxisKEY_yaxisVALUERelation_maplist=[]
+        freq_xaxisKEY_fractionyaxisVALUERelation_maplist=[]
         pool=Pool(int(options.numberofthreads))
         parameterstuples_list=[]
         for chromlistfile in options.chromlistfilename:
@@ -105,17 +106,21 @@ if __name__ == '__main__':
                         a=float(linelist[0]);b=float(linelist[1])
                         freqseqmap[(a,b)]=[]
                         for freq in linelist[2:]:
-                            freqseqmap[(a,b)].append(float(freq))
-                freq_xaxisKEY_yaxisVALUERelation_maplist.append(copy.deepcopy(freqseqmap))
-        for freq_xaxisKEY_yaxisseqVALUERelation_part in freq_xaxisKEY_yaxisVALUERelation_maplist:
+                            freqseqmap[(a,b)].append(int(freq))
+#                             freqseqmap[(a,b)].append(float(freq))
+#                 freq_xaxisKEY_yaxisVALUERelation_maplist.append(copy.deepcopy(freqseqmap))
+                freq_xaxisKEY_fractionyaxisVALUERelation_maplist.append(copy.deepcopy(freqseqmap))
+        for freq_xaxisKEY_yaxisseqVALUERelation_part in freq_xaxisKEY_fractionyaxisVALUERelation_maplist:
             for xaxis in sorted(final_freq_xaxisKEY_yaxisVALUE_seq_list.keys()):
                 final_freq_xaxisKEY_yaxisVALUE_seq_list[xaxis]+=freq_xaxisKEY_yaxisseqVALUERelation_part[xaxis]
         final_freq_xaxisKEY_yaxisVALUERelation={}
+        final_xaxisfreqKEY_yaxisfractionVALUERelation={}
         freq_correlation_configFileName=options.outfileprewithpath+".freq_correlation_merged"
         freq_correlation_config=open(freq_correlation_configFileName,"w")
         for a,b in sorted(final_freq_xaxisKEY_yaxisVALUE_seq_list.keys()):
             final_freq_xaxisKEY_yaxisVALUERelation[(a,b)]=numpy.mean(final_freq_xaxisKEY_yaxisVALUE_seq_list[(a,b)])
-            print('%.12f'%a,'%.12f'%b,'%.12f'%(final_freq_xaxisKEY_yaxisVALUERelation[(a,b)]),sep="\t",file=freq_correlation_config)
+            final_xaxisfreqKEY_yaxisfractionVALUERelation[(a,b)]=final_freq_xaxisKEY_yaxisVALUE_seq_list.count(1)/len(final_freq_xaxisKEY_yaxisVALUE_seq_list)
+            print('%.12f'%a,'%.12f'%b,'%.12f'%(final_xaxisfreqKEY_yaxisfractionVALUERelation[(a,b)]),sep="\t",file=freq_correlation_config)
         freq_correlation_config.close()
         print("freq_correlation_config is produced")
          
@@ -126,9 +131,10 @@ if __name__ == '__main__':
         freq_correlation_configFileName=options.outfileprewithpath+".freq_correlation_merged"
         correlationfile=open(options.correlationfile,'r')
         final_freq_xaxisKEY_yaxisVALUERelation={}
+        final_xaxisfreqKEY_yaxisfractionVALUERelation={}
         for line in correlationfile:
             linelist=re.split(r"\s+",line.strip())
-            final_freq_xaxisKEY_yaxisVALUERelation[float(linelist[0]),float(linelist[1])]=float(linelist[2])
+            final_xaxisfreqKEY_yaxisfractionVALUERelation[float(linelist[0]),float(linelist[1])]=float(linelist[2])
         correlationfile.close()
 #     for a,b in sorted(final_freq_xaxisKEY_yaxisVALUE_seq_list.keys()):
 #         print('%.12f'%a,'%.12f'%(b),'%.12f'%(final_freq_xaxisKEY_yaxisVALUE_seq_list[(a,b)]),sep="\t")
