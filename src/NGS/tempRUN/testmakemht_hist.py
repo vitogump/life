@@ -35,6 +35,7 @@ parser.add_option("-w","--winWidth",dest="winWidth",default="40000",help="win wi
 parser.add_option("-X","--winType",dest="winType",default="zvalue",help="winvalue or zvalue")
 parser.add_option("-N","--mergeNA",dest="mergeNA",default=False,help="winvalue or zvalue")
 parser.add_option("-m", "--minmaxSNP", dest="minmaxSNP",default="0", help="upextend")
+parser.add_option("-r", "--removegenelistfile", dest="removegenelistfile", help="upextend")
 # parser.add_option("-t","--numberofoutlier_to_NearestGene",dest="numberofoutlier_to_NearestGene",default=0,help="number of outlier value,for example top 10")
 (options, args) = parser.parse_args()
 columnname=options.winType.strip()
@@ -45,6 +46,7 @@ if __name__ == '__main__':
     outfileNameWINwithGENE_Nlist=[];outfileNameWIN_Nlist=[]
     uniontpidlist=[];intertpidset=set()
     if options.splitintopart==1:
+        removed=[]
         if options.multiple_positive_winfiles!=[]:
             for p_inputfileName,threshold,outbedfilename in options.multiple_positive_winfiles[:]:
                 outfileNameWIN_Plist.append(p_inputfileName)
@@ -53,6 +55,28 @@ if __name__ == '__main__':
                 makeMhtGraph.makeHistonPicture(outfileNameWINwithGENE_Plist[-1][0], "Fst")
                 print("awk 'NR!=1{print $8}' "+outbedfilename+".bed.selectedgene"+"|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"+outbedfilename+".trscptIDlist")
                 os.system("awk 'NR!=1 && $7>="+options.minmaxSNP +"{print $8}' "+outbedfilename+".bed.selectedgene"+"|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"+outbedfilename+".trscptIDlist")
+                if options.removegenelistfile!=None:
+                    f=open(outbedfilename+".trscptIDlist",'r')
+                    mylist=[];
+                    for line in f:
+
+    #                     uniontpidlist.append(line.strip())
+                        mylist.append(line.strip())
+                    f.close()
+                    ff=open(outbedfilename+".trscptIDlist",'w')
+                    removelist=[]    
+############################
+                    f=open(options.removegenelistfile,'r')
+                    
+                    for line in f:
+                        removelist.append(line.strip())
+                    f.close()
+#########################
+                    finallist=list(set(mylist)-set(removelist))
+                    removed+=list(set(mylist).intersection(set(removelist)))
+                    for e in finallist:
+                        print(e,file=ff)
+                    ff.close()                
                 f=open(outbedfilename+".trscptIDlist",'r')
                 curset=set()
                 mylist=[]
@@ -65,6 +89,7 @@ if __name__ == '__main__':
                     intertpidset=intertpidset.intersection(curset)
                 else:
                     intertpidset=curset
+
                 geneUtil.GOenrichment(options.gotablefile,outbedfilename,None,list(set(mylist)),None)
 
                 print("grep -wFf "+outbedfilename+".trscptIDlist"+""" /home/bioinfo/databases/ensembleIDconvert.txt|awk '{FS="\t";print $3}'|sort|uniq|sed '/^$/d'>"""+outbedfilename+""".Homologs_human""")
@@ -80,8 +105,32 @@ if __name__ == '__main__':
                 outfileNameWINwithGENE_Nlist.append((geneUtil.findTrscpt(n_inputfileName,outbedfilename, int(options.upextend), int(options.downextend), int(options.winWidth), int(options.slideSize), options.winType, "l", threshold, None, options.mergeNA, int(options.distalextend),options.trscptfound),threshold))
                 makeMhtGraph.makeHistonPicture(n_inputfileName, "Hp")#,"c(0,2000)","c(0,45)"
                 makeMhtGraph.makeHistonPicture(outfileNameWINwithGENE_Nlist[-1][0], "Hp")#,"c(0,2000)","c(0,45)"
+                
+#                     print("awk 'NR!=1{print $8}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq|grep --wFf """+options.removegenelistfile + """ - > """+outbedfilename+".trscptIDlist")
                 print("awk 'NR!=1{print $8}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"""+outbedfilename+".trscptIDlist")
                 os.system("awk 'NR!=1 && $7>="+options.minmaxSNP +"{print $8}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq|sed '/^$/d'>"""+outbedfilename+".trscptIDlist")
+                if options.removegenelistfile!=None:
+                    f=open(outbedfilename+".trscptIDlist",'r')
+                    mylist=[];
+                    for line in f:
+
+    #                     uniontpidlist.append(line.strip())
+                        mylist.append(line.strip())
+                    f.close()
+                    ff=open(outbedfilename+".trscptIDlist",'w')
+                    removelist=[]    
+############################
+                    f=open(options.removegenelistfile,'r')
+                    
+                    for line in f:
+                        removelist.append(line.strip())
+                    f.close()
+#########################
+                    finallist=list(set(mylist)-set(removelist))
+                    removed+=list(set(mylist).intersection(set(removelist)))
+                    for e in finallist:
+                        print(e,file=ff)
+                    ff.close()
                 f=open(outbedfilename+".trscptIDlist",'r')
                 curset=set()
                 mylist=[];
@@ -91,7 +140,13 @@ if __name__ == '__main__':
                     intersectionlist.append(line.strip())
                     mylist.append(line.strip())
                 f.close()
-                
+                removelist=[]    
+                if options.removegenelistfile!=None:
+                    f=open(options.removegenelistfile,'r')
+                    
+                    for line in f:
+                        removelist.append(line.strip())
+                    f.close()
                 geneUtil.GOenrichment(options.gotablefile,outbedfilename,None,list(set(mylist)),None)
                 if intertpidset:
                     intertpidset=intertpidset.intersection(curset)
@@ -114,9 +169,11 @@ if __name__ == '__main__':
         for gene in interlist:
             print(gene,file=f)
         f.close()
-        intersectionlist=set(intersectionlist).intersection(set(uniontpidlist))
+        
         geneUtil.GOenrichment(options.gotablefile,options.pathoutputfilename+"u",None,list(set(list(intersectionlist)+uniontpidlist)),None)
-        if intersectionlist!=list(set(uniontpidlist)):
+        
+        intersectionlist=set(intersectionlist).intersection(set(uniontpidlist))
+        if intersectionlist !=set():
             geneUtil.GOenrichment(options.gotablefile,options.pathoutputfilename+"i",None,list(intersectionlist),None)
         splitinto=int(options.splitintopart)
     else:
@@ -127,3 +184,4 @@ if __name__ == '__main__':
     for n_inputfileName,threshold,outbedfilename in options.multiple_negtive_winfiles[:]:
         outfileNameWIN_Nlist.append(n_inputfileName)
     makeMhtGraph.makeMhtplots_compareInOnePicture(options.pathoutputfilename, outfileNameWIN_Plist, outfileNameWIN_Nlist, 0,columnname,splitinto)
+    print(removed)
