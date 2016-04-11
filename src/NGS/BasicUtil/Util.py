@@ -1528,6 +1528,7 @@ class Window():
                 noofsnps, value = Caculator.getResult()
                 try:
                     self.winValueL.append((startPos, lastPos, noofsnps, value))
+#                     print(startPos, lastPos, noofsnps, value)
                 except:
                     print("no snp in first win", len(L), currentIdx, value, L[currentIdx])
                     self.winValueL.append((0, 0, noofsnps, value))
@@ -1566,6 +1567,7 @@ class Window():
             noofsnps, value = Caculator.getResult()
             try :
                 self.winValueL.append((startPos, lastPos, noofsnps, value))
+#                 print(startPos, lastPos, noofsnps, value)
             except UnboundLocalError:
                 self.winValueL.append((0, 0, noofsnps, value))
 #             if nextIdx!=-1:

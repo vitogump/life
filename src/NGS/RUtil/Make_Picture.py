@@ -5,6 +5,7 @@ Created on 2013-8-10
 '''
 
 import itertools
+from os.path import sys
 import re, os, math, time
 
 import numpy
@@ -154,10 +155,14 @@ class MakeMhtGraph(object):
         if not fillvalue.isnumeric():
             fillvalue='"'+fillvalue+'"'
         if positive_negtive == "positive":
+            print(""" awk '{OFS="\\t";if(NR!=1 && ($7=="NA" || $7<0)){$6=""" + fillvalue + """;$7=""" + fillvalue + """};print $0}' """ + inputfileName + ">" + pathtoOutFileName_new)
             os.system(""" awk '{OFS="\\t";if(NR!=1 && ($7=="NA" || $7<0)){$6=""" + fillvalue + """;$7=""" + fillvalue + """};print $0}' """ + inputfileName + ">" + pathtoOutFileName_new)
         elif positive_negtive == "negtive":
             print(""" awk '{OFS="\\t";if(NR!=1 && ($7=="NA" || $7>0)){$6=""" + fillvalue + """;$7=""" + fillvalue + """};print $0}' """ + inputfileName + ">" + pathtoOutFileName_new)
             os.system(""" awk '{OFS="\\t";if(NR!=1 && ($7=="NA" || $7>0)){$6=""" + fillvalue + """;$7=""" + fillvalue + """};print $0}' """ + inputfileName + ">" + pathtoOutFileName_new)
+        elif positive_negtive=="allvalue":
+            os.system(""" awk '{OFS="\\t";if(NR!=1 && ($7=="NA" )){$6=""" + fillvalue + """;$7=""" + fillvalue + """};print $0}' """ + inputfileName + ">" + pathtoOutFileName_new)
+        print(pathtoOutFileName_new)
         return re.search(r"[^/]*$", pathtoOutFileName_new).group(0),pathtoOutFileName_new  # for linux
     
     def makeHistonPicture(self,inputfileName, dataType,ylim=None,xlim=None,columnnames=("winvalue","zvalue")):
@@ -216,8 +221,10 @@ class MakeMhtGraph(object):
         r("library(Cairo)")
 #         r('CairoPNG("'+outname+'.png",width='+str(((len(positive_winfiles)+len(negtive_winfiles))*221.5+35)*2)+',height='+str((len(positive_winfiles)+len(negtive_winfiles))*221.5+35)+')')
         r('CairoPNG("'+outname+'.png",width=1800,height=800)')
+#         r('CairoPDF("'+outname+'.pdf"')
         for i in range(0,len(positive_winfiles)):
-            p_threshold[i]=float(positive_winfiles[i][1].strip())
+            threshold_title_list=re.split(r"_",positive_winfiles[i][1].strip())
+            p_threshold[i]=float(threshold_title_list[0])
             positive_filenames[i],positive_filenameWithPaths[i]=self.prepareMhtFile(positive_winfiles[i][0], "Fst", "positive", fillvalue)
             print('p_dataframe'+str(i)+'=read.delim("' + positive_filenameWithPaths[i] + '",header=T,stringsAsFactors=FALSE)',file=scriptfile)
             r('p_dataframe'+str(i)+'=read.delim("' + positive_filenameWithPaths[i] + '",header=T,stringsAsFactors=FALSE)')
@@ -228,7 +235,8 @@ class MakeMhtGraph(object):
             print('p_highlithcolors'+str(i)+'<- rep("red",nrow(p_highlight'+str(i)+'))',file=scriptfile)
             r('p_highlithcolors'+str(i)+'<- rep("red",nrow(p_highlight'+str(i)+'))')
         for i in range(0,len(negtive_winfiles)):
-            n_threshold[i]=float(negtive_winfiles[i][1].strip())
+            threshold_title_list=re.split(r"_",negtive_winfiles[i][1].strip())
+            n_threshold[i]=float(threshold_title_list[0])
             negtive_filenames[i],negtive_filenameWithPaths[i]=self.prepareMhtFile(negtive_winfiles[i][0], "Hp", "negtive", fillvalue)
             r('n_dataframe'+str(i)+'=read.delim("' + negtive_filenameWithPaths[i] + '",header=T,stringsAsFactors=FALSE)')
             r('n_data'+str(i)+' <- n_dataframe'+str(i)+'[,c("chrNo","winNo","'+columnname+'")]')
@@ -262,13 +270,14 @@ class MakeMhtGraph(object):
                     n.append(ee)
                     intersectionlistMap[str(i)+"p"].append(ee)
             r('mhtplot(p_data'+str(i)+',ops,hops,pch=19,ylab="z' + "Fst" + '",xlab="")')
-            r("title(main='" + positive_filenames[i] + "',cex.main=0.8)")
+            threshold_title_list=re.split(r"_",positive_winfiles[i][1].strip())
+            r("title(main='" + " ".join(threshold_title_list[1:]) + "',cex.main=0.8)")
             r('axis(2)')
             r('abline(h='+str(positive_winfiles[i][1])+')')
             print('ops<-mht.control(logscale=FALSE,colors=colors,cex=0.6)',file=scriptfile)
             print('hops<-hmht.control(data=p_highlight'+str(i)+',cex='+str(0.6*(len(positive_winfiles)+len(negtive_winfiles)))+',yoffset=0.2)',file=scriptfile)
             print('mhtplot(p_data'+str(i)+',ops,hops,pch=19,ylab="z' + "Fst" + '",xlab="")',file=scriptfile)
-            print("title(main='" + positive_filenames[i] + "',cex.main=0.8)",file=scriptfile)
+            print("title(main='" + positive_winfiles[i][2] + "',cex.main=0.8)",file=scriptfile)
             print('axis(2)',file=scriptfile)
             print('abline(h=5)',file=scriptfile)
         for i in range(0,len(negtive_winfiles)):
@@ -281,14 +290,16 @@ class MakeMhtGraph(object):
                 for ee in nn:
                     n.append(ee)
                     intersectionlistMap[str(i)+"n"].append(ee)
-            r('mhtplot(n_data'+str(i)+',ops,hops,pch=19,ylab="zHp",xlab="")')
-            r("title(main='" + negtive_filenames[i] + "',cex.main=0.8)")
-            r('axis(2)')
-            r('abline(h='+str(negtive_winfiles[i][1])+')')
             print('ops<-mht.control(logscale=FALSE,colors=colors,cex=0.6)',file=scriptfile)
             print('hops<-hmht.control(data=n_highlight'+str(i)+',cex=0.6,yoffset=-0.2)',file=scriptfile)
-            print('mhtplot(n_data'+str(i)+',ops,hops,pch=19,ylab="zHp",xlab="")',file=scriptfile)
-            print("title(main='" + negtive_filenames[i] + "',cex.main=0.8)",file=scriptfile)
+            print('mhtplot(n_data'+str(i)+',ops,hops,pch=19,ylab="zHp",xlab="")',file=scriptfile)            
+            r('mhtplot(n_data'+str(i)+',ops,hops,pch=19,ylab="zHp",xlab="")')
+            threshold_title_list=re.split(r"_",negtive_winfiles[i][1].strip())
+            r("title(main='" + " ".join(threshold_title_list[1:]) + "',cex.main=0.8)")
+            r('axis(2)')
+            r('abline(h='+str(threshold_title_list[0])+')')
+
+            print("title(main='" + negtive_winfiles[i][2] + "',cex.main=0.8)",file=scriptfile)
             print('axis(2)',file=scriptfile)
             print('abline(h='+str(negtive_winfiles[i][1])+')',file=scriptfile)
         r('axis(1)')
@@ -300,25 +311,37 @@ class MakeMhtGraph(object):
             intersectionSet=set(intersectionSet) & set(intersectionlistMap[k])
         return list(set(n)),list(intersectionSet)
 
-    def makeMhtplots_compareInOnePicture(self, outputnamewithpath,positive_winfiles,negtive_winfiles,fillvalue=0,columnname="zvalue",splitintoparts=1):
+    def makeMhtplots_compareInOnePicture(self, outputnamewithpath,positive_winfiles,negtive_winfiles,outfileNameWIN_Alist,fillvalue=0,columnname="zvalue",splitintoparts=1):
         scriptfile=open("stripts.R",'w')
         print(outputnamewithpath,file=scriptfile)
         print(positive_winfiles,negtive_winfiles)
         randomstr=Util.random_str()
         NoOfcurchrom={}
-        for winfile in positive_winfiles+negtive_winfiles:
+        for winfile,threshold,outbedfilename in positive_winfiles+negtive_winfiles+outfileNameWIN_Alist:
             NoOfcurchrom[winfile]=0
             os.system("awk 'NR>1{print $1}' "+winfile+"|uniq >"+winfile+"_chrom")
-        for winfile_idx in range(1,len(positive_winfiles+negtive_winfiles)):
-            os.system("comm -12 "+(positive_winfiles+negtive_winfiles)[winfile_idx-1]+"_chrom "+(positive_winfiles+negtive_winfiles)[winfile_idx]+"_chrom|uniq > temp_chrom"+randomstr)
-            os.system("rm "+(positive_winfiles+negtive_winfiles)[winfile_idx-1]+"_chrom ")
-            os.system("mv temp_chrom"+randomstr+" "+(positive_winfiles+negtive_winfiles)[winfile_idx]+"_chrom ")
-        print((positive_winfiles+negtive_winfiles)[-1]+"_chrom ")
-        t=open((positive_winfiles+negtive_winfiles)[-1]+"_chrom","r")
-        chromlist=t.readlines();t.close();os.system("rm "+(positive_winfiles+negtive_winfiles)[-1]+"_chrom ")
+        for winfile_idx in range(1,len(positive_winfiles+negtive_winfiles+outfileNameWIN_Alist)):
+            print("please input winfile withpath")
+            a=os.system("comm -12 "+(positive_winfiles+negtive_winfiles+outfileNameWIN_Alist)[winfile_idx-1][0]+"_chrom "+(positive_winfiles+negtive_winfiles+outfileNameWIN_Alist)[winfile_idx][0]+"_chrom|uniq > temp_chrom"+randomstr)
+#             print("comm -12 "+(positive_winfiles+negtive_winfiles)[winfile_idx-1]+"_chrom "+(positive_winfiles+negtive_winfiles)[winfile_idx]+"_chrom|uniq > temp_chrom"+randomstr)
+            if a!=0:
+                print("comm -12 "+(positive_winfiles+negtive_winfiles+outfileNameWIN_Alist)[winfile_idx-1][0]+"_chrom "+(positive_winfiles+negtive_winfiles+outfileNameWIN_Alist)[winfile_idx][0]+"_chrom|uniq > temp_chrom"+randomstr)
+                exit(-1)   
+            print(winfile_idx,"mv temp_chrom"+randomstr+" "+(positive_winfiles+negtive_winfiles+outfileNameWIN_Alist)[winfile_idx][0]+"_chrom ")
+            os.system("mv temp_chrom"+randomstr+" "+(positive_winfiles+negtive_winfiles+outfileNameWIN_Alist)[winfile_idx][0]+"_chrom ")
+#             print("rm"+(positive_winfiles+negtive_winfiles)[winfile_idx-1]+"_chrom ")
+#         exit()    
+        for winfile_idx in range(1,len(positive_winfiles+negtive_winfiles+outfileNameWIN_Alist)):
+#             print("rm "+(positive_winfiles+negtive_winfiles)[winfile_idx-1]+"_chrom ")
+            os.system("rm "+(positive_winfiles+negtive_winfiles+outfileNameWIN_Alist)[winfile_idx-1][0]+"_chrom ")
+        print((positive_winfiles+negtive_winfiles+outfileNameWIN_Alist)[-1][0]+"_chrom ")
+        t=open((positive_winfiles+negtive_winfiles+outfileNameWIN_Alist)[-1][0]+"_chrom","r")
+        chromlist=t.readlines();t.close();#os.system("rm "+(positive_winfiles+negtive_winfiles)[-1]+"_chrom ")
         d=len(chromlist)/splitintoparts
         part_i=0
+        chromfile=open("chromfile.txt","w")
         for part_i in range(0,splitintoparts-1):
+            
             if re.search(r"^.*/", outputnamewithpath)!=None:
                 dir = re.search(r"^.*/", outputnamewithpath).group(0)
             else:
@@ -329,50 +352,111 @@ class MakeMhtGraph(object):
                 positive_filenames=[""]*len(positive_winfiles);positive_filenameWithPaths=[""]*len(positive_winfiles)
             if negtive_winfiles!=[]:
                 negtive_filenames=[""]*len(negtive_winfiles);negtive_filenameWithPaths=[""]*len(negtive_winfiles)
+            if outfileNameWIN_Alist!=[]:
+                outfileNameWIN_Alistfilenames=[""]*len(outfileNameWIN_Alist);outfileNameWIN_AlistfilenamesWithPaths=[""]*len(outfileNameWIN_Alist)
+            print(dir)
+            print("setwd('" + dir + "')")
             r("setwd('" + dir + "')")
             r('.libPaths("/opt/Rpackages/")')
             r("library(gap)")
             r("library(Cairo)")
     #         r('CairoPNG("'+outname+'.png",width='+str(((len(positive_winfiles)+len(negtive_winfiles))*221.5+35)*2)+',height='+str((len(positive_winfiles)+len(negtive_winfiles))*221.5+35)+')')
-            r('CairoPNG("'+outname+"part_"+str(part_i)+'.png",width=1600,height=800)')
+            templ=positive_winfiles+negtive_winfiles+outfileNameWIN_Alist
+#             r('CairoPDF("'+outname+chromlist[NoOfcurchrom[templ[0][0]]].strip()+"_"+chromlist[math.ceil(NoOfcurchrom[templ[0][0]]+d)].strip()+"part_"+str(part_i)+'.pdf")')
+            r('CairoPNG("'+outname+chromlist[NoOfcurchrom[templ[0][0]]].strip()+"_"+chromlist[math.ceil(NoOfcurchrom[templ[0][0]]+d)].strip()+"part_"+str(part_i)+'.png",width=1600,height=1800)')
+            if outfileNameWIN_Alist!=[]:
+                for i in range(0,len(outfileNameWIN_Alist)):
+                    os.system("""awk '{if(NR==1){print$0}if($0~/"""+chromlist[NoOfcurchrom[outfileNameWIN_Alist[i][0]]].strip()+"""/){start="true"}if($0~/"""+chromlist[math.ceil(NoOfcurchrom[outfileNameWIN_Alist[i][0]]+d)].strip()+"""/){end="true"}if(start=="true" && end!="true"){print $0}}' """+outfileNameWIN_Alist[i][0]+"""> """+outfileNameWIN_Alist[i][0]+"part_"+str(part_i))
+                    if i==0:
+                        print(NoOfcurchrom[outfileNameWIN_Alist[i][0]],file=chromfile)
+                        print(math.ceil(NoOfcurchrom[outfileNameWIN_Alist[i][0]]+d)+1,file=chromfile)
+                    NoOfcurchrom[outfileNameWIN_Alist[i][0]]=math.ceil(NoOfcurchrom[outfileNameWIN_Alist[i][0]]+d)+1
+                    print(chromlist[NoOfcurchrom[outfileNameWIN_Alist[i][0]]].strip())
+                    outfileNameWIN_Alistfilenames[i],outfileNameWIN_AlistfilenamesWithPaths[i]=self.prepareMhtFile(outfileNameWIN_Alist[i][0]+"part_"+str(part_i), "TajimasD", "allvalue", fillvalue)
+                    r('a_dataframe'+str(i)+'=read.delim("' + outfileNameWIN_AlistfilenamesWithPaths[i] + '",header=T)')
+                    print(outfileNameWIN_AlistfilenamesWithPaths[i])
+                    r('a_data'+str(i)+' <- with(a_dataframe'+str(i)+',cbind(chrNo,winNo,'+columnname+'))')
+                    os.system("rm "+outfileNameWIN_AlistfilenamesWithPaths[i]+" "+outfileNameWIN_Alist[i][0]+"part_"+str(part_i))
             if positive_winfiles!=[]:
                 for i in range(0,len(positive_winfiles)):
-                    print(NoOfcurchrom[positive_winfiles[i]],chromlist[NoOfcurchrom[positive_winfiles[i]]],d,NoOfcurchrom[positive_winfiles[i]],len(chromlist))
-                    os.system("""awk '{if(NR==1){print$0}if($0~/"""+chromlist[NoOfcurchrom[positive_winfiles[i]]].strip()+"""/){start="true"}if($0~/"""+chromlist[math.ceil(NoOfcurchrom[positive_winfiles[i]]+d)].strip()+"""/){end="true"}if(start=="true" && end!="true"){print $0}}' """+positive_winfiles[i]+"""> """+positive_winfiles[i]+"part_"+str(part_i))
+                    print("please input winfile withpath")
+                    print("NoOfcurchrom[positive_winfiles[i]]",NoOfcurchrom[positive_winfiles[i][0]],"chromlist[NoOfcurchrom[positive_winfiles[i]]]",chromlist[NoOfcurchrom[positive_winfiles[i][0]]],"d",d,"NoOfcurchrom[positive_winfiles[i]]",NoOfcurchrom[positive_winfiles[i][0]],"chromlist",len(chromlist))
+                    print("""awk '{if(NR==1){print$0}if($0~/"""+chromlist[NoOfcurchrom[positive_winfiles[i][0]]].strip()+"""/){start="true"}if($0~/"""+chromlist[math.ceil(NoOfcurchrom[positive_winfiles[i][0]]+d)].strip()+"""/){end="true"}if(start=="true" && end!="true"){print $0}}' """+positive_winfiles[i][0]+"""> """+positive_winfiles[i][0]+"part_"+str(part_i))
+                    os.system("""awk '{if(NR==1){print$0}if($0~/"""+chromlist[NoOfcurchrom[positive_winfiles[i][0]]].strip()+"""/){start="true"}if($0~/"""+chromlist[math.ceil(NoOfcurchrom[positive_winfiles[i][0]]+d)].strip()+"""/){end="true"}if(start=="true" && end!="true"){print $0}}' """+positive_winfiles[i][0]+"""> """+positive_winfiles[i][0]+"part_"+str(part_i))
     #                 os.system("""awk '{if($0~/"""+chromlist[math.ceil(NoOfcurchrom[positive_winfiles[i]]+d*len(chromlist))].strip()+"""/){skip="true"}if(skip!="true"){print $0}}' >"""+positive_winfiles[i]+"part_"+str(part_i))
-                    NoOfcurchrom[positive_winfiles[i]]=math.ceil(NoOfcurchrom[positive_winfiles[i]]+d)
-                    positive_filenames[i],positive_filenameWithPaths[i]=self.prepareMhtFile(positive_winfiles[i]+"part_"+str(part_i), "Fst", "positive", fillvalue)
+                    if i==0:
+                        print(NoOfcurchrom[positive_winfiles[i][0]],file=chromfile)
+                        print(math.ceil(NoOfcurchrom[positive_winfiles[i][0]]+d)+1,file=chromfile)
+                    NoOfcurchrom[positive_winfiles[i][0]]=math.ceil(NoOfcurchrom[positive_winfiles[i][0]]+d)+1
+                    print(chromlist[NoOfcurchrom[positive_winfiles[i][0]]].strip())
+                    positive_filenames[i],positive_filenameWithPaths[i]=self.prepareMhtFile(positive_winfiles[i][0]+"part_"+str(part_i), "Fst", "positive", fillvalue)
                     r('p_dataframe'+str(i)+'=read.delim("' + positive_filenameWithPaths[i] + '",header=T)')
+                    print(positive_filenameWithPaths[i])
                     r('p_data'+str(i)+' <- with(p_dataframe'+str(i)+',cbind(chrNo,winNo,'+columnname+'))')
-                    os.system("rm "+positive_filenameWithPaths[i]+" "+positive_winfiles[i]+"part_"+str(part_i))
+                    os.system("rm "+positive_filenameWithPaths[i]+" "+positive_winfiles[i][0]+"part_"+str(part_i))
     #             r('p_data'+str(i)+' <- with(p_dataframe'+str(i)+',cbind(chrNo,winNo,zvalue))')
             if negtive_winfiles!=[]:
                 for i in range(0,len(negtive_winfiles)):
-                    os.system("""awk '{if(NR==1){print$0}if($0~/"""+chromlist[NoOfcurchrom[negtive_winfiles[i]]].strip()+"""/){start="true"}if($0~/"""+chromlist[math.ceil(NoOfcurchrom[negtive_winfiles[i]]+d)].strip()+"""/){end="true"}if(start=="true" && end!="true"){print $0}}' """+negtive_winfiles[i]+""" > """+negtive_winfiles[i]+"part_"+str(part_i))
+                    os.system("""awk '{if(NR==1){print$0}if($0~/"""+chromlist[NoOfcurchrom[negtive_winfiles[i][0]]].strip()+"""/){start="true"}if($0~/"""+chromlist[math.ceil(NoOfcurchrom[negtive_winfiles[i][0]]+d)].strip()+"""/){end="true"}if(start=="true" && end!="true"){print $0}}' """+negtive_winfiles[i][0]+""" > """+negtive_winfiles[i][0]+"part_"+str(part_i))
     #                 os.system("""awk '{if($0~/"""+chromlist[math.ceil(NoOfcurchrom[negtive_winfiles[i]]+d*len(chromlist))].strip()+"""/){skip="true"}if(skip!="true"){print $0}}' >"""+negtive_winfiles[i]+"part_"+str(part_i))
-                    NoOfcurchrom[negtive_winfiles[i]]=math.ceil(NoOfcurchrom[negtive_winfiles[i]]+d)
-                    negtive_filenames[i],negtive_filenameWithPaths[i]=self.prepareMhtFile(negtive_winfiles[i]+"part_"+str(part_i), "Hp", "negtive", fillvalue)
+                    NoOfcurchrom[negtive_winfiles[i][0]]=math.ceil(NoOfcurchrom[negtive_winfiles[i][0]]+d)+1
+                    negtive_filenames[i],negtive_filenameWithPaths[i]=self.prepareMhtFile(negtive_winfiles[i][0]+"part_"+str(part_i), "Hp", "negtive", fillvalue)
                     r('n_dataframe'+str(i)+'=read.delim("' + negtive_filenameWithPaths[i] + '",header=T)')
                     r('n_data'+str(i)+' <- n_dataframe'+str(i)+'[,c("chrNo","winNo","'+columnname+'")]')
-                    os.system("rm "+negtive_filenameWithPaths[i]+" "+negtive_winfiles[i]+"part_"+str(part_i))
-    #                 'n_data'+str(i)+' <- with(n_dataframe'+str(i)+',cbind(chrNo,winNo,'+columnname+'))'
+                    os.system("rm "+negtive_filenameWithPaths[i]+" "+negtive_winfiles[i][0]+"part_"+str(part_i))
             r('colors <- rep(c("red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red"),300)')
-            r('par(las=1, cex.axis=1.5, cex=0.8,mfrow=c('+str(len(positive_winfiles)+len(negtive_winfiles)) +',1),mar=c(2, 4, 1.5, 2))')
+            r('par(las=1, cex.axis=1.5, cex=0.8,mfrow=c('+str(len(positive_winfiles)+len(negtive_winfiles)+len(outfileNameWIN_Alist)) +',1),mar=c(2, 4, 1.5, 2),mgp=c(1,-0.5,-1.5))')
+            if outfileNameWIN_Alist!=[]:
+                for i in range(0,len(outfileNameWIN_Alist)):
+                    if outfileNameWIN_Alist[i][2].lower().strip()!="none":
+                        ylimstr=outfileNameWIN_Alist[i][1].lower().strip().replace("_",",")
+                        print(ylimstr)
+                        print('mhtplot(a_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=16,xlab="",'+"ylim=c("+ylimstr+'))')
+                        r('mhtplot(a_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=16,ylab="",xlab="",'+"ylim=c("+ylimstr+'))')
+                    else:
+                        r('mhtplot(a_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=16,ylab="Tajimas D",xlab="")')
+                    if outfileNameWIN_Alist[i][2].lower().strip()!="none":
+#                         print("""title(main='""" + outfileNameWIN_Alist[i][2].replace("_"," ") + "',cex.main=2)"))
+
+                        r('title(main="' + outfileNameWIN_Alist[i][2].replace("_"," ") + '",cex.main=2)')
+                    else:
+                        r("title(main='" + outfileNameWIN_Alistfilenames[i] + "',cex.main=2)")
+                    r('axis(2)')
             if positive_winfiles!=[]:
                 for i in range(0,len(positive_winfiles)):
-                    r('mhtplot(p_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=16,ylab="z' + "Fst" + '",xlab="")')
-                    r("title(main='" + positive_filenames[i] + "',cex.main=2)")
+                    if positive_winfiles[i][1].lower().strip()!="none":
+                        ylimstr=positive_winfiles[i][1].lower().strip().replace("_",",")
+                        r('mhtplot(p_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=16,ylab="",'  + 'xlab=""'+",ylim=c("+ylimstr+'))')
+                    else:
+                        r('mhtplot(p_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=16,ylab="z' + "Fst" + '",xlab="")')
+
+                    if positive_winfiles[i][2].lower().strip()!="none":
+                        if positive_winfiles[i][2].find("expression")!=-1:
+                            r("title(main=" + positive_winfiles[i][2].replace("_"," ") + ",cex.main=2)")
+                        else:
+                            r("title(main='" + positive_winfiles[i][2].replace("_"," ") + "',cex.main=2)")
+                    else:
+                        r("title(main='" + positive_filenames[i] + "',cex.main=2)")
                     r('axis(2)')
             if negtive_winfiles!=[]:
                 for i in range(0,len(negtive_winfiles)):
-                    r('mhtplot(n_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=16,ylab="zHp",xlab="")')
-                    r("title(main='" + negtive_filenames[i] + "',cex.main=2)")
+                    if negtive_winfiles[i][1].lower().strip()!="none":
+                        ylimstr=negtive_winfiles[i][1].lower().strip().replace("_",",")
+                        r('mhtplot(n_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=16,ylab="",xlab=""'+",ylim=c("+ylimstr+'))')
+                    else:
+                        r('mhtplot(n_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=16,ylab="zHp",xlab="")')
+                    if negtive_winfiles[i][2].lower().strip()!="none":
+                        r("title(main='" + negtive_winfiles[i][2].replace("_"," ") + "',cex.main=2)")
+                    else:
+                        r("title(main='" + negtive_filenames[i] + "',cex.main=2)")
                     r('axis(2)')
             r('axis(1)')
             r('dev.off()')
+            
 #             print("rm "+negtive_filenameWithPaths[i]+" "+negtive_winfiles[i]+"part_"+str(part_i)+" "+positive_filenames[i]+" "+positive_filenameWithPaths[i]+" "+positive_winfiles[i]+"part_"+str(part_i))
 #             os.system("rm "+negtive_filenameWithPaths[i]+" "+negtive_winfiles[i]+"part_"+str(part_i)+"  "+positive_filenameWithPaths[i]+" "+positive_winfiles[i]+"part_"+str(part_i))
         else:
+            chromfile.close()
             part_i+=1
             if re.search(r"^.*/", outputnamewithpath)!=None:
                 dir = re.search(r"^.*/", outputnamewithpath).group(0)
@@ -382,16 +466,29 @@ class MakeMhtGraph(object):
             r = robjects.r
             positive_filenames=[""]*len(positive_winfiles);positive_filenameWithPaths=[""]*len(positive_winfiles)
             negtive_filenames=[""]*len(negtive_winfiles);negtive_filenameWithPaths=[""]*len(negtive_winfiles)
+            if outfileNameWIN_Alist!=[]:
+                outfileNameWIN_Alistfilenames=[""]*len(outfileNameWIN_Alist);outfileNameWIN_AlistfilenamesWithPaths=[""]*len(outfileNameWIN_Alist)
             r("setwd('" + dir + "')")
             r('.libPaths("/opt/Rpackages/")')
             r("library(gap)")
             r("library(Cairo)")
+            templ=positive_winfiles+negtive_winfiles+outfileNameWIN_Alist
     #         r('CairoPNG("'+outname+'.png",width='+str(((len(positive_winfiles)+len(negtive_winfiles))*221.5+35)*2)+',height='+str((len(positive_winfiles)+len(negtive_winfiles))*221.5+35)+')')
-            r('CairoPNG("'+outname+"part_"+str(part_i)+'.png",width=1600,height=800)')
+#             r('CairoPDF("'+outname+chromlist[NoOfcurchrom[templ[0][0]]].strip()+"_"+chromlist[-1].strip()+"part_"+str(part_i)+'.pdf")')
+            r('CairoPNG("'+outname+chromlist[NoOfcurchrom[templ[0][0]]].strip()+"_"+chromlist[-1].strip()+"part_"+str(part_i)+'.png",width=1600,height=1800)')
+            if outfileNameWIN_Alist!=[]:
+                for i in range(0,len(outfileNameWIN_Alist)):
+                    os.system("""awk '{if(NR==1){print$0}if($0~/"""+chromlist[NoOfcurchrom[outfileNameWIN_Alist[i][0]]].strip()+"""/){start="true"}if(start=="true"){print $0}}' """+ outfileNameWIN_Alist[i][0]+""">"""+outfileNameWIN_Alist[i][0]+"part_"+str(part_i))
+                    outfileNameWIN_Alistfilenames[i],outfileNameWIN_AlistfilenamesWithPaths[i]=self.prepareMhtFile(outfileNameWIN_Alist[i][0]+"part_"+str(part_i), "TajimasD", "allvalue", fillvalue)
+                    print('a_dataframe'+str(i)+'=read.delim("' + outfileNameWIN_AlistfilenamesWithPaths[i] + '",header=T)',file=scriptfile)
+                    r('a_dataframe'+str(i)+'=read.delim("' + outfileNameWIN_AlistfilenamesWithPaths[i] + '",header=T)')
+                    r('a_data'+str(i)+' <- with(a_dataframe'+str(i)+',cbind(chrNo,winNo,'+columnname+'))')
+#                     os.system("rm "+positive_filenameWithPaths[i]+" "+positive_winfiles[i]+"part_"+str(part_i))
+                    print('a_data'+str(i)+' <- a_dataframe'+str(i)+'[,c("chrNo","winNo","'+columnname+'")]',file=scriptfile)
             if positive_winfiles!=[]:
                 for i in range(0,len(positive_winfiles)):
-                    os.system("""awk '{if(NR==1){print$0}if($0~/"""+chromlist[NoOfcurchrom[positive_winfiles[i]]].strip()+"""/){start="true"}if(start=="true"){print $0}}' """+ positive_winfiles[i]+""">"""+positive_winfiles[i]+"part_"+str(part_i))
-                    positive_filenames[i],positive_filenameWithPaths[i]=self.prepareMhtFile(positive_winfiles[i]+"part_"+str(part_i), "Fst", "positive", fillvalue)
+                    os.system("""awk '{if(NR==1){print$0}if($0~/"""+chromlist[NoOfcurchrom[positive_winfiles[i][0]]].strip()+"""/){start="true"}if(start=="true"){print $0}}' """+ positive_winfiles[i][0]+""">"""+positive_winfiles[i][0]+"part_"+str(part_i))
+                    positive_filenames[i],positive_filenameWithPaths[i]=self.prepareMhtFile(positive_winfiles[i][0]+"part_"+str(part_i), "Fst", "positive", fillvalue)
                     print('p_dataframe'+str(i)+'=read.delim("' + positive_filenameWithPaths[i] + '",header=T)',file=scriptfile)
                     r('p_dataframe'+str(i)+'=read.delim("' + positive_filenameWithPaths[i] + '",header=T)')
                     r('p_data'+str(i)+' <- with(p_dataframe'+str(i)+',cbind(chrNo,winNo,'+columnname+'))')
@@ -400,36 +497,73 @@ class MakeMhtGraph(object):
         #             r('p_data'+str(i)+' <- with(p_dataframe'+str(i)+',cbind(chrNo,winNo,zvalue))')
             if negtive_winfiles!=[]:
                 for i in range(0,len(negtive_winfiles)):
-                    os.system("""awk '{if(NR==1){print$0}if($0~/"""+chromlist[NoOfcurchrom[negtive_winfiles[i]]].strip()+"""/){start="true"}if(start=="true"){print $0}}' """+ negtive_winfiles[i]+""">"""+negtive_winfiles[i]+"part_"+str(part_i))
-                    negtive_filenames[i],negtive_filenameWithPaths[i]=self.prepareMhtFile(negtive_winfiles[i]+"part_"+str(part_i), "Hp", "negtive", fillvalue)
+                    os.system("""awk '{if(NR==1){print$0}if($0~/"""+chromlist[NoOfcurchrom[negtive_winfiles[i][0]]].strip()+"""/){start="true"}if(start=="true"){print $0}}' """+ negtive_winfiles[i][0]+""">"""+negtive_winfiles[i][0]+"part_"+str(part_i))
+                    negtive_filenames[i],negtive_filenameWithPaths[i]=self.prepareMhtFile(negtive_winfiles[i][0]+"part_"+str(part_i), "Hp", "negtive", fillvalue)
                     r('n_dataframe'+str(i)+'=read.delim("' + negtive_filenameWithPaths[i] + '",header=T)')
                     r('n_data'+str(i)+' <- n_dataframe'+str(i)+'[,c("chrNo","winNo","'+columnname+'")]')
-#                     os.system("rm "+negtive_filenameWithPaths[i]+" "+negtive_winfiles[i]+"part_"+str(part_i))
-    #                 'n_data'+str(i)+' <- with(n_dataframe'+str(i)+',cbind(chrNo,winNo,'+columnname+'))'
                     print('n_dataframe'+str(i)+'=read.delim("' + negtive_filenameWithPaths[i] + '",header=T)',file=scriptfile)
                     print('n_data'+str(i)+' <- n_dataframe'+str(i)+'[,c("chrNo","winNo","'+columnname+'")]',file=scriptfile)
             r('colors <- rep(c("red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red"),300)')
-            r('par(las=1, cex.axis=1.5, cex=0.8,mfrow=c('+str(len(positive_winfiles)+len(negtive_winfiles)) +',1),mar=c(2, 4, 1.5, 2))')
+            r('par(las=1, cex.axis=1.5, cex=0.8,mfrow=c('+str(len(positive_winfiles)+len(negtive_winfiles)+len(outfileNameWIN_Alist)) +',1),mar=c(2, 4, 1.5, 2),mgp=c(1,0.5,-0.8))')
             print('colors <- rep(c("red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red"),300)',file=scriptfile)
-            print('par(las=1, cex.axis=1.5, cex=0.8,mfrow=c('+str(len(positive_winfiles)+len(negtive_winfiles)) +',1),mar=c(2, 4, 1.5, 2))',file=scriptfile)
+            print('par(las=1, cex.axis=1.5, cex=0.8,mfrow=c('+str(len(positive_winfiles)+len(negtive_winfiles)+len(outfileNameWIN_Alist)) +',1),mar=c(2, 4, 1.5, 2))',file=scriptfile)
+            if outfileNameWIN_Alist!=[]:
+                for i in range(0,len(outfileNameWIN_Alist)):
+                    if outfileNameWIN_Alist[i][2].lower().strip()!="none":
+                        ylimstr=outfileNameWIN_Alist[i][1].lower().strip().replace("_",",")
+                        r('mhtplot(a_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=16,ylab="",xlab=""'+",ylim=c("+ylimstr+'))')
+                    else:
+                        r('mhtplot(a_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=16,ylab="Tajimas D",xlab="")')
+                    if outfileNameWIN_Alist[i][2].lower().strip()!="none":
+
+                        r('title(main="' + outfileNameWIN_Alist[i][2].replace("_"," ") + '",cex.main=2)')
+                    else:
+                        r("title(main='" + outfileNameWIN_Alistfilenames[i] + "',cex.main=2)")
+                    r('axis(2)')
+                    print('mhtplot(a_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=16,ylab="",ylab="Tajimas D",xlab="")',file=scriptfile)
+                    print("title(main='" + outfileNameWIN_Alistfilenames[i] + "',cex.main=2)",file=scriptfile)
+                    print('axis(2)',file=scriptfile)
             if positive_winfiles!=[]:
                 for i in range(0,len(positive_winfiles)):
-                    r('mhtplot(p_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=16,ylab="z' + "Fst" + '",xlab="")')
-                    r("title(main='" + positive_filenames[i] + "',cex.main=2)")
+                    if positive_winfiles[i][1].lower().strip()!="none":
+                        ylimstr=positive_winfiles[i][1].lower().strip().replace("_",",")
+                        r('mhtplot(p_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=16,ylab="",'  + 'xlab=""'+",ylim=c("+ylimstr+'))')
+                    else:
+                        r('mhtplot(p_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=16,ylab="z' + "Fst" + '",xlab="")')
+                    if positive_winfiles[i][2].lower().strip()!="none":
+                        if positive_winfiles[i][2].find("expression")!=-1:
+                            print('title(main=' + positive_winfiles[i][2].replace("_"," ") + ',cex.main=2)')
+                            r('title(main=' + positive_winfiles[i][2].replace("_"," ") + ',cex.main=2)')
+                        else:
+                            r("title(main='" + positive_winfiles[i][2].replace("_"," ") + "',cex.main=2)")
+                    else:
+                        r("title(main='" + positive_filenames[i] + "',cex.main=2)")
                     r('axis(2)')
-                    print('mhtplot(p_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=16,ylab="z' + "Fst" + '",xlab="")',file=scriptfile)
+                    print('mhtplot(p_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=16,' +  '",xlab="")',file=scriptfile)
                     print("title(main='" + positive_filenames[i] + "',cex.main=2)",file=scriptfile)
                     print('axis(2)',file=scriptfile)
             if negtive_winfiles!=[]:
                 for i in range(0,len(negtive_winfiles)):
-                    r('mhtplot(n_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=16,ylab="zHp",xlab="")')
-                    r("title(main='" + negtive_filenames[i] + "',cex.main=2)")
+                    if negtive_winfiles[i][1].lower().strip()!="none":
+                        ylimstr=negtive_winfiles[i][1].lower().strip().replace("_",",")
+                        r('mhtplot(n_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=16,ylab="",xlab=""'+",ylim=c("+ylimstr+'))')
+                    else:
+                        r('mhtplot(n_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=16,ylab="zHp",xlab="")')
+                    if negtive_winfiles[i][2].lower().strip()!="none":
+                        if negtive_winfiles[i][2].find("expression")!=-1:
+                            r("title(main=" + negtive_winfiles[i][2].replace("_"," ") + ",cex.main=2)")
+                        else:
+                            r("title(main='" + negtive_winfiles[i][2].replace("_"," ") + "',cex.main=2)")
+                    else:
+                        r("title(main='" + negtive_filenames[i] + "',cex.main=2)")
                     r('axis(2)')
                     print('mhtplot(n_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=16,ylab="zHp",xlab="")',file=scriptfile)
                     print("title(main='" + negtive_filenames[i] + "',cex.main=2)",file=scriptfile)
                     print('axis(2)',file=scriptfile)
             r('axis(1)')
             r('dev.off()')
+            
+            
             print(r('Cairo.capabilities()'))
             print(splitintoparts)
 #             print("rm "+negtive_filenames[i]+" "+negtive_filenameWithPaths[i]+" "+negtive_winfiles[i]+"part_"+str(part_i)+" "+positive_filenames[i]+" "+positive_filenameWithPaths[i]+" "+positive_winfiles[i]+"part_"+str(part_i))

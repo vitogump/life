@@ -13,16 +13,15 @@ Created on 2013-7-2
 primaryID = "chrID"
 parser = OptionParser()
 
-parser.add_option("-f", "--df", dest="df",nargs=2,default=None,help="")
+parser.add_option("-f", "--df", dest="df",nargs=2,default=None,help="caculate df between two population,each args record a list individual of a populations.when use this params,....")
 parser.add_option("-c", "--chromtable", dest="chromtable",default="1",help="1 pekingduck,2 D2Bduck")
 parser.add_option("-o","--outputpath",dest="outputpath",help="default infile1_infile2")
 parser.add_option("-v","--vcffile",dest="vcffile",action="append", default=[],help="default infile1_infile2")
 parser.add_option("-w","--winwidth",dest="winwidth",help="default infile1_infile2")#
 parser.add_option("-s","--slideSize",dest="slideSize",help="default infile2_infile1")#
+parser.add_option("-d","--mindepth",dest="mindepth",default=10,help="default 10")#
 parser.add_option("-m","--minlength",dest="minlength")
-parser.add_option("-q", "--quiet",
-                  action="store_false", dest="verbose", default=True,
-                  help="don't print status messages to stdout")
+parser.add_option("-q", "--MQfilter", dest="MQfilter", default=28,help="don't print status messages to stdout")
 (options, args) = parser.parse_args()
 
 
@@ -90,7 +89,7 @@ if __name__ == '__main__':
         hp_caculator.pop2_indvds=len(hp_caculator.pop2idxlist)
         print(hp_caculator.pop1idxlist,hp_caculator.pop2idxlist)
     else:
-        hp_caculator = Caculators.Caculate_Hp(SeqMethodlist=methodlist)
+        hp_caculator = Caculators.Caculate_Hp(SeqMethodlist=methodlist,minsnps=10,depth=int(options.mindepth))
     print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnp\twinvalue\tzvalue",file=outfile)
     print("select","select count(*) from "+chromtable + " where chrlength>="+minlength)
     totalChroms = dbtools.operateDB("select","select count(*) from "+chromtable + " where chrlength>="+minlength)[0][0]
@@ -105,7 +104,7 @@ if __name__ == '__main__':
             for vcf_idx in range(len(vcffileslist)):
                 tempmap={}
                 print(vcffileslist[vcf_idx])
-                tempmap[currentchrID]=poplist[vcf_idx].getVcfListByChrom(currentchrID)
+                tempmap[currentchrID]=poplist[vcf_idx].getVcfListByChrom(currentchrID,MQfilter=int(options.MQfilter))
                 vcflist_A_chrom_container.append(copy.deepcopy(tempmap))
 #                 print("vcflist_A_chrom_container",vcflist_A_chrom_container)
             MultipleVcfMap = Util.alinmultPopSnpPos(vcflist_A_chrom_container,"o")

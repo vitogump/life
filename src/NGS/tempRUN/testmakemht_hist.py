@@ -8,6 +8,7 @@ Created on 2013-8-11
 
 from optparse import OptionParser
 import os
+import re
 
 from NGS.RUtil import *
 from src.NGS.BasicUtil import geneUtil
@@ -21,7 +22,7 @@ parser.add_option("-o","--pathoutputfilename",dest="pathoutputfilename",help="de
 
 parser.add_option("-p","--positive",dest="multiple_positive_winfiles",action="append",nargs=3,default=[],help="on top,filename ond threshold and outpre")#
 parser.add_option("-n","--negtive",dest="multiple_negtive_winfiles",action="append",nargs=3,default=[],help="at bottom")#
-
+parser.add_option("-a","--allvalue",dest="multiple_allvalue_winfiles",action="append",nargs=3,default=[],help="at bottom")#
 parser.add_option("-g", "--gotablefile", dest="gotablefile", help="gotable title with :Ensembl Gene ID    Ensembl Transcript ID    GO Term Accession    GO Term Evidence Code    GO domain    GO Term Name    GO Term Definition,order and upper/lower case is arbitrarily")
 
 parser.add_option("-x", "--threshold_percentage", dest="threshold_percentage",help="t / p", metavar="FILE")
@@ -45,12 +46,14 @@ if __name__ == '__main__':
     outfileNameWINwithGENE_Plist=[];outfileNameWIN_Plist=[]
     outfileNameWINwithGENE_Nlist=[];outfileNameWIN_Nlist=[]
     uniontpidlist=[];intertpidset=set()
+    removed=[]
     if options.splitintopart==1:
-        removed=[]
+        
         if options.multiple_positive_winfiles!=[]:
-            for p_inputfileName,threshold,outbedfilename in options.multiple_positive_winfiles[:]:
+            for p_inputfileName,threshold_title,outbedfilename in options.multiple_positive_winfiles[:]:
                 outfileNameWIN_Plist.append(p_inputfileName)
-                outfileNameWINwithGENE_Plist.append((geneUtil.findTrscpt(p_inputfileName, outbedfilename, int(options.upextend), int(options.downextend), int(options.winWidth), int(options.slideSize), options.winType, "m", threshold, None, options.mergeNA, int(options.distalextend),options.trscptfound),threshold))
+                threshold_title_list=re.split(r"_",threshold_title.strip())
+                outfileNameWINwithGENE_Plist.append((geneUtil.findTrscpt(p_inputfileName, outbedfilename, int(options.upextend), int(options.downextend), int(options.winWidth), int(options.slideSize), options.winType, "m", threshold_title_list[0], None, options.mergeNA, int(options.distalextend),options.trscptfound),threshold_title,outbedfilename))
                 makeMhtGraph.makeHistonPicture(p_inputfileName, "Fst")#,"c(0,2000)","c(0,45)"
                 makeMhtGraph.makeHistonPicture(outfileNameWINwithGENE_Plist[-1][0], "Fst")
                 print("awk 'NR!=1{print $8}' "+outbedfilename+".bed.selectedgene"+"|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"+outbedfilename+".trscptIDlist")
@@ -100,9 +103,10 @@ if __name__ == '__main__':
                 os.system("""grep -wFf """+outbedfilename+""".Homologs_human /home/bioinfo/databases/humanGO.table |awk '{FS="\t";print $3}'|sort|uniq|sed '/^$/d' > """+outbedfilename+".Homologs_humanEntrezGeneID")
         intersectionlist=[]
         if options.multiple_negtive_winfiles!=[]:
-            for n_inputfileName,threshold,outbedfilename in options.multiple_negtive_winfiles[:]:
+            for n_inputfileName,threshold_title,outbedfilename in options.multiple_negtive_winfiles[:]:
+                threshold_title_list=re.split(r"_",threshold_title.strip())
                 outfileNameWIN_Nlist.append(n_inputfileName)
-                outfileNameWINwithGENE_Nlist.append((geneUtil.findTrscpt(n_inputfileName,outbedfilename, int(options.upextend), int(options.downextend), int(options.winWidth), int(options.slideSize), options.winType, "l", threshold, None, options.mergeNA, int(options.distalextend),options.trscptfound),threshold))
+                outfileNameWINwithGENE_Nlist.append((geneUtil.findTrscpt(n_inputfileName,outbedfilename, int(options.upextend), int(options.downextend), int(options.winWidth), int(options.slideSize), options.winType, "l", threshold_title_list[0], None, options.mergeNA, int(options.distalextend),options.trscptfound),threshold_title,outbedfilename))
                 makeMhtGraph.makeHistonPicture(n_inputfileName, "Hp")#,"c(0,2000)","c(0,45)"
                 makeMhtGraph.makeHistonPicture(outfileNameWINwithGENE_Nlist[-1][0], "Hp")#,"c(0,2000)","c(0,45)"
                 
@@ -121,7 +125,6 @@ if __name__ == '__main__':
                     removelist=[]    
 ############################
                     f=open(options.removegenelistfile,'r')
-                    
                     for line in f:
                         removelist.append(line.strip())
                     f.close()
@@ -178,10 +181,12 @@ if __name__ == '__main__':
         splitinto=int(options.splitintopart)
     else:
         splitinto=int(options.splitintopart)
-    outfileNameWIN_Nlist=[];outfileNameWIN_Plist=[]
-    for p_inputfileName,threshold,outbedfilename in options.multiple_positive_winfiles[:]:
-        outfileNameWIN_Plist.append(p_inputfileName)
-    for n_inputfileName,threshold,outbedfilename in options.multiple_negtive_winfiles[:]:
-        outfileNameWIN_Nlist.append(n_inputfileName)
-    makeMhtGraph.makeMhtplots_compareInOnePicture(options.pathoutputfilename, outfileNameWIN_Plist, outfileNameWIN_Nlist, 0,columnname,splitinto)
+        outfileNameWIN_Nlist=[];outfileNameWIN_Plist=[];outfileNameWIN_Alist=[]
+        for p_inputfileName,threshold,outbedfilename in options.multiple_positive_winfiles[:]:
+            outfileNameWIN_Plist.append((p_inputfileName,threshold,outbedfilename))
+        for n_inputfileName,threshold,outbedfilename in options.multiple_negtive_winfiles[:]:
+            outfileNameWIN_Nlist.append((n_inputfileName,threshold,outbedfilename))
+        for a_inputfileName,threshold,outbedfilename in options.multiple_allvalue_winfiles[:]:
+            outfileNameWIN_Alist.append((a_inputfileName,threshold,outbedfilename))
+        makeMhtGraph.makeMhtplots_compareInOnePicture(options.pathoutputfilename, outfileNameWIN_Plist, outfileNameWIN_Nlist,outfileNameWIN_Alist, 0,columnname,splitinto)
     print(removed)
