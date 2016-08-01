@@ -44,7 +44,7 @@ def GOenrichment(gotablefile,outpre,genelist=None,trscptlist=None,UniProtlist=No
 
     gotable={}
     """
-    gotable={tp_id1:(geneID,geneName,bp,cc,mf),tp_id2:(geneID,geneName,bp,cc,mf),,,,,,}
+    gotable={tp_id1:(geneID,geneName,bp,cc,mf,description),tp_id2:(geneID,geneName,bp,cc,mf,description),,,,,,}
     """
     oneGO2manyID={}
     """
@@ -86,20 +86,23 @@ def GOenrichment(gotablefile,outpre,genelist=None,trscptlist=None,UniProtlist=No
             elif termlist[godomainidx].lower().strip()=="molecular_function":
                 mf+=termlist[gotermaccessionidx]+";"+termlist[gotermNameidx]+";"
             if geneName.split():
-                gotable[termlist[IDidx].strip()]=(geneID,geneName,bp,cc,mf)
+                gotable[termlist[IDidx].strip()]=(geneID,geneName,bp,cc,mf,termlist[14])
             else:
-                gotable[termlist[IDidx].strip()]=(geneID,"unknow",bp,cc,mf)            
+                gotable[termlist[IDidx].strip()]=(geneID,"unknow",bp,cc,mf,termlist[14])     
+    else:
+        print()       
     GOAnnationForGene_out_fileName=outpre.strip()+".GO_annotion"
     GOenrichment_fileName=outpre.strip()+".GO_enrichment"
     annf=open(GOAnnationForGene_out_fileName,'w')
+    print("ensembl trscptID","ensembl geneID","gene symbol","go number","description",file=annf)
     enrichfile=open(GOenrichment_fileName,'w')
     all_IDlist=list(gotable.keys());m_n=len(genelist);del genelist
     for id in sampledIDlist:
         id=id.strip()
         if id not in gotable:
-            print(id,"don't have go annotion")
+            print(id,"don't have go annotion",file=annf)
             continue
-        print(id,gotable[id][0].strip(),gotable[id][1].strip(),gotable[id][2].strip(),gotable[id][3].strip(),gotable[id][4].strip(),sep="\t",file=annf)
+        print(id,gotable[id][0].strip(),gotable[id][1].strip(),gotable[id][2].strip(),gotable[id][3].strip(),gotable[id][4].strip(),gotable[id][5].strip(),sep="\t",file=annf)
     outlist=[]
     """
     outlist=[(go_Accession1,go_term_name,go_domain,p-value,FDR,sampled_inTerm,termsize),(),,,,]
@@ -204,6 +207,7 @@ def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,win
     outfile=open(outbedfilename+".bed.selectedgene",'w')
     print("chrNo\tRegion_start\tRegion_end\tNoofWin\textram"+winType+"\tminNoSNP\tmaxNoSNP\ttranscpt\toverlapcode\tgeneID",file=outfile)
     outfileNameWINwithGENE=path+re.search(r"[^/]*$",winFileName7Field).group(0)+".wincopywithgene"
+    print(Util.ip, Util.username, Util.password, Util.genomeinfodbname)
     genomedbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname) 
     winGenome = Util.WinInGenome(Util.ghostdbname, winFileName7Field,Nocol)
     time.sleep(SLEEP_FOR_NEXT_TRY)
@@ -371,31 +375,48 @@ def make_getElemBed(elementfold,targetseqnamesubstr,pathtoblastn,reffa):
                 allseqtobed[bedlinelist[0].strip()]=[(int(bedlinelist[1]),int(bedlinelist[2]),bedlinelist[3],int(bedlinelist[4]),int(bedlinelist[5]),bedlinelist[6],int(bedlinelist[7]),int(bedlinelist[8]))]
         bedfile.close()
         return allseqtobed
-    
-    randomstr="UrZTOpSJ"#Util.random_str()
+    randomstr=Util.random_str()
     targetseqnamesubstr_lenmap={}
-    queryfafile=open(elementfold+"/"+randomstr+"_"+targetseqnamesubstr+".fa",'w')
+    if targetseqnamesubstr=="none":
+        shellstatment=pathtoblastn+" -query "+elementfold+"/"+randomstr+"_"+targetseqnamesubstr+".fa"+" -task blastn -db "+reffa+" -out "+elementfold+"/"+randomstr+"_"+targetseqnamesubstr+".blastout -outfmt 7 -num_alignments 10 -num_threads 6"
+    queryfafile=open(elementfold+"/"+randomstr+"_"+targetseqnamesubstr+".collectionfas",'w')
+    i=0
     for elem in os.listdir(path=elementfold):
         path = elementfold + "/" + elem
+        
         if (not os.path.isdir(path)) and (path.endswith("fa") or path.endswith("fasta")):#True is fa file
-            muscleout_seqgenerator=SeqIO.parse(path,"fasta")
-            for seq_rec in muscleout_seqgenerator:
-                if seq_rec.id==targetseqnamesubstr:
-                    seqstr="".join(seq_rec.seq).replace("-", "")
-                    print(">"+elem,file=queryfafile)
-#                     allseqtobed[elem]=[]
-                    targetseqnamesubstr_lenmap[elem]=len(seqstr)
-                    print(seqstr,file=queryfafile)
-                    break
+            print(path,i)
+            i+=1
+            
+            if targetseqnamesubstr.lower().strip()=="none":
+                pathfile=open(path,"r")
+                for line in pathfile:
+                    print(line.strip(),file=queryfafile)
+                    if line.startswith(">"):
+                        seqname=line.strip()
+                    else:
+                        targetseqnamesubstr_lenmap[seqname[1:]]=len(line.strip())
+#                 print(targetseqnamesubstr_lenmap)
+                pathfile.close()
             else:
-                print(targetseqnamesubstr,"dosenot exist",elem)
+                muscleout_seqgenerator=SeqIO.parse(path,"fasta")
+                for seq_rec in muscleout_seqgenerator:
+                    if seq_rec.id==targetseqnamesubstr:
+                        seqstr="".join(seq_rec.seq).replace("-", "")
+                        print(">"+elem,file=queryfafile)
+    #                     allseqtobed[elem]=[]
+                        targetseqnamesubstr_lenmap[elem]=len(seqstr)
+                        print(seqstr,file=queryfafile)
+                        break
+                else:
+                    print(targetseqnamesubstr,"dosenot exist",elem)
     queryfafile.close()
-    shellstatment=pathtoblastn+" -query "+elementfold+"/"+randomstr+"_"+targetseqnamesubstr+".fa"+" -task blastn -db "+reffa+" -out "+elementfold+"/"+randomstr+"_"+targetseqnamesubstr+".blastout -outfmt 7 -num_alignments 10 -num_threads 6"
+    shellstatment=pathtoblastn+" -query "+elementfold+"/"+randomstr+"_"+targetseqnamesubstr+".collectionfas"+" -task blastn -db "+reffa+" -out "+elementfold+"/"+randomstr+"_"+targetseqnamesubstr+".blastout -outfmt 7 -num_alignments 10 -num_threads 6"
     print(shellstatment)
-#     a=os.system(shellstatment)
-#     if a!=0:
-#         print("error")
-#         exit(-1)
+    a=os.system(shellstatment)
+    if a!=0:
+        print("error")
+        exit(-1)
     blastout=open(elementfold+"/"+randomstr+"_"+targetseqnamesubstr+".blastout","r")
     for line in blastout:
         if re.search(r"^#",line)!=None:

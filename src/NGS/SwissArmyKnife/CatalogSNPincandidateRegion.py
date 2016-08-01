@@ -471,10 +471,10 @@ if __name__ == '__main__':
                         overlap_end=min(regionend,sendpos)
 #                             sqlselectstatementpart_count_left+" where chrID='"+chrom+"' and snp_pos>"+str(overlap_start) + " and snp_pos< "+str(overlap_end)
 #                             sqlselectstatementpart_count_right+" where chrID='"+chrom+"' and snp_pos>"+str(overlap_start) + " and snp_pos< "+str(overlap_end)
-                        muscleout_seqgenerator=SeqIO.parse(elementfold+"/"+fafilename,"fasta")
-                        muscleout_seqmap={}
-                        for seq_rec in muscleout_seqgenerator:
-                            muscleout_seqmap[seq_rec.id]=seq_rec.seq
+#                         muscleout_seqgenerator=SeqIO.parse(elementfold+"/"+fafilename,"fasta")
+#                         muscleout_seqmap={}
+#                         for seq_rec in muscleout_seqgenerator:
+#                             muscleout_seqmap[seq_rec.id]=seq_rec.seq
                         print(sqlselectstatementpart_count_left+" where chrID='"+chrom+"' and snp_pos>"+str(overlap_start) + " and snp_pos< "+str(overlap_end))#+" union "+sqlselectstatementpart_count_right+" where chrID='"+chrom+"' and snp_pos>"+str(overlap_start) + " and snp_pos< "+str(overlap_end))                      
                         allsnps=dbvariantstools.operateDB("select",sqlselectstatementpart_count_left+" where chrID='"+chrom+"' and snp_pos>"+str(overlap_start) + " and snp_pos< "+str(overlap_end))
                         snplist_posdeltaAFrefalt=[]

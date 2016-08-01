@@ -244,10 +244,12 @@ class Caculate_Hp(Caculator):
                 # print("the Heterozigosity value of currentwindow is dividsion by zero,so set it to be NA")
                 HETEROZY[MethodToSeq_idx] = 'NA'
         het_count = 0;het_sum = 0;pop_idx=0
-        for pop_idx in range(len(HETEROZY)) :
+        for pop_idx in range(len(HETEROZY)-1,-1,-1) :
             if HETEROZY[pop_idx] != 'NA' and self.COUNTED[pop_idx]>=self.minsnps:
                 het_count += 1
                 het_sum += HETEROZY[pop_idx]
+            else:
+                self.COUNTED.pop(pop_idx)
 #                 print(HETEROZY[pop_idx],end="\t")
 #         print()
         noofsnpcount = min(self.COUNTED)

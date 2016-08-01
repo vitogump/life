@@ -16,8 +16,9 @@ currentpath=os.path.realpath(__file__)
 currentpath[:currentpath.find("life/src")]+"life/com/config.properties"
 cfparser = configparser.ConfigParser()
 cfparser.read(currentpath[:currentpath.find("life/src")]+"life/com/config.properties")
-print(currentpath)#currentpath[:currentpath.find("life/src")]+"life/com/config.properties")
+
 ip=cfparser.get("mysqldatabase","ip")
+print(currentpath,ip)#currentpath[:currentpath.find("life/src")]+"life/com/config.properties")
 username=cfparser.get("mysqldatabase","username")
 password=cfparser.get("mysqldatabase","password")
 webdbname=cfparser.get("mysqldatabase","webdbname")
@@ -1642,7 +1643,7 @@ class WinInGenome():
     def loadWinDataIntoDB(self, dbname, winFileName7Field,Nocol="7", tableNamewithoutNA=None):
         chromOrder = []
         
-        tempdbtools = dbm.DBTools("10.2.48.140", "root", "1234567", dbname)
+        tempdbtools = dbm.DBTools(ip, "root", "1234567", dbname)
         if tableNamewithoutNA == None:
             tableNamewithoutNA = random_str()
             

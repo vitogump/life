@@ -3,7 +3,7 @@ Created on 2014-11-30
 
 @author: liurui
 '''
-import copy,time
+import copy,time,pysam
 import os, numpy, sys, re
 
 from NGS.BasicUtil import *
@@ -12,6 +12,128 @@ import NGS.BasicUtil.DBManager as dbm
 
 
 mindepthforJudgefixref=10
+class dynamicInsertUpdateAncestralContext():
+    def __init__(self,outgroupBAMconfigs=[],toplevelsnptablename="mspsgjlksy10pop_toplevel_pekingduckref",changetableauthority=False,insertauthority=True):
+        self.vcfnameKEY_vcfobjVALUE={}#{vcfname:vcfobj,,,,}
+        self.vcfnameKEY_pyBAMfilesVALUE={}#{vcfname:[pysam.samfile1,pysam.samfile2,,,,],,,,}
+        self.toplevelsnptablename=toplevelsnptablename
+        self.dbvariantstools=dbm.DBTools(Util.ip, Util.username,Util.password, Util.vcfdbname)
+        self.toplevelsnptable_titlelist=[a[0].strip() for a in self.dbvariantstools.operateDB("select", "select column_name  from information_schema.columns where table_schema='" + Util.vcfdbname + "' and table_name='" + toplevelsnptablename + "'")]
+        for configfile in outgroupBAMconfigs:
+            fp=open(configfile,'r')
+            for line in fp:
+                vcffilename_obj=re.search(r"vcffilename=(.*)",line.strip())
+                if vcffilename_obj!=None:
+                    vcfname=vcffilename_obj.group(1).strip()
+                    archicpop_colname=re.search(r'[^/]*$',vcfname).group(0)
+                    archicpop_colname=re.sub(r"[^\w^\d]","_",archicpop_colname)
+                    for outgroupname_ALT in self.toplevelsnptable_titlelist[6::2]:
+                        if archicpop_colname+"_alt"==outgroupname_ALT:
+                            break
+                    else:
+                        print(archicpop_colname+"_alt does not exist in topleveltable" )
+                        if changetableauthority:
+                            self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(Util.vcfdbname, toplevelsnptablename, archicpop_colname+"_alt", "char(128)", "default null"))
+                            self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(Util.vcfdbname, toplevelsnptablename, archicpop_colname+"_dep", "char(128)", "default null"))
+
+                    self.vcfnameKEY_pyBAMfilesVALUE[vcfname]=[]
+                    self.vcfnameKEY_vcfobjVALUE[vcfname]=VCFutil.VCF_Data(vcffilename_obj.group(1).strip())
+                elif line.split():
+                    self.vcfnameKEY_pyBAMfilesVALUE[vcfname].append(pysam.Samfile(line.split(),'rb'))
+                    
+            fp.close()
+    def insertorUpdatetopleveltable(self,PopSnpAligned):
+        """
+            first element of a snp is the snp position
+        """
+        for chrom in PopSnpAligned.keys():
+            SNPrec_of_one_chrom_invcf=[]
+            for snp in PopSnpAligned[chrom]:
+                snp_pos=snp[0]
+                snp_recINtopleveltable=self.dbvariantstools.operateDB("select","select * from "+self.toplevelsnptablename+" where chrID='"+chrom+"' and snp_pos="+str(snp_pos))
+                if not snp_recINtopleveltable or snp_recINtopleveltable==0:
+                    insertsql_statement="insert into "+self.toplevelsnptablename + " (chrID,snp_pos,snpID,ref_base,alt_base,context"
+                    insertsql_date=[]
+                    updatesql_statement=None
+                else:
+                    insertsql_statement=None
+                    updatesql_date=[]
+                    updatevcflist=[]
+                    for outgroupname_ALT in snp_recINtopleveltable[6::2]:
+                        if None==outgroupname_ALT:
+                            updatevcflist.append(outgroupname_ALT[:-4])#know which field need to be filled
+                            updatesql_statement="update "+ self.toplevelsnptablename+" set "
+                
+                for vcfname in self.vcfnameKEY_vcfobjVALUE.keys():
+                    archicpop_colname=re.search(r'[^/]*$',vcfname).group(0)
+                    archicpop_colname=re.sub(r"[^\w^\d]","_",archicpop_colname)
+                    if archicpop_colname in updatevcflist and insertsql_statement==None:
+                        updatesql_statement+=(archicpop_colname+"_alt =%s,"+archicpop_colname+"_dep =%s,")
+                    elif updatesql_statement!=None and insertsql_statement==None:
+                        continue# this vcf is filled
+                    elif updatesql_statement==None and insertsql_statement!=None:
+                        insertsql_statement+=(archicpop_colname+"_alt,"+archicpop_colname+"_dep,")
+                    SNPrec_of_one_chrom_invcf=self.vcfnameKEY_vcfobjVALUE[vcfname].getVcfListByChrom(chrom,MQfilter=None)
+                    """state: updatesql_statement= update toplevelsnptablename set processed_vcfname1_alt=%s,processed_vcfname1_dep=%s,
+                            insertsql_statement=insert into toplevelsnptablename (chrID,snp_pos,snpID,ref_base,alt_base,context,processed_vcfname_m_alt,processed_vcfname_m_dep,
+                    """
+                    low=0;ALT=snp[2];high=len(SNPrec_of_one_chrom_invcf)-1
+                    while low<=high:
+                        mid=(low+high)>>1
+                        if SNPrec_of_one_chrom_invcf[mid][0]<snp_pos:
+                            low=mid+1
+                        elif SNPrec_of_one_chrom_invcf[mid][0]>snp_pos:
+                            high=mid+1
+                        else:#find the pos
+                            pos, REF, archicpop_ALT, INFO,FORMAT,samples = SNPrec_of_one_chrom_invcf[mid]
+                            dp4=re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", INFO)
+                            refdep=0;altalleledep=0
+                            if dp4!=None:#vcf from samtools 
+                                refdep = int(dp4.group(1)) + int(dp4.group(2))
+                                altalleledep = int(dp4.group(3)) + int(dp4.group(4))
+                            else:
+                                AD_idx=(re.split(":",FORMAT)).index("AD")#gatk GT:AD:DP:GQ:PL 
+                                for sample in samples:
+                                    if len(re.split(r":",sample))==1:# ./.
+                                        continue
+                                    AD_depth=re.split(r",",re.split(":",sample)[AD_idx])
+                                    try:
+                                        refdep+=int(AD_depth[0])
+                                        altalleledep+=int(AD_depth[1])
+                                    except ValueError:
+                                        print("Ancestralallele.fillAncestral except ValueError",sample,end="")
+                            popsdata_alt=archicpop_ALT
+                            popsdata_dep=str(refdep)+","+str(altalleledep)
+                            break
+                    else:
+                        sum_depth=0
+                        popsdata_alt=ALT
+                        for samfile in self.vcfnameKEY_pyBAMfilesVALUE[vcfname]:
+                            ACGTdep=samfile.count_coverage(chrom,snp_pos-1,snp_pos)
+                            for dep in ACGTdep:
+                                sum_depth+=dep[0]
+                        if sum_depth<4:
+                            popsdata_dep="no covered"
+                        else:
+                            popsdata_dep=str(sum_depth) + ",0"
+                    #continnue sql_statement
+                    """state: updatesql_date=[],insertsql_date=[]
+                    updatesql_statement= update toplevelsnptablename set processed_vcfname1_alt=%s,processed_vcfname1_dep=%s,
+                    insertsql_statement=insert into toplevelsnptablename (chrID,snp_pos,snpID,ref_base,alt_base,context,processed_vcfname_m_alt,processed_vcfname_m_dep,
+                    """
+                    if updatesql_statement!=None and insertsql_statement==None:
+                        updatesql_date+=[popsdata_alt,popsdata_dep]
+                    elif  updatesql_statement==None and insertsql_statement!=None:
+                        insertsql_date+=[popsdata_alt,popsdata_dep]
+                    else:
+                        print("error: updatesql_statement!=None or insertsql_statement!=None")
+                #for one snp
+                if updatesql_statement!=None:
+                    self.dbvariantstools.operateDB("",)
+                elif insertsql_statement!=None:
+                    insertsql_statement=insertsql_statement[:-1]+")VALUES ("+"%s,"*(len(insertsql_statement)/2)
+                    insertsql_statement=insertsql_statement[:-1]+")"
+                    self.dbvariantstools.operateDB("",insertsql_statement,data=tuple(insertsql_date))
 class AncestralAlleletabletools():
     def __init__(self, database="ninglabvariantdata", ip="10.2.48.140", usrname="root", pw="1234567",dbgenome="genomebasicinfo"):
         super().__init__()
@@ -70,27 +192,41 @@ class AncestralAlleletabletools():
             vcfChromIndex["title"] = re.split(r'\s+', line.strip())
         else:
             print("need title'#CHROM    POS    ID    REF    ALT    QUAL    FILTER    INFO    FORMAT'")
-            exit(-1) 
+            exit(-1)
+        firstSNPrec=re.split(r"\s+",vcffile.readline().strip())
+        fields_OF_INFO=re.split(r";",firstSNPrec[7])
+ 
+        
         vcffile.close()
-        colslist=vcfChromIndex["title"][9:]
+#         colslist=vcfChromIndex["title"][9:]
         if re.search(r"indvd[^/]+",vcffilename)!=None:
             print("indvd")
-            colslist=["AC","AF","AN"]
+            colslist=["DP","AF","AN"]
+            colidxmap={}
+            for e in fields_OF_INFO:
+                for col in colslist:
+                    if (col+"=" in e) and re.search(r"^"+col+"=",e)!=None :
+                        colidxmap[col]=fields_OF_INFO.index(e)
             for col in colslist:
                 print("col name",col,"adding to mysql databases")
                 self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, tablename, col, "char(128)", "default null"))
-            a=os.system(""" awk '$0!~/#/&&length($5)==1{OFS="\t";print $1,$2,$3,$4,$5,$8}' """+vcffilename+""" |awk '{OFS="\t";split($6,myarr,";");print $1,$2,$3,$4,$5,myarr[1],myarr[2],myarr[3]}' |sed 's/AC=//g'|sed 's/AF=//g'|sed 's/AN=//g'|awk '{OFS="\t";if($7==1){$7=1};print $0}' > """+vcffilename+"tempstep1")
+            a=os.system(""" awk '$0!~/#/&&length($5)==1{OFS="\t";print $1,$2,$3,$4,$5,$8}' """+vcffilename+""" |awk '{OFS="\t";split($6,myarr,";");print $1,$2,$3,$4,$5,myarr["""+str(colidxmap[colslist[0]])+"""],myarr["""+str(colidxmap[colslist[1]])+"""],myarr["""+str(colidxmap[colslist[2]])+"""]}' |sed 's/DP=//g'|sed 's/AF=//g'|sed 's/AN=//g'|awk '{OFS="\t";if($7==1){$7=1};print $0}' > """+vcffilename+"tempstep1")
             if a!=0:
-                print("error",""" awk '$0!~/#/&&length($5)==1 {OFS="\t";print $1,$2,$3,$4,$5,$8}' """+vcffilename+""" |awk '{OFS="\t";split($6,myarr,";");print $1,$2,$3,$4,$5,myarr[1],myarr[2],myarr[3]}' |sed 's/AC=//g'|sed 's/AF=//g'|sed 's/AN=//g'|awk '{OFS="\t";if($7==1){$7=1};print $0}' > """+vcffilename+"tempstep1")
+                print("error",""" awk '$0!~/#/&&length($5)==1{OFS="\t";print $1,$2,$3,$4,$5,$8}' """+vcffilename+""" |awk '{OFS="\t";split($6,myarr,";");print $1,$2,$3,$4,$5,myarr["""+str(colidxmap[colslist[0]])+"""],myarr["""+str(colidxmap[colslist[1]])+"""],myarr["""+str(colidxmap[colslist[2]])+"""]}' |sed 's/DP=//g'|sed 's/AF=//g'|sed 's/AN=//g'|awk '{OFS="\t";if($7==1){$7=1};print $0}' > """+vcffilename+"tempstep1")
         
         elif re.search(r"pool[^/]+",vcffilename)!=None:
             print("pool if NF>10 need recode the programm")
 #             colslist=vcfChromIndex["title"][9:]
-            colslist=["AF","DP"]
+            colslist=["DP","AF"]
+            colidxmap={}
+            for e in fields_OF_INFO:
+                for col in colslist:
+                    if (col+"=" in e) and re.search(r"^"+col+"=",e)!=None :
+                        colidxmap[col]=fields_OF_INFO.index(e)
             for col in colslist:
                 print("col name",col,"adding to mysql databases")
                 self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, tablename, col, "char(128)", "default null"))
-            a=os.system("""awk '$0!~/#/&&length($5)==1{OFS="\t";print $1,$2,$3,$4,$5,$10}' """+vcffilename+""" |awk '{OFS="\t";split($6,myarr,":");split(myarr[2],mydep,",");print $1,$2,$3,$4,$5,mydep[2]/(mydep[1]+mydep[2]),(myarr[3])}'>"""+vcffilename+"tempstep1")
+            a=os.system("""awk '$0!~/#/&&length($5)==1{OFS="\t";print $1,$2,$3,$4,$5,$10}' """+vcffilename+""" |awk '{OFS="\t";split($6,myarr,":");split(myarr[2],mydep,",");print $1,$2,$3,$4,$5,(myarr["""+str(colidxmap[1])+"""]),mydep[2]/(mydep[1]+mydep[2])}'>"""+vcffilename+"tempstep1")
             if a!=0:
                 print("""awk '$0!~/#/&&length($5)==1{OFS="\t";print $1,$2,$3,$4,$5,$10}' """+vcffilename+""" |awk '{OFS="\t";split($6,myarr,":");split(myarr[2],mydep,",");print $1,$2,$3,$4,$5,mydep[2]/(mydep[1]+mydep[2]),(myarr[3])}'>"""+vcffilename+"tempstep1")    
         else:
@@ -274,8 +410,7 @@ class AncestralAlleletabletools():
         for i in range(0,len(depthfile.title)):
             if re.search(r""+archicpopNameindepthFile,depthfile.title[i])!=None:
                 species_idx_list.append(i)        
-        
-        
+
 #         totalChroms = self.dbgenome.operateDB("select","select count(*) from "+chromtable)[0][0]
 #         for i in range(0,totalChroms,20):
 #             currentsql="select * from " + chromtable+" order by chrlength desc limit "+str(i)+",20"

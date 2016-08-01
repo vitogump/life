@@ -27,7 +27,7 @@ parser.add_option("-c","--chromlistfilename",dest="chromlistfilename",action="ap
 parser.add_option("-n","--numberofindvdoftargetpop_todividintobin",dest="numberofindvdoftargetpop_todividintobin",default="o",help="conflit with correlationfile")
 parser.add_option("-o","--outfileprewithpath",dest="outfileprewithpath")
 parser.add_option("-C","--correlationfile",dest="correlationfile",default=None,help="conflit with numberofindvdoftargetpop_todividintobin")
-parser.add_option("-m","--numberofthreads",dest="numberofthreads")
+# parser.add_option("-m","--numberofthreads",dest="numberofthreads")
 parser.add_option("-1","--pathtoslave_config",dest="pathtoslave_config",default=None)
 parser.add_option("-2","--pathtoslave_slidewin",dest="pathtoslave_slidewin",default=None)
 parser.add_option("-q", "--quiet",
@@ -77,11 +77,11 @@ if __name__ == '__main__':
  
      
     if options.correlationfile==None:
-        if int(options.numberofthreads)!=len(options.chromlistfilename):
-            print("int(options.numberofthreads)!=len(options.chromlistfilename)")
-            exit(-1)
+#         if int(options.numberofthreads)!=:
+#             print("int(options.numberofthreads)!=len(options.chromlistfilename)")
+#             exit(-1)
         freq_xaxisKEY_yaxisVALUERelation_maplist=[]
-        pool=Pool(int(options.numberofthreads))
+        pool=Pool(int(len(options.chromlistfilename)))
         parameterstuples_list=[]
         for chromlistfile in options.chromlistfilename:
             parameterstuples_list.append((chromlistfile,options.topleveltablejudgeancestral,options.targetpopvcffile_withdepth,options.refpopvcffile_withdepth,options.numberofindvdoftargetpop_todividintobin,options.outfileprewithpath))
@@ -135,7 +135,7 @@ if __name__ == '__main__':
     #slide window to caculate S
     print("all final_freq_xaxisKEY_yaxisVALUERelation done ,slide window now")
     masterpid=os.getpid()
-    pool=Pool(int(options.numberofthreads))
+    pool=Pool(int(len(options.chromlistfilename)))
     parameterstuples_list=[]
     for chromlistfile in options.chromlistfilename:
         parameterstuples_list.append((chromlistfile,options.topleveltablejudgeancestral,options.targetpopvcffile_withdepth,options.refpopvcffile_withdepth,options.winwidth,options.slideSize,freq_correlation_configFileName,options.outfileprewithpath,masterpid))

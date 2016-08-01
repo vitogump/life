@@ -267,8 +267,7 @@ class VCF_Data():
             FORMAT = linelist[8]
             if linelist[6].strip()=="LowQual":
                 continue
-            aaaa=re.search(r"MQ=([\d\.]+);",INFO)
-            if aaaa!=None:
+            if MQfilter!=None and re.search(r"MQ=([\d\.]+);",INFO)!=None:
                 MQvalue=float(re.search(r"MQ=([\d\.]+);",INFO).group(1))
                 if MQvalue<MQfilter:
                     continue

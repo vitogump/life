@@ -56,12 +56,14 @@ class DBTools():
                 result=cursor.fetchall()
                 return result
             elif sqltype=='update' or sqltype=='insert' or sqltype=='copytableschema':
+                i=0
                 for sql in sqls:
                     if data==None:
                         cursor.execute(sql)
                     else:
-                        cursor.execute(sql,data)
+                        cursor.execute(sql,data[i])
                     self.conn.commit()
+                    i+=1
             elif sqltype=="callproc":
                 cursor.callproc(sqls[0],data)
             elif sqltype=="delete":
