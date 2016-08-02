@@ -3,8 +3,9 @@ Created on 2014-11-30
 
 @author: liurui
 '''
-import copy,time,pysam
+import copy, time, pysam
 import os, numpy, sys, re
+import pickle
 
 from NGS.BasicUtil import *
 from NGS.BasicUtil import Util
@@ -12,8 +13,14 @@ import NGS.BasicUtil.DBManager as dbm
 
 
 mindepthforJudgefixref=10
-class dynamicInsertUpdateAncestralContext():
-    def __init__(self,outgroupBAMconfigs=[],toplevelsnptablename="mspsgjlksy10pop_toplevel_pekingduckref",changetableauthority=False,insertauthority=True):
+class dynamicInsertUpdateAncestralContext():#here use the fast edition
+    def __init__(self,refseqfa,outgroupBAMconfigs=[],toplevelsnptablename="mspsgjlksy10pop_toplevel_pekingduckref",changetableauthority=False,insertauthority=True):
+        self.refseqfahandler=open(refseqfa,'r')
+        try:
+            self.refseqfafasteridx=pickle.load(open(refseqfa+".myfasteridx",'rb'))
+        except IOError:
+            Util.generateFasterRefIndex(refseqfa, refseqfa+".myfasteridx")
+            self.refseqfafasteridx=pickle.load(open(refseqfa+".myfasteridx",'rb'))
         self.vcfnameKEY_vcfobjVALUE={}#{vcfname:vcfobj,,,,}
         self.vcfnameKEY_pyBAMfilesVALUE={}#{vcfname:[pysam.samfile1,pysam.samfile2,,,,],,,,}
         self.toplevelsnptablename=toplevelsnptablename
@@ -42,18 +49,24 @@ class dynamicInsertUpdateAncestralContext():
                     self.vcfnameKEY_pyBAMfilesVALUE[vcfname].append(pysam.Samfile(line.split(),'rb'))
                     
             fp.close()
-    def insertorUpdatetopleveltable(self,PopSnpAligned):
+    def insertorUpdatetopleveltable(self,PopSnpAligned,SNP_flanklen):
         """
             first element of a snp is the snp position
+            PopSnpAligned are required to be ordered
         """
         for chrom in PopSnpAligned.keys():
+            #pre process for context
+            RefSeqMap=Util.getRefSeqBypos_faster(self.refseqfahandler, self.refseqfafasteridx, chrom, PopSnpAligned[chrom][0][0]-SNP_flanklen, PopSnpAligned[chrom][-1][0]+1, PopSnpAligned[chrom][-1][0]+1)
+            #pre process for context end
             SNPrec_of_one_chrom_invcf=[]
+            insertsql_statement_list=[];updatesql_statement_list=[]
+            insertsql_data_list=[];updatesql_date_list=[]
             for snp in PopSnpAligned[chrom]:
                 snp_pos=snp[0]
                 snp_recINtopleveltable=self.dbvariantstools.operateDB("select","select * from "+self.toplevelsnptablename+" where chrID='"+chrom+"' and snp_pos="+str(snp_pos))
                 if not snp_recINtopleveltable or snp_recINtopleveltable==0:
                     insertsql_statement="insert into "+self.toplevelsnptablename + " (chrID,snp_pos,snpID,ref_base,alt_base,context"
-                    insertsql_date=[]
+                    insertsql_date=[chrom,snp_pos,".",snp[1],snp[2]]
                     updatesql_statement=None
                 else:
                     insertsql_statement=None
@@ -63,7 +76,6 @@ class dynamicInsertUpdateAncestralContext():
                         if None==outgroupname_ALT:
                             updatevcflist.append(outgroupname_ALT[:-4])#know which field need to be filled
                             updatesql_statement="update "+ self.toplevelsnptablename+" set "
-                
                 for vcfname in self.vcfnameKEY_vcfobjVALUE.keys():
                     archicpop_colname=re.search(r'[^/]*$',vcfname).group(0)
                     archicpop_colname=re.sub(r"[^\w^\d]","_",archicpop_colname)
@@ -117,7 +129,7 @@ class dynamicInsertUpdateAncestralContext():
                         else:
                             popsdata_dep=str(sum_depth) + ",0"
                     #continnue sql_statement
-                    """state: updatesql_date=[],insertsql_date=[]
+                    """state: updatesql_date=[],insertsql_date=[chrom,snp_pos,".",snp[1],snp[2]]
                     updatesql_statement= update toplevelsnptablename set processed_vcfname1_alt=%s,processed_vcfname1_dep=%s,
                     insertsql_statement=insert into toplevelsnptablename (chrID,snp_pos,snpID,ref_base,alt_base,context,processed_vcfname_m_alt,processed_vcfname_m_dep,
                     """
@@ -128,12 +140,53 @@ class dynamicInsertUpdateAncestralContext():
                     else:
                         print("error: updatesql_statement!=None or insertsql_statement!=None")
                 #for one snp
+                #process context 
+                
+                if (insertsql_statement!=None and  snp_recINtopleveltable[5]==None) or insertsql_statement!=None:
+                    snpID=chrom+"_"+str(snp[0])
+                    if snp_pos + SNP_flanklen<=RefSeqMap[chrom][0]+len(RefSeqMap[chrom])-1 and snp_pos- SNP_flanklen>RefSeqMap[chrom][0]:
+                        snpflankseq="".join(RefSeqMap[chrom][(snp_pos-SNP_flanklen-RefSeqMap[chrom][0]):(snp_pos+SNP_flanklen-RefSeqMap[chrom][0]+1)])
+                        if insertsql_statement!=None:
+                            insertsql_date.insert(5, snpflankseq[SNP_flanklen-1:SNP_flanklen+2])                        
+                        elif snp_recINtopleveltable[5]==None:
+                            updatesql_statement+="context=%s"
+                            updatesql_date.append(snpflankseq[SNP_flanklen-1:SNP_flanklen+2])
+
+                    elif snp_pos <=RefSeqMap[chrom][0]+len(RefSeqMap[chrom])-1 and snp_pos+SNP_flanklen>RefSeqMap[chrom][0]+len(RefSeqMap[chrom])-1:
+                        snpflankseq="".join(RefSeqMap[chrom][(snp_pos-SNP_flanklen-RefSeqMap[chrom][0]):(snp_pos-RefSeqMap[chrom][0]+1)])
+                        if insertsql_statement!=None:
+                            insertsql_date.insert(5,snpflankseq[SNP_flanklen-1:SNP_flanklen+1]+"N")                        
+                        elif snp_recINtopleveltable[5]==None:
+                            updatesql_statement+="context=%s"
+                            updatesql_date.append(snpflankseq[SNP_flanklen-1:SNP_flanklen+1]+"N")
+
+                    elif snp_pos-SNP_flanklen<=RefSeqMap[chrom][0]:
+                        snpflankseq="".join(RefSeqMap[chrom][(snp_pos - RefSeqMap[chrom][0]):(snp_pos + SNP_flanklen - RefSeqMap[chrom][0] + 1)])
+                        if insertsql_statement!=None:
+                            insertsql_date.insert(5,"N"+snpflankseq[1:SNP_flanklen+1])                        
+                        elif snp_recINtopleveltable[5]==None:
+                            updatesql_statement+="context=%s"
+                            updatesql_date.append("N"+snpflankseq[1:SNP_flanklen+1])
+
+                    else:
+                        print("Error! what's wrong with the func insertorUpdatetopleveltable?")
+                        exit(-1)
+                #context process end ,append into multiple statements    
                 if updatesql_statement!=None:
-                    self.dbvariantstools.operateDB("",)
+                    if snp_recINtopleveltable[5]!=None:
+                        updatesql_statement=updatesql_statement[:-1]
+                    updatesql_statement_list.append(updatesql_statement)
+                    updatesql_date_list.append(tuple(updatesql_date))   
                 elif insertsql_statement!=None:
-                    insertsql_statement=insertsql_statement[:-1]+")VALUES ("+"%s,"*(len(insertsql_statement)/2)
+                    insertsql_statement=insertsql_statement[:-1]+")VALUES ("+"%s,"*(len(insertsql_date))
                     insertsql_statement=insertsql_statement[:-1]+")"
-                    self.dbvariantstools.operateDB("",insertsql_statement,data=tuple(insertsql_date))
+                    insertsql_statement_list.append(insertsql_statement)
+                    insertsql_data_list.append(tuple(insertsql_date))
+#                     self.dbvariantstools.operateDB("",insertsql_statement,data=tuple(insertsql_date))
+            if not insertsql_data_list:
+                self.dbvariantstools.operateDB("insert",*insertsql_statement_list,insertsql_data_list)
+            elif not updatesql_date_list:
+                self.dbvariantstools.operateDB("update",*updatesql_statement_list,updatesql_date_list)
 class AncestralAlleletabletools():
     def __init__(self, database="ninglabvariantdata", ip="10.2.48.140", usrname="root", pw="1234567",dbgenome="genomebasicinfo"):
         super().__init__()

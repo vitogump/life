@@ -442,7 +442,7 @@ def random_str(randomlength=8):
     random.shuffle(a)
     return ''.join(a[:randomlength])
 
-def generateIndexByChrom(refFastaFileName, indexFileName, mapname=None,startchar=">",):
+def generateIndexByChrom(refFastaFileName, indexFileName, mapname=None,startchar=">"):
     refFastaFile = open(refFastaFileName, 'r')
     refChromIndex = {}
     refline = refFastaFile.readline()
