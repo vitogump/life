@@ -7,6 +7,7 @@ import copy, time, pysam
 import os, numpy, sys, re
 import pickle
 
+
 from NGS.BasicUtil import *
 from NGS.BasicUtil import Util
 import NGS.BasicUtil.DBManager as dbm
@@ -14,18 +15,19 @@ import NGS.BasicUtil.DBManager as dbm
 
 mindepthforJudgefixref=10
 class dynamicInsertUpdateAncestralContext():#here use the fast edition
-    def __init__(self,refseqfa,outgroupBAMconfigs=[],toplevelsnptablename="mspsgjlksy10pop_toplevel_pekingduckref",changetableauthority=False,insertauthority=True):
+    def __init__(self,refseqfa,toplevelsnptablename="mspsgjlksy10pop_toplevel_pekingduckref_new",insertauthority=True,changetableauthority=False):
         self.refseqfahandler=open(refseqfa,'r')
         try:
             self.refseqfafasteridx=pickle.load(open(refseqfa+".myfasteridx",'rb'))
         except IOError:
             Util.generateFasterRefIndex(refseqfa, refseqfa+".myfasteridx")
             self.refseqfafasteridx=pickle.load(open(refseqfa+".myfasteridx",'rb'))
-        self.vcfnameKEY_vcfobjVALUE={}#{vcfname:vcfobj,,,,}
-        self.vcfnameKEY_pyBAMfilesVALUE={}#{vcfname:[pysam.samfile1,pysam.samfile2,,,,],,,,}
+#         self.vcfnameKEY_vcfobjVALUE={}#{vcfname:vcfobj,,,,}
+        self.vcfnameKEY_vcfobj_pyBAMfilesVALUE={}#{vcfname:[vcfobj,pysam.samfile1,pysam.samfile2,,,,],,,,}
         self.toplevelsnptablename=toplevelsnptablename
         self.dbvariantstools=dbm.DBTools(Util.ip, Util.username,Util.password, Util.vcfdbname)
         self.toplevelsnptable_titlelist=[a[0].strip() for a in self.dbvariantstools.operateDB("select", "select column_name  from information_schema.columns where table_schema='" + Util.vcfdbname + "' and table_name='" + toplevelsnptablename + "'")]
+        outgroupBAMconfigs=re.split(r";",Util.outgroupVCFBAMconfig_beijingref)
         for configfile in outgroupBAMconfigs:
             fp=open(configfile,'r')
             for line in fp:
@@ -42,13 +44,19 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
                         if changetableauthority:
                             self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(Util.vcfdbname, toplevelsnptablename, archicpop_colname+"_alt", "char(128)", "default null"))
                             self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(Util.vcfdbname, toplevelsnptablename, archicpop_colname+"_dep", "char(128)", "default null"))
-
-                    self.vcfnameKEY_pyBAMfilesVALUE[vcfname]=[]
-                    self.vcfnameKEY_vcfobjVALUE[vcfname]=VCFutil.VCF_Data(vcffilename_obj.group(1).strip())
+                        else:
+                            pass
+                    #always a
+                    self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname]=[]
+                    self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname].append(VCFutil.VCF_Data(vcffilename_obj.group(1).strip()))
                 elif line.split():
-                    self.vcfnameKEY_pyBAMfilesVALUE[vcfname].append(pysam.Samfile(line.split(),'rb'))
+                    self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname].append(pysam.Samfile(line.split(),'rb'))
                     
             fp.close()
+    def __del__(self):
+        for vcfname in self.vcfnameKEY_vcfobj_pyBAMfilesVALUE.keys():
+            for pysamobj in self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname][1:]:
+                pysamobj.close()
     def insertorUpdatetopleveltable(self,PopSnpAligned,SNP_flanklen):
         """
             first element of a snp is the snp position
@@ -76,7 +84,7 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
                         if None==outgroupname_ALT:
                             updatevcflist.append(outgroupname_ALT[:-4])#know which field need to be filled
                             updatesql_statement="update "+ self.toplevelsnptablename+" set "
-                for vcfname in self.vcfnameKEY_vcfobjVALUE.keys():
+                for vcfname in self.vcfnameKEY_vcfobj_pyBAMfilesVALUE.keys():
                     archicpop_colname=re.search(r'[^/]*$',vcfname).group(0)
                     archicpop_colname=re.sub(r"[^\w^\d]","_",archicpop_colname)
                     if archicpop_colname in updatevcflist and insertsql_statement==None:
@@ -85,7 +93,7 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
                         continue# this vcf is filled
                     elif updatesql_statement==None and insertsql_statement!=None:
                         insertsql_statement+=(archicpop_colname+"_alt,"+archicpop_colname+"_dep,")
-                    SNPrec_of_one_chrom_invcf=self.vcfnameKEY_vcfobjVALUE[vcfname].getVcfListByChrom(chrom,MQfilter=None)
+                    SNPrec_of_one_chrom_invcf=self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname][0].getVcfListByChrom(chrom,MQfilter=None)
                     """state: updatesql_statement= update toplevelsnptablename set processed_vcfname1_alt=%s,processed_vcfname1_dep=%s,
                             insertsql_statement=insert into toplevelsnptablename (chrID,snp_pos,snpID,ref_base,alt_base,context,processed_vcfname_m_alt,processed_vcfname_m_dep,
                     """
@@ -120,7 +128,7 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
                     else:
                         sum_depth=0
                         popsdata_alt=ALT
-                        for samfile in self.vcfnameKEY_pyBAMfilesVALUE[vcfname]:
+                        for samfile in self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname][1:]:
                             ACGTdep=samfile.count_coverage(chrom,snp_pos-1,snp_pos)
                             for dep in ACGTdep:
                                 sum_depth+=dep[0]

@@ -27,7 +27,7 @@ parser.add_option("-o", "--outputpath", dest="outputpath", help="default infile1
 parser.add_option("-f","--filterfreq",dest="filterfreq",default="0",help="filterfreq ")
 parser.add_option("-E", "--elementfold", dest="elementfold",action="append",nargs=2,help="fold targetseqnamesubstr")
 
-                                                                                                                                                          
+
 (options, args) = parser.parse_args()
 dbvariantstools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.vcfdbname)
 pathtoblastn="/pub/tool/blast_set/ncbi-blast-2.2.29+/bin/blastn "

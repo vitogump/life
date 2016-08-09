@@ -12,8 +12,8 @@ import src.NGS.BasicUtil.DBManager as dbm
 
 
 parser = OptionParser()
-parser.add_option("-T","--targetpopvcffile_withdepth",dest="targetpopvcffile_withdepth",action="append",nargs=2,help="vcftablename filerecord_allname_in_depthfiletitle_belongtothisvcfpop")
-parser.add_option("-R","--refpopvcffile_withdepth",dest="refpopvcffile_withdepth",action="append",nargs=2,help="vcftablename filerecord_allname_in_depthfiletitle_belongtothisvcfpop")
+parser.add_option("-T","--targetpopvcfconfig",dest="targetpopvcfconfig",action="append",help="vcftablename filerecord_allname_in_depthfiletitle_belongtothisvcfpop")
+parser.add_option("-R","--refpopvcffile_withdepth",dest="refpopvcffile_withdepth",action="append",help="vcftablename filerecord_allname_in_depthfiletitle_belongtothisvcfpop")
 parser.add_option("-t","--topleveltablejudgeancestral",dest="topleveltablejudgeancestral",help="R(r)/G(g)")
 parser.add_option("-c","--chromlistfilename",dest="chromlistfilename")
 parser.add_option("-n","--numberofindvdoftargetpop_todividintobin",dest="numberofindvdoftargetpop_todividintobin",default="o",help="conflit with correlationfile")

@@ -3,6 +3,7 @@
 Created on 2015-5-7
 
 @author: liurui
+this is for dadi
 '''
 import copy, random, re, os
 from optparse import OptionParser
