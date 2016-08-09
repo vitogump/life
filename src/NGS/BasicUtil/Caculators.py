@@ -381,10 +381,14 @@ class Caculate_S_ObsExp_difference(Caculator):
                     print("skip this pos",T)
                     continue
                 else:
-                    depth_linelist=self.depthobjlist[tpopidx-3].getdepthByPos_optimized(self.currentchrID,T[0])
+#                     depth_linelist=self.depthobjlist[tpopidx-3].getdepthByPos_optimized(self.currentchrID,T[0])
                     sum_depth=0
-                    for idx in self.species_idx_list[tpopidx-3][:]:
-                        sum_depth+=int(depth_linelist[idx])
+                    for samfile in self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[self.vcfnamelist[tpopidx-3]][1:]:
+                        ACGTdep=samfile.count_coverage(self.currentchrID,T[0]-1,T[0])
+                        for dep in ACGTdep:
+                            sum_depth+=dep[0]
+#                     for idx in self.species_idx_list[tpopidx-3][:]:
+#                         sum_depth+=int(depth_linelist[idx])
                     if sum_depth>self.mindepthtojudefixed:
                         AF=0
                     else:
@@ -427,10 +431,14 @@ class Caculate_S_ObsExp_difference(Caculator):
                     print("skip this snp",T)
                     continue
                 else:
-                    depth_linelist=self.depthobjlist[rpopidx-3-self.N_of_targetpop].getdepthByPos_optimized(self.currentchrID,T[0])
+#                     depth_linelist=self.depthobjlist[rpopidx-3-self.N_of_targetpop].getdepthByPos_optimized(self.currentchrID,T[0])
                     sum_depth=0
-                    for idx in self.species_idx_list[rpopidx-3-self.N_of_targetpop][:]:
-                        sum_depth+=int(depth_linelist[idx])
+                    for samfile in self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[self.vcfnamelist[rpopidx-3-self.N_of_targetpop]][:]:
+                        ACGTdep=samfile.count_coverage(self.currentchrID,T[0]-1,T[0])
+                        for dep in ACGTdep:
+                            sum_depth+=dep[0]
+#                     for idx in self.species_idx_list[rpopidx-3-self.N_of_targetpop][:]:
+#                         sum_depth+=int(depth_linelist[idx])
                     if sum_depth>self.mindepthtojudefixed:
                         AF=0
                     else:
