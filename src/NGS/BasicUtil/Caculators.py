@@ -316,6 +316,7 @@ class Caculate_S_ObsExp_difference(Caculator):
         self.topleveltablejudgeancestralname=topleveltablejudgeancestralname
         self.MethodToSeqpoplist=[]
         self.mindepthtojudefixed=20
+        self.flankseqfafile=None
         self.N_of_targetpop=N_of_targetpop
         self.N_of_refpop=N_of_refpop
 #         self.depthobjlist=[]
@@ -331,6 +332,8 @@ class Caculate_S_ObsExp_difference(Caculator):
         self.minsnps=10
         self.alignedSNP_absentinfo={}#{chrNo:[[pos1,REF,ALT,(),(),(),,],[pos1,REF,ALT,(),(),(),,],[],,]}
         self.dynamicIU_toptable_obj=None
+    def __del__(self):
+        self.flankseqfafile.close()
     def process(self,T):
         """T=[pos,ref,alt,pop1,pop2,.....,popn]"""
         if len(T[1]) != len(T[2]) or len(T[2])!=1  or len(T[2])!=1:
@@ -338,7 +341,7 @@ class Caculate_S_ObsExp_difference(Caculator):
         snp=self.dbvariantstoolstojudgeancestral.operateDB("select","select * from "+self.topleveltablejudgeancestralname+" where chrID='"+self.currentchrID+"' and snp_pos='"+str(T[0])+"'")
         if not snp or snp[0][9]==None or snp[0][5]==None:#needed info of SNPs are absent, snp[0][9] and snp[0][5] are dependent on the fellow code segment
 #             print(self.currentchrID,T,"snp not find,skip")
-            self.alignedSNP_absentinfo[self.currentchrID].append[T]
+            self.alignedSNP_absentinfo[self.currentchrID].append(T)
             return
         else:
             A_base_idx=100
@@ -480,7 +483,7 @@ class Caculate_S_ObsExp_difference(Caculator):
     def getResult(self):
         for chrom in self.alignedSNP_absentinfo.keys():
             if self.alignedSNP_absentinfo[chrom]!=[]:
-                self.dynamicIU_toptable_obj.insertorUpdatetopleveltable(self.alignedSNP_absentinfo,50)
+                self.dynamicIU_toptable_obj.insertorUpdatetopleveltable(self.alignedSNP_absentinfo,self.flankseqfafile,50)
                 for snpT in self.alignedSNP_absentinfo[chrom]:
                     self.process(snpT)      
         S1="NA"

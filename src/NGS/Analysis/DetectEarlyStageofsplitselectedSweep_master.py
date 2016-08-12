@@ -18,8 +18,8 @@ mindeptojudgefix=20
 parser = OptionParser()
 # parser.add_option("-c", "--chromtable", dest="chromtable",# action="callback",type="string",callback=useoptionvalue_previous2,
 #                   help="write report to FILE")
-parser.add_option("-T","--targetpopvcffile_withdepth",dest="targetpopvcffile_withdepth",action="append",nargs=2,help="vcftablename filerecord_allname_in_depthfiletitle_belongtothisvcfpop")
-parser.add_option("-R","--refpopvcffile_withdepth",dest="refpopvcffile_withdepth",action="append",nargs=2,help="vcftablename filerecord_allname_in_depthfiletitle_belongtothisvcfpop")
+parser.add_option("-T","--targetpopvcffile_withdepth",dest="targetpopvcffile_withdepth",action="append",help="vcftablename filerecord_allname_in_depthfiletitle_belongtothisvcfpop")
+parser.add_option("-R","--refpopvcffile_withdepth",dest="refpopvcffile_withdepth",action="append",help="vcftablename filerecord_allname_in_depthfiletitle_belongtothisvcfpop")
 parser.add_option("-t","--topleveltablejudgeancestral",dest="topleveltablejudgeancestral",help="assigned only if -p early")
 parser.add_option("-w","--winwidth",dest="winwidth",help="default infile1_infile2")#
 parser.add_option("-s","--slideSize",dest="slideSize",help="default infile2_infile1")#
@@ -41,30 +41,34 @@ need -t -n/-C
 windowWidth=int(options.winwidth)
 slideSize=int(options.slideSize)
 
-pathtoPython="/home/bioinfo/liurui/software/Python-3.3.3/python "
+pathtoPython=(Util.pathtoPython+" ")
 def runSlave_makecorrelationfile(a):
-    chromlistfilename=a[0];topleveltablename=a[1];targetpopvcffile_withdepthconfig=a[2];refpopvcffile_withdepthconfig=a[3];numberofindvdoftargetpop_todividintobin=a[4];outfileprewithpath=a[5]
+    chromlistfilename=a[0];topleveltablename=a[1];targetpopvcffile_config=a[2];refpopvcffile_config=a[3];numberofindvdoftargetpop_todividintobin=a[4];outfileprewithpath=a[5]
     command=pathtoPython+options.pathtoslave_config+" -c "+chromlistfilename+" -t "+topleveltablename
-    for vcf,depthconfig in targetpopvcffile_withdepthconfig[:]:
-        command+=(" -T "+vcf+" "+depthconfig)
-    for vcf,depthconfig in refpopvcffile_withdepthconfig[:]:
-        command+=(" -R "+vcf+" "+depthconfig)
+    for vcf in targetpopvcffile_config[:]:
+        command+=(" -T "+vcf)
+    for vcf in refpopvcffile_config[:]:
+        command+=(" -R "+vcf)
     chrlistfilewithoutpath=re.search(r"[^/]*$",chromlistfilename).group(0)
     b=os.system(command+" -n "+numberofindvdoftargetpop_todividintobin+" -o "+outfileprewithpath+" >>"+outfileprewithpath+chrlistfilewithoutpath+".runSlave_makecorrelationfile.out 2>&1")
 def runSlave_slidewin(a):
-    chromlistfilename=a[0];typeOfcalculate=a[1];targetpopvcffile_withdepthconfig=a[2];refpopvcffile_withdepthconfig=a[3];winwidth=a[4];slideSize=a[5];outfileprewithpath=a[6];masterpid=a[7];correlationfile=a[8];topleveltablename=a[9]
+    chromlistfilename=a[0];typeOfcalculate=a[1];targetpopvcffile_config=a[2];refpopvcffile_config=a[3];winwidth=a[4];slideSize=a[5];outfileprewithpath=a[6];masterpid=a[7]
+    print(pathtoPython)
     command=pathtoPython+options.pathtoslave_slidewin+" -c "+chromlistfilename+" -p "+typeOfcalculate
     if a[1]=="early" and len(a)==10:
-        command=+" -t "+topleveltablename
+        
+        correlationfile=a[8];topleveltablename=a[9]
+
+        command+=(" -t "+topleveltablename)
     elif a[1]=="is" or a[1]=="pairfst" or a[1]=="pbs" or a[1]=="lsbl" and len(a)==8:
         pass
     else:
         print("error: check parameters ")
         exit(-1)
-    for vcf,depthconfig in targetpopvcffile_withdepthconfig[:]:
-        command+=(" -T "+vcf+" "+depthconfig)
-    for vcf,depthconfig in refpopvcffile_withdepthconfig[:]:
-        command+=(" -R "+vcf+" "+depthconfig)
+    for vcfconfig in targetpopvcffile_config[:]:
+        command+=(" -T "+vcfconfig)
+    for vcfconfig in refpopvcffile_config[:]:
+        command+=(" -R "+vcfconfig)
     chrlistfilewithoutpath=re.search(r"[^/]*$",chromlistfilename).group(0)
     b=os.system(command+" -w "+winwidth+" -s "+slideSize+" -o "+outfileprewithpath+" -C "+correlationfile+" -m "+str(masterpid)+" >>"+outfileprewithpath+chrlistfilewithoutpath+".runSlave_slidewin.out 2>&1")
 if __name__ == '__main__':
@@ -133,7 +137,8 @@ if __name__ == '__main__':
         if len(options.chromlistfilename)!=1:
             print("need only one chromlistfilename???")
 #             exit(-1)
-        freq_correlation_configFileName=options.outfileprewithpath+".freq_correlation_merged"
+#         freq_correlation_configFileName=options.outfileprewithpath+".freq_correlation_merged"
+        freq_correlation_configFileName=options.correlationfile
         correlationfile=open(options.correlationfile,'r')
         final_freq_xaxisKEY_yaxisVALUERelation={}
         for line in correlationfile:
@@ -152,7 +157,7 @@ if __name__ == '__main__':
             if options.topleveltablejudgeancestral==None:
                 print("Error :-t not assigned")
                 exit(-1)
-            parameterstuples_list.append((chromlistfile,options.typeOfcalculate,options.targetpopvcffile_withdepth,options.refpopvcffile_withdepth,options.winwidth,options.slideSize,options.outfileprewithpath,masterpid,options.topleveltablejudgeancestral,freq_correlation_configFileName))
+            parameterstuples_list.append((chromlistfile,options.typeOfcalculate,options.targetpopvcffile_withdepth,options.refpopvcffile_withdepth,options.winwidth,options.slideSize,options.outfileprewithpath,masterpid,freq_correlation_configFileName,options.topleveltablejudgeancestral))
         elif options.typeOfcalculate=="pairfst":
             parameterstuples_list.append((chromlistfile,options.typeOfcalculate,options.targetpopvcffile_withdepth,options.refpopvcffile_withdepth,options.winwidth,options.slideSize,options.outfileprewithpath,masterpid))
         elif options.typeOfcalculate=="is":

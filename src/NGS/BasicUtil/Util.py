@@ -30,7 +30,8 @@ TranscriptGenetable=cfparser.get("mysqldatabase","TranscriptGenetable")
 D2Bduckchromtable=cfparser.get("mysqldatabase","D2Bduckchromtable")
 KB743256_1=cfparser.get("mysqldatabase","KB743256_1")
 outgroupVCFBAMconfig_beijingref=cfparser.get("mysqldatabase","outgroupVCFBAMconfig_beijingref")
-
+pathtoPython=cfparser.get("mysqldatabase", "pathtoPython")
+beijingreffa=cfparser.get("mysqldatabase","beijingreffa")
 def alinmultPopSnpPos(vcfMaplist,jointmode="i"):
     """input:
     two map fomart like this [chrNo:[(pos,REF,ALT,INFO,FORMAT,sample,...),(pos,REF,ALT,INFO,FORMAT,sample,...),,,,,],{chrNo:[]},,,,,,]

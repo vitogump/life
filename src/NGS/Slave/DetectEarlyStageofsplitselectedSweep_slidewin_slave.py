@@ -21,13 +21,14 @@ parser.add_option("-s","--slideSize",dest="slideSize",help="default infile2_infi
 parser.add_option("-C","--correlationfile",dest="correlationfile",default=None,help="conflit with numberofindvdoftargetpop_todividintobin")
 parser.add_option("-o","--outfileprewithpath",dest="outfileprewithpath")
 parser.add_option("-m","--masterpid",dest="masterpid")
-parser.add_option("-f","--reffa",dest="reffa",help="used for fill toplevel context")
+# parser.add_option("-f","--reffa",dest="reffa",help="used for fill toplevel context")
 (options, args) = parser.parse_args()
 mindeptojudgefix=20
 windowWidth=int(options.winwidth)
 slideSize=int(options.slideSize)
 if __name__ == '__main__':
     print("runSlave_slidewin process ID",os.getpid(),"start")
+    flankseqfafilename=options.chromlistfilename+str(os.getpid())+"snpflankseq.fa"
     outputname=options.outfileprewithpath
     listofpopvcfmapOfAChr=[];vcfnamelist=[]
     N_of_targetpop=len(options.targetpopvcfconfig)
@@ -35,12 +36,15 @@ if __name__ == '__main__':
     
 #     genomedbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname)
     if options.typeOfcalculate=="early":
-        dynamicIU_toptable_obj=Ancestralallele.dynamicInsertUpdateAncestralContext(options.reffa,options.topleveltablejudgeancestral)
+        dynamicIU_toptable_obj=Ancestralallele.dynamicInsertUpdateAncestralContext(Util.beijingreffa,options.topleveltablejudgeancestral)
         dbvariantstools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.vcfdbname)
         obsexpcaculator=Caculators.Caculate_S_ObsExp_difference(mindeptojudgefix,N_of_targetpop,N_of_refpop,dbvariantstools,options.topleveltablejudgeancestral)
         obsexpcaculator.dynamicIU_toptable_obj=dynamicIU_toptable_obj
+        obsexpcaculator.flankseqfafile=open(flankseqfafilename,"w")
     elif options.typeOfcalculate=="pairfst":
         obsexpcaculator=Caculators.Caculate_pairFst(mindeptojudgefix,N_of_targetpop,N_of_refpop)
+    elif options.typeOfcalculate=="is":
+        obsexpcaculator
     for vcfconfigfilename in options.targetpopvcfconfig[:]+options.refpopvcffileconfig[:]:
         listofpopvcfmapOfAChr.append({})
         vcfconfig=open(vcfconfigfilename,"r")
@@ -53,7 +57,7 @@ if __name__ == '__main__':
                 obsexpcaculator.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname]=[]
                 obsexpcaculator.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname].append(VCFutil.VCF_Data(vcfname))
             elif line.split():
-                obsexpcaculator.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname].append(pysam.Samfile(line.split(),'rb'))
+                obsexpcaculator.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname].append(pysam.Samfile(line.strip(),'rb'))
         vcfconfig.close()
 #                 poplist.append(VCFutil.VCF_Data(vcfname))  # new a class
 #         if depthconfig.lower()!="none":
@@ -95,7 +99,7 @@ if __name__ == '__main__':
     print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnp\twinvalue\tzvalue",file=outfile)
     freq_correlation_configFileName=options.outfileprewithpath+".freq_correlation_merged"
     if options.correlationfile!=freq_correlation_configFileName:
-        print("what's wrong??",freq_correlation_configFileName,options.correlationfile)
+        print("warning !",freq_correlation_configFileName," is not equal to ",options.correlationfile)
     freq_correlation_config=open(options.correlationfile,"r")
     final_freq_xaxisKEY_yaxisVALUERelation={}
     for line in freq_correlation_config:
@@ -129,8 +133,10 @@ if __name__ == '__main__':
             continue
         #this chr exist in one of the vcffile,then alinmultPopSnpPos
 #         for vcfobj_idx in range(len(poplist)):
-            listofpopvcfmapOfAChr[vcfnamelist.index(vcfname)]={}
-            listofpopvcfmapOfAChr[vcfnamelist.index(vcfname)][currentchrID]=vcfobj.getVcfListByChrom(currentchrID)
+        for vcfobj_idx in range(len(vcfnamelist)):
+            listofpopvcfmapOfAChr[vcfobj_idx]={}
+            vcfobj=obsexpcaculator.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname][0]
+            listofpopvcfmapOfAChr[vcfobj_idx][currentchrID]=vcfobj.getVcfListByChrom(currentchrID)
         target_ref_SNPs=Util.alinmultPopSnpPos(listofpopvcfmapOfAChr, "o")
         obsexpcaculator.currentchrID=currentchrID
         obsexpcaculator.alignedSNP_absentinfo[currentchrID]=[]
