@@ -175,6 +175,7 @@ if __name__ == '__main__':
     pool.join()
     if options.correlationfile==None:
         f.close()
+    
     sf=open(options.outfileprewithpath+".slidwin_filelist"+str(masterpid),"r")
     finalslidwinname=sf.readline().strip()
     outnameper=re.search(r"([\w\W]*)."+options.typeOfcalculate+str(windowWidth)+"_"+str(slideSize)+"[\w\W]*",finalslidwinname).group(1)
@@ -182,31 +183,32 @@ if __name__ == '__main__':
         if slidwinfilename.split():
 #             print("awk 'NR>1{print $0}' "+slidwinfilename.strip()+"|cat "+finalslidwinname+" - >tempfile"+str(masterpid))
             os.system("awk 'NR>1{print $0}' "+slidwinfilename.strip()+"|cat "+finalslidwinname+" - >tempfile"+str(masterpid))
-            finalslidwinname=outnameper+".earlypostiveselected.mergefile"+str(windowWidth)+"_"+str(slideSize)+str(masterpid)
+            finalslidwinname=outnameper+".mergedfile"+str(windowWidth)+"_"+str(slideSize)+str(masterpid)
 #             print("mv tempfile"+str(masterpid) +" "+finalslidwinname)
             os.system("mv tempfile"+str(masterpid) +" "+finalslidwinname)
     sf.close()
-    sfm=open(finalslidwinname,"r")
-    print(sfm.readline())
-    winCrossGenome=[]
-    for line in sfm:
-        linelist=re.split(r"\t",line.strip())
-        if  re.search(r"^[1234567890\.e-]+$",linelist[5])!=None:
-            winCrossGenome.append(float(linelist[5]))
-    exception =numpy.mean(winCrossGenome)
-    std0=numpy.std(winCrossGenome,ddof=0)
-    std1=numpy.std(winCrossGenome,ddof=1)
-    sfm.seek(0)
-    testoutfile=open(outnameper+".earlypostiveselected.zscorefile"+str(windowWidth)+"_"+str(slideSize)+str(masterpid),"w")
-    print(sfm.readline().strip(),file=testoutfile)
-    for line in sfm:
-        linelist=re.split(r"\t",line.strip())
-        if re.search(r"^[1234567890\.e-]+$",linelist[5])!=None:
-            zscore=(float(linelist[5])-exception)/std1
-            print(*linelist[:6]+[str(zscore)],sep="\t",file=testoutfile)
-        else:
-            print(line.strip(),file=testoutfile)
-    testoutfile.close()
+    if options.typeOfcalculate=="early":
+        sfm=open(finalslidwinname,"r")
+        print(sfm.readline())
+        winCrossGenome=[]
+        for line in sfm:
+            linelist=re.split(r"\t",line.strip())
+            if  re.search(r"^[1234567890\.e-]+$",linelist[5])!=None:
+                winCrossGenome.append(float(linelist[5]))
+        exception =numpy.mean(winCrossGenome)
+        std0=numpy.std(winCrossGenome,ddof=0)
+        std1=numpy.std(winCrossGenome,ddof=1)
+        sfm.seek(0)
+        testoutfile=open(outnameper+".earlypostiveselected.zscorefile"+str(windowWidth)+"_"+str(slideSize)+str(masterpid),"w")
+        print(sfm.readline().strip(),file=testoutfile)
+        for line in sfm:
+            linelist=re.split(r"\t",line.strip())
+            if re.search(r"^[1234567890\.e-]+$",linelist[5])!=None:
+                zscore=(float(linelist[5])-exception)/std1
+                print(*linelist[:6]+[str(zscore)],sep="\t",file=testoutfile)
+            else:
+                print(line.strip(),file=testoutfile)
+        testoutfile.close()
     sfm.close()
     print("finished")
 

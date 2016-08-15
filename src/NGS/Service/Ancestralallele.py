@@ -68,7 +68,7 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
         """
         for chrom in PopSnpAligned.keys():
             #pre process for context
-            RefSeqMap=Util.getRefSeqBypos_faster(self.refseqfahandler, self.refseqfafasteridx, chrom, PopSnpAligned[chrom][0][0]-SNP_flanklen, PopSnpAligned[chrom][-1][0]+1, PopSnpAligned[chrom][-1][0]+1)
+            RefSeqMap=Util.getRefSeqBypos_faster(self.refseqfahandler, self.refseqfafasteridx, chrom, PopSnpAligned[chrom][0][0]-SNP_flanklen, PopSnpAligned[chrom][-1][0], PopSnpAligned[chrom][-1][0])
             #pre process for context end
             SNPrec_of_one_chrom_invcf=[]
             insertsql_statement_list=[];updatesql_statement_list=[]
@@ -90,9 +90,12 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
                     insertsql_statement=None
                     updatesql_date=[]
                     updatevcflist=[]
+                    alt_idx=6
                     for outgroupname_ALT in snp_recINtopleveltable[0][6::2]:
                         if None==outgroupname_ALT:
-                            updatevcflist.append(outgroupname_ALT[:-4])#know which field need to be filled
+                            updatevcflist.append(self.toplevelsnptable_titlelist[alt_idx][:-4])#know which field need to be filled
+                        alt_idx+=2
+                        
                     updatesql_statement="update "+ self.toplevelsnptablename+" set "
                 for vcfname in self.outgroupVcfnameKEY_vcfobj_pyBAMfilesVALUE.keys():
                     archicpop_colname=re.search(r'[^/]*$',vcfname).group(0)
