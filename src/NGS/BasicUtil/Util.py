@@ -713,7 +713,7 @@ def getRefSeqBypos_faster(refFastahandle, refindex, currentChromNO, startpos, en
     refSeqMap = {}
     if startpos <= 0:
         startpos = 1
-    print("getRefSeqBypos", currentChromNO, startpos, endpos)
+    print("getRefSeqBypos_faster", currentChromNO, startpos, endpos)
     if currentChromNOlen != None and endpos > currentChromNOlen:
         endpos = currentChromNOlen
 
@@ -733,6 +733,7 @@ def getRefSeqBypos_faster(refFastahandle, refindex, currentChromNO, startpos, en
                 break
         else:
             if refindex[currentChromNO][high][0]>startpos:
+                print("notice getRefSeqBypos_faster:",low,high,mid)
                 high-=1
                 perivouspos_idx=high
             else:
@@ -745,9 +746,10 @@ def getRefSeqBypos_faster(refFastahandle, refindex, currentChromNO, startpos, en
             while dn != 0:
                 preseq = filehandle.read(dn)
                 dn = preseq.count('\n')
-        elif refindex[currentChromNO][perivouspos_idx][0]==(startpos- refindex[currentChromNO][perivouspos_idx][0]):
+        elif refindex[currentChromNO][perivouspos_idx][0]==startpos:
             pass
         else:
+            print(refindex[currentChromNO][perivouspos_idx],startpos)
             print("getRefSeqBypos_faster ERROR error")
             
         # now filehander is right stay at the startpos

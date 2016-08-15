@@ -1,4 +1,4 @@
-import re, copy,math,numpy
+import re, copy,math,numpy,time
 '''
 Created on 2013-7-2
 
@@ -341,6 +341,7 @@ class Caculate_S_ObsExp_difference(Caculator):
         snp=self.dbvariantstoolstojudgeancestral.operateDB("select","select * from "+self.topleveltablejudgeancestralname+" where chrID='"+self.currentchrID+"' and snp_pos='"+str(T[0])+"'")
         if not snp or snp[0][9]==None or snp[0][5]==None:#needed info of SNPs are absent, snp[0][9] and snp[0][5] are dependent on the fellow code segment
 #             print(self.currentchrID,T,"snp not find,skip")
+#             print("append in to alignedSNP_absentinfo",snp,T)
             self.alignedSNP_absentinfo[self.currentchrID].append(T)
             return
         else:
@@ -481,11 +482,16 @@ class Caculate_S_ObsExp_difference(Caculator):
         if rer_DAF_sum/countedAF==1:
             self.CfixedDerived+=1
     def getResult(self):
-        for chrom in self.alignedSNP_absentinfo.keys():
-            if self.alignedSNP_absentinfo[chrom]!=[]:
-                self.dynamicIU_toptable_obj.insertorUpdatetopleveltable(self.alignedSNP_absentinfo,self.flankseqfafile,50)
-                for snpT in self.alignedSNP_absentinfo[chrom]:
-                    self.process(snpT)      
+#         for chrom in self.alignedSNP_absentinfo.keys():
+        if self.alignedSNP_absentinfo[self.currentchrID]!=[]:
+            self.dynamicIU_toptable_obj.insertorUpdatetopleveltable(self.alignedSNP_absentinfo,self.flankseqfafile,50)
+            No_Of_snpT=len(self.alignedSNP_absentinfo[self.currentchrID])
+            for whatever in range(No_Of_snpT):
+                snpT=self.alignedSNP_absentinfo[self.currentchrID].pop(0)
+#                     print(snpT,len(self.alignedSNP_absentinfo[chrom]))
+                print(snpT[0],"process",len(self.alignedSNP_absentinfo[self.currentchrID]),self.CEXP,self.COUNT)
+                self.process(snpT)
+            print("length of snpT",len(self.alignedSNP_absentinfo[self.currentchrID]))      
         S1="NA"
         S2="NA"
         try:
@@ -503,8 +509,7 @@ class Caculate_S_ObsExp_difference(Caculator):
                 
         if S1=="NA" and S2=="NA" or noofsnp<self.minsnps:
             return noofsnp,"NA"
-        return noofsnp,[S1,S2]
-        
+        return noofsnp,[S1,S2]     
 class Caculate_pairFst(Caculator):
     def __init__(self,mindepthtojudefixed,N_of_targetpop,N_of_refpop,minsnps=10):
         super().__init__()

@@ -36,8 +36,9 @@ if __name__ == '__main__':
     
 #     genomedbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname)
     if options.typeOfcalculate=="early":
-        dynamicIU_toptable_obj=Ancestralallele.dynamicInsertUpdateAncestralContext(Util.beijingreffa,options.topleveltablejudgeancestral)
         dbvariantstools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.vcfdbname)
+        dynamicIU_toptable_obj=Ancestralallele.dynamicInsertUpdateAncestralContext(dbvariantstools,Util.beijingreffa,options.topleveltablejudgeancestral)
+        
         obsexpcaculator=Caculators.Caculate_S_ObsExp_difference(mindeptojudgefix,N_of_targetpop,N_of_refpop,dbvariantstools,options.topleveltablejudgeancestral)
         obsexpcaculator.dynamicIU_toptable_obj=dynamicIU_toptable_obj
         obsexpcaculator.flankseqfafile=open(flankseqfafilename,"w")
@@ -59,25 +60,6 @@ if __name__ == '__main__':
             elif line.split():
                 obsexpcaculator.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname].append(pysam.Samfile(line.strip(),'rb'))
         vcfconfig.close()
-#                 poplist.append(VCFutil.VCF_Data(vcfname))  # new a class
-#         if depthconfig.lower()!="none":
-# 
-#             fp=open(depthconfig,'r')
-#             for line in fp:
-#                 depthfilename_obj=re.search(r"depthfilename=(.*)",line.strip())
-#                 if depthfilename_obj!=None:
-#                     #the two for make freq_correlation config file
-# 
-#                     #the two for slide window that code exist blow
-#                     obsexpcaculator.species_idx_list.append([])
-#                     obsexpcaculator.depthobjlist.append(Util.GATK_depthfile(depthfilename_obj.group(1).strip(),depthfilename_obj.group(1).strip()+".index"))                                
-#                 elif line.split():
-#                     titlename=line.strip()
-#                     idx=obsexpcaculator.depthobjlist[-1].title.index("Depth_for_"+titlename)
-# 
-#                     obsexpcaculator.species_idx_list[-1].append(idx)
-# 
-#             fp.close()
         if re.search(r"indvd[^/]+",vcfname)!=None:
             obsexpcaculator.MethodToSeqpoplist.append("indvd")
 
@@ -136,27 +118,18 @@ if __name__ == '__main__':
         for vcfobj_idx in range(len(vcfnamelist)):
             listofpopvcfmapOfAChr[vcfobj_idx]={}
             vcfobj=obsexpcaculator.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname][0]
+            print(vcfnamelist[vcfobj_idx],"getvcf")
             listofpopvcfmapOfAChr[vcfobj_idx][currentchrID]=vcfobj.getVcfListByChrom(currentchrID)
         target_ref_SNPs=Util.alinmultPopSnpPos(listofpopvcfmapOfAChr, "o")
         obsexpcaculator.currentchrID=currentchrID
+        obsexpcaculator.alignedSNP_absentinfo={}
         obsexpcaculator.alignedSNP_absentinfo[currentchrID]=[]
         ##########
         win.slidWindowOverlap(target_ref_SNPs[currentchrID], currentchrLen, windowWidth, slideSize, obsexpcaculator)
         obsexpsignalmapbychrom[currentchrID]=copy.deepcopy(win.winValueL)
-#     for i in range(0,totalChroms,20):
-#     winCrossGenome=[]
-#     for chrom in obsexpsignalmapbychrom.keys():
-#         for i in range(len(obsexpsignalmapbychrom[chrom])):
-#             if obsexpsignalmapbychrom[chrom][i][3]!="NA":
-#                 winCrossGenome.append(obsexpsignalmapbychrom[chrom][i][3][0])
-#     exception =numpy.mean(winCrossGenome)
-#     std0=numpy.std(winCrossGenome,ddof=0)
-#     std1=numpy.std(winCrossGenome,ddof=1)
+
     for currentchrID,currentchrLen in chromlist:
-#         currentsql="select * from " + Util.pekingduckchromtable+" where chrlength>="+options.minlength+" order by "+primaryID+" limit "+str(i)+",20"
-#         result=genomedbtools.operateDB("select",currentsql)
-#         for row in result:
-#             currentchrID=row[0].strip()
+
         if currentchrID in obsexpsignalmapbychrom:
             for i in range(len(obsexpsignalmapbychrom[currentchrID])):
                 if obsexpsignalmapbychrom[currentchrID][i][3]=="NA":
