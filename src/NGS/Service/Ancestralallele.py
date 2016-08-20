@@ -25,7 +25,7 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
             Util.generateFasterRefIndex(refseqfa, refseqfa+".myfasteridx")
             self.refseqfafasteridx=pickle.load(open(refseqfa+".myfasteridx",'rb'))
 #         self.vcfnameKEY_vcfobjVALUE={}#{vcfname:vcfobj,,,,}
-        
+        self.currentchrLen=None
         self.toplevelsnptablename=toplevelsnptablename
         self.dbvariantstools=dbvariantstools
         self.toplevelsnptable_titlelist=[a[0].strip() for a in self.dbvariantstools.operateDB("select", "select column_name  from information_schema.columns where table_schema='" + Util.vcfdbname + "' and table_name='" + toplevelsnptablename + "'")]
@@ -68,7 +68,7 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
         """
         for chrom in PopSnpAligned.keys():
             #pre process for context
-            RefSeqMap=Util.getRefSeqBypos_faster(self.refseqfahandler, self.refseqfafasteridx, chrom, PopSnpAligned[chrom][0][0]-SNP_flanklen, PopSnpAligned[chrom][-1][0], PopSnpAligned[chrom][-1][0])
+            RefSeqMap=Util.getRefSeqBypos_faster(self.refseqfahandler, self.refseqfafasteridx, chrom, PopSnpAligned[chrom][0][0]-SNP_flanklen, PopSnpAligned[chrom][-1][0]+SNP_flanklen, self.currentchrLen)
             #pre process for context end
             SNPrec_of_one_chrom_invcf=[]
             insertsql_statement_list=[];updatesql_statement_list=[]
@@ -184,7 +184,7 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
                         currentsnpID=chrom+"_"+str(snp_pos)+snpflankseq[SNP_flanklen]+":"+snp[1]
                         snpflankseq=snpflankseq[0:SNP_flanklen]+'N'+snpflankseq[SNP_flanklen+1:]
 
-                    elif snp_pos <=RefSeqMap[chrom][0]+len(RefSeqMap[chrom])-1 and snp_pos+SNP_flanklen>RefSeqMap[chrom][0]+len(RefSeqMap[chrom])-1:
+                    elif snp_pos <=RefSeqMap[chrom][0]+len(RefSeqMap[chrom])-1 and snp_pos-SNP_flanklen>RefSeqMap[chrom][0]:
                         snpflankseq="".join(RefSeqMap[chrom][(snp_pos-SNP_flanklen-RefSeqMap[chrom][0]):(snp_pos-RefSeqMap[chrom][0]+1)])
                         if insertsql_statement!=None:
                             insertsql_date.insert(5,snpflankseq[SNP_flanklen-1:SNP_flanklen+1]+"N")                        
@@ -194,7 +194,7 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
                         currentsnpID=chrom+"_"+str(snp_pos)+snpflankseq[SNP_flanklen]+":"+snp[1]
                         snpflankseq=snpflankseq[0:SNP_flanklen]+'N'
                         
-                    elif snp_pos-SNP_flanklen<=RefSeqMap[chrom][0]:
+                    elif snp_pos-SNP_flanklen<=RefSeqMap[chrom][0] and snp_pos + SNP_flanklen<=RefSeqMap[chrom][0]+len(RefSeqMap[chrom])-1:
                         snpflankseq="".join(RefSeqMap[chrom][(snp_pos - RefSeqMap[chrom][0]):(snp_pos + SNP_flanklen - RefSeqMap[chrom][0] + 1)])
                         if insertsql_statement!=None:
                             insertsql_date.insert(5,"N"+snpflankseq[1:SNP_flanklen+1])                        
@@ -205,13 +205,16 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
                         snpflankseq = 'N'+snpflankseq[1:SNP_flanklen+1]
                         
                     else:
+                        print(len(RefSeqMap[chrom]))
+                        currentsnpID=">error"
+                        snpflankseq="error"
                         print("Error! what's wrong with the func insertorUpdatetopleveltable?")
-                        exit(-1)
                     print(">" + currentsnpID + "\n" + snpflankseq, end='\n', file=flankseqfafile)
                 #context process end ,append into multiple statements    
                 if updatesql_statement!=None:
                     if snp_recINtopleveltable[0][5]!=None:
                         updatesql_statement=updatesql_statement[:-1]
+                    updatesql_statement+=" where snp_pos="+str(snp_pos)+" chrID="+chrom
                     updatesql_statement_list.append(updatesql_statement)
                     updatesql_date_list.append(tuple(updatesql_date))   
                 elif insertsql_statement!=None:
@@ -362,7 +365,7 @@ class AncestralAlleletabletools():
                 snpflankseq = ''.join(RefSeqMap[chrom][(currentsnpPos - flanklen - RefSeqMap[chrom][0]):(currentsnpPos + flanklen - RefSeqMap[chrom][0] + 1)])
                 self.dbvariant.operateDB("update","update "+tablename+" set context='"+snpflankseq[flanklen-1:flanklen+2]+"' where chrID='"+ chrom + "' and snp_pos= "+str(currentsnpPos))
                 snpflankseq=snpflankseq[0:flanklen]+'N'+snpflankseq[flanklen+1:]
-            elif currentsnpPos <= RefSeqMap[chrom][0] + len(RefSeqMap[chrom]) - 1 and currentsnpPos + flanklen > RefSeqMap[chrom][0] + len(RefSeqMap[chrom]) - 1:
+            elif currentsnpPos <= RefSeqMap[chrom][0] + len(RefSeqMap[chrom]) - 1 and currentsnpPos - flanklen > RefSeqMap[chrom][0]:
                 snpflankseq = ''.join(RefSeqMap[chrom][(currentsnpPos - flanklen - RefSeqMap[chrom][0]):(currentsnpPos - RefSeqMap[chrom][0] + 1)])
 #                 print(currentsnpID,snpflankseq[flanklen],file=testfile)
                 self.dbvariant.operateDB("update","update "+tablename+" set context='"+snpflankseq[flanklen-1:flanklen+1]+"N' where chrID='"+ chrom + "' and snp_pos= "+str(currentsnpPos))

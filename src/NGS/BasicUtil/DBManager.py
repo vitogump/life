@@ -58,6 +58,12 @@ class DBTools():
             elif sqltype=='update' or sqltype=='insert' or sqltype=='copytableschema':
                 i=0
                 for sql in sqls:
+                    if sqltype=='update' and (re.search(r'where',sqls[0])==None or re.search(r"where",sqls[0].lower())==None):
+                        print(sql)
+                        print("caution! there is no where in the sql statment,it will UPDATE all record")
+                        exit(-1)                        
+                    else:
+                        pass
                     if data==None:
                         cursor.execute(sql)
                     else:

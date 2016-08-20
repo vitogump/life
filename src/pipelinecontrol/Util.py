@@ -228,7 +228,7 @@ class OperatorWithData_mode2(OperatorWithData):
                 for datafilename in files:
                     if re.search(r".*?" + suffixstr+"$", datafilename) != None:
                         self.count+=1
-                        self.scriptinputdata+=(optionstr + " " + curpath + "/" + datafilename + " " + option_suffix_obj.group(0)+";")
+                        self.scriptinputdata+=( " " + curpath + "/" + datafilename + ";")
                         newcmdline = re.sub(r"[-\w\d]+[=\s]+\${.*?}", optionstr + " " + curpath + "/" + datafilename + " " + option_suffix_obj.group(0), newcmdline)
 
 
@@ -284,6 +284,8 @@ def runashell(a):
 def callsh_updateDB(scriptDir,NumOfThread,logicalpurpose):
     pool=Pool(NumOfThread)
     scriptfiles = os.listdir(path=scriptDir)
+    if scriptDir[-1]=="/":
+        scriptDir=scriptDir[:-1]
     inputscriptfiles=[]
     scriptfiles_copy=copy.deepcopy(scriptfiles)
     for filename in scriptfiles_copy:

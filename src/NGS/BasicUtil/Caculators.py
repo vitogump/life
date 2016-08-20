@@ -1,10 +1,22 @@
-import re, copy,math,numpy,time
+# -*- coding: UTF-8 -*-
 '''
 Created on 2013-7-2
 
 @author: rui
 '''
+
+import re, copy, math, numpy, time,pysam
+from itertools import combinations
+from NGS.BasicUtil import VCFutil
+
+
+
+
 class Caculator():
+    def __init__(self):
+        #every Caculator which need two or more vcf have the follow two variable
+        self.vcfnamelist=[]
+        self.vcfnameKEY_vcfobj_pyBAMfilesVALUE={}
     def process(self, T):
         pass
     def getResult(self):
@@ -310,19 +322,43 @@ class Caculate_depth_judge(Caculator):
             self.AVERAGE_DEPTH = [0] * len(self.speciesorder)
         return "empty", ([a / self.winsize for a in countlist], [a / self.winsize for a in average])
 class Caculate_S_ObsExp_difference(Caculator):
-    def __init__(self,mindepthtojudefixed,N_of_targetpop,N_of_refpop,dbvariantstoolstojudgeancestral,topleveltablejudgeancestralname):
+    def __init__(self,mindepthtojudefixed,listOftargetpopvcfconfig,listOfrefpopvcffileconfig,dbvariantstoolstojudgeancestral,toplevelTablejudgeancestralname,outfileprewithpath):
         super().__init__()
         self.dbvariantstoolstojudgeancestral=dbvariantstoolstojudgeancestral
-        self.topleveltablejudgeancestralname=topleveltablejudgeancestralname
+        self.topleveltablejudgeancestralname=toplevelTablejudgeancestralname
         self.MethodToSeqpoplist=[]
         self.mindepthtojudefixed=20
         self.flankseqfafile=None
-        self.N_of_targetpop=N_of_targetpop
-        self.N_of_refpop=N_of_refpop
-#         self.depthobjlist=[]
-#         self.species_idx_list=[]
+        self.N_of_targetpop=len(listOftargetpopvcfconfig)
+        self.N_of_refpop=len(listOfrefpopvcffileconfig)
+        self.listOfpopvcfRecsmapByAChr=[]
         self.vcfnamelist=[]
         self.vcfnameKEY_vcfobj_pyBAMfilesVALUE={}
+        self.outputname=outfileprewithpath
+        for vcfconfigfilename in listOftargetpopvcfconfig[:]+listOfrefpopvcffileconfig[:]:
+            self.listOfpopvcfRecsmapByAChr.append({})
+            vcfconfig=open(vcfconfigfilename,"r")
+            for line in vcfconfig:
+                vcffilename_obj=re.search(r"vcffilename=(.*)",line.strip())
+                if vcffilename_obj!=None:
+                    vcfname=vcffilename_obj.group(1).strip()
+                    self.vcfnamelist.append(vcfname)
+                    self.outputname+=("_"+re.split(r"\.",re.search(r"[^/]*$",vcfname).group(0))[0])[:3]
+                    self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname]=[]
+                    self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname].append(VCFutil.VCF_Data(vcfname))
+                elif line.split():
+                    self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname].append(pysam.Samfile(line.strip(),'rb'))
+            vcfconfig.close()
+            if re.search(r"indvd[^/]+",vcfname)!=None:
+                self.MethodToSeqpoplist.append("indvd")
+    
+            elif re.search(r"pool[^/]+",vcfname)!=None:
+                self.MethodToSeqpoplist.append("pool")
+    
+            else:
+                print("vcfname must with 'pool' or 'indvd'")
+                exit(-1)   
+
         self.currentchrID=None
         self.COUNT=0
         self.obsseq=[]
@@ -335,7 +371,9 @@ class Caculate_S_ObsExp_difference(Caculator):
     def __del__(self):
         self.flankseqfafile.close()
     def process(self,T):
-        """T=[pos,ref,alt,pop1,pop2,.....,popn]"""
+        """T=[pos,ref,alt,pop1,pop2,.....,popn]
+        in ordered as the self.vcfnamelise
+        """
         if len(T[1]) != len(T[2]) or len(T[2])!=1  or len(T[2])!=1:
             return
         snp=self.dbvariantstoolstojudgeancestral.operateDB("select","select * from "+self.topleveltablejudgeancestralname+" where chrID='"+self.currentchrID+"' and snp_pos='"+str(T[0])+"'")
@@ -381,7 +419,7 @@ class Caculate_S_ObsExp_difference(Caculator):
         countedAF=0;target_DAF_sum=0
         for tpopidx in range(3,self.N_of_targetpop+3):
             if T[tpopidx]==None:
-                if self.depthobjlist==[]:
+                if len(self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[self.vcfnamelist[tpopidx-3]])==1:
                     print("skip this pos",T)
                     continue
                 else:
@@ -396,6 +434,7 @@ class Caculate_S_ObsExp_difference(Caculator):
                     if sum_depth>self.mindepthtojudefixed:
                         AF=0
                     else:
+                        print(sum_depth,"low coverage skip")
                         continue
             else:
                 if self.MethodToSeqpoplist[tpopidx-3]=="indvd":
@@ -431,13 +470,13 @@ class Caculate_S_ObsExp_difference(Caculator):
         countedAF=0;rer_DAF_sum=0
         for rpopidx in range(3+self.N_of_targetpop,self.N_of_refpop+self.N_of_targetpop+3):
             if T[rpopidx]==None:
-                if self.depthobjlist==[]:
+                if len(self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[self.vcfnamelist[rpopidx-3]])==1:
                     print("skip this snp",T)
                     continue
                 else:
 #                     depth_linelist=self.depthobjlist[rpopidx-3-self.N_of_targetpop].getdepthByPos_optimized(self.currentchrID,T[0])
                     sum_depth=0
-                    for samfile in self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[self.vcfnamelist[rpopidx-3-self.N_of_targetpop]][:]:
+                    for samfile in self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[self.vcfnamelist[rpopidx-3]][1:]:
                         ACGTdep=samfile.count_coverage(self.currentchrID,T[0]-1,T[0])
                         for dep in ACGTdep:
                             sum_depth+=dep[0]
@@ -446,11 +485,12 @@ class Caculate_S_ObsExp_difference(Caculator):
                     if sum_depth>self.mindepthtojudefixed:
                         AF=0
                     else:
+                        print(sum_depth,"low depth skip")
                         continue
             else:
-                if self.MethodToSeqpoplist[rpopidx-3-self.N_of_targetpop]=="indvd":
+                if self.MethodToSeqpoplist[rpopidx-3]=="indvd":
                     AF=float(re.search(r"AF=([\d\.]+);", T[rpopidx][0]).group(1))
-                elif self.MethodToSeqpoplist[rpopidx-3-self.N_of_targetpop]=="pool":
+                elif self.MethodToSeqpoplist[rpopidx-3]=="pool":
                     refdep = 0;altalleledep = 0
                     AD_idx = (re.split(":", T[rpopidx][1])).index("AD")
                     for sample in T[rpopidx][2]:
@@ -489,7 +529,7 @@ class Caculate_S_ObsExp_difference(Caculator):
             for whatever in range(No_Of_snpT):
                 snpT=self.alignedSNP_absentinfo[self.currentchrID].pop(0)
 #                     print(snpT,len(self.alignedSNP_absentinfo[chrom]))
-                print(snpT[0],"process",len(self.alignedSNP_absentinfo[self.currentchrID]),self.CEXP,self.COUNT)
+                print(snpT[0:3],"process",len(self.alignedSNP_absentinfo[self.currentchrID]),self.CEXP,self.COUNT)
                 self.process(snpT)
             print("length of snpT",len(self.alignedSNP_absentinfo[self.currentchrID]))      
         S1="NA"
@@ -509,37 +549,81 @@ class Caculate_S_ObsExp_difference(Caculator):
                 
         if S1=="NA" and S2=="NA" or noofsnp<self.minsnps:
             return noofsnp,"NA"
-        return noofsnp,[S1,S2]     
+        return noofsnp,[S1,S2]
 class Caculate_pairFst(Caculator):
-    def __init__(self,mindepthtojudefixed,N_of_targetpop,N_of_refpop,minsnps=10):
+    def __init__(self,mindepthtojudefixed,listOftargetpopvcfconfig,listOfrefpopvcffileconfig,outfileprewithpath,minsnps=10):
         super().__init__()
         self.minsnps=minsnps
         self.considerfixdiffinfst=False
         self.MethodToSeqpoplist=[]
         self.mindepthtojudefixed=mindepthtojudefixed
-        self.N_of_targetpop=N_of_targetpop
-        self.N_of_refpop=N_of_refpop
-        self.depthobjlist=[]
-        self.species_idx_list=[]
+        self.N_of_targetpop=len(listOftargetpopvcfconfig)
+        self.N_of_refpop=len(listOfrefpopvcffileconfig)
+        self.outputname=outfileprewithpath
+        self.vcfnamelist=[]#target ref
+        self.listOfpopvcfRecsmapByAChr=[]
+        self.vcfnameKEY_vcfobj_pyBAMfilesVALUE={}
+        for vcfconfigfilename in listOftargetpopvcfconfig[:]+listOfrefpopvcffileconfig[:]:
+            self.listOfpopvcfRecsmapByAChr.append({})
+            vcfconfig=open(vcfconfigfilename,"r")
+            for line in vcfconfig:
+                vcffilename_obj=re.search(r"vcffilename=(.*)",line.strip())
+                if vcffilename_obj!=None:
+                    vcfname=vcffilename_obj.group(1).strip()
+                    self.vcfnamelist.append(vcfname)
+                    self.outputname+=("_"+re.split(r"\.",re.search(r"[^/]*$",vcfname).group(0))[0])[:3]
+                    self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname]=[]
+                    self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname].append(VCFutil.VCF_Data(vcfname))
+                elif line.split():
+                    self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname].append(pysam.Samfile(line.strip(),'rb'))
+            vcfconfig.close()
+            if re.search(r"indvd[^/]+",vcfname)!=None:
+                self.MethodToSeqpoplist.append("indvd")
+    
+            elif re.search(r"pool[^/]+",vcfname)!=None:
+                self.MethodToSeqpoplist.append("pool")
+    
+            else:
+                print("vcfname must with 'pool' or 'indvd'")
+                exit(-1)   
         self.currentchrID=None
-        self.COUNT=0
-        self.obsseq=[]
-        self.CEXP=0
+        self.COUNT=[(0,0)]*(self.N_of_refpop*self.N_of_targetpop)
+        self.CNK=[0]*(self.N_of_refpop*self.N_of_targetpop)
+        self.CDK=[0]*(self.N_of_refpop*self.N_of_targetpop)
         self.CfixedDerived=0
         self.freq_xaxisKEY_yaxisVALUERelation=None
         self.minsnps=10
     def process(self,T):
-        """T=[pos,ref,alt,pop1,pop2,.....,popn]"""
+        """T=[pos,ref,alt,pop1,pop2,.....,popn]
+        T is in the order as self.vcfnamelist
+        """
         if len(T[1]) != len(T[2]) or len(T[2])!=1  or len(T[2])!=1:
             return
 #         snp=self.dbvariantstoolstojudgeancestral.operateDB("select","select * from "+self.topleveltablejudgeancestralname+" where chrID='"+self.currentchrID+"' and snp_pos='"+str(T[0])+"'")
-        if not True:
-            print("wait to filling")
-            return
-        else:
-            pass
-
-
+        for TT_idx in range(3,3+self.N_of_targetpop):
+            TT=T[TT_idx]
+            refdep_1=0;altalleledep_1=0
+            if self.MethodToSeqpoplist[TT_idx-3]=="pool":
+                if TT==None:
+                    if len(self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[self.vcfnamelist[TT_idx-3]])==1:
+                        print("skip this pos",T)
+                        continue
+                    else:
+                        sum_depth=0
+                        for samfile in self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[self.vcfnamelist[TT_idx-3]][1:]:
+                            ACGTdep=samfile.count_coverage(self.currentchrID,T[0]-1,T[0])
+                            for dep in ACGTdep:
+                                sum_depth+=dep[0]
+                        if sum_depth>self.mindepthtojudefixed:
+                            refdep_1=sum_depth;altalleledep_1=0
+                        else:
+                            continue
+                else:
+                    AD_idx_1 = (re.split(":", TT[1])).index("AD")  # gatk GT:AD:DP:GQ:PL
+            for RT_idx in range(3+self.N_of_targetpop,len(T)):
+                RT=T[RT_idx]
+                refdep_2=0;altalleledep_2=0
+                
         ##########x-axis
         countedAF=0;target_DAF_sum=0
         for tpopidx in range(3,self.N_of_targetpop+3):
@@ -653,7 +737,209 @@ class Caculate_pairFst(Caculator):
         if S1=="NA" and S2=="NA" or noofsnp<self.minsnps:
             return noofsnp,"NA"
         return noofsnp,[S1,S2]
-                            
+class Caculate_IS(Caculator):
+    def __init__(self,mindepthtojudefixed,listOftargetpopvcfconfig,listOfrefpopvcffileconfig,minsnps=10):
+        super().__init__()
+        self.minsnps=minsnps
+        self.considerfixdiffinfst=False
+        self.MethodToSeqpoplist=[]
+        self.mindepthtojudefixed=mindepthtojudefixed
+        self.N_of_targetpop=len(listOftargetpopvcfconfig)
+        self.N_of_refpop=len(listOfrefpopvcffileconfig)
+        self.vcfnamelist=[]#target ref order
+        self.listOfpopvcfRecsmapByAChr=[]
+        self.vcfnameKEY_vcfobj_pyBAMfilesVALUE={}
+        for vcfconfigfilename in listOftargetpopvcfconfig[:]+listOfrefpopvcffileconfig[:]:
+            self.listOfpopvcfRecsmapByAChr.append({})
+            vcfconfig=open(vcfconfigfilename,"r")
+            for line in vcfconfig:
+                vcffilename_obj=re.search(r"vcffilename=(.*)",line.strip())
+                if vcffilename_obj!=None:
+                    vcfname=vcffilename_obj.group(1).strip()
+                    self.vcfnamelist.append(vcfname)
+                    self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname]=[]
+                    self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname].append(VCFutil.VCF_Data(vcfname))
+                elif line.split():
+                    self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname].append(pysam.Samfile(line.strip(),'rb'))
+            vcfconfig.close()
+            if re.search(r"indvd[^/]+",vcfname)!=None:
+                self.MethodToSeqpoplist.append("indvd")
+    
+            elif re.search(r"pool[^/]+",vcfname)!=None:
+                self.MethodToSeqpoplist.append("pool")
+    
+            else:
+                print("vcfname must with 'pool' or 'indvd'")
+                exit(-1)   
+        self.currentchrID=None
+#         self.COUNT=[0]*((self.N_of_refpop+self.N_of_targetpop)*(self.N_of_refpop+self.N_of_targetpop-1)/2)
+#         re.search(r"[^/]*$",vcfname).group(0)
+        self.IS_Tinner={}#[0]*((self.N_of_targetpop-1)*self.N_of_targetpop/2)
+        self.IS_Rinner={}#[0]*(self.N_of_refpop*(self.N_of_refpop-1)/2)
+        self.IS_TR={}#[0]*self.N_of_refpop*self.N_of_targetpop
+        self.combination_idx_list=list(combinations([i for i in range(self.N_of_refpop+self.N_of_targetpop)],2))
+        print(self.combination_idx_list,"self.combination_idx_list")
+        self.vcfname_combination=[];vcfname_combination=[]
+        for pop_1_idx,pop_2_idx in self.combination_idx_list:
+            if pop_1_idx<self.N_of_targetpop and pop_2_idx<self.N_of_targetpop:#
+                self.IS_Tinner[(pop_1_idx,pop_2_idx)]=[]
+                vcfname_combination.append(re.split(r"\.",re.search(r"[^/]*$",self.vcfnamelist[pop_1_idx]).group(0))[0]+"_"+re.split(r"\.",re.search(r"[^/]*$",self.vcfnamelist[pop_2_idx]).group(0))[0])
+            elif (pop_1_idx<self.N_of_targetpop and pop_2_idx>=self.N_of_targetpop) or (pop_2_idx<self.N_of_targetpop and pop_1_idx>=self.N_of_targetpop):
+                self.IS_TR[(pop_1_idx,pop_2_idx)]=[]
+                vcfname_combination.append(re.split(r"\.",re.search(r"[^/]*$",self.vcfnamelist[pop_1_idx]).group(0))[0]+"_"+re.split(r"\.",re.search(r"[^/]*$",self.vcfnamelist[pop_2_idx]).group(0))[0])
+            elif pop_1_idx>=self.N_of_targetpop and pop_2_idx>=self.N_of_targetpop:
+                self.IS_Rinner[(pop_1_idx,pop_2_idx)]=[]
+                vcfname_combination.append(re.split(r"\.",re.search(r"[^/]*$",self.vcfnamelist[pop_1_idx]).group(0))[0]+"_"+re.split(r"\.",re.search(r"[^/]*$",self.vcfnamelist[pop_2_idx]).group(0))[0])
+            else:
+                print("what's wrong with CaculatorIS")
+        print("order the vcfname_combination")
+
+        for pop_1_idx,pop_2_idx in sorted(self.IS_Tinner.keys()):
+            idx=self.combination_idx_list.index((pop_1_idx,pop_2_idx))
+            self.vcfname_combination.append(vcfname_combination[idx])
+
+        for pop_1_idx,pop_2_idx in sorted(self.IS_TR.keys()):
+            idx=self.combination_idx_list.index((pop_1_idx,pop_2_idx))
+            self.vcfname_combination.append(vcfname_combination[idx])
+        for pop_1_idx,pop_2_idx in sorted(self.IS_Rinner.keys()):
+            idx=self.combination_idx_list.index((pop_1_idx,pop_2_idx))
+            self.vcfname_combination.append(vcfname_combination[idx])
+                #RIinner            
+        self.minsnps=10
+        print(self.vcfname_combination)
+        print(self.IS_Rinner)
+        print(self.IS_Tinner)
+        print(self.IS_TR)
+    def process(self,T):
+        """T=[pos,ref,alt,pop1,pop2,.....,popn]
+        T is in the order as self.vcfnamelist
+        """
+        if len(T[1]) != len(T[2]) or len(T[2])!=1  or len(T[2])!=1:
+            return
+        for pop_1_idx,pop_2_idx in self.combination_idx_list:
+            TT=T[pop_1_idx+3]
+#             AF=0
+            if TT==None:
+                if len(self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[self.vcfnamelist[pop_1_idx]])==1:
+                    print("skip this pos",T)
+                    continue
+                else:
+                    sum_depth=0
+                    for samfile in self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[self.vcfnamelist[pop_1_idx]][1:]:
+                        ACGTdep=samfile.count_coverage(self.currentchrID,T[0]-1,T[0])
+                        for dep in ACGTdep:
+                            sum_depth+=dep[0]
+                    if sum_depth>self.mindepthtojudefixed:
+                        AF_1=0
+                    else:
+                        print(sum_depth,"low coverage skip ,samfile")
+                        continue
+            else:
+                if self.MethodToSeqpoplist[pop_1_idx]=="pool":
+                    refdep_1=0;altalleledep_1=0
+                    AD_idx_1 = (re.split(":", TT[1])).index("AD")  # gatk GT:AD:DP:GQ:PL
+                    for sample in TT[2][:]:
+                        if len(re.split(":", sample)) == 1 or re.split(":", sample)[AD_idx_1]==".":  # ./.
+                            continue
+                        AD_depth = re.split(",", re.split(":", sample)[AD_idx_1])
+                        try:
+                            refdep_1 += int(AD_depth[0])
+                            altalleledep_1 += int(AD_depth[1])
+                        except ValueError:
+                            print("an ValueError except in int(AD_depth[]) in sample ",sample, end="|")
+                    if (refdep_1==altalleledep_1 and altalleledep_1==0) or altalleledep_1+refdep_1<self.mindepthtojudefixed*0.8:
+                        continue
+                    AF_1=altalleledep_1/(altalleledep_1+refdep_1)
+                elif self.MethodToSeqpoplist[pop_1_idx]=="indvd":
+                    AF_1=float(re.search(r"AF=([\d\.e-]+);", TT[0]).group(1))
+                    AN = float(re.search(r"AN=([\d]+);", TT[0]).group(1))
+                    if AN<5:
+                        continue
+            RT=T[pop_2_idx+3]
+            if RT==None:
+                if len(self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[self.vcfnamelist[pop_2_idx]])==1:
+                    print("skip this pos",T)
+                    continue
+                else:
+                    sum_depth=0
+                    for samfile in self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[self.vcfnamelist[pop_2_idx]][1:]:
+                        ACGTdep=samfile.count_coverage(self.currentchrID,T[0]-1,T[0])
+                        for dep in ACGTdep:
+                            sum_depth+=dep[0]
+                    if sum_depth>self.mindepthtojudefixed:
+                        AF_2=0
+                    else:
+                        print(sum_depth,"low coverage skip ,samfile")
+                        continue
+            else:
+                if self.MethodToSeqpoplist[pop_2_idx]=="pool":
+                    refdep_2=0;altalleledep_2=0
+                    AD_idx_1 = (re.split(":", RT[1])).index("AD")  # gatk GT:AD:DP:GQ:PL
+                    for sample in RT[2][:]:
+                        if len(re.split(":", sample)) == 1 or re.split(":", sample)[AD_idx_1]==".":  # ./.
+                            continue
+                        AD_depth = re.split(",", re.split(":", sample)[AD_idx_1])
+                        try:
+                            refdep_2 += int(AD_depth[0])
+                            altalleledep_2 += int(AD_depth[1])
+                        except ValueError:
+                            print("an ValueError except in int(AD_depth[]) in sample ",sample, end="|")
+                    if (refdep_2==altalleledep_2 and altalleledep_2==0) or altalleledep_2+refdep_2<self.mindepthtojudefixed*0.8:
+                        continue
+                    AF_2=altalleledep_2/(altalleledep_2+refdep_2)
+                elif self.MethodToSeqpoplist[pop_2_idx]=="indvd":
+                    AF_2=float(re.search(r"AF=([\d\.e-]+);", RT[0]).group(1))
+                    AN = float(re.search(r"AN=([\d]+);", RT[0]).group(1))
+                    if AN<5:
+                        continue
+            #this snp is useable
+            IS=1-abs(AF_1-AF_2)
+            if pop_1_idx<self.N_of_targetpop and pop_2_idx<self.N_of_targetpop:
+                self.IS_Tinner[(pop_1_idx,pop_2_idx)].append(IS)
+            elif (pop_1_idx<self.N_of_targetpop and pop_2_idx>=self.N_of_targetpop) or (pop_2_idx<self.N_of_targetpop and pop_1_idx>=self.N_of_targetpop):
+                self.IS_TR[(pop_1_idx,pop_2_idx)].append(IS)
+            elif pop_1_idx>=self.N_of_targetpop and pop_2_idx>=self.N_of_targetpop:
+                #RIinner
+                self.IS_Rinner[(pop_1_idx,pop_2_idx)].append(IS)
+
+                
+
+    def getResult(self):
+        noofsnp=[0]*(int((self.N_of_refpop+self.N_of_targetpop)*(self.N_of_refpop+self.N_of_targetpop-1)/2))
+        ISlist=["NA"]*(int((self.N_of_refpop+self.N_of_targetpop)*(self.N_of_refpop+self.N_of_targetpop-1)/2))
+#         try:
+        i=0
+        for pop_1_idx,pop_2_idx in sorted(self.IS_Tinner.keys()):
+            noofsnp[i]=len(self.IS_Tinner[(pop_1_idx,pop_2_idx)])
+            if noofsnp[i]>self.minsnps:
+                ISlist[i]=numpy.mean(self.IS_Tinner[(pop_1_idx,pop_2_idx)])
+            self.IS_Tinner[(pop_1_idx,pop_2_idx)]=[]
+            i+=1
+        for pop_1_idx,pop_2_idx in sorted(self.IS_TR.keys()):
+            noofsnp[i]=len(self.IS_TR[(pop_1_idx,pop_2_idx)])
+            if noofsnp[i]>self.minsnps:
+                ISlist[i]=numpy.mean(self.IS_TR[(pop_1_idx,pop_2_idx)])
+            self.IS_TR[(pop_1_idx,pop_2_idx)]=[]
+            i+=1
+        for pop_1_idx,pop_2_idx in sorted(self.IS_Rinner.keys()):
+            noofsnp[i]=len(self.IS_Rinner[(pop_1_idx,pop_2_idx)])
+            if noofsnp[i]>self.minsnps:
+                ISlist[i]=numpy.mean(self.IS_Rinner[(pop_1_idx,pop_2_idx)])
+            self.IS_Rinner[(pop_1_idx,pop_2_idx)]=[]
+            i+=1                            
+#         for pop_1_idx,pop_2_idx in self.combination_idx_list:
+#             if pop_1_idx<self.N_of_targetpop and pop_2_idx<self.N_of_targetpop:#
+# 
+#             elif (pop_1_idx<self.N_of_targetpop and pop_2_idx>=self.N_of_targetpop) or (pop_2_idx<self.N_of_targetpop and pop_1_idx>=self.N_of_targetpop):
+# 
+#             elif pop_1_idx>=self.N_of_targetpop and pop_2_idx>=self.N_of_targetpop:
+# 
+#             i+=1
+            
+            
+        print(noofsnp)
+        print(ISlist)
+        return noofsnp,ISlist                    
 class Caculate_Fst(Caculator):
     def __init__(self, MethodToSeqpop1="pool", MethodToSeqpop2="indvd", minsnps=10):
         super().__init__()

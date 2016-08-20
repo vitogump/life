@@ -59,7 +59,7 @@ def runSlave_slidewin(a):
         
         correlationfile=a[8];topleveltablename=a[9]
 
-        command+=(" -t "+topleveltablename)
+        command+=(" -t "+topleveltablename +" -C "+correlationfile)
     elif a[1]=="is" or a[1]=="pairfst" or a[1]=="pbs" or a[1]=="lsbl" and len(a)==8:
         pass
     else:
@@ -70,9 +70,9 @@ def runSlave_slidewin(a):
     for vcfconfig in refpopvcffile_config[:]:
         command+=(" -R "+vcfconfig)
     chrlistfilewithoutpath=re.search(r"[^/]*$",chromlistfilename).group(0)
-    b=os.system(command+" -w "+winwidth+" -s "+slideSize+" -o "+outfileprewithpath+" -C "+correlationfile+" -m "+str(masterpid)+" >>"+outfileprewithpath+chrlistfilewithoutpath+".runSlave_slidewin.out 2>&1")
+    b=os.system(command+" -w "+winwidth+" -s "+slideSize+" -o "+outfileprewithpath+" -m "+str(masterpid)+" >>"+outfileprewithpath+chrlistfilewithoutpath+".runSlave_slidewin.out 2>&1")
 if __name__ == '__main__':
-    if options.correlationfile==None:
+    if options.correlationfile==None and options.typeOfcalculate=="early":
         d_increase=fractions.Fraction(1, (2*int(options.numberofindvdoftargetpop_todividintobin)))
         d_increase=round(d_increase,11)
         minvalue=0.000000000000
@@ -132,7 +132,7 @@ if __name__ == '__main__':
             print('%.12f'%a,'%.12f'%b,'%.12f'%(final_freq_xaxisKEY_yaxisVALUERelation[(a,b)]),sep="\t",file=freq_correlation_config)
         freq_correlation_config.close()
         print("freq_correlation_config is produced")
-         
+        f.close()
     elif options.typeOfcalculate=="early" and options.correlationfile!=None:
         if len(options.chromlistfilename)!=1:
             print("need only one chromlistfilename???")
@@ -173,8 +173,7 @@ if __name__ == '__main__':
     pool.map(runSlave_slidewin,parameterstuples_list)
     pool.close()
     pool.join()
-    if options.correlationfile==None:
-        f.close()
+        
     
     sf=open(options.outfileprewithpath+".slidwin_filelist"+str(masterpid),"r")
     finalslidwinname=sf.readline().strip()
