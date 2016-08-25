@@ -1497,8 +1497,9 @@ class Window():
         else:
             self.winValueL.append((winStart, winStart + windowWidth, Caculator.getResult()))
                 
-    def slidWindowOverlap(self, L, L_End_Pos, windowWidth, slideSize, Caculator):
+    def slidWindowOverlap(self, L, L_End_Pos, windowWidth, slideSize, Caculator,L_Start_Pos=0):
         """
+        window slide from L_Start_Pos to L_End_Pos
         L = [(pos,p1,p2,p3,A_base_idx),(pos,"a,b","c,d","e,f",0),(pos,"a,b","c,d","e,f",1),....] for D-statistics wihtout "no covered"
         or 
         L = [(pos, REF, ALT, INFO,FORMAT,sampleslist),(pos, REF, ALT, INFO,FORMAT,sampleslist),(),...........] for any score need one vcf,
@@ -1513,10 +1514,14 @@ class Window():
         self.winValueL = []  # notice here
         nextIdx = -1  # always be -1 if windowWidth == slideSize
         currentIdx = 0
-        winStart = 0
+        winStart = L_Start_Pos
         FoundNextIdx = False
         firstComeInWin = True
         notjustforsnp = True
+        for findfirstidx in range(len(L)):
+            if L[findfirstidx][0]>winStart:
+                currentIdx=findfirstidx
+                break
         while currentIdx != len(L):
 #             print(L[currentIdx][0],L[currentIdx])
             if L[currentIdx][0] > winStart and  L[currentIdx][0] <= (winStart + windowWidth):

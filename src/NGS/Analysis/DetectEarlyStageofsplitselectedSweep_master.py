@@ -42,23 +42,29 @@ windowWidth=int(options.winwidth)
 slideSize=int(options.slideSize)
 
 pathtoPython=(Util.pathtoPython+" ")
-def runSlave_makecorrelationfile(a):
+def runSlave_makecorrelationfile(a,BedFile=False):
     chromlistfilename=a[0];topleveltablename=a[1];targetpopvcffile_config=a[2];refpopvcffile_config=a[3];numberofindvdoftargetpop_todividintobin=a[4];outfileprewithpath=a[5]
     command=pathtoPython+options.pathtoslave_config+" -c "+chromlistfilename+" -t "+topleveltablename
-    for vcf in targetpopvcffile_config[:]:
-        command+=(" -T "+vcf)
-    for vcf in refpopvcffile_config[:]:
-        command+=(" -R "+vcf)
+    for vcfconfig in targetpopvcffile_config[:]:
+        command+=(" -T "+vcfconfig)
+    for vcfconfig in refpopvcffile_config[:]:
+        command+=(" -R "+vcfconfig)
     chrlistfilewithoutpath=re.search(r"[^/]*$",chromlistfilename).group(0)
     b=os.system(command+" -n "+numberofindvdoftargetpop_todividintobin+" -o "+outfileprewithpath+" >>"+outfileprewithpath+chrlistfilewithoutpath+".runSlave_makecorrelationfile.out 2>&1")
-def runSlave_slidewin(a):
-    chromlistfilename=a[0];typeOfcalculate=a[1];targetpopvcffile_config=a[2];refpopvcffile_config=a[3];winwidth=a[4];slideSize=a[5];outfileprewithpath=a[6];masterpid=a[7]
+def runSlave_slidewin(a,BedFile=False):
+    typeOfcalculate=a[1];targetpopvcffile_config=a[2];refpopvcffile_config=a[3];winwidth=a[4];slideSize=a[5];outfileprewithpath=a[6];masterpid=a[7]
     print(pathtoPython)
-    command=pathtoPython+options.pathtoslave_slidewin+" -c "+chromlistfilename+" -p "+typeOfcalculate
+    if BedFile:
+        bedlikefile=a[0]
+        chrlistfilewithoutpath=re.search(r"[^/]*$",bedlikefile).group(0)
+        command=pathtoPython+options.pathtoslave_slidewin+" -b "+bedlikefile+" -p "+typeOfcalculate        
+    else:
+        chromlistfilename=a[0]
+        chrlistfilewithoutpath=re.search(r"[^/]*$",chromlistfilename).group(0)
+        command=pathtoPython+options.pathtoslave_slidewin+" -c "+chromlistfilename+" -p "+typeOfcalculate
+    
     if a[1]=="early" and len(a)==10:
-        
         correlationfile=a[8];topleveltablename=a[9]
-
         command+=(" -t "+topleveltablename +" -C "+correlationfile)
     elif a[1]=="is" or a[1]=="pairfst" or a[1]=="pbs" or a[1]=="lsbl" and len(a)==8:
         pass
@@ -69,7 +75,8 @@ def runSlave_slidewin(a):
         command+=(" -T "+vcfconfig)
     for vcfconfig in refpopvcffile_config[:]:
         command+=(" -R "+vcfconfig)
-    chrlistfilewithoutpath=re.search(r"[^/]*$",chromlistfilename).group(0)
+    
+    print(command+" -w "+winwidth+" -s "+slideSize+" -o "+outfileprewithpath+" -m "+str(masterpid)+" >>"+outfileprewithpath+chrlistfilewithoutpath+".runSlave_slidewin.out 2>&1")
     b=os.system(command+" -w "+winwidth+" -s "+slideSize+" -o "+outfileprewithpath+" -m "+str(masterpid)+" >>"+outfileprewithpath+chrlistfilewithoutpath+".runSlave_slidewin.out 2>&1")
 if __name__ == '__main__':
     if options.correlationfile==None and options.typeOfcalculate=="early":
@@ -208,7 +215,7 @@ if __name__ == '__main__':
             else:
                 print(line.strip(),file=testoutfile)
         testoutfile.close()
-    sfm.close()
+        sfm.close()
     print("finished")
 
     

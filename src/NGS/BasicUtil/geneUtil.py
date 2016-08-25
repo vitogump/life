@@ -329,6 +329,7 @@ def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,win
         for chrom in selectedRegion:
             selectedRegion[chrom].sort(key=lambda listRec: int(listRec[1]))
 #    get final table
+    print("getting final table")
     final_table={}
     for chrom in selectedRegion:
         for region in selectedRegion[chrom]:
@@ -337,7 +338,7 @@ def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,win
             else:
                 final_table[region]=winGenome.collectTrscptInWin(genomedbtools,Util.TranscriptGenetable,region,upextend,downextend)
 #process top outlier values
-
+    print("fill bedselectedtable")
     for chrom in winGenome.chromOrder:
         if chrom not in selectedRegion:
             continue

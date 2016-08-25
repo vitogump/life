@@ -219,7 +219,7 @@ class VCF_Data():
         mapfile.close()
         pedfile.close()   
         vcffile.close()
-    def getVcfListByChrom(self, chrom, dilute=1, dilutetodensity="noofsnpperkb", posUniq=True, considerINDEL=False,MQfilter=28):
+    def getVcfListByChrom(self, chrom,startpos=1,endpos=9999999999999999999999999999999999999999999999999999, dilute=1, dilutetodensity="noofsnpperkb", posUniq=True, considerINDEL=False,MQfilter=28):
         """
             although dilute and dilutetodensity can present at the same time,but it not make sense.
             return a list that contain all vcf record of a chrom
@@ -238,7 +238,21 @@ class VCF_Data():
         vcfFile = open(self.vcfFileName, 'r')
                     
         vcfFile.seek(self.VcfIndexMap[chrom][0])
-        linescontent=vcfFile.read(self.VcfIndexMap[chrom][1]-self.VcfIndexMap[chrom][0])
+        #find the first line
+        filepos=vcfFile.tell()
+        for line in vcfFile:
+            
+            linelist = re.split(r'\s+', line.strip())
+            samples = linelist[9:len(linelist)]
+            chrom = linelist[0].strip()
+            pos = int(linelist[1].strip())
+            REF = linelist[3].strip()
+            ALT = linelist[4].strip()
+            if pos>=startpos:
+                break
+            filepos=vcfFile.tell()
+        vcfFile.seek(filepos)
+        linescontent=vcfFile.read(self.VcfIndexMap[chrom][1]-filepos)
         vcflineslist=re.split(r"\n",linescontent.strip())
 #         line = vcfFile.readline().strip()
         recidx = 0
@@ -258,6 +272,8 @@ class VCF_Data():
             samples = linelist[9:len(linelist)]
             chrom = linelist[0].strip()
             pos = int(linelist[1].strip())
+            if pos>endpos:
+                break
             REF = linelist[3].strip()
             ALT = linelist[4].strip()
             recidx += 1#line = vcfFile.readline();

@@ -806,6 +806,7 @@ class Caculate_IS(Caculator):
             self.vcfname_combination.append(vcfname_combination[idx])
                 #RIinner            
         self.minsnps=10
+        self.considerdepth=False
         print(self.vcfname_combination)
         print(self.IS_Rinner)
         print(self.IS_Tinner)
@@ -818,21 +819,20 @@ class Caculate_IS(Caculator):
             return
         for pop_1_idx,pop_2_idx in self.combination_idx_list:
             TT=T[pop_1_idx+3]
-#             AF=0
             if TT==None:
                 if len(self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[self.vcfnamelist[pop_1_idx]])==1:
                     print("skip this pos",T)
                     continue
-                else:
+                elif self.considerdepth:
                     sum_depth=0
                     for samfile in self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[self.vcfnamelist[pop_1_idx]][1:]:
                         ACGTdep=samfile.count_coverage(self.currentchrID,T[0]-1,T[0])
                         for dep in ACGTdep:
                             sum_depth+=dep[0]
-                    if sum_depth>self.mindepthtojudefixed:
+                    if sum_depth>=self.mindepthtojudefixed*4:#this threshold is just for mallard and spotbilled
                         AF_1=0
                     else:
-                        print(sum_depth,"low coverage skip ,samfile")
+                        print(self.vcfnamelist[pop_1_idx],sum_depth,"low coverage skip ,samfile",end="\t")
                         continue
             else:
                 if self.MethodToSeqpoplist[pop_1_idx]=="pool":
@@ -866,7 +866,7 @@ class Caculate_IS(Caculator):
                         ACGTdep=samfile.count_coverage(self.currentchrID,T[0]-1,T[0])
                         for dep in ACGTdep:
                             sum_depth+=dep[0]
-                    if sum_depth>self.mindepthtojudefixed:
+                    if sum_depth>=self.mindepthtojudefixed:
                         AF_2=0
                     else:
                         print(sum_depth,"low coverage skip ,samfile")
@@ -902,7 +902,6 @@ class Caculate_IS(Caculator):
                 #RIinner
                 self.IS_Rinner[(pop_1_idx,pop_2_idx)].append(IS)
 
-                
 
     def getResult(self):
         noofsnp=[0]*(int((self.N_of_refpop+self.N_of_targetpop)*(self.N_of_refpop+self.N_of_targetpop-1)/2))

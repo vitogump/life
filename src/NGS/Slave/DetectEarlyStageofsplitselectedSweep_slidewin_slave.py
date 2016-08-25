@@ -21,18 +21,33 @@ parser.add_option("-s","--slideSize",dest="slideSize",help="default infile2_infi
 parser.add_option("-C","--correlationfile",dest="correlationfile",default=None,help="conflit with numberofindvdoftargetpop_todividintobin")
 parser.add_option("-o","--outfileprewithpath",dest="outfileprewithpath")
 parser.add_option("-m","--masterpid",dest="masterpid")
-# parser.add_option("-f","--reffa",dest="reffa",help="used for fill toplevel context")
+parser.add_option("-b","--bedlikefile",dest="bedlikefile",help="conflict with -c ")
 (options, args) = parser.parse_args()
 mindeptojudgefix=20#for pool only
+extendsize=500000
 windowWidth=int(options.winwidth)
 slideSize=int(options.slideSize)
 if __name__ == '__main__':
     print("runSlave_slidewin process ID",os.getpid(),"start")
-    flankseqfafilename=options.chromlistfilename+str(os.getpid())+"snpflankseq.fa"
-    
+    chromlistOrBedRegionList=[]
+    if options.chromlistfilename!=None and options.bedlikefile==None:
+        chromlistfile=open(options.chromlistfilename,"r")
+        
+        for rec in chromlistfile:
+            reclist=re.split(r'\s+',rec.strip())
+            chromlistOrBedRegionList.append((reclist[0].strip(),int(reclist[1].strip())))
+        chrlistfilewithoutpath=re.search(r"[^/]*$",options.chromlistfilename).group(0)
+    elif options.chromlistfilename==None and options.bedlikefile!=None:
+        bedreclistfile=open(options.bedlikefile,"r")
+        for rec in bedreclistfile:
+            reclist=re.split(r"\s+",rec.strip())
+            chromlistOrBedRegionList.append((reclist[0].strip(),(int(reclist[1]),int(reclist[2]))))
+    else:
+        print("options.chromlistfilename and options.chromlistfilename conflict")
 #     genomedbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname)
-    chrlistfilewithoutpath=re.search(r"[^/]*$",options.chromlistfilename).group(0)
+    
     if options.typeOfcalculate=="early":
+        flankseqfafilename=options.chromlistfilename+str(os.getpid())+"snpflankseq.fa"
         dbvariantstools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.vcfdbname)
         dynamicIU_toptable_obj=Ancestralallele.dynamicInsertUpdateAncestralContext(dbvariantstools,Util.beijingreffa,options.topleveltablejudgeancestral)
         
@@ -81,14 +96,13 @@ if __name__ == '__main__':
 
     win = Util.Window()
     obsexpsignalmapbychrom={}
-    chromlistfile=open(options.chromlistfilename,"r")
-    chromlist=[]
-    for chrrow in chromlistfile:
-        chrrowlist=re.split(r'\s+',chrrow.strip())
-        chromlist.append((chrrowlist[0].strip(),int(chrrowlist[1].strip())))
 
 
-    for currentchrID,currentchrLen in chromlist:
+    genomedbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname) 
+    mysqlchromtable = Util.pekingduckchromtable
+    for currentchrID,currentchrLenOrRegion in chromlistOrBedRegionList:
+        if len(currentchrLenOrRegion)==2:
+            currentchrLen=genomedbtools.operateDB("select","select * from "+mysqlchromtable+" where chrID='"+currentchrID+"' ")[0][1]
         for vcfname in obsexpcaculator.vcfnamelist:
             vcfobj=obsexpcaculator.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname][0]
 #         for vcfobj in poplist:
@@ -97,8 +111,19 @@ if __name__ == '__main__':
         else:
             print("this chr doesn't exist in anypop")
             fillNA=obsexpcaculator.getResult()#[(0,0,0,'NA')]
-            for i in range(int(currentchrLen/slideSize)):
-                fillNA.append(obsexpcaculator.getResult())#(0,0,0,'NA')
+            if len(currentchrLenOrRegion)==2 and currentchrLenOrRegion[1]+extendsize<currentchrLen:
+                fillsize_End=currentchrLenOrRegion[1]+extendsize
+            else:
+                fillsize_End=currentchrLen
+            if len(currentchrLenOrRegion)==2 and currentchrLenOrRegion[0]-extendsize>0:
+                fillsize_Start=currentchrLenOrRegion[0]-extendsize
+            else:
+                fillsize_Start=0
+            for i in range(int((fillsize_End-fillsize_Start)/slideSize)):
+                t=obsexpcaculator.getResult()
+                t[0]=i*slideSize+fillsize_Start
+                t[1]=i*slideSize+windowWidth+fillsize_Start
+                fillNA.append(t)#(0,0,0,'NA')
             obsexpsignalmapbychrom[currentchrID]=fillNA
             continue
         #this chr exist in one of the vcffile,then alinmultPopSnpPos
@@ -107,19 +132,27 @@ if __name__ == '__main__':
             obsexpcaculator.listOfpopvcfRecsmapByAChr[vcfobj_idx]={}
             vcfobj=obsexpcaculator.vcfnameKEY_vcfobj_pyBAMfilesVALUE[obsexpcaculator.vcfnamelist[vcfobj_idx]][0]
             print(obsexpcaculator.vcfnamelist[vcfobj_idx],"getvcf")
-            obsexpcaculator.listOfpopvcfRecsmapByAChr[vcfobj_idx][currentchrID]=vcfobj.getVcfListByChrom(currentchrID)
+            if len(currentchrLenOrRegion)==2:#bedfile
+                obsexpcaculator.listOfpopvcfRecsmapByAChr[vcfobj_idx][currentchrID]=vcfobj.getVcfListByChrom(currentchrID,currentchrLenOrRegion[0]-extendsize,currentchrLenOrRegion[1]+extendsize)
+            else:#chrom
+                obsexpcaculator.listOfpopvcfRecsmapByAChr[vcfobj_idx][currentchrID]=vcfobj.getVcfListByChrom(currentchrID)
         target_ref_SNPs=Util.alinmultPopSnpPos(obsexpcaculator.listOfpopvcfRecsmapByAChr, "o")
+        obsexpcaculator.currentchrID=currentchrID
         if options.typeOfcalculate=="early":
-            obsexpcaculator.currentchrID=currentchrID
             obsexpcaculator.dynamicIU_toptable_obj.currentchrLen=currentchrLen
             obsexpcaculator.alignedSNP_absentinfo={}
             obsexpcaculator.alignedSNP_absentinfo[currentchrID]=[]
         ##########
-        win.slidWindowOverlap(target_ref_SNPs[currentchrID], currentchrLen, windowWidth, slideSize, obsexpcaculator)
+        print(len(target_ref_SNPs[currentchrID]))
+        if len(currentchrLenOrRegion)==2:#bedfile
+            win.slidWindowOverlap(target_ref_SNPs[currentchrID], currentchrLenOrRegion[1]+extendsize, windowWidth, slideSize, obsexpcaculator,currentchrLenOrRegion[0]-extendsize)
+        else:
+            win.slidWindowOverlap(target_ref_SNPs[currentchrID], currentchrLen, windowWidth, slideSize, obsexpcaculator)
         obsexpsignalmapbychrom[currentchrID]=copy.deepcopy(win.winValueL)
     
-    for currentchrID,currentchrLen in chromlist:
-
+    for currentchrID,currentchrLenOrRegion in chromlistOrBedRegionList:
+        if len(currentchrLenOrRegion)==2:
+            currentchrLen=genomedbtools.operateDB("select","select * from "+mysqlchromtable+" where chrID='"+currentchrID+"' ")[0][1]
         if currentchrID in obsexpsignalmapbychrom:
             for i in range(len(obsexpsignalmapbychrom[currentchrID])):
                 if options.typeOfcalculate=="early":

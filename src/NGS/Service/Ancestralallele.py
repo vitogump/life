@@ -166,6 +166,7 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
                     """
                     if updatesql_statement!=None and insertsql_statement==None:
                         updatesql_date+=[popsdata_alt,popsdata_dep]
+                        print("updatesql_date",updatesql_date)
                     elif  updatesql_statement==None and insertsql_statement!=None:
                         insertsql_date+=[popsdata_alt,popsdata_dep]
                     else:
@@ -181,6 +182,7 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
                         elif snp_recINtopleveltable[0][5]==None:
                             updatesql_statement+="context=%s"
                             updatesql_date.append(snpflankseq[SNP_flanklen-1:SNP_flanklen+2])
+                            print("updatesql_date",updatesql_date)
                         currentsnpID=chrom+"_"+str(snp_pos)+snpflankseq[SNP_flanklen]+":"+snp[1]
                         snpflankseq=snpflankseq[0:SNP_flanklen]+'N'+snpflankseq[SNP_flanklen+1:]
 
@@ -191,16 +193,18 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
                         elif snp_recINtopleveltable[0][5]==None:
                             updatesql_statement+="context=%s"
                             updatesql_date.append(snpflankseq[SNP_flanklen-1:SNP_flanklen+1]+"N")
+                            print("updatesql_date",updatesql_date)
                         currentsnpID=chrom+"_"+str(snp_pos)+snpflankseq[SNP_flanklen]+":"+snp[1]
                         snpflankseq=snpflankseq[0:SNP_flanklen]+'N'
                         
                     elif snp_pos-SNP_flanklen<=RefSeqMap[chrom][0] and snp_pos + SNP_flanklen<=RefSeqMap[chrom][0]+len(RefSeqMap[chrom])-1:
                         snpflankseq="".join(RefSeqMap[chrom][(snp_pos - RefSeqMap[chrom][0]):(snp_pos + SNP_flanklen - RefSeqMap[chrom][0] + 1)])
                         if insertsql_statement!=None:
-                            insertsql_date.insert(5,"N"+snpflankseq[1:SNP_flanklen+1])                        
+                            insertsql_date.insert(5,"N"+snpflankseq[0:2])                        
                         elif snp_recINtopleveltable[0][5]==None:
                             updatesql_statement+="context=%s"
-                            updatesql_date.append("N"+snpflankseq[1:SNP_flanklen+1])
+                            updatesql_date.append("N"+snpflankseq[0:2])
+                            print("updatesql_date",updatesql_date)
                         currentsnpID=chrom+"_"+str(snp_pos)+snpflankseq[0]+":"+snp[1]
                         snpflankseq = 'N'+snpflankseq[1:SNP_flanklen+1]
                         
@@ -214,9 +218,11 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
                 if updatesql_statement!=None:
                     if snp_recINtopleveltable[0][5]!=None:
                         updatesql_statement=updatesql_statement[:-1]
-                    updatesql_statement+=" where snp_pos="+str(snp_pos)+" chrID="+chrom
+                    updatesql_statement+=" where snp_pos="+str(snp_pos)+" and chrID='"+chrom+"'"
                     updatesql_statement_list.append(updatesql_statement)
-                    updatesql_date_list.append(tuple(updatesql_date))   
+                    print("updatesql_date_list",updatesql_date_list)
+                    updatesql_date_list.append(tuple(updatesql_date))
+                    print("updatesql_date_list",updatesql_date_list)
                 elif insertsql_statement!=None:
                     insertsql_statement=insertsql_statement[:-1]+")VALUES ("+"%s,"*(len(insertsql_date))
                     insertsql_statement=insertsql_statement[:-1]+")"
@@ -228,7 +234,8 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
                 self.dbvariantstools.operateDB("insert",*insertsql_statement_list,data=insertsql_data_list)
 #                 snp=self.dbvariantstools.operateDB("select","select * from "+self.toplevelsnptablename+" where chrID='"+insertsql_data_list[0][0]+"' and snp_pos='"+str(insertsql_data_list[0][1])+"'")
 #                 print(snp)
-            elif updatesql_statement_list !=[]:
+            elif updatesql_statement_list !=[] and len(updatesql_date_list)==len(updatesql_statement_list):
+                print(updatesql_statement_list,updatesql_date_list)
                 self.dbvariantstools.operateDB("update",*updatesql_statement_list,data=updatesql_date_list)
                 
 #             print("insertsql_data_list",insertsql_data_list)

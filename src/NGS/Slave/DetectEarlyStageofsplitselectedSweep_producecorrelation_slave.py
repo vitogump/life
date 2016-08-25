@@ -3,7 +3,7 @@ Created on 2015-8-21
 
 @author: liurui
 '''
-import fractions, re, os, copy
+import fractions, re, os, copy,pysam
 from optparse import OptionParser
 from os.path import sys
 
@@ -13,7 +13,7 @@ import src.NGS.BasicUtil.DBManager as dbm
 
 parser = OptionParser()
 parser.add_option("-T","--targetpopvcfconfig",dest="targetpopvcfconfig",action="append",help="vcftablename filerecord_allname_in_depthfiletitle_belongtothisvcfpop")
-parser.add_option("-R","--refpopvcffile_withdepth",dest="refpopvcffile_withdepth",action="append",help="vcftablename filerecord_allname_in_depthfiletitle_belongtothisvcfpop")
+parser.add_option("-R","--refpopvcffileconfig",dest="refpopvcffileconfig",action="append",help="vcftablename filerecord_allname_in_depthfiletitle_belongtothisvcfpop")
 parser.add_option("-t","--topleveltablejudgeancestral",dest="topleveltablejudgeancestral",help="R(r)/G(g)")
 parser.add_option("-c","--chromlistfilename",dest="chromlistfilename")
 parser.add_option("-n","--numberofindvdoftargetpop_todividintobin",dest="numberofindvdoftargetpop_todividintobin",default="o",help="conflit with correlationfile")
@@ -49,48 +49,43 @@ def make_freq_xaxisKEY_yaxisseqVALUERelation(a):
         chrrowlist=re.split(r'\s+',chrrow.strip())
         chromlist.append((chrrowlist[0].strip(),int(chrrowlist[1].strip())))
 
-    poplist=[];vcfnamelist=[];listofpopvcfmapOfAChr=[];vcfnameKEY_depthobjVALUE={};methodlist=[]
+    vcfnamelist=[];listofpopvcfmapOfAChr=[];methodlist=[]
+    vcfnameKEY_vcfobj_pyBAMfilesVALUE={}
     N_of_targetpop=len(targetpopvcffile_withdepthconfig)
     N_of_refpop=len(refpopvcffile_withdepthconfig)
-    vcfnameKEY_depthfilename_titlenameVALUE={}#{ vcftablename1:[depthfilename1,name1,name2] , vcftablename2:[depthfilename2,name1,name2] } or {vcftablename1:None, vcftablename2:None}
-    for vcf,depthconfig in targetpopvcffile_withdepthconfig[:]+refpopvcffile_withdepthconfig[:]:
-        listofpopvcfmapOfAChr.append({})
-        vcfnamelist.append(vcf)
-        poplist.append(VCFutil.VCF_Data(vcf))  # new a class
-        if depthconfig.lower()!="none":
-            vcfnameKEY_depthfilename_titlenameVALUE[vcf]=[]
-            fp=open(depthconfig,'r')
-            for line in fp:
-                depthfilename_obj=re.search(r"depthfilename=(.*)",line.strip())
-                if depthfilename_obj!=None:
-                    #the two for make freq_correlation config file
-                    vcfnameKEY_depthfilename_titlenameVALUE[vcf].append(depthfilename_obj.group(1).strip())#append depthfilename1
-                    vcfnameKEY_depthobjVALUE[vcf]=Util.GATK_depthfile(vcfnameKEY_depthfilename_titlenameVALUE[vcf][0],vcfnameKEY_depthfilename_titlenameVALUE[vcf][0]+".index",True)
-              
+    #{ vcftablename1:[depthfilename1,name1,name2] , vcftablename2:[depthfilename2,name1,name2] } or {vcftablename1:None, vcftablename2:None}
+    for vcfconfigfilename in targetpopvcffile_withdepthconfig[:]+refpopvcffile_withdepthconfig[:]:
+            listofpopvcfmapOfAChr.append({})
+            vcfconfig=open(vcfconfigfilename,"r")
+            for line in vcfconfig:
+                vcffilename_obj=re.search(r"vcffilename=(.*)",line.strip())
+                if vcffilename_obj!=None:
+                    vcfname=vcffilename_obj.group(1).strip()
+                    vcfnamelist.append(vcfname)
+                    vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname]=[]
+                    vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname].append(VCFutil.VCF_Data(vcfname))
                 elif line.split():
-                    titlename=line.strip()
-                    idx=vcfnameKEY_depthobjVALUE[vcf].title.index("Depth_for_"+titlename)
-                    vcfnameKEY_depthfilename_titlenameVALUE[vcf].append(idx)#append idxname
-            fp.close()
-        if re.search(r"indvd[^/]+",vcf)!=None:
-
-            methodlist.append("indvd")
-        elif re.search(r"pool[^/]+",vcf)!=None:
-
-            methodlist.append("pool")
-        else:
-            print("vcfname must with 'pool' or 'indvd'")
-            exit(-1)
+                    vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname].append(pysam.Samfile(line.strip(),'rb'))
+            vcfconfig.close()
+            if re.search(r"indvd[^/]+",vcfname)!=None:
+                methodlist.append("indvd")
+    
+            elif re.search(r"pool[^/]+",vcfname)!=None:
+                methodlist.append("pool")
+    
+            else:
+                print("vcfname must with 'pool' or 'indvd'")
+                exit(-1)   
     for currentchrID,currentchrLen in chromlist:
-        for vcfobj in poplist:
-            if currentchrID in vcfobj.VcfIndexMap:
+        for vcfname in vcfnamelist:
+            if currentchrID in vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname][0].VcfIndexMap:
                 break
         else:
             print("this chr doesn't exist in anypop")
             continue
-        for vcfobj_idx in range(len(poplist)):
+        for vcfobj_idx in range(len(vcfnamelist)):
             listofpopvcfmapOfAChr[vcfobj_idx]={}
-            listofpopvcfmapOfAChr[vcfobj_idx][currentchrID]=poplist[vcfobj_idx].getVcfListByChrom(currentchrID)
+            listofpopvcfmapOfAChr[vcfobj_idx][currentchrID]=vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfnamelist[vcfobj_idx]][0].getVcfListByChrom(currentchrID)
         target_ref_SNPs=Util.alinmultPopSnpPos(listofpopvcfmapOfAChr, "o")
         for snp_aligned in target_ref_SNPs[currentchrID]:
             if len(snp_aligned[1])!=1 or len(snp_aligned[2])!=1:
@@ -118,18 +113,18 @@ def make_freq_xaxisKEY_yaxisseqVALUERelation(a):
             countedAF=0;target_DAF_sum=0#;noofnocoveredsample=0
             for i in range(3,N_of_targetpop+3):
                 if snp_aligned[i]==None:
-                    if vcfnameKEY_depthobjVALUE==None:
+                    if len(vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfnamelist[i-3]])==1:
                         print("no depth file")
                         continue
                     else:
-                        depth_linelist=vcfnameKEY_depthobjVALUE[vcfnamelist[i-3]].getdepthByPos_optimized(currentchrID,curpos)
                         sum_depth=0
-                        for idx in vcfnameKEY_depthfilename_titlenameVALUE[vcfnamelist[i-3]][1:]:
-                            sum_depth+=int(depth_linelist[idx])
+                        for samfile in vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfnamelist[i-3]][1:]:
+                            ACGTdep=samfile.count_coverage(currentchrID,curpos-1,curpos)
+                            for dep in ACGTdep:
+                                sum_depth+=dep[0]
                         if sum_depth>=mindepthtojudefixed:
                             AF=0
                         else:
-#                                 noofnocoveredsample+=1
                             continue
                 else:
                     if methodlist[i-3]=="indvd":
@@ -164,24 +159,26 @@ def make_freq_xaxisKEY_yaxisseqVALUERelation(a):
             countedAF=0;rer_DAF_sum=0
             for i in range(3+N_of_targetpop,N_of_refpop+N_of_targetpop+3):
                 if snp_aligned[i]==None:
-                    if vcfnameKEY_depthobjVALUE==None:
+                    if len(vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfnamelist[i-3]])==1:
                         continue
                     else:
-                        depth_linelist=vcfnameKEY_depthobjVALUE[vcfnamelist[i-3-N_of_targetpop]].getdepthByPos_optimized(currentchrID,curpos)
+#                         depth_linelist=vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfnamelist[i-3-N_of_targetpop]].getdepthByPos_optimized(currentchrID,curpos)
                         sum_depth=0
-                        for idx in vcfnameKEY_depthfilename_titlenameVALUE[vcfnamelist[i-3-N_of_targetpop]][1:]:
-                            sum_depth+=int(depth_linelist[idx])
+                        for samfile in vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfnamelist[i-3]][1:]:
+                            ACGTdep=samfile.count_coverage(currentchrID,curpos-1,curpos)
+                            for dep in ACGTdep:
+                                sum_depth+=dep[0]
                         if sum_depth>=mindepthtojudefixed:
                             AF=0
                         else:
                             continue
                 else:
-                    if methodlist[i-3-N_of_targetpop]=="indvd":
+                    if methodlist[i-3]=="indvd":
                         AF = float(re.search(r"AF=([\d\.]+);", snp_aligned[i][0]).group(1))
                         AN = float(re.search(r"AN=([\d\.]+);", snp_aligned[i][0]).group(1))
                         if AN<5:
                             continue
-                    elif methodlist[i-3-N_of_targetpop]=="pool":
+                    elif methodlist[i-3]=="pool":
                         refdep = 0;altalleledep = 0
                         AD_idx = (re.split(":", snp_aligned[i][1])).index("AD")  # gatk GT:AD:DP:GQ:PL
                         for sample in snp_aligned[i][2]:
@@ -217,7 +214,7 @@ def make_freq_xaxisKEY_yaxisseqVALUERelation(a):
     return copy.deepcopy(freq_xaxisKEY_yaxisVALUE_seq_list)
 if __name__ == '__main__':
     filenamelistfilename=options.outfileprewithpath+".freqcorrelationfilenamelist"
-    parameterstuples=(options.chromlistfilename,options.topleveltablejudgeancestral,options.targetpopvcffile_withdepth,options.refpopvcffile_withdepth,options.numberofindvdoftargetpop_todividintobin)
+    parameterstuples=(options.chromlistfilename,options.topleveltablejudgeancestral,options.targetpopvcfconfig,options.refpopvcffileconfig,options.numberofindvdoftargetpop_todividintobin)
     print(parameterstuples,options.outfileprewithpath)
     freq_xaxisKEY_yaxisVALUE_seq_list=make_freq_xaxisKEY_yaxisseqVALUERelation(parameterstuples)
     outfilename=options.outfileprewithpath+"_part_"+str(os.getpid())+Util.random_str()
