@@ -37,20 +37,25 @@ if __name__ == '__main__':
             reclist=re.split(r'\s+',rec.strip())
             chromlistOrBedRegionList.append((reclist[0].strip(),int(reclist[1].strip())))
         chrlistfilewithoutpath=re.search(r"[^/]*$",options.chromlistfilename).group(0)
+        chromlistfile.close()
     elif options.chromlistfilename==None and options.bedlikefile!=None:
         bedreclistfile=open(options.bedlikefile,"r")
         for rec in bedreclistfile:
             reclist=re.split(r"\s+",rec.strip())
             chromlistOrBedRegionList.append((reclist[0].strip(),(int(reclist[1]),int(reclist[2]))))
+        chrlistfilewithoutpath=re.search(r"[^/]*$",options.bedlikefile).group(0)
     else:
         print("options.chromlistfilename and options.chromlistfilename conflict")
 #     genomedbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname)
-    
+    print(chromlistOrBedRegionList)
     if options.typeOfcalculate=="early":
-        flankseqfafilename=options.chromlistfilename+str(os.getpid())+"snpflankseq.fa"
+        if  options.chromlistfilename!=None and options.bedlikefile==None:
+            aaaaaaa=options.chromlistfilename
+        else:
+            aaaaaaa=options.bedlikefile
+        flankseqfafilename=aaaaaaa+str(os.getpid())+"snpflankseq.fa"
         dbvariantstools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.vcfdbname)
         dynamicIU_toptable_obj=Ancestralallele.dynamicInsertUpdateAncestralContext(dbvariantstools,Util.beijingreffa,options.topleveltablejudgeancestral)
-        
         obsexpcaculator=Caculators.Caculate_S_ObsExp_difference(mindeptojudgefix,options.targetpopvcfconfig,options.refpopvcffileconfig,dbvariantstools,options.topleveltablejudgeancestral,options.outfileprewithpath)
         obsexpcaculator.dynamicIU_toptable_obj=dynamicIU_toptable_obj
         obsexpcaculator.flankseqfafile=open(flankseqfafilename,"w")
@@ -88,7 +93,14 @@ if __name__ == '__main__':
         outputname=options.outfileprewithpath
         outfile = open(outputname + "."+options.typeOfcalculate+str(windowWidth)+"_"+str(slideSize)+chrlistfilewithoutpath, 'w')
         print("chrNo\twinNo\tfirstsnppos\tlastsnppos",*obsexpcaculator.vcfname_combination,sep="\t",file=outfile)
-
+    elif options.typeOfcalculate=="hp":
+        obsexpcaculator=Caculators.Caculate_Hp_master_slave(options.targetpopvcfconfig,options.outfileprewithpath,minsnps=0)
+        plainname=re.search(r"[^/]*$",options.outfileprewithpath).group(0)
+        if len(plainname)>=250:
+            outputname=options.outfileprewithpath[:-(len(plainname)-250)]
+        outputname=options.outfileprewithpath
+        outfile=open(outputname + "."+options.typeOfcalculate+str(windowWidth)+"_"+str(slideSize)+chrlistfilewithoutpath, 'w')
+        print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnp\twinvalue\tzvalue",file=outfile)
     aaaa=open(options.outfileprewithpath+".slidwin_filelist"+options.masterpid,'a')
     print(outputname + "."+options.typeOfcalculate+str(windowWidth)+"_"+str(slideSize)+chrlistfilewithoutpath,file=aaaa)
     aaaa.close()
@@ -101,8 +113,10 @@ if __name__ == '__main__':
     genomedbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname) 
     mysqlchromtable = Util.pekingduckchromtable
     for currentchrID,currentchrLenOrRegion in chromlistOrBedRegionList:
-        if len(currentchrLenOrRegion)==2:
-            currentchrLen=genomedbtools.operateDB("select","select * from "+mysqlchromtable+" where chrID='"+currentchrID+"' ")[0][1]
+        if isinstance(currentchrLenOrRegion,tuple):
+            currentchrLen=int(genomedbtools.operateDB("select","select * from "+mysqlchromtable+" where chrID='"+currentchrID+"' ")[0][1])
+        else:
+            currentchrLen=currentchrLenOrRegion
         for vcfname in obsexpcaculator.vcfnamelist:
             vcfobj=obsexpcaculator.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname][0]
 #         for vcfobj in poplist:
@@ -111,11 +125,11 @@ if __name__ == '__main__':
         else:
             print("this chr doesn't exist in anypop")
             fillNA=obsexpcaculator.getResult()#[(0,0,0,'NA')]
-            if len(currentchrLenOrRegion)==2 and currentchrLenOrRegion[1]+extendsize<currentchrLen:
+            if isinstance(currentchrLenOrRegion,tuple) and currentchrLenOrRegion[1]+extendsize<currentchrLen:
                 fillsize_End=currentchrLenOrRegion[1]+extendsize
             else:
                 fillsize_End=currentchrLen
-            if len(currentchrLenOrRegion)==2 and currentchrLenOrRegion[0]-extendsize>0:
+            if isinstance(currentchrLenOrRegion,tuple) and currentchrLenOrRegion[0]-extendsize>0:
                 fillsize_Start=currentchrLenOrRegion[0]-extendsize
             else:
                 fillsize_Start=0
@@ -132,7 +146,7 @@ if __name__ == '__main__':
             obsexpcaculator.listOfpopvcfRecsmapByAChr[vcfobj_idx]={}
             vcfobj=obsexpcaculator.vcfnameKEY_vcfobj_pyBAMfilesVALUE[obsexpcaculator.vcfnamelist[vcfobj_idx]][0]
             print(obsexpcaculator.vcfnamelist[vcfobj_idx],"getvcf")
-            if len(currentchrLenOrRegion)==2:#bedfile
+            if isinstance(currentchrLenOrRegion,tuple):#bedfile
                 obsexpcaculator.listOfpopvcfRecsmapByAChr[vcfobj_idx][currentchrID]=vcfobj.getVcfListByChrom(currentchrID,currentchrLenOrRegion[0]-extendsize,currentchrLenOrRegion[1]+extendsize)
             else:#chrom
                 obsexpcaculator.listOfpopvcfRecsmapByAChr[vcfobj_idx][currentchrID]=vcfobj.getVcfListByChrom(currentchrID)
@@ -144,29 +158,39 @@ if __name__ == '__main__':
             obsexpcaculator.alignedSNP_absentinfo[currentchrID]=[]
         ##########
         print(len(target_ref_SNPs[currentchrID]))
-        if len(currentchrLenOrRegion)==2:#bedfile
-            win.slidWindowOverlap(target_ref_SNPs[currentchrID], currentchrLenOrRegion[1]+extendsize, windowWidth, slideSize, obsexpcaculator,currentchrLenOrRegion[0]-extendsize)
+        if isinstance(currentchrLenOrRegion,tuple):#bedfile
+            print(currentchrID,currentchrLenOrRegion[0]-extendsize,currentchrLenOrRegion[1]+extendsize)
+            win.slidWindowOverlap(target_ref_SNPs[currentchrID], min(currentchrLenOrRegion[1]+extendsize,currentchrLen), windowWidth, slideSize, obsexpcaculator,max(0,currentchrLenOrRegion[0]-extendsize))
         else:
             win.slidWindowOverlap(target_ref_SNPs[currentchrID], currentchrLen, windowWidth, slideSize, obsexpcaculator)
-        obsexpsignalmapbychrom[currentchrID]=copy.deepcopy(win.winValueL)
+
+        obsexpsignalmapbychrom[(currentchrID,currentchrLenOrRegion)]=copy.deepcopy(win.winValueL)
+
     
     for currentchrID,currentchrLenOrRegion in chromlistOrBedRegionList:
-        if len(currentchrLenOrRegion)==2:
-            currentchrLen=genomedbtools.operateDB("select","select * from "+mysqlchromtable+" where chrID='"+currentchrID+"' ")[0][1]
-        if currentchrID in obsexpsignalmapbychrom:
-            for i in range(len(obsexpsignalmapbychrom[currentchrID])):
+        if isinstance(currentchrLenOrRegion,tuple):
+            currentchrLen=int(genomedbtools.operateDB("select","select * from "+mysqlchromtable+" where chrID='"+currentchrID+"' ")[0][1])
+        else:
+            currentchrLen=currentchrLenOrRegion
+        if (currentchrID,currentchrLenOrRegion) in obsexpsignalmapbychrom:
+            for i in range(len(obsexpsignalmapbychrom[(currentchrID,currentchrLenOrRegion)])):
                 if options.typeOfcalculate=="early":
-                    if obsexpsignalmapbychrom[currentchrID][i][3]=="NA":
-                        print(currentchrID + "\t" + str(i) + "\t" + str(obsexpsignalmapbychrom[currentchrID][i][0]) + "\t" + str(obsexpsignalmapbychrom[currentchrID][i][1]) + "\t"+str(obsexpsignalmapbychrom[currentchrID][i][2])+"\t" + "NA" + "\t" + "NA", file=outfile)
+                    if obsexpsignalmapbychrom[(currentchrID,currentchrLenOrRegion)][i][3]=="NA":
+                        print(currentchrID + "\t" + str(i) + "\t" + str(obsexpsignalmapbychrom[(currentchrID,currentchrLenOrRegion)][i][0]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID,currentchrLenOrRegion)][i][1]) + "\t"+str(obsexpsignalmapbychrom[(currentchrID,currentchrLenOrRegion)][i][2])+"\t" + "NA" + "\t" + "NA", file=outfile)
                     else:
     #                     zS=(obsexpsignalmapbychrom[currentchrID][i][3][0]-exception)/std1
-                        print(currentchrID + "\t" + str(i) + "\t" + str(obsexpsignalmapbychrom[currentchrID][i][0]) + "\t" + str(obsexpsignalmapbychrom[currentchrID][i][1]) + "\t" +str(obsexpsignalmapbychrom[currentchrID][i][2])+"\t"+ '%.15f'%(obsexpsignalmapbychrom[currentchrID][i][3][0]) + "\t" + '%.12f'%(obsexpsignalmapbychrom[currentchrID][i][3][1]), file=outfile)
+                        print(currentchrID + "\t" + str(i) + "\t" + str(obsexpsignalmapbychrom[(currentchrID,currentchrLenOrRegion)][i][0]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID,currentchrLenOrRegion)][i][1]) + "\t" +str(obsexpsignalmapbychrom[(currentchrID,currentchrLenOrRegion)][i][2])+"\t"+ '%.15f'%(obsexpsignalmapbychrom[(currentchrID,currentchrLenOrRegion)][i][3][0]) + "\t" + '%.12f'%(obsexpsignalmapbychrom[(currentchrID,currentchrLenOrRegion)][i][3][1]), file=outfile)
                 elif options.typeOfcalculate=="pairfst":
                     pass
                 elif options.typeOfcalculate=="is":
-                    print(currentchrID + "\t" + str(i) + "\t" + str(obsexpsignalmapbychrom[currentchrID][i][0])+ "\t" + str(obsexpsignalmapbychrom[currentchrID][i][1]),*obsexpsignalmapbychrom[currentchrID][i][3],sep="\t", file=outfile)# + "\t"+str()
+                    print(currentchrID + "\t" + str(i) + "\t" + str(obsexpsignalmapbychrom[(currentchrID,currentchrLenOrRegion)][i][0])+ "\t" + str(obsexpsignalmapbychrom[(currentchrID,currentchrLenOrRegion)][i][1]),*obsexpsignalmapbychrom[(currentchrID,currentchrLenOrRegion)][i][3],sep="\t", file=outfile)# + "\t"+str()
+                elif options.typeOfcalculate=="hp":
+                    if obsexpsignalmapbychrom[(currentchrID,currentchrLenOrRegion)][i][3]=="NA":
+                        print(currentchrID+"\t"+str(i)+"\t"+str(obsexpsignalmapbychrom[(currentchrID,currentchrLenOrRegion)][i][0])+"\t"+str(obsexpsignalmapbychrom[(currentchrID,currentchrLenOrRegion)][i][1])+"\t"+str(obsexpsignalmapbychrom[(currentchrID,currentchrLenOrRegion)][i][2])+"\t"+ 'NA' + "\t0" , file=outfile)
+                    else:
+                        print(currentchrID+"\t"+str(i)+"\t"+str(obsexpsignalmapbychrom[(currentchrID,currentchrLenOrRegion)][i][0])+"\t"+str(obsexpsignalmapbychrom[(currentchrID,currentchrLenOrRegion)][i][1])+"\t"+str(obsexpsignalmapbychrom[(currentchrID,currentchrLenOrRegion)][i][2])+"\t"+ '%.15f'%(obsexpsignalmapbychrom[(currentchrID,currentchrLenOrRegion)][i][3]) + "\t0" , file=outfile)
     outfile.close()
-    chromlistfile.close()
+    
     if options.topleveltablejudgeancestral!=None:
         dbvariantstools.disconnect()
 #     genomedbtools.disconnect()

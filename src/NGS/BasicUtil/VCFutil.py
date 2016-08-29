@@ -224,7 +224,7 @@ class VCF_Data():
             although dilute and dilutetodensity can present at the same time,but it not make sense.
             return a list that contain all vcf record of a chrom
         """
-        print("getVcfListByChrom",chrom,dilute,dilutetodensity)
+        print("getVcfListByChrom",chrom,startpos,endpos,dilute,dilutetodensity)
         VcfList_A_Chrom = []
         if chrom not in self.chromOrder:
             return []
@@ -240,7 +240,10 @@ class VCF_Data():
         vcfFile.seek(self.VcfIndexMap[chrom][0])
         #find the first line
         filepos=vcfFile.tell()
-        for line in vcfFile:
+        line=vcfFile.readline()
+        
+        while line:
+#         for line in vcfFile:
             
             linelist = re.split(r'\s+', line.strip())
             samples = linelist[9:len(linelist)]
@@ -251,6 +254,8 @@ class VCF_Data():
             if pos>=startpos:
                 break
             filepos=vcfFile.tell()
+            line=vcfFile.readline()
+            
         vcfFile.seek(filepos)
         linescontent=vcfFile.read(self.VcfIndexMap[chrom][1]-filepos)
         vcflineslist=re.split(r"\n",linescontent.strip())
@@ -294,6 +299,7 @@ class VCF_Data():
             VcfList_A_Chrom.append((pos, REF, ALT, INFO, FORMAT, samples))
         vcfFile.close()
         if dilutetodensity != "noofsnpperkb":
+            print("need to be fixed")
             dilute = dilutetodensity * (VcfList_A_Chrom[-1][0] - VcfList_A_Chrom[0][0]) / (1000 * len(VcfList_A_Chrom))
 #             print(dilute)
             if dilute < 1:
@@ -303,7 +309,9 @@ class VCF_Data():
             for recidx in VcfRecRandomSelectIdxlist:
                 new_VcfList_A_Chrom.append(VcfList_A_Chrom[recidx])
             VcfList_A_Chrom = copy.deepcopy(new_VcfList_A_Chrom)
-        print("getVcfListByChrom",chrom, len(VcfList_A_Chrom), self.VcfIndexMap[chrom], self.NumOfRecbychromOrder[i], "total recs in this vcf belong to this chrom,dilute to", int(dilute * self.NumOfRecbychromOrder[i])) 
+        print("getVcfListByChrom",chrom, len(VcfList_A_Chrom), self.VcfIndexMap[chrom], self.NumOfRecbychromOrder[i], "total recs in this vcf belong to this chrom,dilute to", int(dilute * self.NumOfRecbychromOrder[i]),sep="\t") 
+        if VcfList_A_Chrom!=[]:
+            print(VcfList_A_Chrom[-1][0])
         return copy.deepcopy(VcfList_A_Chrom)
         
 

@@ -56,17 +56,18 @@ if __name__ == '__main__':
                 outfileNameWINwithGENE_Plist.append((geneUtil.findTrscpt(p_inputfileName, outbedfilename, int(options.upextend), int(options.downextend), int(options.winWidth), int(options.slideSize), options.winType, "m", threshold_title_list[0], None, options.mergeNA, int(options.distalextend),options.trscptfound),threshold_title,outbedfilename))
                 makeMhtGraph.makeHistonPicture(p_inputfileName, "Fst")#,"c(0,2000)","c(0,45)"
                 makeMhtGraph.makeHistonPicture(outfileNameWINwithGENE_Plist[-1][0], "Fst")
-                print("awk 'NR!=1{print $8}' "+outbedfilename+".bed.selectedgene"+"|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"+outbedfilename+".trscptIDlist")
-                os.system("awk 'NR!=1 && $7>="+options.minmaxSNP +"{print $8}' "+outbedfilename+".bed.selectedgene"+"|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"+outbedfilename+".trscptIDlist")
+                print("awk 'NR!=1{print $8}' "+outbedfilename+".bed.selectedgene"+"|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq|awk'$0~/^ENS/{print $0}' >"+outbedfilename+".ENStrscptIDlist")
+                os.system("awk 'NR!=1 && $7>="+options.minmaxSNP +"{print $8}' "+outbedfilename+".bed.selectedgene"+"|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq|awk '$0~/^ENS/{print $0}' >"+outbedfilename+".ENStrscptIDlist")
+                os.system("awk 'NR!=1 && $7>="+options.minmaxSNP +"{print $8}' "+outbedfilename+".bed.selectedgene"+"|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq|awk '$0!~/^ENS/{print $0}' >"+outbedfilename+".miRNAlist")
                 if options.removegenelistfile!=None:
-                    f=open(outbedfilename+".trscptIDlist",'r')
+                    f=open(outbedfilename+".ENStrscptIDlist",'r')
                     mylist=[];
                     for line in f:
 
     #                     uniontpidlist.append(line.strip())
                         mylist.append(line.strip())
                     f.close()
-                    ff=open(outbedfilename+".trscptIDlist",'w')
+                    ff=open(outbedfilename+".ENStrscptIDlist",'w')
                     removelist=[]    
 ############################
                     f=open(options.removegenelistfile,'r')
@@ -80,7 +81,7 @@ if __name__ == '__main__':
                     for e in finallist:
                         print(e,file=ff)
                     ff.close()                
-                f=open(outbedfilename+".trscptIDlist",'r')
+                f=open(outbedfilename+".ENStrscptIDlist",'r')
                 curset=set()
                 mylist=[]
                 for line in f:

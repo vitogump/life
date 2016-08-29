@@ -1498,6 +1498,7 @@ class Window():
             self.winValueL.append((winStart, winStart + windowWidth, Caculator.getResult()))
                 
     def slidWindowOverlap(self, L, L_End_Pos, windowWidth, slideSize, Caculator,L_Start_Pos=0):
+        print("L_End_Pos",L_End_Pos,L_Start_Pos)
         """
         window slide from L_Start_Pos to L_End_Pos
         L = [(pos,p1,p2,p3,A_base_idx),(pos,"a,b","c,d","e,f",0),(pos,"a,b","c,d","e,f",1),....] for D-statistics wihtout "no covered"
@@ -1787,43 +1788,57 @@ class WinInGenome():
         selectType5OverlapGenesql = "select * from " + transcripttable + " where chrID='" + chrID + "' and trscpt_end_pos > " + str(Region_start - upextend) + " and trscpt_end_pos < " + str(Region_start)
         selectType6OverlapGenesql = "select * from " + transcripttable + " where chrID='" + chrID + "' and trscpt_start_pos < " + str(Region_end + downextend) + " and trscpt_start_pos > " + str(Region_end)
         #1
+        findPROTEINGENE=False
         result = genomedbtools.operateDB("select", selectType1OverlapGenesql)
         for row in result:
             row += tuple([1])
             trscptlist.append(row)
+            if row[0].find("ENS")==0:
+                findPROTEINGENE=True
         #2
         result = genomedbtools.operateDB("select", selectType2OverlapGenesql)
         for row in result:
             row += tuple([2])
             trscptlist.append(row)
+            if row[0].find("ENS")==0:
+                findPROTEINGENE=True
         #3
         result = genomedbtools.operateDB("select", selectType3OverlapGenesql)
         for row in result:
             row += tuple([3])
             trscptlist.append(row)
+            if row[0].find("ENS")==0:
+                findPROTEINGENE=True
         #4
         result = genomedbtools.operateDB("select", selectType4OverlapGenesql)
         for row in result:
             row += tuple([4])
             trscptlist.append(row)
+            if row[0].find("ENS")==0:
+                findPROTEINGENE=True
         #5
         result = genomedbtools.operateDB("select", selectType5OverlapGenesql)
         for row in result:
             row += tuple([5])
             trscptlist.append(row)
+            if row[0].find("ENS")==0:
+                findPROTEINGENE=True
         #6
         result = genomedbtools.operateDB("select", selectType6OverlapGenesql)
         for row in result:
             row += tuple([6])
             trscptlist.append(row)
-        if trscptlist==[] and extendtodistal>max(upextend,downextend):
-            result=genomedbtools.operateDB("select","select * from "+ transcripttable + " where chrID='" + chrID +  "' and trscpt_end_pos < "+str(Region_start) + " order by trscpt_end_pos ")
+            if row[0].find("ENS")==0:
+                findPROTEINGENE=True
+            
+        if not findPROTEINGENE and extendtodistal>max(upextend,downextend):
+            result=genomedbtools.operateDB("select","select * from "+ transcripttable + " where transcript_ID regexp  'ENS' and  chrID='" + chrID +  "' and trscpt_end_pos < "+str(Region_start) + " order by trscpt_end_pos ")
             if len(result)!=0:#result is a list
                 row=list(result[-1])
                 if Region_start-int(row[6])<extendtodistal:
                     row[2]=("<"+str(Region_start-int(row[6])))+row[7]+row[2]
                     trscptlist.append(tuple(row)+tuple([7]))
-            result=genomedbtools.operateDB("select","select * from "+ transcripttable + " where chrID='" + chrID +  "' and trscpt_start_pos > "+ str(Region_end)+" order by trscpt_start_pos desc")
+            result=genomedbtools.operateDB("select","select * from "+ transcripttable + " where transcript_ID regexp  'ENS' and chrID='" + chrID +  "' and trscpt_start_pos > "+ str(Region_end)+" order by trscpt_start_pos desc")
             if len(result)!=0:#result is a list
                 row=list(result[-1])
                 if int(row[5])-Region_end<extendtodistal:
