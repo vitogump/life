@@ -101,6 +101,10 @@ if __name__ == '__main__':
         outputname=options.outfileprewithpath
         outfile=open(outputname + "."+options.typeOfcalculate+str(windowWidth)+"_"+str(slideSize)+chrlistfilewithoutpath, 'w')
         print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnp\twinvalue\tzvalue",file=outfile)
+    if options.bedlikefile!=None:
+        obsexpcaculator.minsnps=3
+    elif options.chromlistfilename!=None:
+        obsexpcaculator.minsnps=10
     aaaa=open(options.outfileprewithpath+".slidwin_filelist"+options.masterpid,'a')
     print(outputname + "."+options.typeOfcalculate+str(windowWidth)+"_"+str(slideSize)+chrlistfilewithoutpath,file=aaaa)
     aaaa.close()

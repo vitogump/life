@@ -112,9 +112,9 @@ if __name__ == '__main__':
                 makeMhtGraph.makeHistonPicture(outfileNameWINwithGENE_Nlist[-1][0], "Hp")#,"c(0,2000)","c(0,45)"
                 
 #                     print("awk 'NR!=1{print $8}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq|grep --wFf """+options.removegenelistfile + """ - > """+outbedfilename+".trscptIDlist")
-                print("awk 'NR!=1{print $8}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"""+outbedfilename+".trscptIDlist")
-                os.system("awk 'NR!=1 && $7>="+options.minmaxSNP +"{print $8}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq|sed '/^$/d'|awk '$0~/^ENS/{print $0}>"""+outbedfilename+".ENStrscptIDlist")
-                os.system("awk 'NR!=1 && $7>="+options.minmaxSNP +"{print $8}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq|sed '/^$/d'|awk '$0!~/^ENS/{print $0}>"""+outbedfilename+".miRNAlist")
+                print("awk 'NR!=1{print $8}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"""+outbedfilename+".ENStrscptIDlist")
+                os.system("awk 'NR!=1 && $7>="+options.minmaxSNP +"{print $8}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq|sed '/^$/d'|awk '$0~/^ENS/{print $0}'>"""+outbedfilename+".ENStrscptIDlist")
+                os.system("awk 'NR!=1 && $7>="+options.minmaxSNP +"{print $8}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq|sed '/^$/d'|awk '$0!~/^ENS/{print $0}'>"""+outbedfilename+".miRNAlist")
                 if options.removegenelistfile!=None:
                     f=open(outbedfilename+".ENStrscptIDlist",'r')
                     mylist=[];
