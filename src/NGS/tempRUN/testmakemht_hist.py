@@ -96,8 +96,8 @@ if __name__ == '__main__':
 
                 geneUtil.GOenrichment(options.gotablefile,outbedfilename,None,list(set(mylist)),None)
 
-                print("grep -wFf "+outbedfilename+".trscptIDlist"+""" /home/bioinfo/databases/ensembleIDconvert.txt|awk '{FS="\t";print $3}'|sort|uniq|sed '/^$/d'>"""+outbedfilename+""".Homologs_human""")
-                os.system("grep -wFf "+outbedfilename+".trscptIDlist"+""" /home/bioinfo/databases/ensembleIDconvert.txt|awk '{FS="\t";print $3}'|sort|uniq|sed '/^$/d'>"""+outbedfilename+""".Homologs_human""")
+                print("grep -wFf "+outbedfilename+".ENStrscptIDlist"+""" /home/bioinfo/databases/ensembleIDconvert.txt|awk '{FS="\t";print $3}'|sort|uniq|sed '/^$/d'>"""+outbedfilename+""".Homologs_human""")
+                os.system("grep -wFf "+outbedfilename+".ENStrscptIDlist"+""" /home/bioinfo/databases/ensembleIDconvert.txt|awk '{FS="\t";print $3}'|sort|uniq|sed '/^$/d'>"""+outbedfilename+""".Homologs_human""")
                 print("grep -wFf "+outbedfilename+".Homologs_human /home/bioinfo/databases/humangenesymbl.txt|awk '{print $3}'|sort|uniq|sed '/^$/d'>"+outbedfilename+"Homologs_human_genesymbl")
                 os.system("grep -wFf "+outbedfilename+".Homologs_human /home/bioinfo/databases/humangenesymbl.txt|awk '{print $3}'|sort|uniq|sed '/^$/d'>"+outbedfilename+"Homologs_human_genesymbl")
                 print("""grep -wFf """+outbedfilename+""".Homologs_human /home/bioinfo/databases/humanGO.table |awk '{FS="\t";print $3}'|sort|uniq|sed '/^$/d' > """+outbedfilename+".Homologs_humanEntrezGeneID")
@@ -113,16 +113,17 @@ if __name__ == '__main__':
                 
 #                     print("awk 'NR!=1{print $8}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq|grep --wFf """+options.removegenelistfile + """ - > """+outbedfilename+".trscptIDlist")
                 print("awk 'NR!=1{print $8}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"""+outbedfilename+".trscptIDlist")
-                os.system("awk 'NR!=1 && $7>="+options.minmaxSNP +"{print $8}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq|sed '/^$/d'>"""+outbedfilename+".trscptIDlist")
+                os.system("awk 'NR!=1 && $7>="+options.minmaxSNP +"{print $8}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq|sed '/^$/d'|awk '$0~/^ENS/{print $0}>"""+outbedfilename+".ENStrscptIDlist")
+                os.system("awk 'NR!=1 && $7>="+options.minmaxSNP +"{print $8}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq|sed '/^$/d'|awk '$0!~/^ENS/{print $0}>"""+outbedfilename+".miRNAlist")
                 if options.removegenelistfile!=None:
-                    f=open(outbedfilename+".trscptIDlist",'r')
+                    f=open(outbedfilename+".ENStrscptIDlist",'r')
                     mylist=[];
                     for line in f:
 
     #                     uniontpidlist.append(line.strip())
                         mylist.append(line.strip())
                     f.close()
-                    ff=open(outbedfilename+".trscptIDlist",'w')
+                    ff=open(outbedfilename+".ENStrscptIDlist",'w')
                     removelist=[]    
 ############################
                     f=open(options.removegenelistfile,'r')
@@ -135,7 +136,7 @@ if __name__ == '__main__':
                     for e in finallist:
                         print(e,file=ff)
                     ff.close()
-                f=open(outbedfilename+".trscptIDlist",'r')
+                f=open(outbedfilename+".ENStrscptIDlist",'r')
                 curset=set()
                 mylist=[];
                 for line in f:
@@ -156,8 +157,8 @@ if __name__ == '__main__':
                     intertpidset=intertpidset.intersection(curset)
                 else:
                     intertpidset=curset
-                print("grep -wFf "+outbedfilename+".trscptIDlist"+""" /home/bioinfo/databases/ensembleIDconvert.txt|awk '{FS="\t";print $3}'|sort|uniq|sed '/^$/d'>"""+outbedfilename+""".Homologs_human""")
-                os.system("grep -wFf "+outbedfilename+".trscptIDlist"+""" /home/bioinfo/databases/ensembleIDconvert.txt|awk '{FS="\t";print $3}'|sort|uniq|sed '/^$/d'>"""+outbedfilename+""".Homologs_human""")
+                print("grep -wFf "+outbedfilename+".ENStrscptIDlist"+""" /home/bioinfo/databases/ensembleIDconvert.txt|awk '{FS="\t";print $3}'|sort|uniq|sed '/^$/d'>"""+outbedfilename+""".Homologs_human""")
+                os.system("grep -wFf "+outbedfilename+".ENStrscptIDlist"+""" /home/bioinfo/databases/ensembleIDconvert.txt|awk '{FS="\t";print $3}'|sort|uniq|sed '/^$/d'>"""+outbedfilename+""".Homologs_human""")
                 print("grep -wFf "+outbedfilename+".Homologs_human /home/bioinfo/databases/humangenesymbl.txt|awk '{print $3}'|sort|uniq|sed '/^$/d'>"+outbedfilename+"Homologs_human_genesymbl")
                 os.system("grep -wFf "+outbedfilename+".Homologs_human /home/bioinfo/databases/humangenesymbl.txt|awk '{print $3}'|sort|uniq|sed '/^$/d'>"+outbedfilename+"Homologs_human_genesymbl")
                 print("""grep -wFf """+outbedfilename+""".Homologs_human /home/bioinfo/databases/humanGO.table |awk '{FS="\t";print $3}'|sort|uniq|sed '/^$/d' > """+outbedfilename+".Homologs_humanEntrezGeneID")
