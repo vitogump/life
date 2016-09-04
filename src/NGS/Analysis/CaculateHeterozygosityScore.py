@@ -71,7 +71,8 @@ if __name__ == '__main__':
 #        pop.getVcfMap(vcf)
     outfile = open(outname + ".het"+str(windowWidth)+"_"+str(slideSize), 'w')
     if options.df!=None:
-        hp_caculator=Caculators.Caculate_df([],[])
+        dfsnpfile=open(outname+".dfsnp","w")
+        hp_caculator=Caculators.Caculate_df([],[],dfsnpfile)
         title=poplist[0].VcfIndexMap["title"]
         total_individ = len(title) - 9
         f=open(options.df[0],"r")
@@ -99,6 +100,7 @@ if __name__ == '__main__':
     for row in result:
         currentchrID=row[0]
         currentchrLen=int(row[1])
+        hp_caculator.currentchrID=currentchrID
         if currentchrID in poplist[0].VcfIndexMap:
             vcflist_A_chrom_container=[]
             for vcf_idx in range(len(vcffileslist)):
@@ -167,6 +169,8 @@ if __name__ == '__main__':
                     print(currentchrID + "\t" + str(i) + "\t" + str(hscore.HeterozyMap[currentchrID][i][0]) + "\t" + str(hscore.HeterozyMap[currentchrID][i][1]) + "\t"+str(hscore.HeterozyMap[currentchrID][i][2])+"\t" + hscore.HeterozyMap[currentchrID][i][3] + "\t" + zHp, file=outfile)
     print(outname, str(expectation), str(std0), str(std1), file=open(outputpath+"staticvalue.txt", 'a'))
     outfile.close()
+    if options.df!=None:
+        dfsnpfile.close()
     dbtools.disconnect()
     print("finished")
 

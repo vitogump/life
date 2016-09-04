@@ -141,7 +141,7 @@ class Caculate_Dstatistics(Caculator):
         return ABBAcount, BABAcount, D_fixed, D_snp, noofsnps
         
 class Caculate_df(Caculator):
-    def __init__(self,pop1idxlist,pop2idxlist):
+    def __init__(self,pop1idxlist,pop2idxlist,filehanlder):
         super().__init__()
         self.pop1idxlist=pop1idxlist
         self.pop2idxlist=pop2idxlist
@@ -150,6 +150,8 @@ class Caculate_df(Caculator):
         self.unsufficentfixediff=0
         self.pop1_indvds=None#=6#when pop1 is none at a pos,and no depth information
         self.pop2_indvds=None#=6
+        self.filepoiner=filehanlder
+        self.currentchrID=None
     def process(self,T):
         #no matter the present of the multiple allele or not,it's still work correct.
         pop1reffixed=0;pop1altfixed=0;pop2reffixed=0;pop2altfixed=0
@@ -183,6 +185,7 @@ class Caculate_df(Caculator):
 #         print(pop1reffixed,"==0",pop1altfixed,"==",self.pop1_indvds,pop2reffixed,"==",self.pop2_indvds,pop2altfixed,"==0",(pop1reffixed==0 and pop1altfixed==self.pop1_indvds and pop2reffixed==self.pop2_indvds and pop2altfixed==0 ),pop1reffixed,"==",self.pop1_indvds,pop1altfixed,"==0",pop2reffixed,"==0",pop2altfixed,"==",self.pop2_indvds,(pop1reffixed==self.pop1_indvds and pop1altfixed==0 and pop2reffixed==0 and pop2altfixed==self.pop2_indvds))
         if (pop1reffixed==0 and pop1altfixed==self.pop1_indvds and pop2reffixed==self.pop2_indvds and pop2altfixed==0 ) or (pop1reffixed==self.pop1_indvds and pop1altfixed==0 and pop2reffixed==0 and pop2altfixed==self.pop2_indvds):
             self.COUNTED+=1
+            print(self.currentchrID,T,file=self.filepoiner)
 #             print("bingle",file=open("tttttt.txt",'a'))
         elif (pop1reffixed*pop1altfixed!=0 or pop1het!=0) or (pop2reffixed*pop2altfixed!=0 or pop2het!=0 ) :
             self.COUNTEDadditional[0]+=1
@@ -493,7 +496,7 @@ class Caculate_S_ObsExp_difference(Caculator):
             elif len(fanyadepthlist)==2 and int(fanyadepthlist[0])>=self.mindepthtojudefixed and fanyadepthlist[1].strip()=="0":
                 A_base_idx=0
             else:
-                print("skip snp",snp[0][1],snp[0][7],snp[0][9],snp[0][11],snp[0][13])
+#                 print("skip snp",snp[0][1],snp[0][7],snp[0][9],snp[0][11],snp[0][13])
                 return
 #             depthlist1=re.split(r",",snp[0][7])
 #             depthlist2=re.split(r",",snp[0][9])
@@ -523,7 +526,7 @@ class Caculate_S_ObsExp_difference(Caculator):
         for tpopidx in range(3,self.N_of_targetpop+3):
             if T[tpopidx]==None:
                 if len(self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[self.vcfnamelist[tpopidx-3]])==1:
-                    print("skip this pos",T)
+#                     print("skip this pos",T)
                     continue
                 else:
 #                     depth_linelist=self.depthobjlist[tpopidx-3].getdepthByPos_optimized(self.currentchrID,T[0])
@@ -537,7 +540,7 @@ class Caculate_S_ObsExp_difference(Caculator):
                     if sum_depth>self.mindepthtojudefixed:
                         AF=0
                     else:
-                        print(sum_depth,"low coverage skip")
+#                         print(sum_depth,"low coverage skip")
                         continue
             else:
                 if self.MethodToSeqpoplist[tpopidx-3]=="indvd":
@@ -574,7 +577,7 @@ class Caculate_S_ObsExp_difference(Caculator):
         for rpopidx in range(3+self.N_of_targetpop,self.N_of_refpop+self.N_of_targetpop+3):
             if T[rpopidx]==None:
                 if len(self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[self.vcfnamelist[rpopidx-3]])==1:
-                    print("skip this snp",T)
+#                     print("skip this snp",T)
                     continue
                 else:
 #                     depth_linelist=self.depthobjlist[rpopidx-3-self.N_of_targetpop].getdepthByPos_optimized(self.currentchrID,T[0])
@@ -588,7 +591,7 @@ class Caculate_S_ObsExp_difference(Caculator):
                     if sum_depth>self.mindepthtojudefixed:
                         AF=0
                     else:
-                        print(sum_depth,"low depth skip")
+#                         print(sum_depth,"low depth skip")
                         continue
             else:
                 if self.MethodToSeqpoplist[rpopidx-3]=="indvd":

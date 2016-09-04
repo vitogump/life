@@ -225,8 +225,9 @@ class VCF_Data():
             return a list that contain all vcf record of a chrom
         """
         print("getVcfListByChrom",chrom,startpos,endpos,dilute,dilutetodensity)
+
         VcfList_A_Chrom = []
-        if chrom not in self.chromOrder:
+        if (chrom not in self.chromOrder) or startpos>=endpos:
             return []
             print(chrom + "didn't find in " + self.vcfFileName)
         i = self.chromOrder.index(chrom.strip())
@@ -244,17 +245,21 @@ class VCF_Data():
         
         while line:
 #         for line in vcfFile:
-            
+
             linelist = re.split(r'\s+', line.strip())
             samples = linelist[9:len(linelist)]
-            chrom = linelist[0].strip()
+            c_chrom = linelist[0].strip()
             pos = int(linelist[1].strip())
             REF = linelist[3].strip()
             ALT = linelist[4].strip()
-            if pos>=startpos:
+            if chrom.strip()!=c_chrom:
+                return VcfList_A_Chrom            
+            if pos>=startpos : 
                 break
+
             filepos=vcfFile.tell()
             line=vcfFile.readline()
+
             
         vcfFile.seek(filepos)
         linescontent=vcfFile.read(self.VcfIndexMap[chrom][1]-filepos)
@@ -275,9 +280,9 @@ class VCF_Data():
             # the code block blow will be excute only when dilute==1,or    dilute!=1 and recidx == VcfRecRandomSelectIdxlist[0]:
             linelist = re.split(r'\s+', line.strip())
             samples = linelist[9:len(linelist)]
-            chrom = linelist[0].strip()
+            c_chrom = linelist[0].strip()
             pos = int(linelist[1].strip())
-            if pos>endpos:
+            if pos>endpos or chrom!=c_chrom:
                 break
             REF = linelist[3].strip()
             ALT = linelist[4].strip()

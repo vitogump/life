@@ -7,7 +7,7 @@ import copy
 from optparse import OptionParser
 import pickle
 import re
-
+from NGS.BasicUtil import VCFutil
 from src.NGS.BasicUtil import Util
 import src.NGS.BasicUtil.DBManager as dbm
 
@@ -19,6 +19,7 @@ parser.add_option("-r", "--reffa", dest="reffa",
                   help="reference.fa")
 parser.add_option("-g", "--gtffile", dest="gtffile", help="gtffile")
 parser.add_option("-v", "--variantstable", dest="variantstable", help="variants")
+parser.add_option("-V", "--vcffilename", dest="vcffilename", help="variants")
 parser.add_option("-b", "--bedfiles", dest="bedfiles", action="append", default=[], help="bedfiles")
 parser.add_option("-o", "--outputpath", dest="outputpath", help="default infile1_infile2")
 
@@ -38,9 +39,17 @@ reffahandler = open(options.reffa, "r")
 minlength = options.minlength
 chromtable = Util.pekingduckchromtable#options.chromtablename
 dbchromtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname)
-
-variantstablename = options.variantstable.strip()
-dbvariantstools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.vcfdbname)
+if options.vcffilename!=None:
+    variantstablename = re.search(r"[^/]*$",options.vcffilename).group(0)
+    vcfobj=VCFutil.VCF_Data(options.vcffilename)
+    titlelist=vcfobj.VcfIndexMap["title"]
+    titlelist=titlelist[0:2]+titlelist[3:5]+titlelist[7:]
+    pos_idx=0;ref_idx=1;alt_idx=2
+else:
+    variantstablename=options.variantstable.strip()
+    dbvariantstools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.vcfdbname)
+    pos_idx=1;ref_idx=3;alt_idx=4
+    titlelist = [a[0].strip() for a in dbvariantstools.operateDB("select", "select column_name  from information_schema.columns where table_schema='" + "ninglabvariantdata" + "' and table_name='" + variantstablename + "'")]
 
 gtfMap,utrMap,allgeneSetMap = Util.getGtfMap(options.gtffile)
 bedfileNames = options.bedfiles
@@ -62,7 +71,6 @@ intergenicVF = open(outputpath + variantstablename+".intergenic", 'w')
 cdsVF = open(outputpath + variantstablename+".cds", 'w')
 intronVF = open(outputpath + variantstablename+".intron", 'w')
 utrVF = open(outputpath + variantstablename+".utr", 'w')
-titlelist = [a[0].strip() for a in dbvariantstools.operateDB("select", "select column_name  from information_schema.columns where table_schema='" + "ninglabvariantdata" + "' and table_name='" + variantstablename + "'")]
 print(*(titlelist + ["trscptID", "geneID", "strand", "cdsidx", "refcodon", "refaa", "altcodon", "altaa"]), sep="\t", file=cdsVF)
 print(*(titlelist + ["trscptID", "geneID", "strand", "intronidx"]), sep="\t", file=intronVF)
 print(*(titlelist + ["trscptID", "geneID", "strand", "5'/3'"]), sep="\t", file=utrVF)
@@ -107,9 +115,12 @@ if __name__ == '__main__':
             currentchrID = row[0]
             currentchrLen = int(row[1])
             if currentchrID not in gtfMap:
-                snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>=" + str(0) + " and snp_pos<" + str(currentchrLen) + " order by snp_pos")
+                if options.vcffilename !=None:
+                    snps=vcfobj.getVcfListByChrom(currentchrID)
+                elif options.variantstable!=None:
+                    snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>=" + str(0) + " and snp_pos<" + str(currentchrLen) + " order by snp_pos")
                 for snp in snps:
-                    print(*(snp+tuple(["nogene"])), sep="\t", file=intergenicVF)
+                    print(currentchrID,*(snp[pos_idx:]+tuple(["nogene"])), sep="\t", file=intergenicVF)
                 print("no gene in the chrom:", currentchrID)
                 continue
             ####################### 
@@ -124,9 +135,13 @@ if __name__ == '__main__':
                 if gtfMap[currentchrID][0][0] in utrMap[currentchrID]:
                     if utrMap[currentchrID][gtfMap[currentchrID][0][0]][0][2]<gtfMap[currentchrID][0][2]:
                         firstutrstartpos=utrMap[currentchrID][gtfMap[currentchrID][0][0]][0][1]
-            snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>=" + str(0) + " and snp_pos<" + str(firstutrstartpos) + " order by snp_pos")
+            if options.vcffilename !=None:
+                snps=vcfobj.getVcfListByChrom(currentchrID,1,firstutrstartpos)
+            elif options.variantstable!=None:
+                
+                snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>=" + str(0) + " and snp_pos<" + str(firstutrstartpos) + " order by snp_pos")
             for snp in snps:
-                print(*(snp+tuple(["begin"])), sep="\t", file=intergenicVF)
+                print(currentchrID,*(snp[pos_idx:]+tuple(["begin"])), sep="\t", file=intergenicVF)
             GeneGrouplist = Util.getGeneGrouplist(gtfMap[currentchrID])
             
 
@@ -143,10 +158,14 @@ if __name__ == '__main__':
                             if utrMap[currentchrID][transcript_id][-1][2]>gene[3]:
                                 lastutr=utrMap[currentchrID][transcript_id][-1][2]                    
                     break
-            snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>=" + str(lastutr) + " and snp_pos<" + str(currentchrLen) + " order by snp_pos")
+            if options.vcffilename!=None:
+                
+                snps=vcfobj.getVcfListByChrom(currentchrID, lastutr, int(currentchrLen))
+            else:
+                snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>=" + str(lastutr) + " and snp_pos<" + str(currentchrLen) + " order by snp_pos")
 
             for snp in snps:
-                print(*(snp+tuple(["end"])), sep="\t", file=intergenicVF)              
+                print(currentchrID,*(snp[pos_idx:]+tuple(["end"])), sep="\t", file=intergenicVF)              
 #  ###################################################           print("collect intergenic rear part of chr :",currentchrID,GeneGrouplist[-1][0],str(currentchrLen))
             lasttscptID_endpos=None
             for geneGroup in GeneGrouplist:
@@ -173,9 +192,16 @@ if __name__ == '__main__':
                     tscptSeqAllCds_mut[tscptID] = copy.deepcopy(tscptSeqAllCds[tscptID])                   
                     
                 linetoCDSMap = {};linetoIntronMap = {}
+                if grouplist_idx>=1 and grouplist_idx<len(GeneGrouplist):
+
+                    if options.vcffilename!=None:
+                        intergennicsnps=vcfobj.getVcfListByChrom(currentchrID,GeneGrouplist[grouplist_idx-1][0]+utr3_region,geneGroup[1][2]-TSSregionlen)                      
+                    else:
+                        intergennicsnps=dbvariantstools.operateDB("select","select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>=" + str(GeneGrouplist[grouplist_idx-1][0]) + " and snp_pos<" + str(geneGroup[1][2]) + " order by snp_pos");
+                    for snp in intergennicsnps:
+                        print(currentchrID,*(snp[pos_idx:]+tuple(["before"+tscptID])),sep='\t',file=intergenicVF)     
                 for gene_idx in range(1, len(geneGroup)):
                     tscptID = geneGroup[gene_idx][0]
-                    
                     currenttscptID_endpos=geneGroup[gene_idx][3]+utr3_region
                     currenttscptID_startpos=geneGroup[gene_idx][2]-TSSregionlen
                     if geneGroup[gene_idx][1] == '+':
@@ -186,10 +212,13 @@ if __name__ == '__main__':
                                 i=0;exist_3utr=False;exist_5utr=False
                                 for utr_type,utr_s,utr_e in utrMap[currentchrID][tscptID]:
                                     if i>=1:
-                                        print("intergenicVF","select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(utrMap[currentchrID][i-1][2]) + " and snp_pos<" + str(utr_s) + " order by snp_pos")
-                                        snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(utrMap[currentchrID][i-1][2]) + " and snp_pos<" + str(utr_s) + " order by snp_pos")
-                                        for snp in snps:
-                                            print(*(snp+tuple(["betweenutr"+tscptID])), sep="\t", file=intergenicVF)
+                                        if options.vcffilename!=None:
+                                            
+                                            snps=vcfobj.getVcfListByChrom(currentchrID, utrMap[currentchrID][i-1][2], utr_s)
+                                        else:
+                                            snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(utrMap[currentchrID][i-1][2]) + " and snp_pos<" + str(utr_s) + " order by snp_pos")
+#                                         for snp in snps:
+#                                             print(currentchrID,*(snp[pos_idx:]+tuple(["betweenutr"+tscptID])), sep="\t", file=intergenicVF)
                                     elif i+1==len(utrMap[currentchrID][tscptID]) and False:
                                         print("unfinished")
                                         
@@ -202,37 +231,63 @@ if __name__ == '__main__':
                                         if not exist_5utr:
                                             currenttscptID_startpos=utr_s
                                         exist_5utr=True
-                                    snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(utr_s) + " and snp_pos<" + str(utr_e) + " order by snp_pos")
+                                    if options.vcffilename!=None:
+                                        
+                                        snps=vcfobj.getVcfListByChrom(currentchrID, utr_s,utr_e)
+                                    else:
+                                        snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(utr_s) + " and snp_pos<" + str(utr_e) + " order by snp_pos")
                                     for snp in snps:
-                                        print(*snp,sep="\t",end="\t",file=utrVF)
+                                        print(currentchrID,*snp[pos_idx:],sep="\t",end="\t",file=utrVF)
                                         print(tscptID,"geneID","+",utrMap[currentchrID][i][0],sep="\t",file=utrVF)               
                                     i+=1
                                 if not exist_3utr:
-                                    snps=dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][3]) + " and snp_pos<" + str(geneGroup[gene_idx][3]+utr3_region) + " order by snp_pos")
+                                    if options.vcffilename!=None:
+                                        
+                                        snps=vcfobj.getVcfListByChrom(currentchrID, geneGroup[gene_idx][3],geneGroup[gene_idx][3]+utr3_region)
+                                    else:
+                                        
+                                        snps=dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][3]) + " and snp_pos<" + str(geneGroup[gene_idx][3]+utr3_region) + " order by snp_pos")
                                     for snp in snps:
-                                        print(*snp,sep="\t",end="\t",file=utrVF)
+                                        print(currentchrID,*snp[pos_idx:],sep="\t",end="\t",file=utrVF)
                                         print(tscptID,"geneID","+","3UTR",sep="\t",file=utrVF)
                                 if not exist_5utr:
-                                    snps=dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][2]-TSSregionlen) + " and snp_pos<" + str(geneGroup[gene_idx][2]) + " order by snp_pos")
+                                    if options.vcffilename!=None:
+                                        
+                                        snps=vcfobj.getVcfListByChrom(currentchrID, geneGroup[gene_idx][2]-TSSregionlen,geneGroup[gene_idx][2])
+                                    else:
+                                        snps=dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][2]-TSSregionlen) + " and snp_pos<" + str(geneGroup[gene_idx][2]) + " order by snp_pos")
                                     for snp in snps:
-                                        print(*snp,sep="\t",end="\t",file=utrVF)
+                                        print(currentchrID,*snp[pos_idx:],sep="\t",end="\t",file=utrVF)
                                         print(tscptID,"geneID","+","5UTR",sep="\t",file=utrVF)
                         else:#no utr annotation in this gene
-                            snps=dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][3]) + " and snp_pos<" + str(geneGroup[gene_idx][3]+utr3_region) + " order by snp_pos")
+                            if options.vcffilename!=None:
+                                
+                                snps=vcfobj.getVcfListByChrom(currentchrID,geneGroup[gene_idx][3],geneGroup[gene_idx][3]+utr3_region)
+                            else:
+                                snps=dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][3]) + " and snp_pos<" + str(geneGroup[gene_idx][3]+utr3_region) + " order by snp_pos")
                             for snp in snps:
-                                print(*snp,sep="\t",end="\t",file=utrVF)
+                                print(currentchrID,*snp[pos_idx:],sep="\t",end="\t",file=utrVF)
                                 print(tscptID,"geneID","+","3UTR",sep="\t",file=utrVF)
-                            snps=dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][2]-TSSregionlen) + " and snp_pos<" + str(geneGroup[gene_idx][2]) + " order by snp_pos")
+                            if options.vcffilename!=None:
+                                
+                                snps=vcfobj.getVcfListByChrom(currentchrID,geneGroup[gene_idx][2]-TSSregionlen,geneGroup[gene_idx][2])
+                            else:
+                                snps=dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][2]-TSSregionlen) + " and snp_pos<" + str(geneGroup[gene_idx][2]) + " order by snp_pos")
+                            
                             for snp in snps:
-                                print(*snp,sep="\t",end="\t",file=utrVF)
+                                print(currentchrID,*snp[pos_idx:],sep="\t",end="\t",file=utrVF)
                                 print(tscptID,"geneID","+","5UTR",sep="\t",file=utrVF)
             ######################################## UTR collection finish
-                        print("cds +","select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][2]) + " and snp_pos<" + str(geneGroup[gene_idx][3]) + " order by snp_pos")
-                        snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][2]) + " and snp_pos<" + str(geneGroup[gene_idx][3]) + " order by snp_pos")  
+                        if options.vcffilename!=None:
+                            
+                            snps=vcfobj.getVcfListByChrom(currentchrID,geneGroup[gene_idx][2],geneGroup[gene_idx][3])
+                        else:
+                            
+                            snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][2]) + " and snp_pos<" + str(geneGroup[gene_idx][3]) + " order by snp_pos")  
                         for snp in snps:
-                            snppos = snp[1]
-                            refbase = snp[3]
-                            altbase = snp[4]
+                            snppos = snp[pos_idx]
+                            refbase = snp[ref_idx]
+                            altbase = snp[alt_idx]
                             cdsidx = 3
                             Intron_idx = -1
                             if re.search(r'[^a-zA-Z]', altbase) != None or len(altbase)>1 or len(refbase)>1:  # contain ',' ie. multiple alle
@@ -259,18 +314,18 @@ if __name__ == '__main__':
                                         
                                         else:  # len(refbase)==len(altbase)==1
                                             tscptSeqAllCds_mut[tscptID][snppos - elemStart + cds_frame[tscptID][cdsidx][1]] = altbase
-                                            if snp[:5] in linetoCDSMap:
-                                                linetoCDSMap[snp[:5]][1] = linetoCDSMap[snp[:5]][1] + ";" + tscptID;linetoCDSMap[snp[:5]][2] = linetoCDSMap[snp[:5]][2] + ";geneID";linetoCDSMap[snp[:5]][3] = linetoCDSMap[snp[:5]][3] + ";+";linetoCDSMap[snp[:5]][4] = linetoCDSMap[snp[:5]][4] + ";" + str(cdsidx-3)
+                                            if tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1])) in linetoCDSMap:
+                                                linetoCDSMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][1] = linetoCDSMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][1] + ";" + tscptID;linetoCDSMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][2] = linetoCDSMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][2] + ";geneID";linetoCDSMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][3] = linetoCDSMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][3] + ";+";linetoCDSMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][4] = linetoCDSMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][4] + ";" + str(cdsidx-3)
                                             else:
-                                                linetoCDSMap[snp[:5]] = [snp[5:], tscptID, "geneID", "+", str(cdsidx-3)]
+                                                linetoCDSMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))] = [snp[alt_idx+1:], tscptID, "geneID", "+", str(cdsidx-3)]
 ###########################################################################
                                 elif snppos > elemEnd and snppos < geneGroup[gene_idx][cdsidx + 1][1]:
                                     Intron_idx = cdsidx - 3
                             if Intron_idx != -1:
-                                if snp[:5] in linetoIntronMap:
-                                    linetoIntronMap[snp[:5]][1]=linetoIntronMap[snp[:5]][1]+";"+tscptID;linetoIntronMap[snp[:5]][2]=linetoIntronMap[snp[:5]][2]+";geneID";linetoIntronMap[snp[:5]][3]=linetoIntronMap[snp[:5]][3]+";+";linetoIntronMap[snp[:5]][4]=linetoIntronMap[snp[:5]][4]+";"+str(Intron_idx)
+                                if tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1])) in linetoIntronMap:
+                                    linetoIntronMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][1]=linetoIntronMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][1]+";"+tscptID;linetoIntronMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][2]=linetoIntronMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][2]+";geneID";linetoIntronMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][3]=linetoIntronMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][3]+";+";linetoIntronMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][4]=linetoIntronMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][4]+";"+str(Intron_idx)
                                 else:
-                                    linetoIntronMap[snp[:5]]=[snp[5:],tscptID, "geneID", "+", str(Intron_idx)]
+                                    linetoIntronMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))]=[snp[alt_idx+1:],tscptID, "geneID", "+", str(Intron_idx)]
 #                                 print(*(list(snp) + [tscptID, "geneID", "+", Intron_idx]), sep="\t", file=intronVF)
 ####################           translate protein       ###################
                         gene=geneGroup[gene_idx]
@@ -290,22 +345,22 @@ if __name__ == '__main__':
                             if codon != codon_m:
                                 try:
                                     snppos_cds, ref_base_cds, alt_base_cds = Util.getSNPrecInCDS(i, len(tscptSeqAllCds[tscptID]), codon, codon_m, cds_frame[tscptID], gene)
-                                    if (currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds) in linetoCDSMap:
-                                        if len(linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)])==9:
-                                            linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][5] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][5] + ";" + codon;linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][6] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][6] + ";" + CodonTable[codon];linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][7] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][7] + ";" + codon_m;linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][8] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][8] + ";" + CodonTable[codon_m]
+                                    if (currentchrID,snppos_cds,ref_base_cds, alt_base_cds) in linetoCDSMap:
+                                        if len(linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)])==9:
+                                            linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][5] = linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][5] + ";" + codon;linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][6] = linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][6] + ";" + CodonTable[codon];linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][7] = linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][7] + ";" + codon_m;linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][8] = linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][8] + ";" + CodonTable[codon_m]
                                         else:
-                                            linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)] += [codon, CodonTable[codon], codon_m, CodonTable[codon_m]]
+                                            linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)] += [codon, CodonTable[codon], codon_m, CodonTable[codon_m]]
                                     else:
-                                        print(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds,i,"should in the linetoCDSMap:",tscptID,codon, codon_m,cds_frame[tscptID],"\n",linetoCDSMap,file=open("wrong.txt",'a'))
+                                        print(currentchrID,snppos_cds,ref_base_cds, alt_base_cds,i,"should in the linetoCDSMap:",tscptID,codon, codon_m,cds_frame[tscptID],"\n",linetoCDSMap,file=open("wrong.txt",'a'))
                                 except KeyError:
 #                                     snppos_cds, ref_base_cds, alt_base_cds = Util.getSNPrecInCDS(i, len(tscptSeqAllCds[tscptID]), codon, codon_m, cds_frame[tscptID], gene)
-                                    if (currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds) in linetoCDSMap:
-                                        if len(linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)])==9:
-                                            linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][5] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][5] + ";" + codon;linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][6] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][6] + ";X";linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][7] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][7] + ";" + codon_m;linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][8] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][8] + ";X"
+                                    if (currentchrID,snppos_cds,ref_base_cds, alt_base_cds) in linetoCDSMap:
+                                        if len(linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)])==9:
+                                            linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][5] = linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][5] + ";" + codon;linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][6] = linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][6] + ";X";linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][7] = linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][7] + ";" + codon_m;linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][8] = linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][8] + ";X"
                                         else:
-                                            linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)] += [codon, "X", codon_m, "X"]
+                                            linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)] += [codon, "X", codon_m, "X"]
                                     else:
-                                        print(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds,i,"should in the linetoCDSMap:",tscptID,codon, codon_m,cds_frame[tscptID],"\n",linetoCDSMap,file=open("wrong.txt",'a'))
+                                        print(currentchrID,snppos_cds,ref_base_cds, alt_base_cds,i,"should in the linetoCDSMap:",tscptID,codon, codon_m,cds_frame[tscptID],"\n",linetoCDSMap,file=open("wrong.txt",'a'))
                                                                         
                             try:
                                 ref_amino_seq[tscptID].append(CodonTable["".join(tscptSeqAllCds[tscptID][i:i + 3]).lower()])
@@ -319,11 +374,19 @@ if __name__ == '__main__':
                                 i=0;exist_3utr=False;exist_5utr=False
                                 for utr_type,utr_s,utr_e in utrMap[currentchrID][tscptID]:
                                     if i>=1:
-                                        snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(utrMap[currentchrID][i-1][2]) + " and snp_pos<" + str(utr_s) + " order by snp_pos")
-                                        for snp in snps:
-                                            print(*(snp+tuple(["betweenutr"+tscptID])), sep="\t", file=intergenicVF)
+                                        if options.vcffilename!=None:
+                                            
+                                            snps=vcfobj.getVcfListByChrom(currentchrID,utrMap[currentchrID][i-1][2],utr_s)
+                                        else:
+                                            snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(utrMap[currentchrID][i-1][2]) + " and snp_pos<" + str(utr_s) + " order by snp_pos")
+#                                         for snp in snps:
+#                                             print(currentchrID,*(snp[pos_idx:]+tuple(["betweenutr"+tscptID])), sep="\t", file=intergenicVF)
                                     elif i+1==len(utrMap[currentchrID][tscptID]) and False:
-                                        snps=dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(utrMap[currentchrID][i-1][2]) + " and snp_pos<" + str(geneGroup[gene_idx][2]) + " order by snp_pos")
+                                        if options.vcffilename!=None:
+                                            
+                                            snps=vcfobj.getVcfListByChrom(currentchrID,utrMap[currentchrID][i-1][2],geneGroup[gene_idx][2])
+                                        else:
+                                            snps=dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(utrMap[currentchrID][i-1][2]) + " and snp_pos<" + str(geneGroup[gene_idx][2]) + " order by snp_pos")
                                         print("unfinished")
                                         
 
@@ -336,37 +399,59 @@ if __name__ == '__main__':
                                         if not exist_3utr:
                                             currenttscptID_startpos=utr_s
                                         exist_3utr=True
-                                    snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(utr_s) + " and snp_pos<" + str(utr_e) + " order by snp_pos")
+                                    if options.vcffilename!=None:
+                                        
+                                        snps=vcfobj.getVcfListByChrom(currentchrID,utr_s,utr_e)
+                                    else:
+                                        snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(utr_s) + " and snp_pos<" + str(utr_e) + " order by snp_pos")
+                                    
                                     for snp in snps:
-                                        print(*snp,sep="\t",end="\t",file=utrVF)
+                                        print(currentchrID,*snp[pos_idx:],sep="\t",end="\t",file=utrVF)
                                         print(tscptID,"geneID","-",utrMap[currentchrID][i][0],sep="\t",file=utrVF)               
                                     i+=1
                                 if not exist_3utr:
-                                    snps=dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][2]-utr3_region) + " and snp_pos<" + str(geneGroup[gene_idx][2]) + " order by snp_pos")
+                                    if options.vcffilename!=None:
+                                        
+                                        snps=vcfobj.getVcfListByChrom(currentchrID,geneGroup[gene_idx][2]-utr3_region,geneGroup[gene_idx][2])
+                                    else:
+                                        snps=dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][2]-utr3_region) + " and snp_pos<" + str(geneGroup[gene_idx][2]) + " order by snp_pos")
                                     for snp in snps:
-                                        print(*snp,sep="\t",end="\t",file=utrVF)
+                                        print(currentchrID,*snp[pos_idx:],sep="\t",end="\t",file=utrVF)
                                         print(tscptID,"geneID","-","3UTR",sep="\t",file=utrVF)
                                 if not exist_5utr:
-                                    snps=dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][3]) + " and snp_pos<" + str(geneGroup[gene_idx][3]+TSSregionlen) + " order by snp_pos")
+                                    if options.vcffilename!=None:
+                                        
+                                        snps=vcfobj.getVcfListByChrom(currentchrID,geneGroup[gene_idx][3],geneGroup[gene_idx][3]+TSSregionlen)
+                                    else:
+                                        snps=dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][3]) + " and snp_pos<" + str(geneGroup[gene_idx][3]+TSSregionlen) + " order by snp_pos")
                                     for snp in snps:
-                                        print(*snp,sep="\t",end="\t",file=utrVF)
+                                        print(currentchrID,*snp[pos_idx:],sep="\t",end="\t",file=utrVF)
                                         print(tscptID,"geneID","-","5UTR",sep="\t",file=utrVF)
                         else:
-                            snps=dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][3]-utr3_region) + " and snp_pos<" + str(geneGroup[gene_idx][3]) + " order by snp_pos")
+                            if options.vcffilename!=None:
+                                
+                                snps=vcfobj.getVcfListByChrom(currentchrID,geneGroup[gene_idx][3]-utr3_region,geneGroup[gene_idx][3])
+                            else:
+                                snps=dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][3]-utr3_region) + " and snp_pos<" + str(geneGroup[gene_idx][3]) + " order by snp_pos")
                             for snp in snps:
-                                print(*snp,sep="\t",end="\t",file=utrVF)
+                                print(currentchrID,*snp[pos_idx:],sep="\t",end="\t",file=utrVF)
                                 print(tscptID,"geneID","-","3UTR",sep="\t",file=utrVF)
-                            snps=dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][2]) + " and snp_pos<" + str(geneGroup[gene_idx][2]+TSSregionlen) + " order by snp_pos")
+                            if options.vcffilename!=None:
+                                snps=vcfobj.getVcfListByChrom(currentchrID,geneGroup[gene_idx][2],geneGroup[gene_idx][2]+TSSregionlen)
+                            else:
+                                snps=dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][2]) + " and snp_pos<" + str(geneGroup[gene_idx][2]+TSSregionlen) + " order by snp_pos")
                             for snp in snps:
-                                print(*snp,sep="\t",end="\t",file=utrVF)
+                                print(currentchrID,*snp[pos_idx:],sep="\t",end="\t",file=utrVF)
                                 print(tscptID,"geneID","-","5UTR",sep="\t",file=utrVF)
                         ################################# utr region collection finished #############################
-                        print("cds -", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][2]) + " and snp_pos<" + str(geneGroup[gene_idx][3]) + " order by snp_pos")
-                        snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][2]) + " and snp_pos<" + str(geneGroup[gene_idx][3]) + " order by snp_pos")
+                        if options.vcffilename!=None:
+                            snps=vcfobj.getVcfListByChrom(currentchrID,geneGroup[gene_idx][2],geneGroup[gene_idx][3])
+                        else:
+                            snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>" + str(geneGroup[gene_idx][2]) + " and snp_pos<" + str(geneGroup[gene_idx][3]) + " order by snp_pos")
                         for snp in snps:
-                            snppos = snp[1]
-                            refbase = snp[3]
-                            altbase = snp[4]
+                            snppos = snp[pos_idx]
+                            refbase = snp[ref_idx]
+                            altbase = snp[alt_idx]
                             cdsidx = 3
                             Intron_idx = -1
                             if re.search(r'[^a-zA-Z]', altbase) != None or len(altbase)>1 or len(refbase)>1:  # contain ',' ie. multiple alle
@@ -393,18 +478,18 @@ if __name__ == '__main__':
                                         
                                         else:  # len(refbase)==len(altbase)==1
                                             tscptSeqAllCds_mut[tscptID][snppos - elemStart + cds_frame[tscptID][cdsidx][1]] = altbase
-                                            if snp[:5] in linetoCDSMap:
-                                                linetoCDSMap[snp[:5]][1] = linetoCDSMap[snp[:5]][1] + ";" + tscptID;linetoCDSMap[snp[:5]][2] = linetoCDSMap[snp[:5]][2] + ";geneID";linetoCDSMap[snp[:5]][3] = linetoCDSMap[snp[:5]][3] + ";-";linetoCDSMap[snp[:5]][4] = linetoCDSMap[snp[:5]][4] + ";" + str(len(cds_frame[tscptID]) - (cdsidx-4))
+                                            if tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1])) in linetoCDSMap:
+                                                linetoCDSMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][1] = linetoCDSMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][1] + ";" + tscptID;linetoCDSMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][2] = linetoCDSMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][2] + ";geneID";linetoCDSMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][3] = linetoCDSMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][3] + ";-";linetoCDSMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][4] = linetoCDSMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][4] + ";" + str(len(cds_frame[tscptID]) - (cdsidx-4))
                                             else:
-                                                linetoCDSMap[snp[:5]] = [snp[5:],tscptID, "geneID", "-", str(len(cds_frame[tscptID]) - (cdsidx-4))]   
+                                                linetoCDSMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))] = [snp[alt_idx+1:],tscptID, "geneID", "-", str(len(cds_frame[tscptID]) - (cdsidx-4))]   
 ########################################################
                                 elif snppos > elemEnd and snppos < geneGroup[gene_idx][cdsidx + 1][1]:
                                     Intron_idx = len(cds_frame[tscptID]) - (cdsidx-3)
                             if Intron_idx != -1:
-                                if snp[:5] in linetoIntronMap:
-                                    linetoIntronMap[snp[:5]][1]=linetoIntronMap[snp[:5]][1]+";"+tscptID;linetoIntronMap[snp[:5]][2]=linetoIntronMap[snp[:5]][2]+";geneID";linetoIntronMap[snp[:5]][3]=linetoIntronMap[snp[:5]][3]+";-";linetoIntronMap[snp[:5]][4]=linetoIntronMap[snp[:5]][4]+";"+str(Intron_idx)
+                                if tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1])) in linetoIntronMap:
+                                    linetoIntronMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][1]=linetoIntronMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][1]+";"+tscptID;linetoIntronMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][2]=linetoIntronMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][2]+";geneID";linetoIntronMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][3]=linetoIntronMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][3]+";-";linetoIntronMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][4]=linetoIntronMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))][4]+";"+str(Intron_idx)
                                 else:
-                                    linetoIntronMap[snp[:5]]=[snp[5:],tscptID, "geneID", "-", str(Intron_idx)]
+                                    linetoIntronMap[tuple([currentchrID]+list(snp[pos_idx:pos_idx+1]+snp[ref_idx:alt_idx+1]))]=[snp[alt_idx+1:],tscptID, "geneID", "-", str(Intron_idx)]
 #                                 print(*(list(snp) + [tscptID, "geneID", "-", Intron_idx]), sep="\t", file=intronVF)
 # translate protein
                         gene=geneGroup[gene_idx]
@@ -429,22 +514,23 @@ if __name__ == '__main__':
                             if codon != codon_m:
                                 try:
                                     snppos_cds, ref_base_cds, alt_base_cds = Util.getSNPrecInCDS(i, len(tscptSeqAllCds[tscptID]), codon, codon_m, cds_frame[tscptID], gene)
-                                    if (currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds) in linetoCDSMap:
-                                        if len(linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)])==9:
-                                            linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][5] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][5] + ";" + codon;linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][6] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][6] + ";" + CodonTable[codon];linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][7] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][7] + ";" + codon_m;linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][8] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][8] + ";" + CodonTable[codon_m]
+#                                     print((currentchrID,snppos_cds,ref_base_cds, alt_base_cds))
+                                    if (currentchrID,snppos_cds,ref_base_cds, alt_base_cds) in linetoCDSMap:
+                                        if len(linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)])==9:
+                                            linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][5] = linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][5] + ";" + codon;linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][6] = linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][6] + ";" + CodonTable[codon];linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][7] = linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][7] + ";" + codon_m;linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][8] = linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][8] + ";" + CodonTable[codon_m]
                                         else:
-                                            linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)] += [codon, CodonTable[codon], codon_m, CodonTable[codon_m]]
+                                            linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)] += [codon, CodonTable[codon], codon_m, CodonTable[codon_m]]
                                     else:
-                                        print(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds,i,"should in the linetoCDSMap:",tscptID,codon, codon_m,cds_frame[tscptID],"\n",linetoCDSMap,file=open("wrong.txt",'a'))
+                                        print(currentchrID,snppos_cds,ref_base_cds, alt_base_cds,i,"should in the linetoCDSMap:",tscptID,codon, codon_m,cds_frame[tscptID],"\n",linetoCDSMap,file=open("wrong.txt",'a'))
                                 except KeyError:
                                     print("except KEYERROR")
-                                    if (currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds) in linetoCDSMap:
-                                        if len(linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)])==9:
-                                            linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][5] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][5] + ";" + codon;linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][6] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][6] + ";X";linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][7] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][7] + ";" + codon_m;linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][8] = linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)][8] + ";X"
+                                    if (currentchrID,snppos_cds,ref_base_cds, alt_base_cds) in linetoCDSMap:
+                                        if len(linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)])==9:
+                                            linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][5] = linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][5] + ";" + codon;linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][6] = linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][6] + ";X";linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][7] = linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][7] + ";" + codon_m;linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][8] = linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][8] + ";X"
                                         else:
-                                            linetoCDSMap[(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds)] += [codon, "X", codon_m, "X"]
+                                            linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)] += [codon, "X", codon_m, "X"]
                                     else:
-                                        print(currentchrID,snppos_cds,".",ref_base_cds, alt_base_cds,i,"should in the linetoCDSMap:",linetoCDSMap,tscptID,codon, codon_m,cds_frame[tscptID],"\n",linetoCDSMap,file=open("wrong.txt",'a'))
+                                        print(currentchrID,snppos_cds,ref_base_cds, alt_base_cds,i,"should in the linetoCDSMap:",linetoCDSMap,tscptID,codon, codon_m,cds_frame[tscptID],"\n",linetoCDSMap,file=open("wrong.txt",'a'))
                             try:
                                 mutat_amino_seq[tscptID].append(CodonTable[codon_m])
                                 ref_amino_seq[tscptID].append(CodonTable["".join(tscptSeqAllCds_Revr_Cmplm[i:i + 3]).lower()])
@@ -475,16 +561,20 @@ if __name__ == '__main__':
                         aastrline = "".join(ref_amino_seq[tscptID][k:k + 60])
                     else:
                         print(aastrline, file=testrefaa)                                    
-                if grouplist_idx>=1:
-                    print("intergenicVF","select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>=" + str(lasttscptID_endpos) + " and snp_pos<" + str(currenttscptID_startpos) + " order by snp_pos")
-                    intergennicsnps=dbvariantstools.operateDB("select","select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>=" + str(lasttscptID_endpos) + " and snp_pos<" + str(currenttscptID_startpos) + " order by snp_pos");
-                    for snp in intergennicsnps:
-                        print(*(snp+tuple(["before"+tscptID])),sep='\t',file=intergenicVF)                
+                    if gene_idx>1:
+    #                     print("intergenicVF","select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>=" + str(lasttscptID_endpos) + " and snp_pos<" + str(currenttscptID_startpos) + " order by snp_pos")
+                        if options.vcffilename!=None:
+                            intergennicsnps=vcfobj.getVcfListByChrom(currentchrID,lasttscptID_endpos,currenttscptID_startpos)
+                        else:
+                            intergennicsnps=dbvariantstools.operateDB("select","select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>=" + str(lasttscptID_endpos) + " and snp_pos<" + str(currenttscptID_startpos) + " order by snp_pos");
+                        for snp in intergennicsnps:
+                            print(currentchrID,*(snp[pos_idx:]+tuple(["before"+tscptID])),sep='\t',file=intergenicVF)                
+                    lasttscptID_endpos=currenttscptID_endpos
                 for snpInIntron in sorted(linetoIntronMap.keys()):
                     print(*(list(snpInIntron)+list(linetoIntronMap[snpInIntron][0])+linetoIntronMap[snpInIntron][1:]),sep="\t",file=intronVF)           
                 for snpInCDS in sorted(linetoCDSMap.keys()):
                     print(*(list(snpInCDS) +list(linetoCDSMap[snpInCDS][0])+ linetoCDSMap[snpInCDS][1:]), sep="\t", file=cdsVF)
-                lasttscptID_endpos=currenttscptID_endpos
+                
     intergenicVF.close()
     cdsVF.close()
     intronVF.close()
