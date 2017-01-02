@@ -15,7 +15,7 @@ import NGS.BasicUtil.DBManager as dbm
 
 mindepthforJudgefixref=10
 class dynamicInsertUpdateAncestralContext():#here use the fast edition
-    def __init__(self,dbvariantstools,refseqfa,toplevelsnptablename="mspsgjlksy10pop_toplevel_pekingduckref_new",insertauthority=True,changetableauthority=False):
+    def __init__(self,dbvariantstools,refseqfa,toplevelsnptablename="mspsgjlksy10pop_toplevel_pekingduckref_new",insertauthority=True,changetableauthority=True):
         self.refseqfahandler=open(refseqfa,'r')
         self.outgroupVcfnameKEY_vcfobj_pyBAMfilesVALUE={}#{vcfname:[vcfobj,pysam.samfile1,pysam.samfile2,,,,],,,,}
         self.mapofSNPrecsForeachVCFpop_mapBYchrom={}
@@ -129,12 +129,16 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
                             high=mid-1
                         else:#find the pos
                             pos, REF, archicpop_ALT, INFO,FORMAT,samples = SNPrec_of_one_chrom_invcf[mid]
-                            dp4=re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", INFO)
+                            dp=re.search(r"DP4=(\d*)", INFO)
+                            AF=re.search(r"AF=([\d\.]+);", INFO).group(1)
                             refdep=0;altalleledep=0
-                            if dp4!=None:#vcf from samtools 
-                                refdep = int(dp4.group(1)) + int(dp4.group(2))
-                                altalleledep = int(dp4.group(3)) + int(dp4.group(4))
-                            else:
+                            if dp!=None and AF!=None :#vcf from indvd 
+                                refdep = int(dp.group(1))*(1- float(AF))
+                                altalleledep = int(dp.group(1)) * float(AF)
+                            else:#pool
+                                if "AD" not in FORMAT:
+                                    print("AD not in ",FORMAT )
+                                    continue
                                 AD_idx=(re.split(":",FORMAT)).index("AD")#gatk GT:AD:DP:GQ:PL 
                                 for sample in samples:
                                     if len(re.split(r":",sample))==1:# ./.
@@ -499,87 +503,92 @@ class AncestralAlleletabletools():
                 lastbasesAccur[RefSeqMap[chrom][snpindex + 1]] = [(chrom, sstartpos, sendpos)]
         print("finish")
         ancestryreffile.close()
-    def fillAncestral(self,archicpopVcfFile,depthFile,archicpopNameindepthFile,chromlist,toplevelsnptablename="ducksnp_toplevel"):
+    def fillAncestral(self,archicpopVcfFile,chromlist,toplevelsnptablename="ducksnp_toplevel"):
         """
         abandon the snps which exist in archicpopVcfFile but absence in all others pop snp sets 
         """
-        archicpop = VCFutil.VCF_Data(archicpopVcfFile)
-        archicpop_colname=re.search(r'[^/]*$',archicpopVcfFile).group(0)
-        archicpop_colname=re.sub(r"[^\w^\d]","_",archicpop_colname)
-        print(archicpop_colname+"_alt",archicpop_colname+"_dep")
-#         self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, toplevelsnptablename, archicpop_colname+"_alt", "char(128)", "default null"))
-#         self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, toplevelsnptablename, archicpop_colname+"_dep", "char(128)", "default null"))  
-        print("callproc", "mysql_sp_add_column","done",time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
-        depthfile = Util.GATK_depthfile(depthFile, depthFile + ".index")
-        print("Util.GATK_depthfile done",time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
-        species_idx_list=[]
-#         species_idx = depthfile.title.index("Depth_for_" + archicpopNameindepthFile)
-        for i in range(0,len(depthfile.title)):
-            if re.search(r""+archicpopNameindepthFile,depthfile.title[i])!=None:
-                species_idx_list.append(i)        
-
-#         totalChroms = self.dbgenome.operateDB("select","select count(*) from "+chromtable)[0][0]
-#         for i in range(0,totalChroms,20):
-#             currentsql="select * from " + chromtable+" order by chrlength desc limit "+str(i)+",20"
-#             result=self.dbgenome.operateDB("select",currentsql)
-        lastposofdepthfilefp=0
-        for currentchrID in chromlist:
-            print(currentchrID+":",end="")
         
-            archicpopSeqOfAChr={}
-            archicpopSeqOfAChr[currentchrID]=archicpop.getVcfListByChrom(currentchrID)
-            allsnpsInAchr=self.dbvariant.operateDB("select","select snp_pos,alt_base from "+toplevelsnptablename+" where chrID='"+currentchrID+"'")
-            updatesql_statments=[]
-            for snp in allsnpsInAchr:
-                snp_pos=int(snp[0])
-                ALT=snp[1]
-                low=0
-                high=len(archicpopSeqOfAChr[currentchrID])-1
-                while low <=high:
-                    mid=(low+high)>>1
-                    if archicpopSeqOfAChr[currentchrID][mid][0]< snp_pos:
-                        low=mid+1
-                    elif archicpopSeqOfAChr[currentchrID][mid][0]> snp_pos:
-                        high=mid-1
-                    else:#find the pos
-                        pos, REF, archicpop_ALT, INFO,FORMAT,samples = archicpopSeqOfAChr[currentchrID][mid]
-                        dp4 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", INFO)
-                        refdep=0;altalleledep=0
-                        if dp4!=None:#vcf from samtools 
-                            refdep = int(dp4.group(1)) + int(dp4.group(2))
-                            altalleledep = int(dp4.group(3)) + int(dp4.group(4))    
-                        else:
-                            AD_idx=(re.split(":",FORMAT)).index("AD")#gatk GT:AD:DP:GQ:PL
-                            for sample in samples:
-                                if len(re.split(":",sample))==1:# ./.
-                                    continue
-                                AD_depth=re.split(",",re.split(":",sample)[AD_idx])
-                                try :
-                                    refdep+=int(AD_depth[0])
-                                    altalleledep+=int(AD_depth[1])
-                                except ValueError:
-                                    print("Ancestralallele.fillAncestral except ValueError",sample,end="")
-                        popsdata_alt=archicpop_ALT
-                        popsdata_dep=str(refdep)+","+str(altalleledep)
-                        break
-                else:
-                    depth_linelist = depthfile.getdepthByPos_optimized(currentchrID, snp_pos)
-#                     lastposofdepthfilefp=depthfile.depthfilefp.tell()
-                    sum_depth=0
-                    for species_idx in species_idx_list:
-                        sum_depth+=int(depth_linelist[species_idx])
-                    if sum_depth < 4:
-                        popsdata_alt=ALT
-                        popsdata_dep="no covered"
+
+        for vcffilename in archicpopVcfFile.keys():
+#             archicpop = VCFutil.VCF_Data(archicpopVcfFile)
+            archicpop=archicpopVcfFile[vcffilename][0]
+            archicpop_colname=re.search(r'[^/]*$',vcffilename).group(0)
+            archicpop_colname=re.sub(r"[^\w^\d]","_",archicpop_colname)            
+            print(archicpop_colname+"_alt",archicpop_colname+"_dep")
+            self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, toplevelsnptablename, archicpop_colname+"_alt", "char(128)", "default null"))
+            self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, toplevelsnptablename, archicpop_colname+"_dep", "char(128)", "default null"))  
+            print("callproc", "mysql_sp_add_column","done",time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
+#             depthfile = Util.GATK_depthfile(depthFile, depthFile + ".index")
+#             print("Util.GATK_depthfile done",time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
+#             species_idx_list=[]
+#     #         species_idx = depthfile.title.index("Depth_for_" + archicpopNameindepthFile)
+#             for i in range(0,len(depthfile.title)):
+#                 if re.search(r""+archicpopNameindepthFile,depthfile.title[i])!=None:
+#                     species_idx_list.append(i)        
+#     后面程序需要调一下，考虑一下indvd 的 AF DP仿照Caculators里面的东西
+    #         totalChroms = self.dbgenome.operateDB("select","select count(*) from "+chromtable)[0][0]
+    #         for i in range(0,totalChroms,20):
+    #             currentsql="select * from " + chromtable+" order by chrlength desc limit "+str(i)+",20"
+    #             result=self.dbgenome.operateDB("select",currentsql)
+            lastposofdepthfilefp=0
+            for currentchrID in chromlist:
+                print(currentchrID+":",end="")
+            
+                archicpopSeqOfAChr={}
+                archicpopSeqOfAChr[currentchrID]=archicpop.getVcfListByChrom(currentchrID)
+                allsnpsInAchr=self.dbvariant.operateDB("select","select snp_pos,alt_base from "+toplevelsnptablename+" where chrID='"+currentchrID+"'")
+                updatesql_statments=[]
+                for snp in allsnpsInAchr:
+                    snp_pos=int(snp[0])
+                    ALT=snp[1]
+                    low=0
+                    high=len(archicpopSeqOfAChr[currentchrID])-1
+                    while low <=high:
+                        mid=(low+high)>>1
+                        if archicpopSeqOfAChr[currentchrID][mid][0]< snp_pos:
+                            low=mid+1
+                        elif archicpopSeqOfAChr[currentchrID][mid][0]> snp_pos:
+                            high=mid-1
+                        else:#find the pos
+                            pos, REF, archicpop_ALT, INFO,FORMAT,samples = archicpopSeqOfAChr[currentchrID][mid]
+                            dp4 = re.search(r"DP4=(\d*),(\d*),(\d*),(\d*)", INFO)
+                            refdep=0;altalleledep=0
+                            if dp4!=None:#vcf from samtools 
+                                refdep = int(dp4.group(1)) + int(dp4.group(2))
+                                altalleledep = int(dp4.group(3)) + int(dp4.group(4))    
+                            else:
+                                AD_idx=(re.split(":",FORMAT)).index("AD")#gatk GT:AD:DP:GQ:PL
+                                for sample in samples:
+                                    if len(re.split(":",sample))==1:# ./.
+                                        continue
+                                    AD_depth=re.split(",",re.split(":",sample)[AD_idx])
+                                    try :
+                                        refdep+=int(AD_depth[0])
+                                        altalleledep+=int(AD_depth[1])
+                                    except ValueError:
+                                        print("Ancestralallele.fillAncestral except ValueError",sample,end="")
+                            popsdata_alt=archicpop_ALT
+                            popsdata_dep=str(refdep)+","+str(altalleledep)
+                            break
                     else:
-                        popsdata_alt=ALT 
-                        popsdata_dep=str(sum_depth) + ",0"
-                #change to insert if exist skip
-                print(str(snp_pos),popsdata_alt,popsdata_dep)
-                updatesql_statments.append("update " + toplevelsnptablename + " set "+archicpop_colname+"_alt = '" + popsdata_alt+"',"+archicpop_colname+"_dep= '"+popsdata_dep+"' where chrID="+"'"+currentchrID+"' and snp_pos="+str(snp[0]))
-            if  updatesql_statments:
-                print("updatesql_statments",len(updatesql_statments))
-                self.dbvariant.operateDB("update", *updatesql_statments)
+                        sum_depth=0
+                        for samfile in archicpopVcfFile[vcffilename][1:]:
+                            ACGTdep=samfile.count_coverage(currentchrID,snp_pos-1,snp_pos)
+                        for dep in ACGTdep:
+                            sum_depth+=dep[0]
+                        if sum_depth<4:
+                            popsdata_alt=ALT
+                            popsdata_dep="no covered"
+                        else:
+                            popsdata_alt=ALT
+                            popsdata_dep=str(sum_depth) + ",0"
+
+                    #change to insert if exist skip
+                    print(str(snp_pos),popsdata_alt,popsdata_dep)
+                    updatesql_statments.append("update " + toplevelsnptablename + " set "+archicpop_colname+"_alt = '" + popsdata_alt+"',"+archicpop_colname+"_dep= '"+popsdata_dep+"' where chrID="+"'"+currentchrID+"' and snp_pos="+str(snp[0]))
+                if  updatesql_statments:
+                    print("updatesql_statments",len(updatesql_statments))
+                    self.dbvariant.operateDB("update", *updatesql_statments)
     def leftjoinSelectedTables(self,chromlist,outtable_file_Name,depthfilenames,vcftables=[],toplevelsnptable="ducksnp_toplevel",drop=False):
         depthobjmap={};lastposofdepthfilefp={}#
         for vcftablename in depthfilenames.keys():

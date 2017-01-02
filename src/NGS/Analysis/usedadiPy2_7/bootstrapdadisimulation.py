@@ -5,6 +5,7 @@ Created on 2015-10-17
 '''
 from optparse import OptionParser
 from os.path import sys
+import pickle
 import random
 import re, os
 import time
@@ -49,6 +50,8 @@ if __name__ == '__main__':
     for n,v,l,u in options.parameters:
         ll_param_MAPlist[n]=[]
     print(options.bootstrap[0])
+    residualarraylist=[]
+    residualhistlist=[]
     for i in range(int(options.bootstrap[0])):
         print(time.strftime( ISOTIMEFORMAT, time.localtime() ))
         print("cycly ",i)
@@ -80,6 +83,15 @@ if __name__ == '__main__':
             print("cycle",i,a,"wrong")
             continue
         #collection result
+        print(options.fsfile+namestr+options.tag+options.model+"array.pickle")
+        u=pickle._Unpickler(open(options.fsfile+namestr+options.tag+options.model+"array.pickle","rb"))
+        u.encoding='latin1'
+        residualarray=u.load() #pickle.load(open(options.fsfile+namestr+options.tag+options.model+"array.pickle","rb"))
+        u=pickle._Unpickler(open(options.fsfile+namestr+options.tag+options.model+"hist.pickle","rb"))
+        u.encoding='latin1'
+        residualhis=u.load()#pickle.load(open(options.fsfile+namestr+options.tag+options.model+"hist.pickle","rb"))
+        residualarraylist.append(residualarray)
+        residualhistlist.append(residualhis)
         inf=open(namestr+options.tag+randomstr+".parameter","r")
         for resultline in inf:
             linelist=re.split(r"\s+",resultline.strip())
@@ -91,9 +103,11 @@ if __name__ == '__main__':
         inf.close()
         print(ll_param_MAPlist)
 ##################
-    of=open(options.fsfile[:20]+"_"+namestr+options.tag+".final_parameter","w")
+    pickle.dump(residualarraylist,open(options.fsfile+namestr+options.tag+options.model+"arraylist.pickle",'wb'))
+    pickle.dump(residualhistlist,open(options.fsfile+namestr+options.tag+options.model+"histlist.pickle",'wb'))
+    of=open(options.fsfile[:20]+"_"+namestr+options.model+options.tag+".final_parameter","w")
     for a in sorted(ll_param_MAPlist.keys()):
-        print(a,end="\t",file=of)
+        print(a+"convertvalue"+" "+a+"value",end="\t",file=of)
     else:
         print("",file=of)
     for i in range(len(ll_param_MAPlist["likelihood"])):

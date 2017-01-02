@@ -26,7 +26,7 @@ for popname,projection in options.popname:
     projectionlist.append(int(projection))
 print(options.popname)
 fsdata=dadi.Spectrum.from_data_dict(dd,pop_ids=popnamelist,polarized=True,projections=projectionlist)
-def split_mig_1_w_bottleneck(params,ns,pts):
+def split_mig_w_bottleneck(params,ns,pts):
     nuA,nuM,nuP,TA,TS,m12,m21=params
     xx=dadi.Numerics.default_grid(pts)
     phi=dadi.PhiManip.phi_1D(xx)
@@ -34,6 +34,52 @@ def split_mig_1_w_bottleneck(params,ns,pts):
     phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
 
     phi=dadi.Integration.two_pops(phi,xx,TS,nu1=nuM,nu2=nuP,m12=m12,m21=m21)
+    fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
+    return fs
+def split_mig_1_w_bottleneck(params,ns,pts):
+    nuA,s1,s2,TA,TS,m12,m21=params
+    xx=dadi.Numerics.default_grid(pts)
+    phi=dadi.PhiManip.phi_1D(xx)
+    phi=dadi.Integration.one_pop(phi,xx,TA,nu=nuA)
+    phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
+    nuM=s1*nuA
+    nuP=(1-s1)*s2*nuA
+    phi=dadi.Integration.two_pops(phi,xx,TS,nu1=nuM,nu2=nuP,m12=m12,m21=m21)
+    fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
+    return fs
+def split_mig_1_IM(params,ns,pts):
+    nuA,s,TA,TS,m12,m21=params
+    xx=dadi.Numerics.default_grid(pts)
+    phi=dadi.PhiManip.phi_1D(xx)
+    phi=dadi.Integration.one_pop(phi,xx,TA,nu=nuA)
+    phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
+    nuM=s*nuA
+    nuB=(1-s)*nuA
+    phi=dadi.Integration.two_pops(phi,xx,TS,nu1=nuM,nu2=nuB,m12=m12,m21=m21)
+    fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
+    return fs
+def split_mig_Afterbottleneck(params,ns,pts):
+    nuA,nuAb,s,TA,TAb,TS,m12,m21=params
+    xx=dadi.Numerics.default_grid(pts)
+    phi=dadi.PhiManip.phi_1D(xx)
+    phi=dadi.Integration.one_pop(phi,xx,TA,nu=nuA)
+    phi=dadi.Integration.one_pop(phi,xx,TAb,nu=nuAb)
+    phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
+    nuM=s*nuA
+    nuB=(1-s)*nuA
+    phi=dadi.Integration.two_pops(phi,xx,TS,nu1=nuM,nu2=nuB,m12=m12,m21=m21)
+    fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
+    return fs
+def both_bottleneck_aftersplit(params,ns,pts):
+    nuA,s,TA,TS,nuM,nuB,TB,m12,m21=params
+    xx=dadi.Numerics.default_grid(pts)
+    phi=dadi.PhiManip.phi_1D(xx)
+    phi=dadi.Integration.one_pop(phi,xx,TA,nu=nuA)
+    phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
+    nu1=s*nuA
+    nu2=(1-s)*nuA
+    phi=dadi.Integration.two_pops(phi,xx,TS,nu1=nu1,nu2=nu2,m12=m12,m21=m21)
+    phi=dadi.Integration.two_pops(phi,xx,TB,nu1=nuM,nu2=nuB,m12=m12,m21=m21)
     fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
     return fs
 def split_mig_1_w_bottleneck_split_domDecrease_bottle_increase_wildbottle_IM(params,ns,pts):
@@ -53,17 +99,7 @@ def split_mig_1_w_bottleneck_split_domDecrease_bottle_increase_wildbottle_IM(par
     phi=dadi.Integration.two_pops(phi,xx,TBP,nu1=nuM,nu2=nuP_i_func,m12=m12,m21=m21)
     fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
     return fs
-def split_mig_1_IM(params,ns,pts):
-    nuA,s,TA,TS,m12,m21=params
-    xx=dadi.Numerics.default_grid(pts)
-    phi=dadi.PhiManip.phi_1D(xx)
-    phi=dadi.Integration.one_pop(phi,xx,TA,nu=nuA)
-    phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
-    nuM=s*nuA
-    nuB=(1-s)*nuA
-    phi=dadi.Integration.two_pops(phi,xx,TS,nu1=nuM,nu2=nuB,m12=m12,m21=m21)
-    fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
-    return fs
+
 def bottleneckafter_split_mig_1_IM(params,ns,pts):
     nuA,s,nuP,TA,TS,TBP,m12,m21=params
 #     if TA<TS:
@@ -77,7 +113,7 @@ def bottleneckafter_split_mig_1_IM(params,ns,pts):
 #         print 'adjust',
 
     phi=dadi.Integration.two_pops(phi,xx,TS,nu1=nuM0,nu2=nuP0,m12=m12,m21=m21)
-    phi=dadi.Integration.two_pops(phi,xx,TBP,nu1=nuM0,nu2=nuP,m12=m12,m21=m21)
+    phi=dadi.Integration.two_pops(phi,xx,TBP,nu1=nuM0,nu2=nuP)
     fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
     return fs
 def IM_2(params,ns,pts):
@@ -311,6 +347,8 @@ ns=fsdata.sample_sizes
 pts_1=[40,50,60]
 if options.model=="split_mig_1_w_bottleneck":
     func=split_mig_1_w_bottleneck
+elif options.model=="split_mig_w_bottleneck":
+    func=split_mig_w_bottleneck
 elif options.model=="split_mig_1_w_bottleneck_split_domDecrease_bottle_increase_wildbottle_IM":
     func=split_mig_1_w_bottleneck_split_domDecrease_bottle_increase_wildbottle_IM
 elif options.model=="split_mig_2":
@@ -343,6 +381,10 @@ elif options.model=="increader_split_domDecrease_bottle_increase_wildbottle_IM":
     func=increader_split_domDecrease_bottle_increase_wildbottle_IM
 elif options.model=="splitdom_splitwild_3d_domlineDecrease":
     func=splitdom_splitwild_3d_domlineDecrease
+elif options.model=="split_mig_Afterbottleneck":
+    func=split_mig_Afterbottleneck
+elif options.model=="both_bottleneck_aftersplit":
+    func=both_bottleneck_aftersplit
 paramslist=[]
 upper_boundlist=[]
 lower_boundlist=[]
@@ -388,6 +430,7 @@ if options.bootstrap!=False:
     model=func_ex(popt,ns,pts_1)
     theta=dadi.Inference.optimal_sfs_scaling(model,fsdata)
     ll_opt=dadi.Inference.ll_multinom(model,fsdata)
+    
     Nref=theta/(4*9.97e-10*float(options.genomelengthwhichsnpfrom))
     for i in range(len(popt)):
         if re.search(r"^T",paramsname[i])!=None:
@@ -410,7 +453,8 @@ if options.bootstrap!=False:
 #             print >>of,ll_param_MAP[a],
 #         else:
 #             print >>of,""
-
+    if len(popnamelist)==2:
+        dadi.Plotting.plot_2d_comp_multinom(model,fsdata,vmin=1,residualfilenamepre=options.fsfile+namestr+options.tag+options.model)
     of.close()
 #     exit()
 else:
@@ -440,17 +484,17 @@ else:
         pylab.figure()
         dadi.Plotting.plot_single_2d_sfs(fsdata,vmin=1)
         pylab.show()
-        pylab.savefig('fsdata_split'+namestr+options.tag+options.model+'.png', dpi=100)
+        pylab.savefig('fsdata_split'+namestr+options.tag+options.model+'.png', dpi=600)
         
         pylab.figure()
         dadi.Plotting.plot_single_2d_sfs(model,vmin=1)
         pylab.show()
-        pylab.savefig('model_split'+namestr+options.tag+options.model+'.png', dpi=100)
+        pylab.savefig('model_split'+namestr+options.tag+options.model+'.png', dpi=600)
         
         pylab.figure()
-        dadi.Plotting.plot_2d_comp_multinom(model,fsdata,vmin=1)
+        dadi.Plotting.plot_2d_comp_multinom(model,fsdata,vmin=1,residualfilenamepre=options.fsfile+namestr+options.tag+options.model)
         pylab.show()
-        pylab.savefig('compare_split'+namestr+options.tag+options.model+'.png', dpi=100)
+        pylab.savefig('compare_split'+namestr+options.tag+options.model+'.png', dpi=600)
         pylab.figure()
         dadi.Plotting.plot_2d_comp_Poisson(model,fsdata,vmin=1)
         pylab.show()

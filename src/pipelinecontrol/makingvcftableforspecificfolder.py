@@ -6,7 +6,7 @@ Created on 2014-11-27
 '''
 from optparse import OptionParser
 
-from NGS.BasicUtil import VCFutil 
+from NGS.BasicUtil import VCFutil , Util
 from src.NGS.Service.Ancestralallele import AncestralAlleletabletools
 from src.pipelinecontrol.Util import upTodownTravelDir, \
     OperatorWithData_loadintodatabase
@@ -33,7 +33,7 @@ inputdatafilesrootpath=options.vcffiledir
 interceptdirs=options.interceptdirs
 vcfsuffix=options.vcfsuffix
 if __name__ == '__main__':
-    ancestralalleletabletools=AncestralAlleletabletools(database="ninglabvariantdata", ip="10.2.48.140", usrname="root", pw="1234567")
+    ancestralalleletabletools=AncestralAlleletabletools(database="ninglabvariantdata", ip=Util.ip, usrname=Util.username, pw=Util.password)
     operatorWithData_loadintodatabase=OperatorWithData_loadintodatabase(inputdatafilesrootpath,ancestralalleletabletools, interceptdirs,vcfsuffix,options.droptable)
     upTodownTravelDir(inputdatafilesrootpath,operatorWithData_loadintodatabase,datadepth,Interceptor_depth,0,datadepth)
     print("finish")

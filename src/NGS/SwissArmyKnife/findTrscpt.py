@@ -1,6 +1,6 @@
 from optparse import OptionParser
-import os
-import re, sys, time
+import os,numpy
+import re, sys, time,math
 
 from NGS.BasicUtil import *
 import src.NGS.BasicUtil.DBManager as dbm
@@ -27,15 +27,91 @@ parser.add_option("-w","--winWidth",dest="winWidth",default="40000",help="win wi
 parser.add_option("-X","--winType",dest="winType",default="zvalue",help="winvalue or zvalue")
 parser.add_option("-N","--mergeNA",dest="mergeNA",default=False,help="winvalue or zvalue")
 parser.add_option("-n","--numberofoutlier_to_NearestGene",dest="numberofoutlier_to_NearestGene",default=0,help="number of outlier value")
-
+parser.add_option("-a","--anchorfile",dest="anchorfile",default=None,help="winvalue or zvalue")
                                                                                                                                                           
 (options, args) = parser.parse_args()
+
 #if len(sys.argv) != 6:
 #    print("python findTrscpt.py [winFile1] [tempwinDBName] [threshold] [outfilename] [m/l]")
 #    exit(-1)
 upextend=int(options.upextend);slideSize=int(options.slideSize);winWidth=int(options.winWidth)
 downextend=int(options.downextend)
 winFileName7Field = options.winfileName
+if options.anchorfile!=None:
+    anchorDATASTRUCTURE={}
+    """
+    {chr1:[(53353,53806,scaffold451,558997,558537,-),(57200,62371,scaffold451,553669,548504,-),(),,],chr2:[],,,,}
+    """
+    reverseAnchorDATASTRUCTURE={}
+    """
+    {scaffold451:{chr1:[0,1,2,,,,]},C17734302:{chr1:[idx]}}  idx is idx in the list of anchorDATASTRUCTURE[chr1] 
+    """
+    newanchorfilehandler=open(options.anchorfile+"changed",'r')
+    for line in newanchorfilehandler:
+        linelist=re.split(r"\s+",line.strip())
+        if linelist[0].strip() in anchorDATASTRUCTURE:
+            anchorDATASTRUCTURE[linelist[0].strip()].append((int(linelist[1].strip()),int(linelist[2].strip()),linelist[3].strip(),int(linelist[4].strip()),int(linelist[5].strip()),linelist[6].strip()))
+        else:
+            anchorDATASTRUCTURE[linelist[0].strip()]=[(int(linelist[1].strip()),int(linelist[2].strip()),linelist[3].strip(),int(linelist[4].strip()),int(linelist[5].strip()),linelist[6].strip())]
+        #fill reverseAnchorDATASTRUCTURE
+        if linelist[3].strip() in reverseAnchorDATASTRUCTURE:
+            if linelist[0].strip() in reverseAnchorDATASTRUCTURE[linelist[3].strip()]:
+                reverseAnchorDATASTRUCTURE[linelist[3].strip()][linelist[0].strip()].append(len(anchorDATASTRUCTURE[linelist[0].strip()])-1)
+            else:
+                reverseAnchorDATASTRUCTURE[linelist[3].strip()]={linelist[0].strip():[len(anchorDATASTRUCTURE[linelist[0].strip()])-1]}
+        else:
+            reverseAnchorDATASTRUCTURE[linelist[3].strip()]={linelist[0].strip():[len(anchorDATASTRUCTURE[linelist[0].strip()])-1]}
+    newanchorfilehandler.close()
+    ##############
+    winfile=open(winFileName7Field,'r')
+    winfile.readline()
+    winMap={}#{scaffold:[(startpos,endpos,noofsnp,winvalue,zvalue),(),(),,,]}
+    for line in winfile:
+        linelist=re.split(r"\s+",line.strip())
+        if linelist[0].strip()  in winMap:
+            winMap[linelist[0].strip()].append((int(linelist[2]),int(linelist[3]),int(linelist[4]),linelist[5],linelist[6]))
+        else:
+            winMap[linelist[0].strip()]=[(int(linelist[2]),int(linelist[3]),int(linelist[4]),linelist[5],linelist[6])]
+    winfile.close()
+    ##################winfile has been loaded into memonery
+    ##################reZ-transform the winvalue by seperate the autochromosome and sex chromosome
+    
+    winCrossGenomeMap={"autosome":[],"Z":[],"W":[],"X":[],"Y":[]}
+    winFileName7Field=winFileName7Field+"sexchromseperate"
+    
+    
+    f=open(winFileName7Field,'w')
+    for scaffold in winMap.keys():
+        for startpos,endpos,noofsnp,winvalue,zvalue in winMap[scaffold]:
+            if  re.search(r"^[1234567890\.e-]+$",winvalue)==None:
+                continue
+            if "Z" in reverseAnchorDATASTRUCTURE[scaffold] or "z" in reverseAnchorDATASTRUCTURE[scaffold]:
+                winCrossGenomeMap["Z"].append(float(winvalue))
+            elif "W" in reverseAnchorDATASTRUCTURE[scaffold] or "w" in reverseAnchorDATASTRUCTURE[scaffold]:
+                winCrossGenomeMap["W"].append(float(winvalue))
+            elif "X" in reverseAnchorDATASTRUCTURE[scaffold] or "x" in reverseAnchorDATASTRUCTURE[scaffold]:
+                winCrossGenomeMap["X"].append(float(winvalue))
+            elif "Y" in reverseAnchorDATASTRUCTURE[scaffold] or "y" in reverseAnchorDATASTRUCTURE[scaffold]:
+                winCrossGenomeMap["Y"].append(float(winvalue)) 
+            else:
+                winCrossGenomeMap["autosome"].append(float(winvalue))
+    autoexception=numpy.mean(winCrossGenomeMap["autosome"])
+    autostd1=numpy.std(winCrossGenomeMap["autosome"],ddof=1)
+    sexexception=numpy.mean(winCrossGenomeMap["Z"]+winCrossGenomeMap["W"]+winCrossGenomeMap["X"]+winCrossGenomeMap["Y"])
+    sexstd1=numpy.std(winCrossGenomeMap["Z"]+winCrossGenomeMap["W"]+winCrossGenomeMap["X"]+winCrossGenomeMap["Y"],ddof=1)
+    for scaffold in sorted(winMap.keys()):
+        winNo=0
+        for startpos,endpos,noofsnp,winvalue,zvalue in winMap[scaffold]:
+            if re.search(r"^[1234567890\.e-]+$",winvalue)!=None:
+                if "Z" in reverseAnchorDATASTRUCTURE[scaffold] or "z" in reverseAnchorDATASTRUCTURE[scaffold] or "W" in reverseAnchorDATASTRUCTURE[scaffold] or "w" in reverseAnchorDATASTRUCTURE[scaffold] or "X" in reverseAnchorDATASTRUCTURE[scaffold] or "x" in reverseAnchorDATASTRUCTURE[scaffold] or "Y" in reverseAnchorDATASTRUCTURE[scaffold] or "y" in reverseAnchorDATASTRUCTURE[scaffold]:
+                    zscore=(float(winvalue)-sexexception)/sexstd1
+                else:
+                    zscore=(float(winvalue)-autoexception)/autostd1
+                print(scaffold,winNo,startpos,endpos,noofsnp,winvalue,zscore,sep="\t",file=f)
+            else:
+                print(scaffold,winNo,startpos,endpos,noofsnp,winvalue,zvalue,sep="\t",file=f)
+            winNo+=1
+    f.close()
 re.search(r"[^/]*$",winFileName7Field).group(0)
 if re.search(r'^.*/',options.outfileprename)!=None:
     path=re.search(r'^.*/',options.outfileprename).group(0)
@@ -59,6 +135,8 @@ vcftable=None
 outfile=open(outfilename,'w')
 print("chrNo\tRegion_start\tRegion_end\tNoofWin\textram"+options.winType+"\ttranscpt\tgeneID",file=outfile)
 outfileNameWINwithGENE=path+re.search(r"[^/]*$",winFileName7Field).group(0)+".wincopywithgene"
+
+    
 if __name__ == '__main__':
     genomedbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname) 
     winGenome = Util.WinInGenome(Util.ghostdbname, winFileName7Field)

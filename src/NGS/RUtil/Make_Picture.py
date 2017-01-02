@@ -378,7 +378,7 @@ class MakeMhtGraph(object):
                     r('a_data'+str(i)+' <- with(a_dataframe'+str(i)+',cbind(chrNo,winNo,'+columnname+'))')
                     print('a_data'+str(i)+' <- with(a_dataframe'+str(i)+',cbind(chrNo,winNo,'+columnname+'))',file=scriptfile)
                     os.system("cp "+outfileNameWIN_AlistfilenamesWithPaths[i]+" "+dir+re.search(r"[^/]*$", outfileNameWIN_AlistfilenamesWithPaths[i]).group(0))
-                    os.system("rm "+outfileNameWIN_AlistfilenamesWithPaths[i]+" "+outfileNameWIN_Alist[i][0]+"part_"+str(part_i))
+#                     os.system("rm "+outfileNameWIN_AlistfilenamesWithPaths[i]+" "+outfileNameWIN_Alist[i][0]+"part_"+str(part_i))
             if positive_winfiles!=[]:
                 for i in range(0,len(positive_winfiles)):
                     print("please input winfile withpath")
@@ -398,7 +398,7 @@ class MakeMhtGraph(object):
                     print('p_data'+str(i)+' <- with(p_dataframe'+str(i)+',cbind(chrNo,winNo,'+columnname+'))',file=scriptfile)
                     r('p_data'+str(i)+' <- with(p_dataframe'+str(i)+',cbind(chrNo,winNo,'+columnname+'))')
                     os.system("cp "+positive_filenameWithPaths[i]+" "+dir+re.search(r"[^/]*$", positive_filenameWithPaths[i]).group(0))
-                    os.system("rm "+positive_filenameWithPaths[i]+" "+positive_winfiles[i][0]+"part_"+str(part_i))
+#                     os.system("rm "+positive_filenameWithPaths[i]+" "+positive_winfiles[i][0]+"part_"+str(part_i))
     #             r('p_data'+str(i)+' <- with(p_dataframe'+str(i)+',cbind(chrNo,winNo,zvalue))')
             if negtive_winfiles!=[]:
                 for i in range(0,len(negtive_winfiles)):
@@ -411,7 +411,7 @@ class MakeMhtGraph(object):
                     print('n_data'+str(i)+' <- n_dataframe'+str(i)+'[,c("chrNo","winNo","'+columnname+'")]',file=scriptfile)
                     r('n_data'+str(i)+' <- n_dataframe'+str(i)+'[,c("chrNo","winNo","'+columnname+'")]')
                     os.system("cp "+negtive_filenameWithPaths[i]+" "+dir+re.search(r"[^/]*$", negtive_filenameWithPaths[i]).group(0))
-                    os.system("rm "+negtive_filenameWithPaths[i]+" "+negtive_winfiles[i][0]+"part_"+str(part_i))
+#                     os.system("rm "+negtive_filenameWithPaths[i]+" "+negtive_winfiles[i][0]+"part_"+str(part_i))
             print('colors <- rep(c("red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red"),300)',file=scriptfile)
             r('colors <- rep(c("red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red"),300)')
             print('par(las=1, cex.axis=1.5, cex=2,mfrow=c('+str(len(positive_winfiles)+len(negtive_winfiles)+len(outfileNameWIN_Alist)) +',1),mar=c(2, 4, 1.5, 2),mgp=c(0,1,-6))',file=scriptfile)
@@ -504,7 +504,7 @@ class MakeMhtGraph(object):
                     r('a_data'+str(i)+' <- with(a_dataframe'+str(i)+',cbind(chrNo,winNo,'+columnname+'))')
 #                     print('a_data'+str(i)+' <- a_dataframe'+str(i)+'[,c("chrNo","winNo","'+columnname+'")]',file=scriptfile)
                     os.system("cp "+outfileNameWIN_AlistfilenamesWithPaths[i]+" "+dir+re.search(r"[^/]*$", outfileNameWIN_AlistfilenamesWithPaths[i]).group(0))
-                    os.system("rm "+outfileNameWIN_AlistfilenamesWithPaths[i]+" "+outfileNameWIN_Alist[i][0]+"part_"+str(part_i))
+#                     os.system("rm "+outfileNameWIN_AlistfilenamesWithPaths[i]+" "+outfileNameWIN_Alist[i][0]+"part_"+str(part_i))
             if positive_winfiles!=[]:
                 for i in range(0,len(positive_winfiles)):
                     os.system("""awk '{if(NR==1){print$0}if($0~/"""+chromlist[NoOfcurchrom[positive_winfiles[i][0]]].strip()+"""/){start="true"}if(start=="true"){print $0}}' """+ positive_winfiles[i][0]+""">"""+positive_winfiles[i][0]+"part_"+str(part_i))
@@ -514,7 +514,7 @@ class MakeMhtGraph(object):
                     r('p_data'+str(i)+' <- with(p_dataframe'+str(i)+',cbind(chrNo,winNo,'+columnname+'))')
 #                     print('p_data'+str(i)+' <- p_dataframe'+str(i)+'[,c("chrNo","winNo","'+columnname+'")]',file=scriptfile)
                     os.system("cp "+positive_filenameWithPaths[i]+" "+dir+re.search(r"[^/]*$", positive_filenameWithPaths[i]).group(0))
-                    os.system("rm "+positive_filenameWithPaths[i]+" "+positive_winfiles[i][0]+"part_"+str(part_i))
+#                     os.system("rm "+positive_filenameWithPaths[i]+" "+positive_winfiles[i][0]+"part_"+str(part_i))
         #             r('p_data'+str(i)+' <- with(p_dataframe'+str(i)+',cbind(chrNo,winNo,zvalue))')
             if negtive_winfiles!=[]:
                 for i in range(0,len(negtive_winfiles)):
@@ -523,7 +523,7 @@ class MakeMhtGraph(object):
                     r('n_dataframe'+str(i)+'=read.delim("' + negtive_filenameWithPaths[i] + '",header=T)')
                     r('n_data'+str(i)+' <- n_dataframe'+str(i)+'[,c("chrNo","winNo","'+columnname+'")]')
                     os.system("cp "+negtive_filenameWithPaths[i] +" "+dir+re.search(r"[^/]*$", negtive_filenameWithPaths[i]).group(0))
-                    os.system("rm "+negtive_filenameWithPaths[i]+" "+negtive_winfiles[i][0]+"part_"+str(part_i))
+#                     os.system("rm "+negtive_filenameWithPaths[i]+" "+negtive_winfiles[i][0]+"part_"+str(part_i))
 #                     print('n_dataframe'+str(i)+'=read.delim("' + negtive_filenameWithPaths[i] + '",header=T)',file=scriptfile)
 #                     print('n_data'+str(i)+' <- n_dataframe'+str(i)+'[,c("chrNo","winNo","'+columnname+'")]',file=scriptfile)
             r('colors <- rep(c("red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red"),300)')

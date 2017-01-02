@@ -63,7 +63,7 @@ if __name__ == '__main__':
         if len(plainname)>=250:
             obsexpcaculator.outputname=obsexpcaculator.outputname[:-(len(plainname)-250)]
         outputname=obsexpcaculator.outputname
-        outfile = open( outputname+ ".earlypostiveselected"+str(windowWidth)+"_"+str(slideSize)+chrlistfilewithoutpath, 'w')
+        outfile = open( outputname+ "."+options.typeOfcalculate+str(windowWidth)+"_"+str(slideSize)+chrlistfilewithoutpath, 'w')
         print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnp\twinvalue\tzvalue",file=outfile)
         freq_correlation_configFileName=options.outfileprewithpath+".freq_correlation_merged" 
         if options.correlationfile!=freq_correlation_configFileName:
@@ -102,18 +102,14 @@ if __name__ == '__main__':
         outfile=open(outputname + "."+options.typeOfcalculate+str(windowWidth)+"_"+str(slideSize)+chrlistfilewithoutpath, 'w')
         print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnp\twinvalue\tzvalue",file=outfile)
     if options.bedlikefile!=None:
-        obsexpcaculator.minsnps=3
+        obsexpcaculator.minsnps=7
     elif options.chromlistfilename!=None:
         obsexpcaculator.minsnps=10
     aaaa=open(options.outfileprewithpath+".slidwin_filelist"+options.masterpid,'a')
     print(outputname + "."+options.typeOfcalculate+str(windowWidth)+"_"+str(slideSize)+chrlistfilewithoutpath,file=aaaa)
     aaaa.close()
-
-
     win = Util.Window()
     obsexpsignalmapbychrom={}
-
-
     genomedbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname) 
     mysqlchromtable = Util.pekingduckchromtable
     for currentchrID,currentchrLenOrRegion in chromlistOrBedRegionList:
