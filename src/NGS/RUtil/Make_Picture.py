@@ -363,7 +363,7 @@ class MakeMhtGraph(object):
             templ=positive_winfiles+negtive_winfiles+outfileNameWIN_Alist
 #             r('CairoPS("'+outname+chromlist[NoOfcurchrom[templ[0][0]]].strip()+"_"+chromlist[math.ceil(NoOfcurchrom[templ[0][0]]+d)].strip()+"part_"+str(part_i)+'.ps",width=1800,height=900)')
             print('Cairo("'+outname+chromlist[NoOfcurchrom[templ[0][0]]].strip()+"_"+chromlist[math.ceil(NoOfcurchrom[templ[0][0]]+d)].strip()+"part_"+str(part_i)+'.png",type="png",pointsize=12,res=750,width=900,height=550,bg="white",units="mm")',file=scriptfile)
-            r('Cairo("'+outname+chromlist[NoOfcurchrom[templ[0][0]]].strip()+"_"+chromlist[math.ceil(NoOfcurchrom[templ[0][0]]+d)].strip()+"part_"+str(part_i)+'.png",type="png",pointsize=12,res=750,width=900,height=550,bg="white",units="mm")')  
+            r('Cairo("'+outname+chromlist[NoOfcurchrom[templ[0][0]]].strip()+"_"+chromlist[math.ceil(NoOfcurchrom[templ[0][0]]+d)].strip()+"part_"+str(part_i)+'.png",type="png",width=1800,height=900,res=300)')  
             if outfileNameWIN_Alist!=[]:
                 for i in range(0,len(outfileNameWIN_Alist)):
                     os.system("""awk '{if(NR==1){print$0}if($0~/"""+chromlist[NoOfcurchrom[outfileNameWIN_Alist[i][0]]].strip()+"""/){start="true"}if($0~/"""+chromlist[math.ceil(NoOfcurchrom[outfileNameWIN_Alist[i][0]]+d)].strip()+"""/){end="true"}if(start=="true" && end!="true"){print $0}}' """+outfileNameWIN_Alist[i][0]+"""> """+outfileNameWIN_Alist[i][0]+"part_"+str(part_i))
@@ -494,7 +494,7 @@ class MakeMhtGraph(object):
             templ=positive_winfiles+negtive_winfiles+outfileNameWIN_Alist
     #         r('CairoPNG("'+outname+'.png",width='+str(((len(positive_winfiles)+len(negtive_winfiles))*221.5+35)*2)+',height='+str((len(positive_winfiles)+len(negtive_winfiles))*221.5+35)+')')
 #             r('CairoPS("'+outname+chromlist[NoOfcurchrom[templ[0][0]]].strip()+"_"+chromlist[-1].strip()+"part_"+str(part_i)+'.ps")')
-            r('Cairo("'+outname+chromlist[NoOfcurchrom[templ[0][0]]].strip()+"_"+chromlist[-1].strip()+"part_"+str(part_i)+'.pdf",type="pdf",pointsize=12,res=600,width=1800,height=900)')
+            r('Cairo("'+outname+chromlist[NoOfcurchrom[templ[0][0]]].strip()+"_"+chromlist[-1].strip()+"part_"+str(part_i)+'.png",type="png",width=1800,height=900)')
             if outfileNameWIN_Alist!=[]:
                 for i in range(0,len(outfileNameWIN_Alist)):
                     os.system("""awk '{if(NR==1){print$0}if($0~/"""+chromlist[NoOfcurchrom[outfileNameWIN_Alist[i][0]]].strip()+"""/){start="true"}if(start=="true"){print $0}}' """+ outfileNameWIN_Alist[i][0]+""">"""+outfileNameWIN_Alist[i][0]+"part_"+str(part_i))

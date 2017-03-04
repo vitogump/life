@@ -1645,7 +1645,7 @@ def distributionfuncdraft(intervalFileName,dataFileNames,col_to_bined1,col_to_bi
                 intervalMap_mean[a,b]=intervalMap_sum[a,b]/intervalMap_count[a,b]
     return copy.deepcopy(intervalMap_count),copy.deepcopy(intervalMap_mean)
 class WinInGenome():           
-    def __init__(self, dbname, winFileName6Field,Nocol, tableName=None):
+    def __init__(self, dbname, winFileName6Field,Nocol=7, tableName=None):
         super().__init__()
         self.dbname = dbname
         self.chromOrder, self.windbtools, self.wintablewithoutNA, self.wintabletextvalueallwin = self.loadWinDataIntoDB(dbname, winFileName6Field,Nocol, tableName)

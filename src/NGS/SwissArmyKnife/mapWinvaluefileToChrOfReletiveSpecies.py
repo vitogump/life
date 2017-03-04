@@ -5,7 +5,7 @@ Created on 2016-12-13
 '''
 import math
 from optparse import OptionParser
-import re
+import re,copy
 
 
 parser = OptionParser()
@@ -41,7 +41,11 @@ reverseAnchorDATASTRUCTURE={}
 """
 {scaffold451:{chr1:[0,1,2,,,,]},C17734302:{chr1:[idx]}}  idx is idx in the list of anchorDATASTRUCTURE[chr1] 
 """
-newanchorfilehandler=open(options.anchorfile+"changed",'r')
+if options.mapfile:
+    
+    newanchorfilehandler=open(options.anchorfile+"changed",'r')
+else:
+    newanchorfilehandler=open(options.anchorfile,'r')
 for line in newanchorfilehandler:
     linelist=re.split(r"\s+",line.strip())
     if linelist[0].strip() in anchorDATASTRUCTURE:
@@ -59,7 +63,7 @@ for line in newanchorfilehandler:
 newanchorfilehandler.close()
 if __name__ == '__main__':
     winfile=open(options.winfile,'r')
-    winfile.readline()
+    title=winfile.readline()
     winMap={}#{scaffold:[(startpos,endpos,noofsnp,winvalue,zvalue),(),(),,,]}
     for line in winfile:
         linelist=re.split(r"\s+",line.strip())
@@ -69,8 +73,12 @@ if __name__ == '__main__':
             winMap[linelist[0].strip()]=[(int(linelist[2]),int(linelist[3]),int(linelist[4]),linelist[5],linelist[6])]
     winfile.close()
     #winfile has been loaded into memonery
-    
+    #print a new winfile mark auto or sex chromosome
+    f=open(options.winfile)
+    winMapMarked=copy.deepcopy(winMap)
+
     outwinfile=open(options.winfile+"arrangemented",'w')
+    print(title.strip(),file=outwinfile)
     for chrom in sorted(anchorDATASTRUCTURE.keys()):
         idx=0#it seems not useful
         if anchorDATASTRUCTURE[chrom][idx][5]=="-":
@@ -109,9 +117,17 @@ if __name__ == '__main__':
                     winendNo=math.ceil((regionend-int(options.winwidth))/int(options.slidesize))
                 if anchorDATASTRUCTURE[chrom][idx-1][5]=="-":#last scaffold so here is idx-1
                     for i in range(winstartNo,winendNo+1)[::-1]:
+                        if scaffold not in reverseAnchorDATASTRUCTURE or ("Z" not in reverseAnchorDATASTRUCTURE[scaffold] and  "z" not in reverseAnchorDATASTRUCTURE[scaffold] and  "W" not in reverseAnchorDATASTRUCTURE[scaffold] and "w" not in reverseAnchorDATASTRUCTURE[scaffold] and "X" not in reverseAnchorDATASTRUCTURE[scaffold] and "x" not in reverseAnchorDATASTRUCTURE[scaffold] and "Y" not in reverseAnchorDATASTRUCTURE[scaffold] and "y" not in reverseAnchorDATASTRUCTURE[scaffold]):
+                            winMapMarked[lastscaffold][i]=tuple((list(winMapMarked[lastscaffold][i]))+["auto"])
+                        else:
+                            winMapMarked[lastscaffold][i]=tuple((list(winMapMarked[lastscaffold][i]))+["Z"])
                         print(chrom,i,winMap[lastscaffold][i][0],winMap[lastscaffold][i][1],winMap[lastscaffold][i][2],winMap[lastscaffold][i][3],winMap[lastscaffold][i][4],lastscaffold,sep="\t",file=outwinfile)
                 else:
                     for i in range(winstartNo,winendNo+1):
+                        if scaffold not in reverseAnchorDATASTRUCTURE or ("Z" not in reverseAnchorDATASTRUCTURE[scaffold] and  "z" not in reverseAnchorDATASTRUCTURE[scaffold] and  "W" not in reverseAnchorDATASTRUCTURE[scaffold] and "w" not in reverseAnchorDATASTRUCTURE[scaffold] and "X" not in reverseAnchorDATASTRUCTURE[scaffold] and "x" not in reverseAnchorDATASTRUCTURE[scaffold] and "Y" not in reverseAnchorDATASTRUCTURE[scaffold] and "y" not in reverseAnchorDATASTRUCTURE[scaffold]):
+                            winMapMarked[lastscaffold][i]=tuple((list(winMapMarked[lastscaffold][i]))+["auto"])
+                        else:
+                            winMapMarked[lastscaffold][i]=tuple((list(winMapMarked[lastscaffold][i]))+["Z"])
                         print(chrom,i,winMap[lastscaffold][i][0],winMap[lastscaffold][i][1],winMap[lastscaffold][i][2],winMap[lastscaffold][i][3],winMap[lastscaffold][i][4],lastscaffold,sep="\t",file=outwinfile)
                 print("new region")
                 if foward_reverse=="-":
@@ -135,13 +151,28 @@ if __name__ == '__main__':
                 winendNo=math.ceil((regionend-int(options.winwidth))/int(options.slidesize))
             if anchorDATASTRUCTURE[chrom][idx-1][5]=="-":
                 for i in range(winstartNo,winendNo+1)[::-1]:
+                    if scaffold not in reverseAnchorDATASTRUCTURE or ("Z" not in reverseAnchorDATASTRUCTURE[scaffold] and  "z" not in reverseAnchorDATASTRUCTURE[scaffold] and  "W" not in reverseAnchorDATASTRUCTURE[scaffold] and "w" not in reverseAnchorDATASTRUCTURE[scaffold] and "X" not in reverseAnchorDATASTRUCTURE[scaffold] and "x" not in reverseAnchorDATASTRUCTURE[scaffold] and "Y" not in reverseAnchorDATASTRUCTURE[scaffold] and "y" not in reverseAnchorDATASTRUCTURE[scaffold]):
+                        winMapMarked[lastscaffold][i]=tuple((list(winMapMarked[lastscaffold][i]))+["auto"])
+                    else:
+                        winMapMarked[lastscaffold][i]=tuple((list(winMapMarked[lastscaffold][i]))+["Z"])
                     print(chrom,i,winMap[lastscaffold][i][0],winMap[lastscaffold][i][1],winMap[lastscaffold][i][2],winMap[lastscaffold][i][3],winMap[lastscaffold][i][4],lastscaffold,sep="\t",file=outwinfile)
             else:
                 for i in range(winstartNo,winendNo+1):
+                    if scaffold not in reverseAnchorDATASTRUCTURE or ("Z" not in reverseAnchorDATASTRUCTURE[scaffold] and  "z" not in reverseAnchorDATASTRUCTURE[scaffold] and  "W" not in reverseAnchorDATASTRUCTURE[scaffold] and "w" not in reverseAnchorDATASTRUCTURE[scaffold] and "X" not in reverseAnchorDATASTRUCTURE[scaffold] and "x" not in reverseAnchorDATASTRUCTURE[scaffold] and "Y" not in reverseAnchorDATASTRUCTURE[scaffold] and "y" not in reverseAnchorDATASTRUCTURE[scaffold]):
+                        winMapMarked[lastscaffold][i]=tuple((list(winMapMarked[lastscaffold][i]))+["auto"])
+                    else:
+                        winMapMarked[lastscaffold][i]=tuple((list(winMapMarked[lastscaffold][i]))+["Z"])
                     print(chrom,i,winMap[lastscaffold][i][0],winMap[lastscaffold][i][1],winMap[lastscaffold][i][2],winMap[lastscaffold][i][3],winMap[lastscaffold][i][4],lastscaffold,sep="\t",file=outwinfile)
             
 #             for i in range(winstartNo,winendNo+1):
 #                 print(chrom,i,winMap[lastscaffold][i][0],winMap[lastscaffold][i][1],winMap[lastscaffold][i][2],winMap[lastscaffold][i][3],winMap[lastscaffold][i][4],scaffold,sep="\t",file=outwinfile)
     outwinfile.close()
-                        
-    
+    outwinfile=open(options.winfile+"marked",'w')
+    print(title.strip()+"\tmark",file=outwinfile)
+    for scaffold in sorted(winMapMarked.keys()):
+        for winNo in range(len(winMapMarked[scaffold])):
+            if len(winMapMarked[scaffold][winNo])==5 or winMapMarked[scaffold][winNo][5]=="auto":
+                print(scaffold,winNo,winMapMarked[scaffold][winNo][0],winMapMarked[scaffold][winNo][1],winMapMarked[scaffold][winNo][2],winMapMarked[scaffold][winNo][3],winMapMarked[scaffold][winNo][4],"autochromosome",sep="\t",file=outwinfile)
+            else:
+                print(scaffold,winNo,winMapMarked[scaffold][winNo][0],winMapMarked[scaffold][winNo][1],winMapMarked[scaffold][winNo][2],winMapMarked[scaffold][winNo][3],winMapMarked[scaffold][winNo][4],"sexchromosome",sep="\t",file=outwinfile)
+    outwinfile.close()

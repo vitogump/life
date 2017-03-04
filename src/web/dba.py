@@ -17,7 +17,7 @@ from sqlalchemy.sql.sqltypes import Date, DateTime
 
 
 db_config = {
-    'host': '10.2.48.241',
+    'host': '10.2.48.147',
     'user': 'root',
     'passwd': '1234567',
     'db':'ninglabweb',

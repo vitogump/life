@@ -46,7 +46,7 @@ if options.anchorfile!=None:
     """
     {scaffold451:{chr1:[0,1,2,,,,]},C17734302:{chr1:[idx]}}  idx is idx in the list of anchorDATASTRUCTURE[chr1] 
     """
-    newanchorfilehandler=open(options.anchorfile+"changed",'r')
+    newanchorfilehandler=open(options.anchorfile,'r')
     for line in newanchorfilehandler:
         linelist=re.split(r"\s+",line.strip())
         if linelist[0].strip() in anchorDATASTRUCTURE:
@@ -64,7 +64,7 @@ if options.anchorfile!=None:
     newanchorfilehandler.close()
     ##############
     winfile=open(winFileName7Field,'r')
-    winfile.readline()
+    title=winfile.readline()
     winMap={}#{scaffold:[(startpos,endpos,noofsnp,winvalue,zvalue),(),(),,,]}
     for line in winfile:
         linelist=re.split(r"\s+",line.strip())
@@ -77,15 +77,18 @@ if options.anchorfile!=None:
     ##################reZ-transform the winvalue by seperate the autochromosome and sex chromosome
     
     winCrossGenomeMap={"autosome":[],"Z":[],"W":[],"X":[],"Y":[]}
-    winFileName7Field=winFileName7Field+"sexchromseperate"
+    winFileName7Field=winFileName7Field+"sexchromseperatestandard"
     
     
     f=open(winFileName7Field,'w')
+    print(title,end="",file=f)
     for scaffold in winMap.keys():
         for startpos,endpos,noofsnp,winvalue,zvalue in winMap[scaffold]:
             if  re.search(r"^[1234567890\.e-]+$",winvalue)==None:
                 continue
-            if "Z" in reverseAnchorDATASTRUCTURE[scaffold] or "z" in reverseAnchorDATASTRUCTURE[scaffold]:
+            if scaffold not in reverseAnchorDATASTRUCTURE:
+                winCrossGenomeMap["autosome"].append(float(winvalue))
+            elif "Z" in reverseAnchorDATASTRUCTURE[scaffold] or "z" in reverseAnchorDATASTRUCTURE[scaffold]:
                 winCrossGenomeMap["Z"].append(float(winvalue))
             elif "W" in reverseAnchorDATASTRUCTURE[scaffold] or "w" in reverseAnchorDATASTRUCTURE[scaffold]:
                 winCrossGenomeMap["W"].append(float(winvalue))
@@ -103,10 +106,10 @@ if options.anchorfile!=None:
         winNo=0
         for startpos,endpos,noofsnp,winvalue,zvalue in winMap[scaffold]:
             if re.search(r"^[1234567890\.e-]+$",winvalue)!=None:
-                if "Z" in reverseAnchorDATASTRUCTURE[scaffold] or "z" in reverseAnchorDATASTRUCTURE[scaffold] or "W" in reverseAnchorDATASTRUCTURE[scaffold] or "w" in reverseAnchorDATASTRUCTURE[scaffold] or "X" in reverseAnchorDATASTRUCTURE[scaffold] or "x" in reverseAnchorDATASTRUCTURE[scaffold] or "Y" in reverseAnchorDATASTRUCTURE[scaffold] or "y" in reverseAnchorDATASTRUCTURE[scaffold]:
-                    zscore=(float(winvalue)-sexexception)/sexstd1
-                else:
+                if scaffold not in reverseAnchorDATASTRUCTURE or ("Z" not in reverseAnchorDATASTRUCTURE[scaffold] and  "z" not in reverseAnchorDATASTRUCTURE[scaffold] and  "W" not in reverseAnchorDATASTRUCTURE[scaffold] and "w" not in reverseAnchorDATASTRUCTURE[scaffold] and "X" not in reverseAnchorDATASTRUCTURE[scaffold] and "x" not in reverseAnchorDATASTRUCTURE[scaffold] and "Y" not in reverseAnchorDATASTRUCTURE[scaffold] and "y" not in reverseAnchorDATASTRUCTURE[scaffold]):
                     zscore=(float(winvalue)-autoexception)/autostd1
+                else:
+                    zscore=(float(winvalue)-sexexception)/sexstd1
                 print(scaffold,winNo,startpos,endpos,noofsnp,winvalue,zscore,sep="\t",file=f)
             else:
                 print(scaffold,winNo,startpos,endpos,noofsnp,winvalue,zvalue,sep="\t",file=f)
