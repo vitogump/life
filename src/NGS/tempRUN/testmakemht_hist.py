@@ -131,11 +131,10 @@ if __name__ == '__main__':
     uniontpidlist=[];intertpidset=set()
     removed=[]
     if options.splitintopart==1:
-        
         if options.multiple_positive_winfiles!=[]:
             for p_inputfileName,threshold_title,outbedfilename in options.multiple_positive_winfiles[:]:
                 if options.anchorfile!=None:
-                    p_inputfileName==standardseparately(options.anchorfile,p_inputfileName,int(options.upextend),int(options.downextend),int(options.winWidth),int(options.slideSize))
+                    p_inputfileName=standardseparately(options.anchorfile,p_inputfileName,int(options.upextend),int(options.downextend),int(options.winWidth),int(options.slideSize))
                 outfileNameWIN_Plist.append(p_inputfileName)
                 threshold_title_list=re.split(r"_",threshold_title.strip())
                 outfileNameWINwithGENE_Plist.append((geneUtil.findTrscpt(p_inputfileName, outbedfilename, int(options.upextend), int(options.downextend), int(options.winWidth), int(options.slideSize), options.winType, "m", threshold_title_list[0], None, options.mergeNA, int(options.distalextend),options.trscptfound),threshold_title,outbedfilename))
@@ -191,13 +190,12 @@ if __name__ == '__main__':
         if options.multiple_negtive_winfiles!=[]:
             for n_inputfileName,threshold_title,outbedfilename in options.multiple_negtive_winfiles[:]:
                 if options.anchorfile!=None:
-                    n_inputfileName==standardseparately(options.anchorfile,n_inputfileName,int(options.upextend),int(options.downextend),int(options.winWidth),int(options.slideSize))
+                    n_inputfileName=standardseparately(options.anchorfile,n_inputfileName,int(options.upextend),int(options.downextend),int(options.winWidth),int(options.slideSize))
                 threshold_title_list=re.split(r"_",threshold_title.strip())
                 outfileNameWIN_Nlist.append(n_inputfileName)
                 outfileNameWINwithGENE_Nlist.append((geneUtil.findTrscpt(n_inputfileName,outbedfilename, int(options.upextend), int(options.downextend), int(options.winWidth), int(options.slideSize), options.winType, "l", threshold_title_list[0], None, options.mergeNA, int(options.distalextend),options.trscptfound),threshold_title,outbedfilename))
                 makeMhtGraph.makeHistonPicture(n_inputfileName, "Hp")#,"c(0,2000)","c(0,45)"
                 makeMhtGraph.makeHistonPicture(outfileNameWINwithGENE_Nlist[-1][0], "Hp")#,"c(0,2000)","c(0,45)"
-                
 #                     print("awk 'NR!=1{print $8}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq|grep --wFf """+options.removegenelistfile + """ - > """+outbedfilename+".trscptIDlist")
                 print("awk 'NR!=1{print $8}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq>"""+outbedfilename+".ENStrscptIDlist")
                 os.system("awk 'NR!=1 && $7>="+options.minmaxSNP +"{print $8}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq|sed '/^$/d'|awk '$0~/^ENS/{print $0}'>"""+outbedfilename+".ENStrscptIDlist")
@@ -278,4 +276,4 @@ if __name__ == '__main__':
         for a_inputfileName,threshold,outbedfilename in options.multiple_allvalue_winfiles[:]:
             outfileNameWIN_Alist.append((a_inputfileName,threshold,outbedfilename))
         makeMhtGraph.makeMhtplots_compareInOnePicture(options.pathoutputfilename, outfileNameWIN_Plist, outfileNameWIN_Nlist,outfileNameWIN_Alist, 0,columnname,splitinto)
-    print(removed)
+    print("removed genes:",removed)

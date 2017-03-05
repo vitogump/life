@@ -37,7 +37,7 @@ def GOenrichment(gotablefile,outpre,genelist=None,trscptlist=None,UniProtlist=No
         IDidx=UniProtidx
     
 #     sampledIDlist=ensemblIDlistfile.readlines()
-    print(sampledIDlist,sep="\n")
+    print("GOenrichmentinput:",sampledIDlist,sep="\n")
     
 #     ensemblIDlistfile.close()
     

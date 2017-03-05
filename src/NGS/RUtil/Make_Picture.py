@@ -200,7 +200,7 @@ class MakeMhtGraph(object):
 #                 print(inputfileName,columnname,sd,mean,file=open(dir+"/test.txt",'a'))
                 r('dev.off()')
         os.system("cd "+self.olddir)
-        print(ylim,xlim,"mkmht done")     
+        print(ylim,xlim,"mkmhthist done")     
     def makeMhtplots_compareInOnePicture_withgeneName(self, outputnamewithpath,positive_winfiles,negtive_winfiles,fillvalue=0,columnname="zvalue"):
         scriptfile=open("stripts_withgene.R",'w')
         print(outputnamewithpath,file=scriptfile)
@@ -232,6 +232,9 @@ class MakeMhtGraph(object):
             r('p_data'+str(i)+' <- p_dataframe'+str(i)+'[,c("chrNo","winNo","'+columnname+'")]')
             print('p_highlight'+str(i)+'<- p_dataframe'+str(i)+'[p_dataframe'+str(i)+'$'+columnname+'>='+str(p_threshold[i])+',][,c("chrNo","winNo","'+columnname+'","geneName")]',file=scriptfile)
             r('p_highlight'+str(i)+'<- p_dataframe'+str(i)+'[p_dataframe'+str(i)+'$'+columnname+'>='+str(p_threshold[i])+',][,c("chrNo","winNo","'+columnname+'","geneName")]')
+            r('p_highlight'+str(i)+'$geneName<-gsub(pattern="miRNA;",replacement="",x=p_highlight0$geneName)')
+            r('p_highlight'+str(i)+'$geneName<-gsub(pattern=";",replacement="",x=p_highlight0$geneName)')
+            r('p_highlight'+str(i)+'$geneName<-gsub(pattern="miRNA",replacement="",x=p_highlight0$geneName)')
             print('p_highlithcolors'+str(i)+'<- rep("red",nrow(p_highlight'+str(i)+'))',file=scriptfile)
             r('p_highlithcolors'+str(i)+'<- rep("red",nrow(p_highlight'+str(i)+'))')
         for i in range(0,len(negtive_winfiles)):
@@ -243,13 +246,16 @@ class MakeMhtGraph(object):
             print('n_dataframe'+str(i)+'=read.delim("' + negtive_filenameWithPaths[i] + '",header=T,stringsAsFactors=FALSE)',file=scriptfile)
             print('n_data'+str(i)+' <- n_dataframe'+str(i)+'[,c("chrNo","winNo","'+columnname+'")]',file=scriptfile)
             r('n_highlight'+str(i)+'<-n_dataframe'+str(i)+'[n_dataframe'+str(i)+'$'+columnname+'<='+str(n_threshold[i])+',][,c("chrNo","winNo","'+columnname+'","geneName")]')
+            r('n_highlight'+str(i)+'$geneName<-gsub(pattern="miRNA;",replacement="",x=n_highlight0$geneName)')
+            r('n_highlight'+str(i)+'$geneName<-gsub(pattern=";",replacement="",x=n_highlight0$geneName)')
+            r('n_highlight'+str(i)+'$geneName<-gsub(pattern="miRNA",replacement="",x=n_highlight0$geneName)')
             print('n_highlight'+str(i)+'<-n_dataframe'+str(i)+'[n_dataframe'+str(i)+'$'+columnname+'<='+str(n_threshold[i])+',][,c("chrNo","winNo","'+columnname+'","geneName")]',file=scriptfile)
             print('n_highlithcolors'+str(i)+'<- rep("red",nrow(n_highlight'+str(i)+'))',file=scriptfile)
             r('n_highlithcolors'+str(i)+'<- rep("red",nrow(n_highlight'+str(i)+'))')
             
-        r('colors <- rep(c("red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red"),300)')
+        r('colors <- rep(c("red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta"),300)')
         r('par(las=1, cex.axis=1.5, cex=0.8,mfrow=c('+str(len(positive_winfiles)+len(negtive_winfiles)) +',1),mar=c(0.8, 4, 0.8, 2))')
-        print('colors <- rep(c("red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red"),300)',file=scriptfile)
+        print('colors <- rep(c("red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta"),300)',file=scriptfile)
         print('par(las=1, cex.axis=1.5, cex=0.8,mfrow=c('+str(len(positive_winfiles)+len(negtive_winfiles)) +',1),mar=c(0.8, 4, 0.8, 2))',file=scriptfile)
         if len(positive_winfiles)==1:
             hopscex='1'
@@ -412,8 +418,8 @@ class MakeMhtGraph(object):
                     r('n_data'+str(i)+' <- n_dataframe'+str(i)+'[,c("chrNo","winNo","'+columnname+'")]')
                     os.system("cp "+negtive_filenameWithPaths[i]+" "+dir+re.search(r"[^/]*$", negtive_filenameWithPaths[i]).group(0))
 #                     os.system("rm "+negtive_filenameWithPaths[i]+" "+negtive_winfiles[i][0]+"part_"+str(part_i))
-            print('colors <- rep(c("red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red"),300)',file=scriptfile)
-            r('colors <- rep(c("red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red"),300)')
+            print('colors <- rep(c("red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta"),300)',file=scriptfile)
+            r('colors <- rep(c("red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta"),300)')
             print('par(las=1, cex.axis=1.5, cex=2,mfrow=c('+str(len(positive_winfiles)+len(negtive_winfiles)+len(outfileNameWIN_Alist)) +',1),mar=c(2, 4, 1.5, 2),mgp=c(0,1,-6))',file=scriptfile)
             r('par(las=1, cex.axis=1.5, cex=2,mfrow=c('+str(len(positive_winfiles)+len(negtive_winfiles)+len(outfileNameWIN_Alist)) +',1),mar=c(2, 4, 1.5, 2),mgp=c(0,1,-6))')#rep(0,4)
             if outfileNameWIN_Alist!=[]:
@@ -526,7 +532,7 @@ class MakeMhtGraph(object):
 #                     os.system("rm "+negtive_filenameWithPaths[i]+" "+negtive_winfiles[i][0]+"part_"+str(part_i))
 #                     print('n_dataframe'+str(i)+'=read.delim("' + negtive_filenameWithPaths[i] + '",header=T)',file=scriptfile)
 #                     print('n_data'+str(i)+' <- n_dataframe'+str(i)+'[,c("chrNo","winNo","'+columnname+'")]',file=scriptfile)
-            r('colors <- rep(c("red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red"),300)')
+            r('colors <- rep(c("red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta"),300)')
             r('par(las=1, cex.axis=0.15, cex=0.5,mfrow=c('+str(len(positive_winfiles)+len(negtive_winfiles)+len(outfileNameWIN_Alist)) +',1),mar=rep(0,4))')#,mgp=c(-2,1,-4)
 #             print('colors <- rep(c("red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red","blue","green","cyan","yellow","gray","magenta","red"),300)',file=scriptfile)
 #             print('par(las=1, cex.axis=2, cex=1,mfrow=c('+str(len(positive_winfiles)+len(negtive_winfiles)+len(outfileNameWIN_Alist)) +',1),mar=c(2, 4, 1.5, 2))',file=scriptfile)
