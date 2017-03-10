@@ -1,5 +1,5 @@
 import copy
-import os
+import os,numpy
 import re
 import time
 
@@ -184,17 +184,105 @@ def collectSNP_locatInRegion(MultipleVcfMap,chrom,startpos,endpos):
         return copy.deepcopy(MultipleVcfMap[chrom][start_idx:end_idx])
     else:
         return []
-def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,winType,morethan_lessthan,threshold=None,percentage=None,mergeNA=False,extendtodistal=0,found=False):
+def standardseparately(anchorfile,winfilein):
+    anchorDATASTRUCTURE={}
+    """
+    {chr1:[(53353,53806,scaffold451,558997,558537,-),(57200,62371,scaffold451,553669,548504,-),(),,],chr2:[],,,,}
+    """
+    reverseAnchorDATASTRUCTURE={}
+    """
+    {scaffold451:{chr1:[0,1,2,,,,]},C17734302:{chr1:[idx]}}  idx is idx in the list of anchorDATASTRUCTURE[chr1] 
+    """
+    newanchorfilehandler=open(anchorfile,'r')
+    for line in newanchorfilehandler:
+        linelist=re.split(r"\s+",line.strip())
+        if linelist[0].strip() in anchorDATASTRUCTURE:
+            anchorDATASTRUCTURE[linelist[0].strip()].append((int(linelist[1].strip()),int(linelist[2].strip()),linelist[3].strip(),int(linelist[4].strip()),int(linelist[5].strip()),linelist[6].strip()))
+        else:
+            anchorDATASTRUCTURE[linelist[0].strip()]=[(int(linelist[1].strip()),int(linelist[2].strip()),linelist[3].strip(),int(linelist[4].strip()),int(linelist[5].strip()),linelist[6].strip())]
+        #fill reverseAnchorDATASTRUCTURE
+        if linelist[3].strip() in reverseAnchorDATASTRUCTURE:
+            if linelist[0].strip() in reverseAnchorDATASTRUCTURE[linelist[3].strip()]:
+                reverseAnchorDATASTRUCTURE[linelist[3].strip()][linelist[0].strip()].append(len(anchorDATASTRUCTURE[linelist[0].strip()])-1)
+            else:
+                reverseAnchorDATASTRUCTURE[linelist[3].strip()]={linelist[0].strip():[len(anchorDATASTRUCTURE[linelist[0].strip()])-1]}
+        else:
+            reverseAnchorDATASTRUCTURE[linelist[3].strip()]={linelist[0].strip():[len(anchorDATASTRUCTURE[linelist[0].strip()])-1]}
+    newanchorfilehandler.close()
+    ##############
+    winfile=open(winfilein,'r')
+    title=winfile.readline()
+    winMap={}#{scaffold:[(startpos,endpos,noofsnp,winvalue,zvalue),(),(),,,]}
+    for line in winfile:
+        linelist=re.split(r"\s+",line.strip())
+        if linelist[0].strip()  in winMap:
+            winMap[linelist[0].strip()].append((int(linelist[2]),int(linelist[3]),int(linelist[4]),linelist[5],linelist[6]))
+        else:
+            winMap[linelist[0].strip()]=[(int(linelist[2]),int(linelist[3]),int(linelist[4]),linelist[5],linelist[6])]
+    winfile.close()
+    ##################winfile has been loaded into memonery
+    ##################reZ-transform the winvalue by seperate the autochromosome and sex chromosome
+    
+    winCrossGenomeMap={"autosome":[],"Z":[],"W":[],"X":[],"Y":[]}
+    winFileName7Field=winfilein+"sexchromseperatestandard"
+    
+    
+    f=open(winFileName7Field,'w')
+    print(title,end="",file=f)
+    for scaffold in winMap.keys():
+        for startpos,endpos,noofsnp,winvalue,zvalue in winMap[scaffold]:
+            if  re.search(r"^[1234567890\.e-]+$",winvalue)==None:
+                continue
+            if scaffold not in reverseAnchorDATASTRUCTURE:
+                winCrossGenomeMap["autosome"].append(float(winvalue))
+            elif "Z" in reverseAnchorDATASTRUCTURE[scaffold] or "z" in reverseAnchorDATASTRUCTURE[scaffold]:
+                winCrossGenomeMap["Z"].append(float(winvalue))
+            elif "W" in reverseAnchorDATASTRUCTURE[scaffold] or "w" in reverseAnchorDATASTRUCTURE[scaffold]:
+                winCrossGenomeMap["W"].append(float(winvalue))
+            elif "X" in reverseAnchorDATASTRUCTURE[scaffold] or "x" in reverseAnchorDATASTRUCTURE[scaffold]:
+                winCrossGenomeMap["X"].append(float(winvalue))
+            elif "Y" in reverseAnchorDATASTRUCTURE[scaffold] or "y" in reverseAnchorDATASTRUCTURE[scaffold]:
+                winCrossGenomeMap["Y"].append(float(winvalue)) 
+            else:
+                winCrossGenomeMap["autosome"].append(float(winvalue))
+    autoexception=numpy.mean(winCrossGenomeMap["autosome"])
+    autostd1=numpy.std(winCrossGenomeMap["autosome"],ddof=1)
+    print("autoexception,autostd",autoexception,autostd1)
+    sexexception=numpy.mean(winCrossGenomeMap["Z"]+winCrossGenomeMap["W"]+winCrossGenomeMap["X"]+winCrossGenomeMap["Y"])
+    sexstd1=numpy.std(winCrossGenomeMap["Z"]+winCrossGenomeMap["W"]+winCrossGenomeMap["X"]+winCrossGenomeMap["Y"],ddof=1)
+    
+    for scaffold in sorted(winMap.keys()):
+        winNo=0
+        for startpos,endpos,noofsnp,winvalue,zvalue in winMap[scaffold]:
+            if re.search(r"^[1234567890\.e-]+$",winvalue)!=None:
+                if scaffold not in reverseAnchorDATASTRUCTURE or ("Z" not in reverseAnchorDATASTRUCTURE[scaffold] and  "z" not in reverseAnchorDATASTRUCTURE[scaffold] and  "W" not in reverseAnchorDATASTRUCTURE[scaffold] and "w" not in reverseAnchorDATASTRUCTURE[scaffold] and "X" not in reverseAnchorDATASTRUCTURE[scaffold] and "x" not in reverseAnchorDATASTRUCTURE[scaffold] and "Y" not in reverseAnchorDATASTRUCTURE[scaffold] and "y" not in reverseAnchorDATASTRUCTURE[scaffold]):
+                    zscore=(float(winvalue)-autoexception)/autostd1
+                else:
+                    zscore=(float(winvalue)-sexexception)/sexstd1
+                print(scaffold,winNo,startpos,endpos,noofsnp,winvalue,zscore,sep="\t",file=f)
+            else:
+                print(scaffold,winNo,startpos,endpos,noofsnp,winvalue,zvalue,sep="\t",file=f)
+            winNo+=1
+    f.close()
+    return winFileName7Field
+def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,winType,morethan_lessthan,threshold_title_list=None,percentage=None,mergeNA=False,extendtodistal=0,anchorfile=None,sexthreshold=None,found=False,mapfile=None):
 
-    if percentage!=None and threshold!=None:
+    if percentage!=None and threshold_title_list!=None:
         print("-t conflict with -p")
         exit(-1)
-    winFileName7Field = winfile
-    f=open(winFileName7Field,"r")
+    threshold_title_list
+    if anchorfile:
+        winfile=standardseparately(anchorfile,winfile)
+        winfilemark,winfilearrangement=Util.mapWinvaluefileToChrOfReletiveSpecie(anchorfile, winfile, winwidth, slideSize, mapfile)
+    else:
+        winfile=standardseparately(anchorfile,winfile)
+        os.system("awk ' {if(NR=1){print $0"+'"\tmark"'+"}else{print $0"+'"\tunknown"'+"}}' "+winfile+">"+winfile+"marked")
+    winFileName8Field = winfile+"marked"
+    f=open(winFileName8Field,"r")
     title=re.split(r"\s+",f.readline().strip())
     f.close()
     Nocol=title.index(winType)+1
-    re.search(r"[^/]*$",winFileName7Field).group(0)
+    re.search(r"[^/]*$",winFileName8Field).group(0)
     if re.search(r'^.*/',outbedfilename)!=None:
         path=re.search(r'^.*/',outbedfilename).group(0)
     else:
@@ -202,32 +290,48 @@ def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,win
         path=a.readline().strip()+"/"
         a.close()
     if found:
-        outfileNameWINwithGENE=path+re.search(r"[^/]*$",winFileName7Field).group(0)+".wincopywithgene"
+        outfileNameWINwithGENE=path+re.search(r"[^/]*$",winFileName8Field).group(0)+".wincopywithgene"
         return outfileNameWINwithGENE   
     outfile=open(outbedfilename+".bed.selectedgene",'w')
     print("chrNo\tRegion_start\tRegion_end\tNoofWin\textram"+winType+"\tminNoSNP\tmaxNoSNP\ttranscpt\toverlapcode\tgeneID",file=outfile)
-    outfileNameWINwithGENE=path+re.search(r"[^/]*$",winFileName7Field).group(0)+".wincopywithgene"
+    outfileNameWINwithGENE=path+re.search(r"[^/]*$",winFileName8Field).group(0)+".wincopywithgene"
     print(Util.ip, Util.username, Util.password, Util.genomeinfodbname)
-    genomedbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname) 
-    winGenome = Util.WinInGenome(Util.ghostdbname, winFileName7Field,Nocol)
+    genomedbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname)
+    
+    winGenome = Util.WinInGenome(Util.ghostdbname, winFileName8Field,Nocol)
+    
     time.sleep(SLEEP_FOR_NEXT_TRY)
-    winGenome.appendGeneName(Util.TranscriptGenetable, genomedbtools, winwidth, slideSize, outfileNameWINwithGENE,upextend,downextend,(10,morethan_lessthan))
     selectWinNos="threshold method"
+    totalWin = winGenome.windbtools.operateDB("select", "select count(*) from " + winGenome.wintablewithoutNA)[0][0]  
+#     selectWinNos = int(float(percentage) * totalWin)  
+    if anchorfile:
+        wherestatmentmt=" where (mark=autochromosome and "+winType+">=" + threshold_title_list[0]+") or (mark=sexchromosome and "+winType+">=" +threshold_title_list[-1]+")"
+#         wherestatmentmp=" where 1 order by "+winType+" desc limit 0," + str(selectWinNos)
+        wherestatmentlt=" where (mark=autochromosome and "+winType+"<=" + threshold_title_list[0]+") or (mark=sexchromosome and "+winType+"<=" +threshold_title_list[-1]+")"
+#         wherestatmentlp=" where 1 order by "+winType+" asc limit 0," + str(selectWinNos)
+    else:
+        wherestatmentmt= " where 1 and "+winType+">=" + threshold_title_list[0]
+#         wherestatmentmp=" where 1 order by "+winType+" desc limit 0," + str(selectWinNos)
+        wherestatmentlt=" where "+winType+"!= 'NA' and "+winType+"<=" + threshold_title_list[0]
+#         wherestatmentlp=" where 1 order by "+winType+" asc limit 0," + str(selectWinNos)
+    winGenome.appendGeneName(Util.TranscriptGenetable, genomedbtools, winwidth, slideSize, outfileNameWINwithGENE,upextend,downextend,(10,morethan_lessthan))
+#    should be rewrite in a clear statment
     if percentage!=None:
-        totalWin = winGenome.windbtools.operateDB("select", "select count(*) from " + winGenome.wintablewithoutNA)[0][0]
-        selectWinNos = int(float(percentage) * totalWin)
+        
+        
         if morethan_lessthan == "m" or morethan_lessthan == "M":
             selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintablewithoutNA + " where 1 order by "+winType+" desc limit 0," + str(selectWinNos))
             print("select * from "+winGenome.wintablewithoutNA + " where 1 order by zvalue desc limit 0," + str(selectWinNos))
         elif morethan_lessthan == "l" or morethan_lessthan == "L":
             selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintablewithoutNA + " where 1 order by "+winType+" asc limit 0," + str(selectWinNos))
             print("select * from " + winGenome.wintablewithoutNA + " where 1 order by "+winType+" asc limit 0," + str(selectWinNos))
-    elif threshold!=None:
+    elif threshold_title_list!=None:
         if morethan_lessthan=="m" or morethan_lessthan=="M":
-            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintablewithoutNA + " where 1 and "+winType+">=" + threshold)
+            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintablewithoutNA + wherestatmentmt)
+            
         elif morethan_lessthan=="l" or morethan_lessthan=="L":
-            print("select", "select * from " + winGenome.wintablewithoutNA + " where "+winType+"!= 'NA' and "+winType+"<=" + threshold)
-            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintablewithoutNA + " where 1 and "+winType+"<=" + threshold)
+#             print("select", "select * from " + winGenome.wintablewithoutNA + " where "+winType+"!= 'NA' and "+winType+"<=" + threshold)
+            selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintablewithoutNA + wherestatmentlt)
         selectWinNos=len(selectedWins)
     selectedWins.sort(key=lambda listRec:float(listRec[5]))
     if selectWinNos==0:

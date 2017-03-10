@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 import copy
 import random
-import string,numpy
+import string,numpy,math
 import re
 import pickle,os,configparser
 import src.NGS.BasicUtil.DBManager as dbm
@@ -991,6 +991,170 @@ def encode_phyliplines(headers, sequences,maxlen=10):
     return '\n'.join(out_lines)
 #phylip format 
 
+#######################
+def mapWinvaluefileToChrOfReletiveSpecie(anchorfile,winfileinName,winwidth,slidesize,mapfile=None):
+    newanchorfilehandler=anchorfile
+    if mapfile:
+        scaffoldmap={}
+        mapfile=open(mapfile,'r')
+        for line in mapfile:
+            linelist=re.split(r"\s+",line.strip())
+            scaffoldmap[linelist[0].strip().lower()]=linelist[1].strip()
+        oldanchorfilehandler=open(anchorfile,'r')
+        newanchorfilehandler=open(anchorfile+"changed",'w')
+        for line in oldanchorfilehandler:
+            linelist=re.split(r"\s+",line.strip())
+            if linelist[3] in scaffoldmap:
+                linelist[3]=scaffoldmap[linelist[3].strip().lower()]
+            print(*linelist,sep="\t",file=newanchorfilehandler)
+        oldanchorfilehandler.close()
+        newanchorfilehandler.close()
+            
+        
+    anchorDATASTRUCTURE={}
+    """
+    {chr1:[(53353,53806,scaffold451,558997,558537,-),(57200,62371,scaffold451,553669,548504,-),(),,],chr2:[],,,,}
+    """
+    reverseAnchorDATASTRUCTURE={}
+    """
+    {scaffold451:{chr1:[0,1,2,,,,]},C17734302:{chr1:[idx]}}  idx is idx in the list of anchorDATASTRUCTURE[chr1] 
+    """
+    if mapfile:
+        
+        newanchorfilehandler=open(anchorfile+"changed",'r')
+    else:
+        newanchorfilehandler=open(anchorfile,'r')
+    for line in newanchorfilehandler:
+        linelist=re.split(r"\s+",line.strip())
+        if linelist[0].strip() in anchorDATASTRUCTURE:
+            anchorDATASTRUCTURE[linelist[0].strip()].append((int(linelist[1].strip()),int(linelist[2].strip()),linelist[3].strip(),int(linelist[4].strip()),int(linelist[5].strip()),linelist[6].strip()))
+        else:
+            anchorDATASTRUCTURE[linelist[0].strip()]=[(int(linelist[1].strip()),int(linelist[2].strip()),linelist[3].strip(),int(linelist[4].strip()),int(linelist[5].strip()),linelist[6].strip())]
+        #fill reverseAnchorDATASTRUCTURE
+        if linelist[3].strip() in reverseAnchorDATASTRUCTURE:
+            if linelist[0].strip() in reverseAnchorDATASTRUCTURE[linelist[3].strip()]:
+                reverseAnchorDATASTRUCTURE[linelist[3].strip()][linelist[0].strip()].append(len(anchorDATASTRUCTURE[linelist[0].strip()])-1)
+            else:
+                reverseAnchorDATASTRUCTURE[linelist[3].strip()]={linelist[0].strip():[len(anchorDATASTRUCTURE[linelist[0].strip()])-1]}
+        else:
+            reverseAnchorDATASTRUCTURE[linelist[3].strip()]={linelist[0].strip():[len(anchorDATASTRUCTURE[linelist[0].strip()])-1]}
+    newanchorfilehandler.close()
+#     if __name__ == '__main__':
+    winfile=open(winfileinName,'r')
+    title=winfile.readline()
+    winMap={}#{scaffold:[(startpos,endpos,noofsnp,winvalue,zvalue),(),(),,,]}
+    for line in winfile:
+        linelist=re.split(r"\s+",line.strip())
+        if linelist[0].strip()  in winMap:
+            winMap[linelist[0].strip()].append((int(linelist[2]),int(linelist[3]),int(linelist[4]),linelist[5],linelist[6]))
+        else:
+            winMap[linelist[0].strip()]=[(int(linelist[2]),int(linelist[3]),int(linelist[4]),linelist[5],linelist[6])]
+    winfile.close()
+    #winfile has been loaded into memonery
+    #print a new winfile mark auto or sex chromosome
+    winMapMarked=copy.deepcopy(winMap)
+
+    outwinfile=open(winfileinName+"arrangemented",'w')
+    print(title.strip(),file=outwinfile)
+    for chrom in sorted(anchorDATASTRUCTURE.keys()):
+        idx=0#it seems not useful
+        if anchorDATASTRUCTURE[chrom][idx][5]=="-":
+            regionstart=anchorDATASTRUCTURE[chrom][idx][4]
+            regionend=anchorDATASTRUCTURE[chrom][idx][3]
+        elif anchorDATASTRUCTURE[chrom][idx][5]=="+":
+            regionstart=anchorDATASTRUCTURE[chrom][idx][3]
+            regionend=anchorDATASTRUCTURE[chrom][idx][4]
+        lastscaffold=anchorDATASTRUCTURE[chrom][idx][2]
+        if lastscaffold not in winMap:
+            for startpos,endpos,scaffold,sstartpos,sendpos,foward_reverse in anchorDATASTRUCTURE[chrom]:
+                idx+=1
+                if scaffold in winMap:
+                    lastscaffold=scaffold
+                    break
+
+        for startpos,endpos,scaffold,sstartpos,sendpos,foward_reverse in anchorDATASTRUCTURE[chrom][idx:]:
+            if lastscaffold==scaffold:
+#                 print("this code block counting the continue stretch . and Should consider wither there are some gap in it")
+                if foward_reverse=="-":
+                    regionstart=min(regionstart,sendpos)
+                    regionend=max(regionend,sstartpos)
+                else:
+                    regionstart=min(regionstart,sstartpos)
+                    regionend=max(regionend,sendpos)
+                
+            else:
+                print("after determining the start or the end of the stretch, arranging the scaffolds which in the stretch")
+                if regionstart < int(winwidth):
+                    winstartNo=0
+                else:
+                    winstartNo=math.ceil((regionstart-int(winwidth))/int(slidesize))
+                if regionend<int(winwidth):
+                    winendNo=0
+                else:
+                    winendNo=math.ceil((regionend-int(winwidth))/int(slidesize))
+                if anchorDATASTRUCTURE[chrom][idx-1][5]=="-":#last scaffold so here is idx-1
+                    for i in range(winstartNo,winendNo+1)[::-1]:
+                        if scaffold not in reverseAnchorDATASTRUCTURE or ("Z" not in reverseAnchorDATASTRUCTURE[scaffold] and  "z" not in reverseAnchorDATASTRUCTURE[scaffold] and  "W" not in reverseAnchorDATASTRUCTURE[scaffold] and "w" not in reverseAnchorDATASTRUCTURE[scaffold] and "X" not in reverseAnchorDATASTRUCTURE[scaffold] and "x" not in reverseAnchorDATASTRUCTURE[scaffold] and "Y" not in reverseAnchorDATASTRUCTURE[scaffold] and "y" not in reverseAnchorDATASTRUCTURE[scaffold]):
+                            winMapMarked[lastscaffold][i]=tuple((list(winMapMarked[lastscaffold][i]))+["auto"])
+                        else:
+                            winMapMarked[lastscaffold][i]=tuple((list(winMapMarked[lastscaffold][i]))+["Z"])
+                        print(chrom,i,winMap[lastscaffold][i][0],winMap[lastscaffold][i][1],winMap[lastscaffold][i][2],winMap[lastscaffold][i][3],winMap[lastscaffold][i][4],lastscaffold,sep="\t",file=outwinfile)
+                else:
+                    for i in range(winstartNo,winendNo+1):
+                        if scaffold not in reverseAnchorDATASTRUCTURE or ("Z" not in reverseAnchorDATASTRUCTURE[scaffold] and  "z" not in reverseAnchorDATASTRUCTURE[scaffold] and  "W" not in reverseAnchorDATASTRUCTURE[scaffold] and "w" not in reverseAnchorDATASTRUCTURE[scaffold] and "X" not in reverseAnchorDATASTRUCTURE[scaffold] and "x" not in reverseAnchorDATASTRUCTURE[scaffold] and "Y" not in reverseAnchorDATASTRUCTURE[scaffold] and "y" not in reverseAnchorDATASTRUCTURE[scaffold]):
+                            winMapMarked[lastscaffold][i]=tuple((list(winMapMarked[lastscaffold][i]))+["auto"])
+                        else:
+                            winMapMarked[lastscaffold][i]=tuple((list(winMapMarked[lastscaffold][i]))+["Z"])
+                        print(chrom,i,winMap[lastscaffold][i][0],winMap[lastscaffold][i][1],winMap[lastscaffold][i][2],winMap[lastscaffold][i][3],winMap[lastscaffold][i][4],lastscaffold,sep="\t",file=outwinfile)
+                print("new region")
+                if foward_reverse=="-":
+                    regionstart=sendpos
+                    regionend=sstartpos
+                elif foward_reverse=="+":
+                    regionstart=sstartpos
+                    regionend=sendpos
+                if scaffold not in winMap:
+                    continue
+                lastscaffold=scaffold
+            idx+=1
+        else:
+            if regionstart < int(winwidth):
+                winstartNo=0
+            else:
+                winstartNo=math.ceil((regionstart-int(winwidth))/int(slidesize))
+            if regionend<int(winwidth):
+                winendNo=0
+            else:
+                winendNo=math.ceil((regionend-int(winwidth))/int(slidesize))
+            if anchorDATASTRUCTURE[chrom][idx-1][5]=="-":
+                for i in range(winstartNo,winendNo+1)[::-1]:
+                    if scaffold not in reverseAnchorDATASTRUCTURE or ("Z" not in reverseAnchorDATASTRUCTURE[scaffold] and  "z" not in reverseAnchorDATASTRUCTURE[scaffold] and  "W" not in reverseAnchorDATASTRUCTURE[scaffold] and "w" not in reverseAnchorDATASTRUCTURE[scaffold] and "X" not in reverseAnchorDATASTRUCTURE[scaffold] and "x" not in reverseAnchorDATASTRUCTURE[scaffold] and "Y" not in reverseAnchorDATASTRUCTURE[scaffold] and "y" not in reverseAnchorDATASTRUCTURE[scaffold]):
+                        winMapMarked[lastscaffold][i]=tuple((list(winMapMarked[lastscaffold][i]))+["auto"])
+                    else:
+                        winMapMarked[lastscaffold][i]=tuple((list(winMapMarked[lastscaffold][i]))+["Z"])
+                    print(chrom,i,winMap[lastscaffold][i][0],winMap[lastscaffold][i][1],winMap[lastscaffold][i][2],winMap[lastscaffold][i][3],winMap[lastscaffold][i][4],lastscaffold,sep="\t",file=outwinfile)
+            else:
+                for i in range(winstartNo,winendNo+1):
+                    if scaffold not in reverseAnchorDATASTRUCTURE or ("Z" not in reverseAnchorDATASTRUCTURE[scaffold] and  "z" not in reverseAnchorDATASTRUCTURE[scaffold] and  "W" not in reverseAnchorDATASTRUCTURE[scaffold] and "w" not in reverseAnchorDATASTRUCTURE[scaffold] and "X" not in reverseAnchorDATASTRUCTURE[scaffold] and "x" not in reverseAnchorDATASTRUCTURE[scaffold] and "Y" not in reverseAnchorDATASTRUCTURE[scaffold] and "y" not in reverseAnchorDATASTRUCTURE[scaffold]):
+                        winMapMarked[lastscaffold][i]=tuple((list(winMapMarked[lastscaffold][i]))+["auto"])
+                    else:
+                        winMapMarked[lastscaffold][i]=tuple((list(winMapMarked[lastscaffold][i]))+["Z"])
+                    print(chrom,i,winMap[lastscaffold][i][0],winMap[lastscaffold][i][1],winMap[lastscaffold][i][2],winMap[lastscaffold][i][3],winMap[lastscaffold][i][4],lastscaffold,sep="\t",file=outwinfile)
+            
+#             for i in range(winstartNo,winendNo+1):
+#                 print(chrom,i,winMap[lastscaffold][i][0],winMap[lastscaffold][i][1],winMap[lastscaffold][i][2],winMap[lastscaffold][i][3],winMap[lastscaffold][i][4],scaffold,sep="\t",file=outwinfile)
+    outwinfile.close()
+    outwinfile=open(winfileinName+"marked",'w')
+    print(title.strip()+"\tmark",file=outwinfile)
+    for scaffold in sorted(winMapMarked.keys()):
+        for winNo in range(len(winMapMarked[scaffold])):
+            if len(winMapMarked[scaffold][winNo])==5 or winMapMarked[scaffold][winNo][5]=="auto":
+                print(scaffold,winNo,winMapMarked[scaffold][winNo][0],winMapMarked[scaffold][winNo][1],winMapMarked[scaffold][winNo][2],winMapMarked[scaffold][winNo][3],winMapMarked[scaffold][winNo][4],"autochromosome",sep="\t",file=outwinfile)
+            else:
+                print(scaffold,winNo,winMapMarked[scaffold][winNo][0],winMapMarked[scaffold][winNo][1],winMapMarked[scaffold][winNo][2],winMapMarked[scaffold][winNo][3],winMapMarked[scaffold][winNo][4],"sexchromosome",sep="\t",file=outwinfile)
+    outwinfile.close()
+    return winfileinName+"marked",winfileinName+"arrangemented"
+####################
 def getRefSeqMap(refFastafilehander, currentChromNO=None, preBaseTotal=0, linesOnce=500000, mapname=None):
     '''
     the refSeqMap has only one chromosome's sequence
@@ -1645,18 +1809,17 @@ def distributionfuncdraft(intervalFileName,dataFileNames,col_to_bined1,col_to_bi
                 intervalMap_mean[a,b]=intervalMap_sum[a,b]/intervalMap_count[a,b]
     return copy.deepcopy(intervalMap_count),copy.deepcopy(intervalMap_mean)
 class WinInGenome():           
-    def __init__(self, dbname, winFileName6Field,Nocol=7, tableName=None):
+    def __init__(self, dbname, winFileName8Field,Nocol=7, tableName=None):
         super().__init__()
         self.dbname = dbname
-        self.chromOrder, self.windbtools, self.wintablewithoutNA, self.wintabletextvalueallwin = self.loadWinDataIntoDB(dbname, winFileName6Field,Nocol, tableName)
+        self.chromOrder, self.windbtools, self.wintablewithoutNA, self.wintabletextvalueallwin = self.loadWinDataIntoDB(dbname, winFileName8Field,Nocol, tableName)
         self.winContainTrscptMap = {}
-    def loadWinDataIntoDB(self, dbname, winFileName7Field,Nocol="7", tableNamewithoutNA=None):
+    def loadWinDataIntoDB(self, dbname, winFileName8Field,Nocol="7", tableNamewithoutNA=None):
         chromOrder = []
         
         tempdbtools = dbm.DBTools(ip, "root", "1234567", dbname)
         if tableNamewithoutNA == None:
             tableNamewithoutNA = random_str()
-            
 #             return chromOrder, tempdbtools, tableNamewithoutNA, tableNametextValueForappendGeneName 
         tableNametextValueForappendGeneName = tableNamewithoutNA + "textField"
         
@@ -1670,6 +1833,7 @@ class WinInGenome():
             " `snpcount` int(11) NOT NULL,"
             " `winvalue` double NOT NULL,"  #########why?
             " `zvalue` double NOT NULL,"  ##########
+            " `mark` varchar(30) NOT NULL DEFAULT 'unknown', "
             " PRIMARY KEY (`chrID`,`winNo`)"
             ")"
             )
@@ -1682,21 +1846,22 @@ class WinInGenome():
             " `snpcount` int(11) NOT NULL,"
             " `winvalue` text NOT NULL,"  ##############why?
             " `zvalue` text NOT NULL,"  ###############
+            " `mark` varchar(30) NOT NULL DEFAULT 'unknown', "
             " PRIMARY KEY (`chrID`,`winNo`)"
             ")"
             )        
         print(TABLES)
         tempdbtools.create_table(TABLES)
-        a = os.popen("awk '{print $1}' " + winFileName7Field + "|uniq")
+        a = os.popen("awk '{print $1}' " + winFileName8Field + "|uniq")
         for chromNo in a:
             chromOrder.append(chromNo.strip())
         a.close()
-        a = os.system("awk '$"+str(Nocol)+"!~/NA/ && NR!=1{print $0}' " + winFileName7Field + ">" + winFileName7Field + "_tmpfile")
+        a = os.system("awk '$"+str(Nocol)+"!~/NA/ && NR!=1{print $0}' " + winFileName8Field + ">" + winFileName8Field + "_tmpfile")
         if a != 0:
-            print("awk '$"+str(Nocol)+"!~/NA/ && NR!=1{print $0}' " + winFileName7Field + ">" + winFileName7Field + "_tmpfile" + ": failed")
+            print("awk '$"+str(Nocol)+"!~/NA/ && NR!=1{print $0}' " + winFileName8Field + ">" + winFileName8Field + "_tmpfile" + ": failed")
             exit(-1)
-        print("awk '$"+str(Nocol)+"!~/NA/ && NR!=1{print $0}' " + winFileName7Field + ">" + winFileName7Field + "_tmpfile" + ": ok")
-        loaddatasql = "load data local infile '" + winFileName7Field + "_tmpfile' into table " + tableNamewithoutNA + " fields terminated by '\\t'"
+        print("awk '$"+str(Nocol)+"!~/NA/ && NR!=1{print $0}' " + winFileName8Field + ">" + winFileName8Field + "_tmpfile" + ": ok")
+        loaddatasql = "load data local infile '" + winFileName8Field + "_tmpfile' into table " + tableNamewithoutNA + " fields terminated by '\\t'"
         
         shellstatment = "mysql -uroot -p1234567 -D" + dbname.strip() + ' -e "' + loaddatasql + '"'
         
@@ -1705,9 +1870,9 @@ class WinInGenome():
             print("Util : loadWinDataIntoDB func os.system return not 0")
             exit(-1)
         print(shellstatment + ":ok")
-        os.system("rm " + winFileName7Field + "_tmpfile")
+        os.system("rm " + winFileName8Field + "_tmpfile")
         
-        loaddatasql = "load data local infile '" + winFileName7Field + "' into table " + tableNametextValueForappendGeneName + " fields terminated by '\\t'"
+        loaddatasql = "load data local infile '" + winFileName8Field + "' into table " + tableNametextValueForappendGeneName + " fields terminated by '\\t'"
         
         shellstatment = "mysql -uroot -p1234567 -D" + dbname.strip() + ' -e "' + loaddatasql + '"'
         
@@ -1722,7 +1887,7 @@ class WinInGenome():
         return chromOrder, tempdbtools, tableNamewithoutNA, tableNametextValueForappendGeneName 
     def appendGeneName(self, TranscriptGenetable, genomedbtools, winwidth, slideSize, outfileName,upextend=0, downextend=0,findNearestGene=(5,"m")):
         outfile = open(outfileName, 'w')
-        print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnps\twinvalue\tzvalue\tgeneName\ttrscptID", file=outfile)
+        print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnps\twinvalue\tzvalue\tmark\tgeneName\ttrscptID", file=outfile)
 
         allwins = self.windbtools.operateDB("select", "select * from " + self.wintabletextvalueallwin )
         self.windbtools.operateDB("callproc", "mysql_sp_add_column", data=(self.dbname, self.wintabletextvalueallwin, "geneName", "varchar(128)", "default null"))

@@ -26,7 +26,7 @@ parser.add_option("-a","--allvalue",dest="multiple_allvalue_winfiles",action="ap
 
 parser.add_option("-A","--anchorfile",dest="anchorfile",default=None,help="winvalue or zvalue")
 parser.add_option("-g", "--gotablefile", dest="gotablefile", help="gotable title with :Ensembl Gene ID    Ensembl Transcript ID    GO Term Accession    GO Term Evidence Code    GO domain    GO Term Name    GO Term Definition,order and upper/lower case is arbitrarily")
-
+parser.add_option("-M", "--mapfile", dest="mapfile",default=None, help="optional")
 parser.add_option("-x", "--threshold_percentage", dest="threshold_percentage",help="t / p", metavar="FILE")
 parser.add_option("-e", "--distalextend", dest="distalextend",default="180000",help="t / p", metavar="FILE")
 parser.add_option("-f", "--trscptfound", dest="trscptfound",action="store_true",default=False, help="outfileprename")
@@ -37,91 +37,12 @@ parser.add_option("-s","--slideSize",dest="slideSize",default="20000",help="win 
 parser.add_option("-w","--winWidth",dest="winWidth",default="40000",help="win width ")
 parser.add_option("-X","--winType",dest="winType",default="zvalue",help="winvalue or zvalue")
 parser.add_option("-N","--mergeNA",dest="mergeNA",default=False,help="winvalue or zvalue")
-parser.add_option("-m", "--minmaxSNP", dest="minmaxSNP",default="0", help="upextend")
+parser.add_option("-m", "--minmaxSNP", dest="minmaxSNP",default="7", help="upextend")
 parser.add_option("-r", "--removegenelistfile", dest="removegenelistfile", help="upextend")
 # parser.add_option("-t","--numberofoutlier_to_NearestGene",dest="numberofoutlier_to_NearestGene",default=0,help="number of outlier value,for example top 10")
 (options, args) = parser.parse_args()
 columnname=options.winType.strip()
 
-def standardseparately(anchorfile,winfilein,upextend,downextend,winWidth,slideSize):
-    anchorDATASTRUCTURE={}
-    """
-    {chr1:[(53353,53806,scaffold451,558997,558537,-),(57200,62371,scaffold451,553669,548504,-),(),,],chr2:[],,,,}
-    """
-    reverseAnchorDATASTRUCTURE={}
-    """
-    {scaffold451:{chr1:[0,1,2,,,,]},C17734302:{chr1:[idx]}}  idx is idx in the list of anchorDATASTRUCTURE[chr1] 
-    """
-    newanchorfilehandler=open(anchorfile,'r')
-    for line in newanchorfilehandler:
-        linelist=re.split(r"\s+",line.strip())
-        if linelist[0].strip() in anchorDATASTRUCTURE:
-            anchorDATASTRUCTURE[linelist[0].strip()].append((int(linelist[1].strip()),int(linelist[2].strip()),linelist[3].strip(),int(linelist[4].strip()),int(linelist[5].strip()),linelist[6].strip()))
-        else:
-            anchorDATASTRUCTURE[linelist[0].strip()]=[(int(linelist[1].strip()),int(linelist[2].strip()),linelist[3].strip(),int(linelist[4].strip()),int(linelist[5].strip()),linelist[6].strip())]
-        #fill reverseAnchorDATASTRUCTURE
-        if linelist[3].strip() in reverseAnchorDATASTRUCTURE:
-            if linelist[0].strip() in reverseAnchorDATASTRUCTURE[linelist[3].strip()]:
-                reverseAnchorDATASTRUCTURE[linelist[3].strip()][linelist[0].strip()].append(len(anchorDATASTRUCTURE[linelist[0].strip()])-1)
-            else:
-                reverseAnchorDATASTRUCTURE[linelist[3].strip()]={linelist[0].strip():[len(anchorDATASTRUCTURE[linelist[0].strip()])-1]}
-        else:
-            reverseAnchorDATASTRUCTURE[linelist[3].strip()]={linelist[0].strip():[len(anchorDATASTRUCTURE[linelist[0].strip()])-1]}
-    newanchorfilehandler.close()
-    ##############
-    winfile=open(winfilein,'r')
-    title=winfile.readline()
-    winMap={}#{scaffold:[(startpos,endpos,noofsnp,winvalue,zvalue),(),(),,,]}
-    for line in winfile:
-        linelist=re.split(r"\s+",line.strip())
-        if linelist[0].strip()  in winMap:
-            winMap[linelist[0].strip()].append((int(linelist[2]),int(linelist[3]),int(linelist[4]),linelist[5],linelist[6]))
-        else:
-            winMap[linelist[0].strip()]=[(int(linelist[2]),int(linelist[3]),int(linelist[4]),linelist[5],linelist[6])]
-    winfile.close()
-    ##################winfile has been loaded into memonery
-    ##################reZ-transform the winvalue by seperate the autochromosome and sex chromosome
-    
-    winCrossGenomeMap={"autosome":[],"Z":[],"W":[],"X":[],"Y":[]}
-    winFileName7Field=winfilein+"sexchromseperatestandard"
-    
-    
-    f=open(winFileName7Field,'w')
-    print(title,end="",file=f)
-    for scaffold in winMap.keys():
-        for startpos,endpos,noofsnp,winvalue,zvalue in winMap[scaffold]:
-            if  re.search(r"^[1234567890\.e-]+$",winvalue)==None:
-                continue
-            if scaffold not in reverseAnchorDATASTRUCTURE:
-                winCrossGenomeMap["autosome"].append(float(winvalue))
-            elif "Z" in reverseAnchorDATASTRUCTURE[scaffold] or "z" in reverseAnchorDATASTRUCTURE[scaffold]:
-                winCrossGenomeMap["Z"].append(float(winvalue))
-            elif "W" in reverseAnchorDATASTRUCTURE[scaffold] or "w" in reverseAnchorDATASTRUCTURE[scaffold]:
-                winCrossGenomeMap["W"].append(float(winvalue))
-            elif "X" in reverseAnchorDATASTRUCTURE[scaffold] or "x" in reverseAnchorDATASTRUCTURE[scaffold]:
-                winCrossGenomeMap["X"].append(float(winvalue))
-            elif "Y" in reverseAnchorDATASTRUCTURE[scaffold] or "y" in reverseAnchorDATASTRUCTURE[scaffold]:
-                winCrossGenomeMap["Y"].append(float(winvalue)) 
-            else:
-                winCrossGenomeMap["autosome"].append(float(winvalue))
-    autoexception=numpy.mean(winCrossGenomeMap["autosome"])
-    autostd1=numpy.std(winCrossGenomeMap["autosome"],ddof=1)
-    sexexception=numpy.mean(winCrossGenomeMap["Z"]+winCrossGenomeMap["W"]+winCrossGenomeMap["X"]+winCrossGenomeMap["Y"])
-    sexstd1=numpy.std(winCrossGenomeMap["Z"]+winCrossGenomeMap["W"]+winCrossGenomeMap["X"]+winCrossGenomeMap["Y"],ddof=1)
-    for scaffold in sorted(winMap.keys()):
-        winNo=0
-        for startpos,endpos,noofsnp,winvalue,zvalue in winMap[scaffold]:
-            if re.search(r"^[1234567890\.e-]+$",winvalue)!=None:
-                if scaffold not in reverseAnchorDATASTRUCTURE or ("Z" not in reverseAnchorDATASTRUCTURE[scaffold] and  "z" not in reverseAnchorDATASTRUCTURE[scaffold] and  "W" not in reverseAnchorDATASTRUCTURE[scaffold] and "w" not in reverseAnchorDATASTRUCTURE[scaffold] and "X" not in reverseAnchorDATASTRUCTURE[scaffold] and "x" not in reverseAnchorDATASTRUCTURE[scaffold] and "Y" not in reverseAnchorDATASTRUCTURE[scaffold] and "y" not in reverseAnchorDATASTRUCTURE[scaffold]):
-                    zscore=(float(winvalue)-autoexception)/autostd1
-                else:
-                    zscore=(float(winvalue)-sexexception)/sexstd1
-                print(scaffold,winNo,startpos,endpos,noofsnp,winvalue,zscore,sep="\t",file=f)
-            else:
-                print(scaffold,winNo,startpos,endpos,noofsnp,winvalue,zvalue,sep="\t",file=f)
-            winNo+=1
-    f.close()
-    return winFileName7Field
     
 if __name__ == '__main__':
 
@@ -133,12 +54,10 @@ if __name__ == '__main__':
     if options.splitintopart==1:
         if options.multiple_positive_winfiles!=[]:
             for p_inputfileName,threshold_title,outbedfilename in options.multiple_positive_winfiles[:]:
-                if options.anchorfile!=None:
-                    p_inputfileName=standardseparately(options.anchorfile,p_inputfileName,int(options.upextend),int(options.downextend),int(options.winWidth),int(options.slideSize))
                 outfileNameWIN_Plist.append(p_inputfileName)
                 threshold_title_list=re.split(r"_",threshold_title.strip())
-                outfileNameWINwithGENE_Plist.append((geneUtil.findTrscpt(p_inputfileName, outbedfilename, int(options.upextend), int(options.downextend), int(options.winWidth), int(options.slideSize), options.winType, "m", threshold_title_list[0], None, options.mergeNA, int(options.distalextend),options.trscptfound),threshold_title,outbedfilename))
-                makeMhtGraph.makeHistonPicture(p_inputfileName, "Fst")#,"c(0,2000)","c(0,45)"
+                outfileNameWINwithGENE_Plist.append((geneUtil.findTrscpt(p_inputfileName, outbedfilename, int(options.upextend), int(options.downextend), int(options.winWidth), int(options.slideSize), options.winType, "m", threshold_title_list, None, options.mergeNA, int(options.distalextend),options.anchorfile,options.trscptfound,options.mapfile),threshold_title,outbedfilename))
+#                 makeMhtGraph.makeHistonPicture(p_inputfileName, "Fst")#,"c(0,2000)","c(0,45)"
                 makeMhtGraph.makeHistonPicture(outfileNameWINwithGENE_Plist[-1][0], "Fst")
                 print("awk 'NR!=1{print $8}' "+outbedfilename+".bed.selectedgene"+"|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq|awk'$0~/^ENS/{print $0}' >"+outbedfilename+".ENStrscptIDlist")
                 os.system("awk 'NR!=1 && $7>="+options.minmaxSNP +"{print $8}' "+outbedfilename+".bed.selectedgene"+"|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq|awk '$0~/^ENS/{print $0}' >"+outbedfilename+".ENStrscptIDlist")
@@ -189,11 +108,10 @@ if __name__ == '__main__':
         intersectionlist=[]
         if options.multiple_negtive_winfiles!=[]:
             for n_inputfileName,threshold_title,outbedfilename in options.multiple_negtive_winfiles[:]:
-                if options.anchorfile!=None:
-                    n_inputfileName=standardseparately(options.anchorfile,n_inputfileName,int(options.upextend),int(options.downextend),int(options.winWidth),int(options.slideSize))
+
                 threshold_title_list=re.split(r"_",threshold_title.strip())
                 outfileNameWIN_Nlist.append(n_inputfileName)
-                outfileNameWINwithGENE_Nlist.append((geneUtil.findTrscpt(n_inputfileName,outbedfilename, int(options.upextend), int(options.downextend), int(options.winWidth), int(options.slideSize), options.winType, "l", threshold_title_list[0], None, options.mergeNA, int(options.distalextend),options.trscptfound),threshold_title,outbedfilename))
+                outfileNameWINwithGENE_Nlist.append((geneUtil.findTrscpt(n_inputfileName,outbedfilename, int(options.upextend), int(options.downextend), int(options.winWidth), int(options.slideSize), options.winType, "l", threshold_title_list, None, options.mergeNA, int(options.distalextend),options.anchorfile,options.trscptfound,options.mapfile),threshold_title,outbedfilename))
                 makeMhtGraph.makeHistonPicture(n_inputfileName, "Hp")#,"c(0,2000)","c(0,45)"
                 makeMhtGraph.makeHistonPicture(outfileNameWINwithGENE_Nlist[-1][0], "Hp")#,"c(0,2000)","c(0,45)"
 #                     print("awk 'NR!=1{print $8}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq|grep --wFf """+options.removegenelistfile + """ - > """+outbedfilename+".trscptIDlist")

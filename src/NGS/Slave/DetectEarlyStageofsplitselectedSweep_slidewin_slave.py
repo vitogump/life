@@ -63,7 +63,7 @@ if __name__ == '__main__':
         if len(plainname)>=250:
             obsexpcaculator.outputname=obsexpcaculator.outputname[:-(len(plainname)-250)]
         outputname=obsexpcaculator.outputname
-        outfile = open( outputname+ "."+options.typeOfcalculate+str(windowWidth)+"_"+str(slideSize)+chrlistfilewithoutpath, 'w')
+        outfile = open( outputname+ "."+options.typeOfcalculate+str(windowWidth)+"_"+str(slideSize)+str(os.getpid())+chrlistfilewithoutpath, 'w')
         print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnp\twinvalue\tzvalue",file=outfile)
         freq_correlation_configFileName=options.outfileprewithpath+".freq_correlation_merged" 
         if options.correlationfile!=freq_correlation_configFileName:
@@ -82,7 +82,7 @@ if __name__ == '__main__':
         plainname=re.search(r"[^/]*$",obsexpcaculator.outputname).group(0)
         if len(plainname)>=250:
             obsexpcaculator.outputname=obsexpcaculator.outputname[:-(len(plainname)-250)]
-        outfile = open(obsexpcaculator.outputname + ".earlypostiveselected"+str(windowWidth)+"_"+str(slideSize)+chrlistfilewithoutpath, 'w')
+        outfile = open(obsexpcaculator.outputname + "."+options.typeOfcalculate+str(windowWidth)+"_"+str(slideSize)+str(os.getpid())+chrlistfilewithoutpath, 'w')
         print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnp\twinvalue\tzvalue",file=outfile)
 
     elif options.typeOfcalculate=="is":
@@ -91,7 +91,7 @@ if __name__ == '__main__':
         if len(plainname)>=250:
             outputname=options.outfileprewithpath[:-(len(plainname)-250)]
         outputname=options.outfileprewithpath
-        outfile = open(outputname + "."+options.typeOfcalculate+str(windowWidth)+"_"+str(slideSize)+chrlistfilewithoutpath, 'w')
+        outfile = open(outputname + "."+options.typeOfcalculate+str(windowWidth)+"_"+str(slideSize)+str(os.getpid())+chrlistfilewithoutpath, 'w')
         print("chrNo\twinNo\tfirstsnppos\tlastsnppos",*obsexpcaculator.vcfname_combination,sep="\t",file=outfile)
     elif options.typeOfcalculate=="hp":
         obsexpcaculator=Caculators.Caculate_Hp_master_slave(options.targetpopvcfconfig,options.outfileprewithpath,minsnps=0)
@@ -99,14 +99,14 @@ if __name__ == '__main__':
         if len(plainname)>=250:
             outputname=options.outfileprewithpath[:-(len(plainname)-250)]
         outputname=options.outfileprewithpath
-        outfile=open(outputname + "."+options.typeOfcalculate+str(windowWidth)+"_"+str(slideSize)+chrlistfilewithoutpath, 'w')
+        outfile=open(outputname + "."+options.typeOfcalculate+str(windowWidth)+"_"+str(slideSize)+str(os.getpid())+chrlistfilewithoutpath, 'w')
         print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnp\twinvalue\tzvalue",file=outfile)
     if options.bedlikefile!=None:
         obsexpcaculator.minsnps=7
     elif options.chromlistfilename!=None:
         obsexpcaculator.minsnps=10
     aaaa=open(options.outfileprewithpath+".slidwin_filelist"+options.masterpid,'a')
-    print(outputname + "."+options.typeOfcalculate+str(windowWidth)+"_"+str(slideSize)+chrlistfilewithoutpath,file=aaaa)
+    print(outputname + "."+options.typeOfcalculate+str(windowWidth)+"_"+str(slideSize)+str(os.getpid())+chrlistfilewithoutpath,file=aaaa)
     aaaa.close()
     win = Util.Window()
     obsexpsignalmapbychrom={}

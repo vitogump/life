@@ -179,7 +179,7 @@ if __name__ == '__main__':
         print("freq_correlation_config is produced")
         f.close()
     elif options.typeOfcalculate=="early" and options.correlationfile!=None:
-        if len(chromfilelist_OR_Bedfilelist)!=1:
+        if len(chromfilelist_OR_Bedfilelist)==1:
             print("need only one chromlistfilename???")
 #             exit(-1)
 #         freq_correlation_configFileName=options.outfileprewithpath+".freq_correlation_merged"

@@ -129,13 +129,13 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
                             high=mid-1
                         else:#find the pos
                             pos, REF, archicpop_ALT, INFO,FORMAT,samples = SNPrec_of_one_chrom_invcf[mid]
-                            dp=re.search(r"DP4=(\d*)", INFO)
-                            AF=re.search(r"AF=([\d\.]+);", INFO).group(1)
+                            dp4=re.search(r"DP4=(\d*)", INFO)
+                            AF=re.search(r"AF=([\d\.e-]+)", INFO).group(1)
                             refdep=0;altalleledep=0
-                            if dp!=None and AF!=None :#vcf from indvd 
-                                refdep = int(dp.group(1))*(1- float(AF))
-                                altalleledep = int(dp.group(1)) * float(AF)
-                            else:#pool
+                            if dp4!=None and AF!=None: #samtools
+                                refdep = int(dp4.group(1))*(1- float(AF))
+                                altalleledep = int(dp4.group(1)) * float(AF)
+                            else:#vcf from indvd 
                                 if "AD" not in FORMAT:
                                     print("AD not in ",FORMAT )
                                     continue
