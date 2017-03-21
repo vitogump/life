@@ -992,7 +992,7 @@ def encode_phyliplines(headers, sequences,maxlen=10):
 #phylip format 
 
 #######################
-def mapWinvaluefileToChrOfReletiveSpecie(anchorfile,winfileinName,winwidth,slidesize,standardsexseperately=None,mapfile=None):
+def mapWinvaluefileToChrOfReletiveSpecie(anchorfile,winfileinName,winwidth,slidesize,standardsexseperately=True,mapfile=None):
     newanchorfilehandler=anchorfile
     if mapfile:
         scaffoldmap={}
@@ -1186,11 +1186,12 @@ def mapWinvaluefileToChrOfReletiveSpecie(anchorfile,winfileinName,winwidth,slide
                     zscore=(float(linelist[5])-autoexception)/autostd1
                 else:
                     print("what's wrong");exit(-1)
-                print(linelist[0],linelist[1],linelist[2],linelist[3],linelist[4],linelist[5],zscore,linelist[7],file=markedseperatelyfile)
+                print(linelist[0],linelist[1],linelist[2],linelist[3],linelist[4],linelist[5],zscore,linelist[7],sep="\t",file=markedseperatelyfile)
             else:
                 print(line,end="",file=markedseperatelyfile)
     else:
         markfilname=winfileinName+"marked"
+    markedseperatelyfile.close();markedfile.close()
     return markfilname,winfileinName+"arrangemented"
 ####################
 def getRefSeqMap(refFastafilehander, currentChromNO=None, preBaseTotal=0, linesOnce=500000, mapname=None):

@@ -184,87 +184,7 @@ def collectSNP_locatInRegion(MultipleVcfMap,chrom,startpos,endpos):
         return copy.deepcopy(MultipleVcfMap[chrom][start_idx:end_idx])
     else:
         return []
-def standardseparately(anchorfile,winfilein):
-    anchorDATASTRUCTURE={}
-    """
-    {chr1:[(53353,53806,scaffold451,558997,558537,-),(57200,62371,scaffold451,553669,548504,-),(),,],chr2:[],,,,}
-    """
-    reverseAnchorDATASTRUCTURE={}
-    """
-    {scaffold451:{chr1:[0,1,2,,,,]},C17734302:{chr1:[idx]}}  idx is idx in the list of anchorDATASTRUCTURE[chr1] 
-    """
-    newanchorfilehandler=open(anchorfile,'r')
-    for line in newanchorfilehandler:
-        linelist=re.split(r"\s+",line.strip())
-        if linelist[0].strip() in anchorDATASTRUCTURE:
-            anchorDATASTRUCTURE[linelist[0].strip()].append((int(linelist[1].strip()),int(linelist[2].strip()),linelist[3].strip(),int(linelist[4].strip()),int(linelist[5].strip()),linelist[6].strip()))
-        else:
-            anchorDATASTRUCTURE[linelist[0].strip()]=[(int(linelist[1].strip()),int(linelist[2].strip()),linelist[3].strip(),int(linelist[4].strip()),int(linelist[5].strip()),linelist[6].strip())]
-        #fill reverseAnchorDATASTRUCTURE
-        if linelist[3].strip() in reverseAnchorDATASTRUCTURE:
-            if linelist[0].strip() in reverseAnchorDATASTRUCTURE[linelist[3].strip()]:
-                reverseAnchorDATASTRUCTURE[linelist[3].strip()][linelist[0].strip()].append(len(anchorDATASTRUCTURE[linelist[0].strip()])-1)
-            else:
-                reverseAnchorDATASTRUCTURE[linelist[3].strip()][linelist[0].strip()]=[len(anchorDATASTRUCTURE[linelist[0].strip()])-1]
-        else:
-            reverseAnchorDATASTRUCTURE[linelist[3].strip()]={linelist[0].strip():[len(anchorDATASTRUCTURE[linelist[0].strip()])-1]}
-    newanchorfilehandler.close()
-    ##############
-    winfile=open(winfilein,'r')
-    title=winfile.readline()
-    winMap={}#{scaffold:[(startpos,endpos,noofsnp,winvalue,zvalue),(),(),,,]}
-    for line in winfile:
-        linelist=re.split(r"\s+",line.strip())
-        if linelist[0].strip()  in winMap:
-            winMap[linelist[0].strip()].append((int(linelist[2]),int(linelist[3]),int(linelist[4]),linelist[5],linelist[6]))
-        else:
-            winMap[linelist[0].strip()]=[(int(linelist[2]),int(linelist[3]),int(linelist[4]),linelist[5],linelist[6])]
-    winfile.close()
-    ##################winfile has been loaded into memonery
-    ##################reZ-transform the winvalue by seperate the autochromosome and sex chromosome
-    
-    winCrossGenomeMap={"autosome":[],"Z":[],"W":[],"X":[],"Y":[]}
-    winFileName7Field=winfilein+"sexchromseperatestandard"
-    
-    
-    f=open(winFileName7Field,'w')
-    print(title,end="",file=f)
-    for scaffold in winMap.keys():
-        for startpos,endpos,noofsnp,winvalue,zvalue in winMap[scaffold]:
-            if  re.search(r"^[1234567890\.e-]+$",winvalue)==None:
-                continue
-            if scaffold not in reverseAnchorDATASTRUCTURE:
-                winCrossGenomeMap["autosome"].append(float(winvalue))
-            elif "Z" in reverseAnchorDATASTRUCTURE[scaffold] or "z" in reverseAnchorDATASTRUCTURE[scaffold]:
-                winCrossGenomeMap["Z"].append(float(winvalue))
-            elif "W" in reverseAnchorDATASTRUCTURE[scaffold] or "w" in reverseAnchorDATASTRUCTURE[scaffold]:
-                winCrossGenomeMap["W"].append(float(winvalue))
-            elif "X" in reverseAnchorDATASTRUCTURE[scaffold] or "x" in reverseAnchorDATASTRUCTURE[scaffold]:
-                winCrossGenomeMap["X"].append(float(winvalue))
-            elif "Y" in reverseAnchorDATASTRUCTURE[scaffold] or "y" in reverseAnchorDATASTRUCTURE[scaffold]:
-                winCrossGenomeMap["Y"].append(float(winvalue)) 
-            else:
-                winCrossGenomeMap["autosome"].append(float(winvalue))
-    autoexception=numpy.mean(winCrossGenomeMap["autosome"])
-    autostd1=numpy.std(winCrossGenomeMap["autosome"],ddof=1)
-    print("autoexception,autostd",autoexception,autostd1)
-    sexexception=numpy.mean(winCrossGenomeMap["Z"]+winCrossGenomeMap["W"]+winCrossGenomeMap["X"]+winCrossGenomeMap["Y"])
-    sexstd1=numpy.std(winCrossGenomeMap["Z"]+winCrossGenomeMap["W"]+winCrossGenomeMap["X"]+winCrossGenomeMap["Y"],ddof=1)
-    
-    for scaffold in sorted(winMap.keys()):
-        winNo=0
-        for startpos,endpos,noofsnp,winvalue,zvalue in winMap[scaffold]:
-            if re.search(r"^[1234567890\.e-]+$",winvalue)!=None:
-                if scaffold not in reverseAnchorDATASTRUCTURE or ("Z" not in reverseAnchorDATASTRUCTURE[scaffold] and  "z" not in reverseAnchorDATASTRUCTURE[scaffold] and  "W" not in reverseAnchorDATASTRUCTURE[scaffold] and "w" not in reverseAnchorDATASTRUCTURE[scaffold] and "X" not in reverseAnchorDATASTRUCTURE[scaffold] and "x" not in reverseAnchorDATASTRUCTURE[scaffold] and "Y" not in reverseAnchorDATASTRUCTURE[scaffold] and "y" not in reverseAnchorDATASTRUCTURE[scaffold]):
-                    zscore=(float(winvalue)-autoexception)/autostd1
-                else:
-                    zscore=(float(winvalue)-sexexception)/sexstd1
-                print(scaffold,winNo,startpos,endpos,noofsnp,winvalue,zscore,sep="\t",file=f)
-            else:
-                print(scaffold,winNo,startpos,endpos,noofsnp,winvalue,zvalue,sep="\t",file=f)
-            winNo+=1
-    f.close()
-    return winFileName7Field
+
 def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,winType,morethan_lessthan,threshold_title_list=None,percentage=None,mergeNA=False,extendtodistal=0,anchorfile=None,sexthreshold=None,found=False,mapfile=None):
 
     if percentage!=None and threshold_title_list!=None:
@@ -272,8 +192,8 @@ def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,win
         exit(-1)
     threshold_title_list
     if anchorfile:
-        winfile=standardseparately(anchorfile,winfile)
-        winfilemark,winfilearrangement=Util.mapWinvaluefileToChrOfReletiveSpecie(anchorfile, winfile, winwidth, slideSize, mapfile)
+#         winfile=standardseparately(anchorfile,winfile)
+        winfilemark,winfilearrangement=Util.mapWinvaluefileToChrOfReletiveSpecie(anchorfile, winfile, winwidth, slideSize, True,mapfile)
     else:
 #         winfile=standardseparately(anchorfile,winfile)
         os.system("awk ' {if(NR=1){print $0"+'"\tmark"'+"}else{print $0"+'"\tunknown"'+"}}' "+winfile+">"+winfile+"marked")
