@@ -205,7 +205,7 @@ def standardseparately(anchorfile,winfilein):
             if linelist[0].strip() in reverseAnchorDATASTRUCTURE[linelist[3].strip()]:
                 reverseAnchorDATASTRUCTURE[linelist[3].strip()][linelist[0].strip()].append(len(anchorDATASTRUCTURE[linelist[0].strip()])-1)
             else:
-                reverseAnchorDATASTRUCTURE[linelist[3].strip()]={linelist[0].strip():[len(anchorDATASTRUCTURE[linelist[0].strip()])-1]}
+                reverseAnchorDATASTRUCTURE[linelist[3].strip()][linelist[0].strip()]=[len(anchorDATASTRUCTURE[linelist[0].strip()])-1]
         else:
             reverseAnchorDATASTRUCTURE[linelist[3].strip()]={linelist[0].strip():[len(anchorDATASTRUCTURE[linelist[0].strip()])-1]}
     newanchorfilehandler.close()
@@ -275,7 +275,7 @@ def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,win
         winfile=standardseparately(anchorfile,winfile)
         winfilemark,winfilearrangement=Util.mapWinvaluefileToChrOfReletiveSpecie(anchorfile, winfile, winwidth, slideSize, mapfile)
     else:
-        winfile=standardseparately(anchorfile,winfile)
+#         winfile=standardseparately(anchorfile,winfile)
         os.system("awk ' {if(NR=1){print $0"+'"\tmark"'+"}else{print $0"+'"\tunknown"'+"}}' "+winfile+">"+winfile+"marked")
     winFileName8Field = winfile+"marked"
     f=open(winFileName8Field,"r")
@@ -305,9 +305,9 @@ def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,win
     totalWin = winGenome.windbtools.operateDB("select", "select count(*) from " + winGenome.wintablewithoutNA)[0][0]  
 #     selectWinNos = int(float(percentage) * totalWin)  
     if anchorfile:
-        wherestatmentmt=" where (mark=autochromosome and "+winType+">=" + threshold_title_list[0]+") or (mark=sexchromosome and "+winType+">=" +threshold_title_list[-1]+")"
+        wherestatmentmt=" where (mark='autochromosome' and "+winType+">=" + threshold_title_list[0]+") or (mark='sexchromosome' and "+winType+">=" +threshold_title_list[-1]+")"
 #         wherestatmentmp=" where 1 order by "+winType+" desc limit 0," + str(selectWinNos)
-        wherestatmentlt=" where (mark=autochromosome and "+winType+"<=" + threshold_title_list[0]+") or (mark=sexchromosome and "+winType+"<=" +threshold_title_list[-1]+")"
+        wherestatmentlt=" where (mark='autochromosome' and "+winType+"<=" + threshold_title_list[0]+") or (mark='sexchromosome' and "+winType+"<=" +threshold_title_list[-1]+")"
 #         wherestatmentlp=" where 1 order by "+winType+" asc limit 0," + str(selectWinNos)
     else:
         wherestatmentmt= " where 1 and "+winType+">=" + threshold_title_list[0]
