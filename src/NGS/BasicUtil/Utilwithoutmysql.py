@@ -1,10 +1,10 @@
 # -*- coding: UTF-8 -*-
 import copy
-import random,re
-import string,numpy,math
-from multiprocessing.dummy import Pool
+import random
+import string,numpy
+import re
 import pickle,os,configparser
-import src.NGS.BasicUtil.DBManager as dbm
+
 # from src.NGS.BasicUtil import *
 
 '''
@@ -16,9 +16,8 @@ currentpath=os.path.realpath(__file__)
 currentpath[:currentpath.find("life/src")]+"life/com/config.properties"
 cfparser = configparser.ConfigParser()
 cfparser.read(currentpath[:currentpath.find("life/src")]+"life/com/config.properties")
-
+print(currentpath)#currentpath[:currentpath.find("life/src")]+"life/com/config.properties")
 ip=cfparser.get("mysqldatabase","ip")
-print(currentpath,ip)#currentpath[:currentpath.find("life/src")]+"life/com/config.properties")
 username=cfparser.get("mysqldatabase","username")
 password=cfparser.get("mysqldatabase","password")
 webdbname=cfparser.get("mysqldatabase","webdbname")
@@ -27,20 +26,17 @@ pekingduckchromtable=cfparser.get("mysqldatabase","pekingduckchromtable")
 ghostdbname=cfparser.get("mysqldatabase","ghostdbname")
 vcfdbname=cfparser.get("mysqldatabase","vcfdbname")
 TranscriptGenetable=cfparser.get("mysqldatabase","TranscriptGenetable")
-D2Bduckchromtable=cfparser.get("mysqldatabase","D2Bduckchromtable")
 KB743256_1=cfparser.get("mysqldatabase","KB743256_1")
-outgroupVCFBAMconfig_beijingref=cfparser.get("mysqldatabase","outgroupVCFBAMconfig_beijingref")
-pathtoPython=cfparser.get("mysqldatabase", "pathtoPython")
-beijingreffa=cfparser.get("mysqldatabase","beijingreffa")
-def alinmultPopSnpPos(vcfMaplist,jointmode="i"):
+
+def alinmultPopSnpPos(vcfMaplist,innerjoin_outjoin="i"):
     """input:
-    two map fomart like this [chrNo:[(pos,REF,ALT,INFO,FORMAT,sample,...),(pos,REF,ALT,INFO,FORMAT,sample,...),,,,,],{chrNo:[]},,,,,,]
+    two map fomart like this {chrNo:[(pos,REF,ALT,INFO,FORMAT,sample,...),(pos,REF,ALT,INFO,FORMAT,sample,...),,,,,],chrNo:[],,,,,,}
     output:
     one map like this {chrNo:[(pos,REF,ALT,(INFO,FORMAT,sample,...),(INFO,FORMAT,sample,...)),(,,,(),()),,,,,],chrNo:[],,,}
                                             from pop1                        from pop2
     """
     multipleVcfMap={}
-    if len(vcfMaplist)==1 or jointmode=="o" or jointmode=="l":
+    if len(multipleVcfMap)==1 or innerjoin_outjoin=="o":
 
         for currentChrom in vcfMaplist[0].keys():
             multipleVcfMap[currentChrom]=[]
@@ -74,19 +70,14 @@ def alinmultPopSnpPos(vcfMaplist,jointmode="i"):
                                 multipleVcfMap[currentChrom][mid].append(SNPrec[3:])
                             break
                     else:
-                        if jointmode=="o":
-                            insertelem=[posInPop1,RefInPop1,AltInPop1]
-                            for i in range(0,vcfMap_obj_idx):
-                                insertelem.append(None)
-                            insertelem.append(SNPrec[3:])
-                            multipleVcfMap[currentChrom].insert(low,insertelem)
-    #list(multipleVcfMap.keys())[0]==currentChrom
-    #when a pos only exist in the former several pops,but not exist in the rear several pops,the loop block under are neccessary
+                        insertelem=[posInPop1,RefInPop1,AltInPop1]
+                        for i in range(0,vcfMap_obj_idx):
+                            insertelem.append(None)
+                        insertelem.append(SNPrec[3:])
+                        multipleVcfMap[currentChrom].insert(low,insertelem)
         for REC_idx in range(0,len(multipleVcfMap[list(multipleVcfMap.keys())[0]])):
-            #
             for i in range(len(vcfMaplist)+3-len(multipleVcfMap[list(multipleVcfMap.keys())[0]][REC_idx])):
                 multipleVcfMap[list(multipleVcfMap.keys())[0]][REC_idx].append(None)
-
         return copy.deepcopy(multipleVcfMap)
     
     for currentChrom in vcfMaplist[0].keys():
@@ -104,9 +95,9 @@ def alinmultPopSnpPos(vcfMaplist,jointmode="i"):
                 vcfMap_obj=vcfMaplist[vcfMap_obj_idx]
                 if currentChrom not in vcfMap_obj or len(vcfMap_obj[currentChrom])==0:
                     print("alinmultPopSnpPos",currentChrom,"didn't find in vcfMap2")
-#                     if jointmode=="i":
+#                     if innerjoin_outjoin=="i":
                     break
-#                     elif jointmode=="o":
+#                     elif innerjoin_outjoin=="o":
 #                         if vcfMap_obj_idx!=len(vcfMaplist)-1:
 #                             elementToAppend.append(None)
 #                         else:
@@ -133,7 +124,7 @@ def alinmultPopSnpPos(vcfMaplist,jointmode="i"):
                             elif vcfMap_obj_idx==len(vcfMaplist)-1:
                                 elementToAppend.append(vcfMap_obj[currentChrom][mid][3:])
                                 multipleVcfMap[currentChrom].append(elementToAppend)
-#                         elif jointmode=="i":
+#                         elif innerjoin_outjoin=="i":
 #                         print("skip the different allele rec",currentChrom,posInPop1,AltInPop1,vcfMap_obj[currentChrom][mid][2])
 #                             print(currentChrom,posInPop1,AltInPop1,vcfMap_obj[currentChrom][mid][2],"different alt allele,should skip this rec,but i have no time to improve this now")
 #                         elif innerjoin_outjoin=="o":
@@ -144,10 +135,10 @@ def alinmultPopSnpPos(vcfMaplist,jointmode="i"):
 #                                 multipleVcfMap[currentChrom].append(elementToAppend)
                         break
                 else:
-                    if jointmode=="i":
+                    if innerjoin_outjoin=="i":
                         #ignore the rec
                         break
-#                     elif jointmode=="o":
+#                     elif innerjoin_outjoin=="o":
 #                         if vcfMap_obj_idx!=len(vcfMaplist)-1:
 #                             elementToAppend.append(None)
 #                         elif vcfMap_obj_idx==len(vcfMaplist)-1:
@@ -156,108 +147,7 @@ def alinmultPopSnpPos(vcfMaplist,jointmode="i"):
 #                     print("snp not found in vcfMap2",SNPrec)
 #                     self.doubleVcfMap[currentChrom].append(SNPrec+)
     return multipleVcfMap
-def alinmultPopSnpPos_diffrefalt(vcfMaplist,jointmode="i"):
-    """input:
-    two map fomart like this [chrNo:[(pos,REF,ALT,INFO,FORMAT,sample,...),(pos,REF,ALT,INFO,FORMAT,sample,...),,,,,],{chrNo:[]},,,,,,]
-    output:
-    one map like this {chrNo:[(pos,(REF,ALT,INFO,FORMAT,sample,...),(REF,ALT,INFO,FORMAT,sample,...)),(,,,(),()),,,,,],chrNo:[],,,}
-                                            from pop1                        from pop2
-    """
-    multipleVcfMap={}
-    if len(vcfMaplist)==1 or jointmode=="o" or jointmode=="l":
-
-        for currentChrom in vcfMaplist[0].keys():
-            multipleVcfMap[currentChrom]=[]
-            for SNPrec in vcfMaplist[0][currentChrom]:
-                posInPop1 = SNPrec[0]#;print(posInPop1,file=open("testpos_8rep.txt0",'a'))
-
-                multipleVcfMap[currentChrom].append([posInPop1,SNPrec[1:]])
-        if len(vcfMaplist)==1:
-            return copy.deepcopy(multipleVcfMap)
-        vcfMap_obj_idx=0
-        for vcfMap in vcfMaplist[1:]:
-            vcfMap_obj_idx+=1
-            for currentChrom in vcfMap:
-                for SNPrec in vcfMap[currentChrom]:
-                    posInPop1 = SNPrec[0]#;print(posInPop1,file=open("testpos_8rep.txt"+str(vcfMap_obj_idx),'a'))
-
-                    low=0;high=len(multipleVcfMap[currentChrom])-1
-                    while low<=high:
-                        mid = (low + high)>>1
-                        if multipleVcfMap[currentChrom][mid][0]<posInPop1:
-                            low=mid+1
-                        elif multipleVcfMap[currentChrom][mid][0]>posInPop1:
-                            high=mid-1
-                        else:
-#                             if AltInPop1 == multipleVcfMap[currentChrom][mid][2]:#same alt alle
-                            fillNoneNum=vcfMap_obj_idx-(len(multipleVcfMap[currentChrom][mid])-3)
-                            for i in range(fillNoneNum):
-                                multipleVcfMap[currentChrom][mid].append(None)
-                            multipleVcfMap[currentChrom][mid].append(SNPrec[1:])
-                            break
-                    else:
-                        if jointmode=="o":
-                            insertelem=[posInPop1]
-                            for i in range(0,vcfMap_obj_idx):
-                                insertelem.append(None)
-                            insertelem.append(SNPrec[1:])
-                            multipleVcfMap[currentChrom].insert(low,insertelem)
-
-    #list(multipleVcfMap.keys())[0]==currentChrom
-    #when a pos only exist in the former several pops,but not exist in the rear several pops,the loop block under are neccessary
-#         print(multipleVcfMap[list(multipleVcfMap.keys())[0]],len(multipleVcfMap[list(multipleVcfMap.keys())[0]]))
-        for REC_idx in range(0,len(multipleVcfMap[list(multipleVcfMap.keys())[0]])):
-            #
-            for i in range(len(vcfMaplist)+1-len(multipleVcfMap[list(multipleVcfMap.keys())[0]][REC_idx])):
-                multipleVcfMap[list(multipleVcfMap.keys())[0]][REC_idx].append(None)
-
-        return copy.deepcopy(multipleVcfMap)
-    
-    for currentChrom in vcfMaplist[0].keys():
-#             self.FstMapByChrom[currentChrom] = []
-        multipleVcfMap[currentChrom]=[]
-        for SNPrec in vcfMaplist[0][currentChrom]:
-            posInPop1 = SNPrec[0]
-
-            elementToAppend=[posInPop1,SNPrec[1:]]
-            if len(vcfMaplist)==1:
-                multipleVcfMap[currentChrom].append(elementToAppend)
-                continue
-            for vcfMap_obj_idx in range(1,len(vcfMaplist[:])):
-                vcfMap_obj=vcfMaplist[vcfMap_obj_idx]
-                if currentChrom not in vcfMap_obj or len(vcfMap_obj[currentChrom])==0:
-                    print("alinmultPopSnpPos",currentChrom,"didn't find in vcfMap2")
-
-                    break
-
-                low = 0
-                high = len(vcfMap_obj[currentChrom]) - 1
-                
-                if re.search(r"[A-Za-z]+,[A-Za-z]+", SNPrec[2]) != None:  # multiple allels
-                    continue
-         
-                while low <= high:
-                    mid = (low + high)>>1
-                    if vcfMap_obj[currentChrom][mid][0]<posInPop1:
-                        low=mid+1
-                    elif vcfMap_obj[currentChrom][mid][0]>posInPop1:
-                        high=mid-1
-                    else:
-#                         if AltInPop1 == vcfMap_obj[currentChrom][mid][2]:#same alt alle
-                        if vcfMap_obj_idx!=len(vcfMaplist)-1:
-                            elementToAppend.append(vcfMap_obj[currentChrom][mid][1:])
-                        elif vcfMap_obj_idx==len(vcfMaplist)-1:
-                            elementToAppend.append(vcfMap_obj[currentChrom][mid][1:])
-                            multipleVcfMap[currentChrom].append(elementToAppend)
-
-                        break
-                else:
-                    if jointmode=="i":
-                        #ignore the rec
-                        break
-
-    return multipleVcfMap
-def bedfiletools(bedfilename, withtitle=True):
+def bedfiletools(bedfilename, withtitle=False):
     """
         return m={chr1:[(startpos,endpos,[optional_fields]),(),,,],chr2:[],,,,,}
     """
@@ -545,7 +435,7 @@ def random_str(randomlength=8):
     random.shuffle(a)
     return ''.join(a[:randomlength])
 
-def generateIndexByChrom(refFastaFileName, indexFileName, mapname=None,startchar=">"):
+def generateIndexByChrom(refFastaFileName, indexFileName, mapname=None,startchar=">",):
     refFastaFile = open(refFastaFileName, 'r')
     refChromIndex = {}
     refline = refFastaFile.readline()
@@ -560,60 +450,6 @@ def generateIndexByChrom(refFastaFileName, indexFileName, mapname=None,startchar
         refline = refFastaFile.readline()
     pickle.dump(refChromIndex, open(indexFileName, 'wb'))
     refFastaFile.close()
-def generateFasterRefIndex(refFastaFileName, indexFileName,mapname=None,startchar=">"):
-    refFastaFile = open(refFastaFileName, 'r')
-    refChromIndex = {}
-    refline = refFastaFile.readline()
-    while refline:
-        if re.search(r'^['+startchar+']', refline) != None:
-            basecount=1
-            m=1
-            if mapname == "transcript:":
-                currentChromNo = re.search(r'transcript:(.*?)\s+', refline).group(1).strip()
-            else:
-                currentChromNo = re.search(r'[^'+startchar+']+', (re.split(r'\s+', refline))[0]).group(0)
-            refChromIndex[currentChromNo] = [(basecount,int(refFastaFile.tell()))]# (no of base befor,cur file pos)
-        else:
-            basecount+=len(refline.strip())
-            if basecount>=6000*m:
-                refChromIndex[currentChromNo].append((basecount,int(refFastaFile.tell())))
-                m+=1
-        refline = refFastaFile.readline()
-    pickle.dump(refChromIndex,open(indexFileName, 'wb'))
-    refFastaFile.close()
-def loadAnchorFile(anchorFile):
-    anchorDATASTRUCTURE={}
-    """
-    {chr1:[(53353,53806,scaffold451,558997,558537,-),(57200,62371,scaffold451,553669,548504,-),(),,],chr2:[],,,,}
-    """
-    reverseAnchorDATASTRUCTURE={}
-    """
-    {scaffold451:{chr1:[0,1,2,,,,],chr2:[],,,},C17734302:{chr1:[idx,,,],chr2:[idx,,,],,,}}  idx is idx in the list of anchorDATASTRUCTURE[chr1] 
-    """
-    newanchorfilehandler=open(anchorFile,'r')
-    print("chrNo\tstartpos\tendpos\tstrand",file=open("sexchromrecs.bed",'w'))
-    for line in newanchorfilehandler:
-        linelist=re.split(r"\s+",line.strip())
-        if linelist[0].strip() in anchorDATASTRUCTURE:
-            anchorDATASTRUCTURE[linelist[0].strip()].append((int(linelist[1].strip()),int(linelist[2].strip()),linelist[3].strip(),int(linelist[4].strip()),int(linelist[5].strip()),linelist[6].strip()))
-        else:
-            anchorDATASTRUCTURE[linelist[0].strip()]=[(int(linelist[1].strip()),int(linelist[2].strip()),linelist[3].strip(),int(linelist[4].strip()),int(linelist[5].strip()),linelist[6].strip())]
-        #fill reverseAnchorDATASTRUCTURE
-        if linelist[3].strip() in reverseAnchorDATASTRUCTURE:
-            if linelist[0].strip() in reverseAnchorDATASTRUCTURE[linelist[3].strip()]:
-                reverseAnchorDATASTRUCTURE[linelist[3].strip()][linelist[0].strip()].append(len(anchorDATASTRUCTURE[linelist[0].strip()])-1)
-            else:
-                reverseAnchorDATASTRUCTURE[linelist[3].strip()]={linelist[0].strip():[len(anchorDATASTRUCTURE[linelist[0].strip()])-1]}
-        else:
-            reverseAnchorDATASTRUCTURE[linelist[3].strip()]={linelist[0].strip():[len(anchorDATASTRUCTURE[linelist[0].strip()])-1]}
-    for scaffold in reverseAnchorDATASTRUCTURE.keys():
-        if "Z" in reverseAnchorDATASTRUCTURE[scaffold] or "z" in reverseAnchorDATASTRUCTURE[scaffold] or "W" in reverseAnchorDATASTRUCTURE[scaffold] or "w" in reverseAnchorDATASTRUCTURE[scaffold] or "X" in reverseAnchorDATASTRUCTURE[scaffold] or "x" in reverseAnchorDATASTRUCTURE[scaffold] or "Y" in reverseAnchorDATASTRUCTURE[scaffold] or "y" in reverseAnchorDATASTRUCTURE[scaffold]:
-            for chrom,recs in reverseAnchorDATASTRUCTURE[scaffold].items():
-                if "Z" ==chrom.upper() or "W" ==chrom.upper() or  "X" ==chrom.upper() or "Y" ==chrom.upper():
-                    for idx in recs:
-                        print("\t".join([str(e) for e in anchorDATASTRUCTURE[chrom][idx][2:]]) if anchorDATASTRUCTURE[chrom][idx][-1]=="+" else "\t".join((anchorDATASTRUCTURE[chrom][idx][2],str(anchorDATASTRUCTURE[chrom][idx][4]),str(anchorDATASTRUCTURE[chrom][idx][3]),anchorDATASTRUCTURE[chrom][idx][5])),file=open("sexchromrecs.bed",'a'))
-    newanchorfilehandler.close()
-    return anchorDATASTRUCTURE,reverseAnchorDATASTRUCTURE
 def generateIndexByChromForFQ(refFastaFileName, indexFileName, mapname=None,startchar=">"):
     refFastaFile = open(refFastaFileName, 'r')
     refChromIndex = {}
@@ -637,22 +473,11 @@ def getGtfMap(gtfFileName, elementTypes=["CDS", "stop_codon"]):
                chromNo:[],,,,,,,,,,,,,,}
         chrtranscrpitididxMap{chromNo:{transcript_id:ttanscript_id_idx,transcript_id:ttanscript_id_idx,,,,,},
                                 chromNo:{},chromNo:{},,,,}
-        utrMap={chromNo:{{transcript_id:[("UTR",start,end),(),()],}}}
-        allgeneSetMap={chromNo:{transcript_order:[],transcript_id:(strand,startpos,endpos),transcript_id:(strand,startpos,endpos),,,},chromNo:{transcript_id:(strand,startpos,endpos),,,,,},,,,}
     """
-    try:
-        
-        protein_codingMap=pickle.load(open(gtfFileName+".protein_codingMap.landmine","rb"))
-        utrMap=pickle.load(open(gtfFileName+".utrMap.landmine","rb"))
-        allgeneSetMap=pickle.load(open(gtfFileName+".allgeneSetMap.landmine","rb"))
-        return protein_codingMap,utrMap,allgeneSetMap
-    except IOError:
-        print("getGtfMap")
     gtfFileHandler = open(gtfFileName, 'r')
     protein_codingMap = {}
     chrtranscrpitididxMap = {}
     utrMap={}
-    allgeneSetlist={}
 #     gtfline = gtfFileHandler.readline()
     jumpout = False
     for getfirstcds in gtfFileHandler:
@@ -669,20 +494,14 @@ def getGtfMap(gtfFileName, elementTypes=["CDS", "stop_codon"]):
             continue
         print("transcript_id_idx", transcript_id_idx)
         transcript_id = re.search(r'\"(.*)\";', gtfColList[transcript_id_idx].strip()).group(1)
-        countInChrom = 0
-        if gtfColList[2].strip()=="transcript":
-            if chromNo in allgeneSetlist:
-                allgeneSetlist[chromNo].append((transcript_id,gtfColList[6],int(gtfColList[3]), int(gtfColList[4])))
-            else:
-                allgeneSetlist[chromNo]=[(transcript_id,gtfColList[6],int(gtfColList[3]), int(gtfColList[4]))]
+        countInChrom = 0        
         for elementType in elementTypes:
             if elementType == gtfColList[2].strip():
                 jumpout = True
                 protein_codingMap[chromNo] = [[transcript_id, gtfColList[6], int(gtfColList[3]), int(gtfColList[4]), (gtfColList[2], int(gtfColList[3]), int(gtfColList[4]), gtfColList[7])]]
         else:
             if gtfColList[2].strip()=="UTR":
-                if int(gtfColList[3])!=int(gtfColList[4]):#ensembl's bug
-                    utrMap[chromNo]={transcript_id:[("UTR",int(gtfColList[3]), int(gtfColList[4]))]}
+                utrMap[chromNo]={transcript_id:[("UTR",int(gtfColList[3]), int(gtfColList[4]))]}
             print(getfirstcds)
         if jumpout:
             break
@@ -691,17 +510,11 @@ def getGtfMap(gtfFileName, elementTypes=["CDS", "stop_codon"]):
     for gtfline in gtfFileHandler:
         gtfColList = re.split(r'\s+', gtfline)
         transcript_id = re.search(r'\"(.*)\";', gtfColList[transcript_id_idx].strip()).group(1)
-        chromNo = gtfColList[0].strip()
-        if gtfColList[2].strip()=="transcript":
-            if chromNo in allgeneSetlist:
-                allgeneSetlist[chromNo].append((transcript_id,gtfColList[6],int(gtfColList[3]), int(gtfColList[4])))
-            else:
-                allgeneSetlist[chromNo]=[(transcript_id,gtfColList[6],int(gtfColList[3]), int(gtfColList[4]))]
         for elementType in elementTypes:
             if elementType == gtfColList[2].strip():
                 break
         else:
-            if gtfColList[2].strip()=="UTR" and int(gtfColList[3])!=int(gtfColList[4]):#ensembl's bug
+            if gtfColList[2].strip()=="UTR":
                 if chromNo in utrMap:
                     if transcript_id in utrMap[chromNo]:
                         utrMap[chromNo][transcript_id].append(("UTR",int(gtfColList[3]), int(gtfColList[4])))
@@ -710,7 +523,7 @@ def getGtfMap(gtfFileName, elementTypes=["CDS", "stop_codon"]):
                 else:
                     utrMap[chromNo]={transcript_id:[("UTR",int(gtfColList[3]), int(gtfColList[4]))]}
             continue
-        
+        chromNo = gtfColList[0].strip()
         if chromNo in protein_codingMap:
             if transcript_id in chrtranscrpitididxMap[chromNo].keys():
                 tanscript_id_idx = chrtranscrpitididxMap[chromNo][transcript_id]
@@ -726,15 +539,7 @@ def getGtfMap(gtfFileName, elementTypes=["CDS", "stop_codon"]):
     else:
         pass                 
     gtffilepath = re.search(r"^.*[/]", gtfFileName).group(0)
-    testfile = open(gtffilepath + "protein_codingMap.sort.txt", 'w')
-    allgeneSetMap={}
-    for chromNo in allgeneSetlist.keys():
-        allgeneSetMap[chromNo]={"transcript_order":[]}
-        allgeneSetlist[chromNo].sort(key=lambda listRec:listRec[2])
-        for tp_id,strand,startpos,endpos in allgeneSetlist[chromNo]:
-            allgeneSetMap[chromNo]["transcript_order"].append(tp_id)
-            allgeneSetMap[chromNo][tp_id]=(strand,startpos,endpos)
-        
+    testfile = open(gtffilepath + "protein_codingMap.sort.txt", 'w')    
     for chromNo in protein_codingMap.keys():
         protein_codingMap[chromNo].sort(key=lambda listRec:listRec[2])
         # 先按照转录本起始坐标排序，下面是对转录本内元件排序，不过是什么排序方法忘记了，仔细读一下吧
@@ -755,18 +560,15 @@ def getGtfMap(gtfFileName, elementTypes=["CDS", "stop_codon"]):
                 print(protein_codingMap[chromNo][i][k], file=testfile)
     testfile.close()
     gtfFileHandler.close()
-#     testutr=open("testURT","w")
+    testutr=open("testURT","w")
     for chrom in utrMap.keys():
-#         print(chrom,file=testutr)
+        print(chrom,file=testutr)
         for tpid in utrMap[chrom].keys():
             utrMap[chrom][tpid].sort(key=lambda listRec:listRec[1])
-#             print(tpid,file=testutr)
-#             print(utrMap[chrom][tpid],file=testutr)
-#     testutr.close()
-    pickle.dump(protein_codingMap,open(gtfFileName+".protein_codingMap.landmine", 'wb'))
-    pickle.dump(utrMap,open(gtfFileName+".utrMap.landmine", 'wb'))
-    pickle.dump(allgeneSetMap,open(gtfFileName+".allgeneSetMap.landmine", 'wb'))
-    return protein_codingMap,utrMap,allgeneSetMap
+            print(tpid,file=testutr)
+            print(utrMap[chrom][tpid],file=testutr)
+    testutr.close()
+    return protein_codingMap,utrMap
 def getNearestGenegroup(gtfList, pos):
     """
     input:for a chrom,contain all transcript of this chrom
@@ -837,96 +639,6 @@ def getGeneGrouplist(gtfList):
         geneGrouplist.append(geneGroup)
         
     return geneGrouplist
-def getRefSeqBypos_faster(refFastahandle, fasterrefindex, currentChromNO, startpos, endpos, currentChromNOlen=None, seektuple=()):
-    '''
-    pos start at 1
-    seektuple=(filepos,basesbeforefilepos)
-    the refSeqMap has only one chromosome's sequence
-    There is no restriction on refFastahander
-    refindex must indexed by generateFasterRefIndex func
-    return {'1': [0, 'A']}
-    '''    
-    refSeqMap = {}
-    if startpos <= 0:
-        startpos = 1
-    print("getRefSeqBypos_faster currentChromNO:", currentChromNO, startpos, endpos)
-    if currentChromNOlen != None and endpos > currentChromNOlen:
-        endpos = currentChromNOlen
-
-    filehandle = refFastahandle
-    if not seektuple or seektuple[1] > startpos:
-        refSeqMap[currentChromNO] = [startpos - 1]
-        low=0;high=len(fasterrefindex[currentChromNO])-1
-        while low<=high:
-            mid=(low + high)>>1
-            if fasterrefindex[currentChromNO][mid][0]<startpos:
-                low=mid+1
-            elif fasterrefindex[currentChromNO][mid][0]>startpos:
-                high=mid-1
-            else:
-                perivouspos_idx=mid
-#                 filehandle.seek(refindex[currentChromNO][mid][1])
-                break
-        else:
-            if fasterrefindex[currentChromNO][high][0]>startpos:
-                print("notice getRefSeqBypos_faster:",low,high,mid)
-                high-=1
-                perivouspos_idx=high
-            else:
-                perivouspos_idx=high
-        filehandle.seek(fasterrefindex[currentChromNO][perivouspos_idx][1])
-          # seekmap is empty so go to the first bases of the currentChromNO
-        if fasterrefindex[currentChromNO][perivouspos_idx][0]<startpos:
-            preseq = filehandle.read(startpos- fasterrefindex[currentChromNO][perivouspos_idx][0])
-            dn = preseq.count('\n')
-            while dn != 0:
-                preseq = filehandle.read(dn)
-                dn = preseq.count('\n')
-        elif fasterrefindex[currentChromNO][perivouspos_idx][0]==startpos:
-            pass
-        else:
-            print(fasterrefindex[currentChromNO][perivouspos_idx],startpos)
-            print("getRefSeqBypos_faster ERROR error")
-            
-        # now filehander is right stay at the startpos
-        myseqline = filehandle.read(endpos - startpos + 1)
-        myseqn = myseqline.count('\n')
-#        if len(myseqline)>200:
-#            print(myseqn)
-#            exit(-1)
-#        print("myseqline=",myseqline,"myseqn", myseqn)
-        while myseqn != 0:  # fill the same number of \n with bases
-            myseqline = myseqline.replace('\n', '')
-            myseqline += filehandle.read(myseqn)
-            myseqn = myseqline.count('\n')
-            
-#            print(currentChromNO,myseqline, myseqn)
-        if myseqline.count('>') >= 1:
-            print(currentChromNO, myseqline, myseqn)
-            exit(-1)
-        refSeqMap[currentChromNO].extend(list(myseqline))
-    else:
-        filehandle.seek(seektuple[0])  # seekmap is not empty
-        refSeqMap[currentChromNO] = [startpos - 1]
-        preseq = filehandle.read(startpos - seektuple[1] - 1)
-        dn = preseq.count('\n')
-        while dn != 0:
-            preseq = filehandle.read(dn)
-            dn = preseq.count('\n')
-        # now filehander is right stay at the startpos
-        myseqline = filehandle.read(endpos - startpos + 1)
-        myseqn = myseqline.count('\n')
-        while myseqn != 0:  # fill the same number of \n with bases
-            myseqline = myseqline.replace('\n', '')
-            myseqline += filehandle.read(myseqn)
-            myseqn = myseqline.count('\n')
-        refSeqMap[currentChromNO].extend(list(myseqline))
-    plus = myseqline.count('>')
-    if plus != 0:
-        print("getRefSeqBypos", currentChromNO, startpos, endpos)
-        return -1
-    
-    return refSeqMap 
 def getRefSeqBypos(refFastahandle, refindex, currentChromNO, startpos, endpos, currentChromNOlen=None, seektuple=()):
     '''
     pos start at 1
@@ -990,45 +702,6 @@ def getRefSeqBypos(refFastahandle, refindex, currentChromNO, startpos, endpos, c
         return -1
     
     return refSeqMap 
-def getRefSeqMap(refFastafilehander, currentChromNO=None, preBaseTotal=0, linesOnce=500000, mapname=None):
-    '''
-    the refSeqMap has only one chromosome's sequence
-    '''
-    refSeqMap = {}
-    print(refFastafilehander.tell(),currentChromNO)
-    if currentChromNO == None:
-        refline = refFastafilehander.readline() 
-        print("getRefSeqMap", refline)
-        if mapname == "transcript:":
-            currentChromNO = re.search(r'transcript:(.*?)\s+', refline).group(1).strip()
-        else:
-            currentChromNO = re.search(r'[^>]+', (re.split(r'\s+', refline))[0]).group(0)
-        refSeqMap[currentChromNO] = [preBaseTotal]  # preBaseTotal=0
-        print("getRefSeqMap", currentChromNO)
-    elif currentChromNO == "end of the reffile":
-        return refSeqMap, currentChromNO, "end of the reffile"
-    else:
-        refSeqMap[currentChromNO] = [preBaseTotal]
-#     for refline in refFastafilehander:
-    
-    while 1:
-        refline = refFastafilehander.readline()
-        if not refline:
-            return refSeqMap, currentChromNO, "end of the reffile"
-        if re.search(r'^[>]', refline) != None:
-            collist = re.split(r'\s+', refline)
-            print("getRefSeqMap","3", re.search(r'[^>]+', collist[0]).group(0))
-#            refSeqMap[currentChromNO] = [0]
-            nextChromNo = re.search(r'[^>]+', collist[0]).group(0)
-            return refSeqMap, currentChromNO, nextChromNo  # clean the refSeqMap and report the current chromNO
-        else:
-            refSeqMap[currentChromNO].extend(list(refline.strip().lower()))
-        linesOnce -= 1    
-        if linesOnce == 0:
-            break                
-    else:
-        return refSeqMap, currentChromNO, "end of the reffile"
-    return refSeqMap, currentChromNO, currentChromNO
 def getRefSeqBypos_fromFQ(refFastqhandle, refindex, currentChromNO, startpos, endpos, currentChromNOlen=None):
     '''
     pos start at 1
@@ -1166,211 +839,45 @@ def encode_phyliplines(headers, sequences,maxlen=10):
     return '\n'.join(out_lines)
 #phylip format 
 
-#######################
-def mapWinvaluefileToChrOfReletiveSpecie(anchorfile,winfileinName,winwidth,slidesize,standardsexseperately=True,mapfile=None):
-    newanchorfilehandler=anchorfile
-    if mapfile:
-        scaffoldmap={}
-        mapfile=open(mapfile,'r')
-        for line in mapfile:
-            linelist=re.split(r"\s+",line.strip())
-            scaffoldmap[linelist[0].strip().lower()]=linelist[1].strip()
-        oldanchorfilehandler=open(anchorfile,'r')
-        newanchorfilehandler=open(anchorfile+"changed",'w')
-        for line in oldanchorfilehandler:
-            linelist=re.split(r"\s+",line.strip())
-            if linelist[3] in scaffoldmap:
-                linelist[3]=scaffoldmap[linelist[3].strip().lower()]
-            print(*linelist,sep="\t",file=newanchorfilehandler)
-        oldanchorfilehandler.close()
-        newanchorfilehandler.close()
-            
-        
-    anchorDATASTRUCTURE={}
-    """
-    {chr1:[(53353,53806,scaffold451,558997,558537,-),(57200,62371,scaffold451,553669,548504,-),(),,],chr2:[],,,,}
-    """
-    reverseAnchorDATASTRUCTURE={}
-    """
-    {scaffold451:{chr1:[0,1,2,,,,]},C17734302:{chr1:[idx]}}  idx is idx in the list of anchorDATASTRUCTURE[chr1] 
-    """
-    if mapfile:
-        
-        newanchorfilehandler=open(anchorfile+"changed",'r')
+def getRefSeqMap(refFastafilehander, currentChromNO=None, preBaseTotal=0, linesOnce=500000, mapname=None):
+    '''
+    the refSeqMap has only one chromosome's sequence
+    '''
+    refSeqMap = {}
+    print(refFastafilehander.tell(),currentChromNO)
+    if currentChromNO == None:
+        refline = refFastafilehander.readline() 
+        print("getRefSeqMap", refline)
+        if mapname == "transcript:":
+            currentChromNO = re.search(r'transcript:(.*?)\s+', refline).group(1).strip()
+        else:
+            currentChromNO = re.search(r'[^>]+', (re.split(r'\s+', refline))[0]).group(0)
+        refSeqMap[currentChromNO] = [preBaseTotal]  # preBaseTotal=0
+        print("getRefSeqMap", currentChromNO)
+    elif currentChromNO == "end of the reffile":
+        return refSeqMap, currentChromNO, "end of the reffile"
     else:
-        newanchorfilehandler=open(anchorfile,'r')
-    for line in newanchorfilehandler:
-        linelist=re.split(r"\s+",line.strip())
-        if linelist[0].strip() in anchorDATASTRUCTURE:
-            anchorDATASTRUCTURE[linelist[0].strip()].append((int(linelist[1].strip()),int(linelist[2].strip()),linelist[3].strip(),int(linelist[4].strip()),int(linelist[5].strip()),linelist[6].strip()))
-        else:
-            anchorDATASTRUCTURE[linelist[0].strip()]=[(int(linelist[1].strip()),int(linelist[2].strip()),linelist[3].strip(),int(linelist[4].strip()),int(linelist[5].strip()),linelist[6].strip())]
-        #fill reverseAnchorDATASTRUCTURE
-        if linelist[3].strip() in reverseAnchorDATASTRUCTURE:
-            if linelist[0].strip() in reverseAnchorDATASTRUCTURE[linelist[3].strip()]:
-                reverseAnchorDATASTRUCTURE[linelist[3].strip()][linelist[0].strip()].append(len(anchorDATASTRUCTURE[linelist[0].strip()])-1)
-            else:
-                reverseAnchorDATASTRUCTURE[linelist[3].strip()][linelist[0].strip()]=[len(anchorDATASTRUCTURE[linelist[0].strip()])-1]
-        else:
-            reverseAnchorDATASTRUCTURE[linelist[3].strip()]={linelist[0].strip():[len(anchorDATASTRUCTURE[linelist[0].strip()])-1]}
-    newanchorfilehandler.close()
-#     if __name__ == '__main__':
-    winfile=open(winfileinName,'r')
-    title=winfile.readline()
-    winMap={}#{scaffold:[(startpos,endpos,noofsnp,winvalue,zvalue),(),(),,,]}
-    for line in winfile:
-        linelist=re.split(r"\s+",line.strip())
-        if linelist[0].strip()  in winMap:
-            winMap[linelist[0].strip()].append((int(linelist[2]),int(linelist[3]),int(linelist[4]),linelist[5],linelist[6]))
-        else:
-            winMap[linelist[0].strip()]=[(int(linelist[2]),int(linelist[3]),int(linelist[4]),linelist[5],linelist[6])]
-    winfile.close()
-    #winfile has been loaded into memonery
-    #print a new winfile mark auto or sex chromosome
-    winMapMarked=copy.deepcopy(winMap)
-
-    outwinfile=open(winfileinName+"arrangemented",'w')
-    print(title.strip(),file=outwinfile)
-    for chrom in sorted(anchorDATASTRUCTURE.keys()):
-        idx=0#it seems not useful
-        if anchorDATASTRUCTURE[chrom][idx][5]=="-":
-            regionstart=anchorDATASTRUCTURE[chrom][idx][4]
-            regionend=anchorDATASTRUCTURE[chrom][idx][3]
-        elif anchorDATASTRUCTURE[chrom][idx][5]=="+":
-            regionstart=anchorDATASTRUCTURE[chrom][idx][3]
-            regionend=anchorDATASTRUCTURE[chrom][idx][4]
-        lastscaffold=anchorDATASTRUCTURE[chrom][idx][2]
-        if lastscaffold not in winMap:
-            for startpos,endpos,scaffold,sstartpos,sendpos,foward_reverse in anchorDATASTRUCTURE[chrom]:
-                idx+=1
-                if scaffold in winMap:
-                    lastscaffold=scaffold
-                    break
-
-        for startpos,endpos,scaffold,sstartpos,sendpos,foward_reverse in anchorDATASTRUCTURE[chrom][idx:]:
-            if lastscaffold==scaffold:
-#                 print("this code block counting the continue stretch . and Should consider wither there are some gap in it")
-                if foward_reverse=="-":
-                    regionstart=min(regionstart,sendpos)
-                    regionend=max(regionend,sstartpos)
-                else:
-                    regionstart=min(regionstart,sstartpos)
-                    regionend=max(regionend,sendpos)
-                
-            else:
-                print("after determining the start or the end of the stretch, arranging the scaffolds which in the stretch")
-                if regionstart < int(winwidth):
-                    winstartNo=0
-                else:
-                    winstartNo=math.ceil((regionstart-int(winwidth))/int(slidesize))
-                if regionend<int(winwidth):
-                    winendNo=0
-                else:
-                    winendNo=math.ceil((regionend-int(winwidth))/int(slidesize))
-                if anchorDATASTRUCTURE[chrom][idx-1][5]=="-":#last scaffold so here is idx-1
-                    for i in range(winstartNo,winendNo+1)[::-1]:
-#                         if lastscaffold not in reverseAnchorDATASTRUCTURE or ("Z" not in reverseAnchorDATASTRUCTURE[lastscaffold] and  "z" not in reverseAnchorDATASTRUCTURE[lastscaffold] and  "W" not in reverseAnchorDATASTRUCTURE[lastscaffold] and "w" not in reverseAnchorDATASTRUCTURE[lastscaffold] and "X" not in reverseAnchorDATASTRUCTURE[lastscaffold] and "x" not in reverseAnchorDATASTRUCTURE[lastscaffold] and "Y" not in reverseAnchorDATASTRUCTURE[lastscaffold] and "y" not in reverseAnchorDATASTRUCTURE[lastscaffold]):
-                        winMapMarked[lastscaffold][i]=tuple((list(winMapMarked[lastscaffold][i]))+[chrom])
-#                         else:
-#                             winMapMarked[lastscaffold][i]=tuple((list(winMapMarked[lastscaffold][i]))+["Z"])
-                        print(chrom,i,winMap[lastscaffold][i][0],winMap[lastscaffold][i][1],winMap[lastscaffold][i][2],winMap[lastscaffold][i][3],winMap[lastscaffold][i][4],lastscaffold,sep="\t",file=outwinfile)
-                else:
-                    for i in range(winstartNo,winendNo+1):
-#                         if lastscaffold not in reverseAnchorDATASTRUCTURE or ("Z" not in reverseAnchorDATASTRUCTURE[lastscaffold] and  "z" not in reverseAnchorDATASTRUCTURE[lastscaffold] and  "W" not in reverseAnchorDATASTRUCTURE[lastscaffold] and "w" not in reverseAnchorDATASTRUCTURE[lastscaffold] and "X" not in reverseAnchorDATASTRUCTURE[lastscaffold] and "x" not in reverseAnchorDATASTRUCTURE[lastscaffold] and "Y" not in reverseAnchorDATASTRUCTURE[lastscaffold] and "y" not in reverseAnchorDATASTRUCTURE[lastscaffold]):
-                        winMapMarked[lastscaffold][i]=tuple((list(winMapMarked[lastscaffold][i]))+[chrom])
-#                         else:
-#                             winMapMarked[lastscaffold][i]=tuple((list(winMapMarked[lastscaffold][i]))+["Z"])
-                        print(chrom,i,winMap[lastscaffold][i][0],winMap[lastscaffold][i][1],winMap[lastscaffold][i][2],winMap[lastscaffold][i][3],winMap[lastscaffold][i][4],lastscaffold,sep="\t",file=outwinfile)
-                print("new region")
-                if foward_reverse=="-":
-                    regionstart=sendpos
-                    regionend=sstartpos
-                elif foward_reverse=="+":
-                    regionstart=sstartpos
-                    regionend=sendpos
-                if scaffold not in winMap:
-                    continue
-                lastscaffold=scaffold
-            idx+=1
-        else:
-            if regionstart < int(winwidth):
-                winstartNo=0
-            else:
-                winstartNo=math.ceil((regionstart-int(winwidth))/int(slidesize))
-            if regionend<int(winwidth):
-                winendNo=0
-            else:
-                winendNo=math.ceil((regionend-int(winwidth))/int(slidesize))
-            if anchorDATASTRUCTURE[chrom][idx-1][5]=="-":
-                for i in range(winstartNo,winendNo+1)[::-1]:
-#                     if scaffold not in reverseAnchorDATASTRUCTURE or ("Z" not in reverseAnchorDATASTRUCTURE[scaffold] and  "z" not in reverseAnchorDATASTRUCTURE[scaffold] and  "W" not in reverseAnchorDATASTRUCTURE[scaffold] and "w" not in reverseAnchorDATASTRUCTURE[scaffold] and "X" not in reverseAnchorDATASTRUCTURE[scaffold] and "x" not in reverseAnchorDATASTRUCTURE[scaffold] and "Y" not in reverseAnchorDATASTRUCTURE[scaffold] and "y" not in reverseAnchorDATASTRUCTURE[scaffold]):
-                    winMapMarked[lastscaffold][i]=tuple((list(winMapMarked[lastscaffold][i]))+[chrom])
-#                     else:
-#                         winMapMarked[lastscaffold][i]=tuple((list(winMapMarked[lastscaffold][i]))+["Z"])
-                    print(chrom,i,winMap[lastscaffold][i][0],winMap[lastscaffold][i][1],winMap[lastscaffold][i][2],winMap[lastscaffold][i][3],winMap[lastscaffold][i][4],lastscaffold,sep="\t",file=outwinfile)
-            else:
-                for i in range(winstartNo,winendNo+1):
-#                     if scaffold not in reverseAnchorDATASTRUCTURE or ("Z" not in reverseAnchorDATASTRUCTURE[scaffold] and  "z" not in reverseAnchorDATASTRUCTURE[scaffold] and  "W" not in reverseAnchorDATASTRUCTURE[scaffold] and "w" not in reverseAnchorDATASTRUCTURE[scaffold] and "X" not in reverseAnchorDATASTRUCTURE[scaffold] and "x" not in reverseAnchorDATASTRUCTURE[scaffold] and "Y" not in reverseAnchorDATASTRUCTURE[scaffold] and "y" not in reverseAnchorDATASTRUCTURE[scaffold]):
-                    winMapMarked[lastscaffold][i]=tuple((list(winMapMarked[lastscaffold][i]))+[chrom])
-#                     else:
-#                         winMapMarked[lastscaffold][i]=tuple((list(winMapMarked[lastscaffold][i]))+["Z"])
-                    print(chrom,i,winMap[lastscaffold][i][0],winMap[lastscaffold][i][1],winMap[lastscaffold][i][2],winMap[lastscaffold][i][3],winMap[lastscaffold][i][4],lastscaffold,sep="\t",file=outwinfile)
-            
-#             for i in range(winstartNo,winendNo+1):
-#                 print(chrom,i,winMap[lastscaffold][i][0],winMap[lastscaffold][i][1],winMap[lastscaffold][i][2],winMap[lastscaffold][i][3],winMap[lastscaffold][i][4],scaffold,sep="\t",file=outwinfile)
-    outwinfile.close()
-    winCrossGenomeMap={"autosome":[],"sexchromosome":[]}#{"autosome":[],"Z":[],"W":[],"X":[],"Y":[]}
-    outwinfile=open(winfileinName+"marked",'w')
-    print(title.strip()+"\tmark",file=outwinfile)
-    for scaffold in sorted(winMapMarked.keys()):
-        for winNo in range(len(winMapMarked[scaffold])):
-
-            if len(winMapMarked[scaffold][winNo])==5 :
-                if (scaffold in reverseAnchorDATASTRUCTURE) and ((len(reverseAnchorDATASTRUCTURE[scaffold])==1 and  re.search(r"[zwxy]" , "".join(reverseAnchorDATASTRUCTURE[scaffold].keys()).lower())!=None) or (len(reverseAnchorDATASTRUCTURE[scaffold])>1 and re.search(r"([zwxyZWXY]+)" , "".join(reverseAnchorDATASTRUCTURE[scaffold].keys()))!=None and len(reverseAnchorDATASTRUCTURE[scaffold][re.search(r"([zwxyZWXY]+)" , "".join(reverseAnchorDATASTRUCTURE[scaffold].keys())).group(1)[-1]])>3)):
-                    print(scaffold,winNo,winMapMarked[scaffold][winNo][0],winMapMarked[scaffold][winNo][1],winMapMarked[scaffold][winNo][2],winMapMarked[scaffold][winNo][3],winMapMarked[scaffold][winNo][4],"sexchromosome",sep="\t",file=outwinfile)#,"unknow"
-                    signal="sexchromosome"
-                else:
-                    print(scaffold,winNo,winMapMarked[scaffold][winNo][0],winMapMarked[scaffold][winNo][1],winMapMarked[scaffold][winNo][2],winMapMarked[scaffold][winNo][3],winMapMarked[scaffold][winNo][4],"autosome",sep="\t",file=outwinfile)#,"unknow"
-                    signal="autosome"
-            elif winMapMarked[scaffold][winNo][5].upper()=="Z" or winMapMarked[scaffold][winNo][5].lower()=="w" or winMapMarked[scaffold][winNo][5].upper()=="X" or winMapMarked[scaffold][winNo][5].lower()=="y":
-                print(scaffold,winNo,winMapMarked[scaffold][winNo][0],winMapMarked[scaffold][winNo][1],winMapMarked[scaffold][winNo][2],winMapMarked[scaffold][winNo][3],winMapMarked[scaffold][winNo][4],"sexchromosome",sep="\t",file=outwinfile)#winMapMarked[scaffold][winNo][5],
-                signal="sexchromosome"
-            else:
-                print(scaffold,winNo,winMapMarked[scaffold][winNo][0],winMapMarked[scaffold][winNo][1],winMapMarked[scaffold][winNo][2],winMapMarked[scaffold][winNo][3],winMapMarked[scaffold][winNo][4],"autosome",sep="\t",file=outwinfile)#winMapMarked[scaffold][winNo][5],
-                signal="autosome"
-            if  re.search(r"^[1234567890\.e-]+$",winMapMarked[scaffold][winNo][3])!=None:
-                winCrossGenomeMap[signal].append(float(winMapMarked[scaffold][winNo][3]))
-    autoexception=numpy.mean(winCrossGenomeMap["autosome"])
-    autostd1=numpy.std(winCrossGenomeMap["autosome"],ddof=1)
-    sexexception=numpy.mean(winCrossGenomeMap["sexchromosome"])
-    sexstd1=numpy.std(winCrossGenomeMap["sexchromosome"],ddof=1)
-    print("autoexception,autostd",autoexception,autostd1,"sexchromosome:",sexexception,sexstd1)
-    outwinfile.close()
-    if standardsexseperately:
-        markfilname=winfileinName+"marked.sexchromseperatestandard"
-        markedfile=open(winfileinName+"marked","r")
-        markedseperatelyfile=open(markfilname,'w')
-        title=markedfile.readline()
-        print(title,end="",file=markedseperatelyfile)
-        for line in markedfile:
-            linelist=re.split(r"\s+",line.strip())
-            if re.search(r"^[1234567890\.e-]+$",linelist[5])!=None:
-                if linelist[7] =="sexchromosome":
-                    zscore=(float(linelist[5])-sexexception)/sexstd1
-                elif linelist[7] =="autosome":
-                    zscore=(float(linelist[5])-autoexception)/autostd1
-                else:
-                    print("what's wrong");exit(-1)
-                print(linelist[0],linelist[1],linelist[2],linelist[3],linelist[4],linelist[5],zscore,linelist[7],sep="\t",file=markedseperatelyfile)
-            else:
-                print(line,end="",file=markedseperatelyfile)
-        markedseperatelyfile.close();markedfile.close()
-    else:
-        markfilname=winfileinName+"marked.sexchromseperatestandard"
+        refSeqMap[currentChromNO] = [preBaseTotal]
+#     for refline in refFastafilehander:
     
-    return markfilname,winfileinName+"arrangemented"
-####################
-
+    while 1:
+        refline = refFastafilehander.readline()
+        if not refline:
+            return refSeqMap, currentChromNO, "end of the reffile"
+        if re.search(r'^[>]', refline) != None:
+            collist = re.split(r'\s+', refline)
+            print("getRefSeqMap","3", re.search(r'[^>]+', collist[0]).group(0))
+#            refSeqMap[currentChromNO] = [0]
+            nextChromNo = re.search(r'[^>]+', collist[0]).group(0)
+            return refSeqMap, currentChromNO, nextChromNo  # clean the refSeqMap and report the current chromNO
+        else:
+            refSeqMap[currentChromNO].extend(list(refline.strip().lower()))
+        linesOnce -= 1    
+        if linesOnce == 0:
+            break                
+    else:
+        return refSeqMap, currentChromNO, "end of the reffile"
+    return refSeqMap, currentChromNO, currentChromNO
 class genes():
     def __init__(self, gtfList, pos, RefSeqList, minintervalbetweengenes_basesperfaline=60):
         super().__init__()
@@ -1569,12 +1076,11 @@ class GATK_depthfile():
     onecopy=None
     static_depthfileName=None
     static_allrecsforcurchrom_mapbypos=None
-    def __init__(self, depthfileName, indexFileName,ismultplethreads=False):
+    def __init__(self, depthfileName, indexFileName):
         super().__init__()
         self.covfileidx = {}
         self.title = []
         self.depthfileName = depthfileName
-        self.ismultplethreads=ismultplethreads
         
         if self.static_depthfileName==None:
             self.onecopy=True
@@ -1674,7 +1180,7 @@ class GATK_depthfile():
         return chrom, pos, linelist, self.depthfilefp.tell()
     def getdepthByPos_optimized(self, targetchr, targetloc):
         if self.curchrom!=targetchr:
-            if self.ismultplethreads or (self.onecopy and self.static_allrecsforcurchrom_mapbypos==None) or not self.onecopy:#((first time only one obj )or not first time )and not multiplethreads. multimple copy
+            if (self.onecopy and self.static_allrecsforcurchrom_mapbypos==None) or not self.onecopy:#(first time only one obj )or not first time  multimple copy
                 self.depthfilefp.seek(self.covfileidx[targetchr])
                 content=self.depthfilefp.read(self.covfileidx[self.chromOrder[self.chromOrder.index(targetchr.strip()) + 1]] - self.covfileidx[targetchr.strip()])
                 contentlines=re.split(r"\n",content.strip())
@@ -1685,7 +1191,7 @@ class GATK_depthfile():
                     self.allrecsforcurchrom_mapbypos[int(linelist[0])]=linelist
                 self.curchrom=targetchr
                 self.static_allrecsforcurchrom_mapbypos=self.allrecsforcurchrom_mapbypos
-            elif self.onecopy and self.static_allrecsforcurchrom_mapbypos!=None:#only one copy
+            elif self.onecopy and self.static_allrecsforcurchrom_mapbypos!=None:
                 self.allrecsforcurchrom_mapbypos=self.static_allrecsforcurchrom_mapbypos# 
     
                  
@@ -1838,10 +1344,8 @@ class Window():
         else:
             self.winValueL.append((winStart, winStart + windowWidth, Caculator.getResult()))
                 
-    def slidWindowOverlap(self, L, L_End_Pos, windowWidth, slideSize, Caculator,L_Start_Pos=0):
-        print("L_End_Pos",L_End_Pos,L_Start_Pos)
+    def slidWindowOverlap(self, L, L_End_Pos, windowWidth, slideSize, Caculator):
         """
-        window slide from L_Start_Pos to L_End_Pos
         L = [(pos,p1,p2,p3,A_base_idx),(pos,"a,b","c,d","e,f",0),(pos,"a,b","c,d","e,f",1),....] for D-statistics wihtout "no covered"
         or 
         L = [(pos, REF, ALT, INFO,FORMAT,sampleslist),(pos, REF, ALT, INFO,FORMAT,sampleslist),(),...........] for any score need one vcf,
@@ -1856,14 +1360,10 @@ class Window():
         self.winValueL = []  # notice here
         nextIdx = -1  # always be -1 if windowWidth == slideSize
         currentIdx = 0
-        winStart = L_Start_Pos
+        winStart = 0
         FoundNextIdx = False
         firstComeInWin = True
         notjustforsnp = True
-        for findfirstidx in range(len(L)):
-            if L[findfirstidx][0]>winStart:
-                currentIdx=findfirstidx
-                break
         while currentIdx != len(L):
 #             print(L[currentIdx][0],L[currentIdx])
             if L[currentIdx][0] > winStart and  L[currentIdx][0] <= (winStart + windowWidth):
@@ -1880,10 +1380,9 @@ class Window():
                 noofsnps, value = Caculator.getResult()
                 try:
                     self.winValueL.append((startPos, lastPos, noofsnps, value))
-#                     print(startPos, lastPos, noofsnps, value)
                 except:
                     print("no snp in first win", len(L), currentIdx, value, L[currentIdx])
-                    self.winValueL.append((0, 0, noofsnps, value))
+                    self.winValueL.append((0, 0, 0, value))
                     winStart += slideSize
                     continue
 #                 self.winValueL.append((0, 0, value))
@@ -1919,7 +1418,6 @@ class Window():
             noofsnps, value = Caculator.getResult()
             try :
                 self.winValueL.append((startPos, lastPos, noofsnps, value))
-#                 print(startPos, lastPos, noofsnps, value)
             except UnboundLocalError:
                 self.winValueL.append((0, 0, noofsnps, value))
 #             if nextIdx!=-1:
@@ -1985,207 +1483,192 @@ def distributionfuncdraft(intervalFileName,dataFileNames,col_to_bined1,col_to_bi
             else:
                 intervalMap_mean[a,b]=intervalMap_sum[a,b]/intervalMap_count[a,b]
     return copy.deepcopy(intervalMap_count),copy.deepcopy(intervalMap_mean)
-class WinInGenome():           
-    def __init__(self, dbname, winFileName8Field,Nocol=7, tableName=None):
-        super().__init__()
-        self.dbname = dbname
-        self.chromOrder, self.windbtools, self.wintablewithoutNA, self.wintabletextvalueallwin = self.loadWinDataIntoDB(dbname, winFileName8Field,Nocol, tableName)
-        self.winContainTrscptMap = {}
-    def loadWinDataIntoDB(self, dbname, winFileName8Field,Nocol="7", tableNamewithoutNA=None):
-        chromOrder = []
-        
-        tempdbtools = dbm.DBTools(ip, "root", "1234567", dbname)
-        if tableNamewithoutNA == None:
-            tableNamewithoutNA = random_str()
-#             return chromOrder, tempdbtools, tableNamewithoutNA, tableNametextValueForappendGeneName 
-        tableNametextValueForappendGeneName = tableNamewithoutNA + "textField"
-        
-        TABLES = {}
-        TABLES[tableNamewithoutNA] = (
-            "CREATE TABLE " + tableNamewithoutNA + " ("
-            " `chrID` varchar(128) NOT NULL ,"
-            " `winNo` varchar(128) NOT NULL,"
-            " `bp_start` varchar(128) NOT NULL,"
-            " `bp_end` varchar(128) NOT NULL,"
-            " `snpcount` int(11) NOT NULL,"
-            " `winvalue` double NOT NULL,"  #########why?
-            " `zvalue` double NOT NULL,"  ##########
-            " `mark` varchar(30) NOT NULL DEFAULT 'unknown', "
-            " PRIMARY KEY (`chrID`,`winNo`)"
-            ")"
-            )
-        TABLES[tableNametextValueForappendGeneName] = (
-            "CREATE TABLE " + tableNametextValueForappendGeneName + " ("
-            " `chrID` varchar(128) NOT NULL ,"
-            " `winNo` varchar(128) NOT NULL,"
-            " `bp_start` varchar(128) NOT NULL,"
-            " `bp_end` varchar(128) NOT NULL,"
-            " `snpcount` int(11) NOT NULL,"
-            " `winvalue` text NOT NULL,"  ##############why?
-            " `zvalue` text NOT NULL,"  ###############
-            " `mark` varchar(30) NOT NULL DEFAULT 'unknown', "
-            " PRIMARY KEY (`chrID`,`winNo`)"
-            ")"
-            )        
-        print(TABLES)
-        tempdbtools.create_table(TABLES)
-        a = os.popen("awk '{print $1}' " + winFileName8Field + "|uniq")
-        for chromNo in a:
-            chromOrder.append(chromNo.strip())
-        a.close()
-        a = os.system("awk '$"+str(Nocol)+"!~/NA/ && NR!=1{print $0}' " + winFileName8Field + ">" + winFileName8Field + "_tmpfile")
-        if a != 0:
-            print("awk '$"+str(Nocol)+"!~/NA/ && NR!=1{print $0}' " + winFileName8Field + ">" + winFileName8Field + "_tmpfile" + ": failed")
-            exit(-1)
-        print("awk '$"+str(Nocol)+"!~/NA/ && NR!=1{print $0}' " + winFileName8Field + ">" + winFileName8Field + "_tmpfile" + ": ok")
-        loaddatasql = "load data local infile '" + winFileName8Field + "_tmpfile' into table " + tableNamewithoutNA + " fields terminated by '\\t'"
-        
-        shellstatment = "mysql -uroot -p1234567 -D" + dbname.strip() + ' -e "' + loaddatasql + '"'
-        
-        a = os.system(shellstatment)
-        if a != 0:
-            print("Util : loadWinDataIntoDB func os.system return not 0")
-            exit(-1)
-        print(shellstatment + ":ok")
-        os.system("rm " + winFileName8Field + "_tmpfile")
-        
-        loaddatasql = "load data local infile '" + winFileName8Field + "' into table " + tableNametextValueForappendGeneName + " fields terminated by '\\t'"
-        
-        shellstatment = "mysql -uroot -p1234567 -D" + dbname.strip() + ' -e "' + loaddatasql + '"'
-        
-        a = os.system(shellstatment)
-        
-        if a != 0:
-            print(shellstatment + ":failed")
-            exit(-1)
-        print(shellstatment + ":ok")    
-        tempdbtools.operateDB("delete", "delete from " + tableNametextValueForappendGeneName + " where chrID='chrNo' and winNo='winNo' and winvalue='winvalue' ")    
-
-        return chromOrder, tempdbtools, tableNamewithoutNA, tableNametextValueForappendGeneName 
-    def appendGeneName(self, TranscriptGenetable, genomedbtools, winwidth, slideSize, outfileName,upextend=0, downextend=0,findNearestGene=(5,"m")):
-        outfile = open(outfileName, 'w')
-        print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnps\twinvalue\tzvalue\tmark\tgeneName\ttrscptID", file=outfile)
-
-        allwins = self.windbtools.operateDB("select", "select * from " + self.wintabletextvalueallwin )
-        self.windbtools.operateDB("callproc", "mysql_sp_add_column", data=(self.dbname, self.wintabletextvalueallwin, "geneName", "varchar(128)", "default null"))
-        self.windbtools.operateDB("callproc", "mysql_sp_add_column", data=(self.dbname, self.wintabletextvalueallwin, "trscptID", "varchar(128)", "default null"))  
-        for win in allwins:
-            region = (win[0], int(win[1]) * slideSize, int(win[1]) * slideSize + winwidth, win[1], win[5])
-            geneNames = "";trscptIDs = ""
-            recs=self.collectTrscptInWin(genomedbtools, TranscriptGenetable, region, upextend, downextend)
-            for rec in recs:
-                trscptIDs += rec[0].strip() + ";"
-                if rec[2].strip() != "":
-                    geneNames += (rec[2].strip() + ";")
-            self.windbtools.operateDB("update", "update " + self.wintabletextvalueallwin + " set geneName = '" + geneNames[0:-1] + "', trscptID= '" + trscptIDs[0:-1] + "' where chrID= '" + win[0] + "' and winNo=" + win[1])
-        #process outliers win
-        
-        total_outliers=findNearestGene[0]
-        if findNearestGene[1]=="m":
-            outlierwins=self.windbtools.operateDB("select","select * from "+ self.wintablewithoutNA+" order by zvalue desc limit 0,"+str(total_outliers))
-        elif  findNearestGene[1]=="l":
-            outlierwins=self.windbtools.operateDB("select","select * from "+ self.wintablewithoutNA+" order by zvalue asc limit 0,"+str(total_outliers))
-        print(total_outliers,outlierwins)
-        for win in outlierwins:
-            region = (win[0], int(win[1]) * slideSize, int(win[1]) * slideSize + winwidth, win[1], win[5])
-            geneNames = "";trscptIDs = ""
-            recs=self.collectTrscptInWin(genomedbtools, TranscriptGenetable, region,upextend, downextend,True)
-            for rec in recs:
-                trscptIDs+=rec[0].strip() + ";"
-                if rec[2].strip()!="":
-                    geneNames+=(rec[2].strip() + ";")
-            if recs==[]:
-                geneNames+="top"+str(total_outliers)
-                trscptIDs+="NA"
-            self.windbtools.operateDB("update","update " + self.wintabletextvalueallwin + " set geneName = '" + geneNames[0:-1] + "', trscptID= '" + trscptIDs[0:-1] + "' where chrID= '" + win[0] + "' and winNo=" + win[1])
-        allwins = self.windbtools.operateDB("select", "select * from " + self.wintabletextvalueallwin)
-        for win in allwins:
-            if win[-2] == "":
-                if win[-1] == "":
-                    print(*(win[:-2] + ("NA", "NA")), sep="\t", file=outfile)
-                else:
-                    print(*(win[:-2] + ("NA", win[-1])), sep="\t", file=outfile)
-            else:
-                print(*win, sep="\t", file=outfile)
-        outfile.close()
-
-    def collectTrscptInWin(self, genomedbtools, trscptableName, region, upextend=0, downextend=0,extendtodistal=0):
-        """select trscpt overlaped with the region
-        reture a list of trscpts [tp_generecord1+overlapcode,tp_generecord2+overlapcode,,,]
-        """
-        trscptlist = []
-        transcripttable = trscptableName
-        chrID = region[0]
-        Region_start = region[1]
-        Region_end = region[2]
-        """
-        region=(chrom,Region_start,Region_end,Nwin,extremeValue,maxsnp,mixsnp)
-        
-        """
-        selectType1OverlapGenesql = "select * from " + transcripttable + " where chrID='" + chrID + "' and trscpt_start_pos >= " + str(Region_start) + " and trscpt_end_pos <= " + str(Region_end)
-        selectType2OverlapGenesql = "select * from " + transcripttable + " where chrID='" + chrID + "' and trscpt_start_pos < " + str(Region_start) + " and trscpt_end_pos > " + str(Region_end)
-        selectType3OverlapGenesql = "select * from " + transcripttable + " where chrID='" + chrID + "' and trscpt_start_pos < " + str(Region_start) + " and trscpt_end_pos > " + str(Region_start) + " and trscpt_end_pos < " + str(Region_end)
-        selectType4OverlapGenesql = "select * from " + transcripttable + " where chrID='" + chrID + "' and trscpt_start_pos > " + str(Region_start) + " and trscpt_start_pos < " + str(Region_end) + " and trscpt_end_pos > " + str(Region_end)
-        selectType5OverlapGenesql = "select * from " + transcripttable + " where chrID='" + chrID + "' and trscpt_end_pos > " + str(Region_start - upextend) + " and trscpt_end_pos < " + str(Region_start)
-        selectType6OverlapGenesql = "select * from " + transcripttable + " where chrID='" + chrID + "' and trscpt_start_pos < " + str(Region_end + downextend) + " and trscpt_start_pos > " + str(Region_end)
-        #1
-        findPROTEINGENE=False
-        result = genomedbtools.operateDB("select", selectType1OverlapGenesql)
-        for row in result:
-            row += tuple([1])
-            trscptlist.append(row)
-            if row[0].find("ENS")==0:
-                findPROTEINGENE=True
-        #2
-        result = genomedbtools.operateDB("select", selectType2OverlapGenesql)
-        for row in result:
-            row += tuple([2])
-            trscptlist.append(row)
-            if row[0].find("ENS")==0:
-                findPROTEINGENE=True
-        #3
-        result = genomedbtools.operateDB("select", selectType3OverlapGenesql)
-        for row in result:
-            row += tuple([3])
-            trscptlist.append(row)
-            if row[0].find("ENS")==0:
-                findPROTEINGENE=True
-        #4
-        result = genomedbtools.operateDB("select", selectType4OverlapGenesql)
-        for row in result:
-            row += tuple([4])
-            trscptlist.append(row)
-            if row[0].find("ENS")==0:
-                findPROTEINGENE=True
-        #5
-        result = genomedbtools.operateDB("select", selectType5OverlapGenesql)
-        for row in result:
-            row += tuple([5])
-            trscptlist.append(row)
-            if row[0].find("ENS")==0:
-                findPROTEINGENE=True
-        #6
-        result = genomedbtools.operateDB("select", selectType6OverlapGenesql)
-        for row in result:
-            row += tuple([6])
-            trscptlist.append(row)
-            if row[0].find("ENS")==0:
-                findPROTEINGENE=True
-            
-        if not findPROTEINGENE and extendtodistal>max(upextend,downextend):
-            result=genomedbtools.operateDB("select","select * from "+ transcripttable + " where transcript_ID regexp  'ENS' and  chrID='" + chrID +  "' and trscpt_end_pos < "+str(Region_start) + " order by trscpt_end_pos ")
-            if len(result)!=0:#result is a list
-                row=list(result[-1])
-                if Region_start-int(row[6])<extendtodistal:
-                    row[2]=("<"+str(Region_start-int(row[6])))+row[7]+row[2]
-                    trscptlist.append(tuple(row)+tuple([7]))
-            result=genomedbtools.operateDB("select","select * from "+ transcripttable + " where transcript_ID regexp  'ENS' and chrID='" + chrID +  "' and trscpt_start_pos > "+ str(Region_end)+" order by trscpt_start_pos desc")
-            if len(result)!=0:#result is a list
-                row=list(result[-1])
-                if int(row[5])-Region_end<extendtodistal:
-                    row[2]=(">"+str(int(row[5])-Region_end))+row[7]+row[2]
-                    trscptlist.append(tuple(row)+tuple([8]))
-        return trscptlist
+# class WinInGenome():           
+#     def __init__(self, dbname, winFileName6Field, tableName=None):
+#         super().__init__()
+#         self.dbname = dbname
+#         self.chromOrder, self.windbtools, self.wintablewithoutNA, self.wintabletextvalueallwin = self.loadWinDataIntoDB(dbname, winFileName6Field, tableName)
+#         self.winContainTrscptMap = {}
+#     def loadWinDataIntoDB(self, dbname, winFileName7Field, tableNamewithoutNA=None):
+#         chromOrder = []
+#         if tableNamewithoutNA == None:
+#             tableNamewithoutNA = random_str()
+#         tableNametextValueForappendGeneName = tableNamewithoutNA + "textField"
+#         tempdbtools = dbm.DBTools("10.2.48.140", "root", "1234567", dbname)
+#         TABLES = {}
+#         TABLES[tableNamewithoutNA] = (
+#             "CREATE TABLE " + tableNamewithoutNA + " ("
+#             " `chrID` varchar(128) NOT NULL ,"
+#             " `winNo` varchar(128) NOT NULL,"
+#             " `bp_start` varchar(128) NOT NULL,"
+#             " `bp_end` varchar(128) NOT NULL,"
+#             " `snpcount` int(11) NOT NULL,"
+#             " `winvalue` double NOT NULL,"  #########why?
+#             " `zvalue` double NOT NULL,"  ##########
+#             " PRIMARY KEY (`chrID`,`winNo`)"
+#             ")"
+#             )
+#         TABLES[tableNametextValueForappendGeneName] = (
+#             "CREATE TABLE " + tableNametextValueForappendGeneName + " ("
+#             " `chrID` varchar(128) NOT NULL ,"
+#             " `winNo` varchar(128) NOT NULL,"
+#             " `bp_start` varchar(128) NOT NULL,"
+#             " `bp_end` varchar(128) NOT NULL,"
+#             " `snpcount` int(11) NOT NULL,"
+#             " `winvalue` text NOT NULL,"  ##############why?
+#             " `zvalue` text NOT NULL,"  ###############
+#             " PRIMARY KEY (`chrID`,`winNo`)"
+#             ")"
+#             )        
+#         print(TABLES)
+#         tempdbtools.create_table(TABLES)
+#         a = os.popen("awk '{print $1}' " + winFileName7Field + "|uniq")
+#         for chromNo in a:
+#             chromOrder.append(chromNo.strip())
+#         a.close()
+#         a = os.system("awk '$0!~/NA/ && NR!=1{print $0}' " + winFileName7Field + ">" + winFileName7Field + "_tmpfile")
+#         if a != 0:
+#             print("awk '$0!~/NA/ && NR!=1{print $0}' " + winFileName7Field + ">" + winFileName7Field + "_tmpfile" + ": failed")
+#             exit(-1)
+#         print("awk '$0!~/NA/ && NR!=1{print $0}' " + winFileName7Field + ">" + winFileName7Field + "_tmpfile" + ": ok")
+#         loaddatasql = "load data local infile '" + winFileName7Field + "_tmpfile' into table " + tableNamewithoutNA + " fields terminated by '\\t'"
+#         
+#         shellstatment = "mysql -uroot -p1234567 -D" + dbname.strip() + ' -e "' + loaddatasql + '"'
+#         
+#         a = os.system(shellstatment)
+#         if a != 0:
+#             print("Util : loadWinDataIntoDB func os.system return not 0")
+#             exit(-1)
+#         print(shellstatment + ":ok")
+#         os.system("rm " + winFileName7Field + "_tmpfile")
+#         
+#         loaddatasql = "load data local infile '" + winFileName7Field + "' into table " + tableNametextValueForappendGeneName + " fields terminated by '\\t'"
+#         
+#         shellstatment = "mysql -uroot -p1234567 -D" + dbname.strip() + ' -e "' + loaddatasql + '"'
+#         
+#         a = os.system(shellstatment)
+#         
+#         if a != 0:
+#             print(shellstatment + ":failed")
+#             exit(-1)
+#         print(shellstatment + ":ok")    
+#         tempdbtools.operateDB("delete", "delete from " + tableNametextValueForappendGeneName + " where chrID='chrNo' and winNo='winNo' and winvalue='winvalue' ")    
+# 
+#         return chromOrder, tempdbtools, tableNamewithoutNA, tableNametextValueForappendGeneName 
+#     def appendGeneName(self, TranscriptGenetable, genomedbtools, winwidth, slideSize, outfileName,upextend=0, downextend=0,findNearestGene=(5,"m")):
+#         outfile = open(outfileName, 'w')
+#         print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnps\twinvalue\tzvalue\tgeneName\ttrscptID", file=outfile)
+# 
+#         allwins = self.windbtools.operateDB("select", "select * from " + self.wintabletextvalueallwin )
+#         self.windbtools.operateDB("callproc", "mysql_sp_add_column", data=(self.dbname, self.wintabletextvalueallwin, "geneName", "varchar(128)", "default null"))
+#         self.windbtools.operateDB("callproc", "mysql_sp_add_column", data=(self.dbname, self.wintabletextvalueallwin, "trscptID", "varchar(128)", "default null"))  
+# 
+#         for win in allwins:
+#             region = (win[0], int(win[1]) * slideSize, int(win[1]) * slideSize + winwidth, win[1], win[5])
+#             geneNames = "";trscptIDs = ""
+#             recs=self.collectTrscptInWin(genomedbtools, TranscriptGenetable, region, upextend, downextend)
+#             for rec in recs:
+#                 trscptIDs += rec[0].strip() + ";"
+#                 if rec[2].strip() != "":
+#                     geneNames += (rec[2].strip() + ";")
+#             self.windbtools.operateDB("update", "update " + self.wintabletextvalueallwin + " set geneName = '" + geneNames[0:-1] + "', trscptID= '" + trscptIDs[0:-1] + "' where chrID= '" + win[0] + "' and winNo=" + win[1])
+#         #process outliers win
+#         
+#         total_outliers=findNearestGene[0]
+#         if findNearestGene[1]=="m":
+#             outlierwins=self.windbtools.operateDB("select","select * from "+ self.wintablewithoutNA+" order by zvalue desc limit 0,"+str(total_outliers))
+#         elif  findNearestGene[1]=="l":
+#             outlierwins=self.windbtools.operateDB("select","select * from "+ self.wintablewithoutNA+" order by zvalue asc limit 0,"+str(total_outliers))
+#         print(total_outliers,outlierwins)
+#         for win in outlierwins:
+#             region = (win[0], int(win[1]) * slideSize, int(win[1]) * slideSize + winwidth, win[1], win[5])
+#             geneNames = "";trscptIDs = ""
+#             recs=self.collectTrscptInWin(genomedbtools, TranscriptGenetable, region,upextend, downextend,True)
+#             for rec in recs:
+#                 trscptIDs+=rec[0].strip() + ";"
+#                 if rec[2].strip()!="":
+#                     geneNames+=(rec[2].strip() + ";")
+#             if recs==[]:
+#                 geneNames+="top"+str(total_outliers)
+#                 trscptIDs+="NA"
+#             self.windbtools.operateDB("update","update " + self.wintabletextvalueallwin + " set geneName = '" + geneNames[0:-1] + "', trscptID= '" + trscptIDs[0:-1] + "' where chrID= '" + win[0] + "' and winNo=" + win[1])
+#         allwins = self.windbtools.operateDB("select", "select * from " + self.wintabletextvalueallwin)
+#         for win in allwins:
+#             if win[-2] == "":
+#                 if win[-1] == "":
+#                     print(*(win[:-2] + ("NA", "NA")), sep="\t", file=outfile)
+#                 else:
+#                     print(*(win[:-2] + ("NA", win[-1])), sep="\t", file=outfile)
+#             else:
+#                 print(*win, sep="\t", file=outfile)
+#         outfile.close()
+# 
+#     def collectTrscptInWin(self, genomedbtools, trscptableName, region, upextend=0, downextend=0,findNearestGene=False):
+#         """select region overlaped with the trscpt
+#         reture a list of trscpts [tp_generecord1,tp_generecord2,,,]
+#         """
+#         trscptlist = []
+#         transcripttable = trscptableName
+#         chrID = region[0]
+#         Region_start = region[1]
+#         Region_end = region[2]
+#         """
+#         region=(chrom,Region_start,Region_end,Nwin,extremeValue)
+#         
+#         """
+#         strandidx = 7
+# #         titlelist = [a[0].strip() for a in genomedbtools.operateDB("select", "select column_name  from information_schema.columns where table_schema='" + "ninglabvariantdata" + "' and table_name='" + trscptableName + "'")]
+# #         "select * from " + transcripttable + " where chrID='" + chrID + "' and trscpt_end_pos >= " + str(Region_start) + " and trscpt_start_pos <= " + str(Region_end)
+#         selectType1OverlapGenesql = "select * from " + transcripttable + " where chrID='" + chrID + "' and trscpt_start_pos >= " + str(Region_start) + " and trscpt_end_pos <= " + str(Region_end)
+#         selectType2OverlapGenesql = "select * from " + transcripttable + " where chrID='" + chrID + "' and trscpt_start_pos < " + str(Region_start) + " and trscpt_end_pos > " + str(Region_end)
+#         selectType3OverlapGenesql = "select * from " + transcripttable + " where chrID='" + chrID + "' and trscpt_start_pos < " + str(Region_start) + " and trscpt_end_pos > " + str(Region_start) + " and trscpt_end_pos < " + str(Region_end)
+#         selectType4OverlapGenesql = "select * from " + transcripttable + " where chrID='" + chrID + "' and trscpt_start_pos > " + str(Region_start) + " and trscpt_start_pos < " + str(Region_end) + " and trscpt_end_pos > " + str(Region_end)
+#         selectType5OverlapGenesql = "select * from " + transcripttable + " where chrID='" + chrID + "' and trscpt_end_pos > " + str(Region_start - upextend) + " and trscpt_end_pos < " + str(Region_start)
+#         selectType6OverlapGenesql = "select * from " + transcripttable + " where chrID='" + chrID + "' and trscpt_start_pos < " + str(Region_end + downextend) + " and trscpt_start_pos > " + str(Region_end)
+#         #1
+#         result = genomedbtools.operateDB("select", selectType1OverlapGenesql)
+#         for row in result:
+#             row += tuple([1])
+#             trscptlist.append(row)
+#         #2
+#         result = genomedbtools.operateDB("select", selectType2OverlapGenesql)
+#         for row in result:
+#             row += tuple([2])
+#             trscptlist.append(row)
+#         #3
+#         result = genomedbtools.operateDB("select", selectType3OverlapGenesql)
+#         for row in result:
+#             row += tuple([3])
+#             trscptlist.append(row)
+#         #4
+#         result = genomedbtools.operateDB("select", selectType4OverlapGenesql)
+#         for row in result:
+#             row += tuple([4])
+#             trscptlist.append(row)
+#         #5
+#         result = genomedbtools.operateDB("select", selectType5OverlapGenesql)
+#         for row in result:
+#             row += tuple([5])
+#             trscptlist.append(row)
+#         #6
+#         result = genomedbtools.operateDB("select", selectType6OverlapGenesql)
+#         for row in result:
+#             row += tuple([6])
+#             trscptlist.append(row)
+#         if trscptlist==[] and findNearestGene:
+#             result=genomedbtools.operateDB("select","select * from "+ transcripttable + " where chrID='" + chrID +  "' and trscpt_end_pos < "+str(Region_start) + " order by trscpt_end_pos")
+#             if len(result)!=0:#result is a list
+#                 row=list(result[-1])
+#                 if Region_start-int(row[6])<180000:
+#                     row[2]=(str(Region_start-int(row[6]))+"<"+row[7])+row[2]
+#                     trscptlist.append(tuple(row))
+#             result=genomedbtools.operateDB("select","select * from "+ transcripttable + " where chrID='" + chrID +  "' and trscpt_start_pos > "+ str(Region_end)+" order by trscpt_start_pos")
+#             if len(result)!=0:#result is a list
+#                 row=list(result[-1])
+#                 if int(row[6])-Region_end<180000:
+#                     row[2]+=(">"+row[7]+str(int(row[6])-Region_end))
+#                     trscptlist.append(tuple(row))
+#         return trscptlist
 
 class BinDepth():
     def __init__(self, depthbinFileName):

@@ -51,7 +51,7 @@ class VCF_Data():
 #         vcfChromIndex[currentChrom]=(lastPosition,0)
         print(line)
         line = vcffile.readline()
-        print(line)
+        print("first line:",line)
         i = 0
         while line:      
             linelist = re.split(r"\s+", line)
@@ -96,6 +96,7 @@ class VCF_Data():
     @staticmethod        
     def Vcf2geno_snp_ind(vcfFileName, sampleID_to_popmap, outputfileprefix, software, Morgenperbp, outputfilepart, VcfIndexMap=None, genotypesep=" ", withheader=False):
         vcffile = open(vcfFileName, "r")
+        Morgenperbp=float(Morgenperbp)
         genofile = open(outputfileprefix + str(outputfilepart) + ".geno", "w")
         snpfile = open(outputfileprefix + str(outputfilepart) + ".snp", "w")
         indfile = open(outputfileprefix + str(outputfilepart) + ".ind", 'w')
@@ -121,7 +122,7 @@ class VCF_Data():
             linelist = re.split(r"\s+", line)
             if linelist[3].strip().upper() == 'N' or len(linelist[3].strip()) > 1 or len(linelist[4].strip()) > 1:  # when ref is N ,or INDEL ,or multiple allels 
                 continue
-            print("\t" + linelist[0] + "_" + linelist[1] + "\t" + linelist[0] + "\t" + str(Morgenperbp * int(linelist[1])) + "\t" + linelist[1] + "\t" + linelist[3] + "\t" + linelist[4], file=snpfile)
+            print("\t" + linelist[0] + "_" + linelist[1] + "\t" + linelist[0] + "\t" + str(round(Morgenperbp * int(linelist[1]),6)) + "\t" + linelist[1] + "\t" + linelist[3] + "\t" + linelist[4], file=snpfile)
             if software.upper() == "GATK":
                 GT_idx = (re.split(":", linelist[8])).index("GT")
                 PL_idx = (re.split(":", linelist[8])).index("PL")

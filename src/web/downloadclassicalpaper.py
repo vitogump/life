@@ -32,23 +32,25 @@ def server_static(urlpath):
     herfs=""""""
     catajudge=re.search(r'[^/]*$',urlpath).group(0)
     if urlpath.endswith("GBS"):
-        path='../../classical_paper/GBS/'
+        path='../../toDownload/classical_paper/GBS/'
     elif urlpath.endswith("mRNA_microRNA"):
-        path='../../classical_paper/mRNA_microRNA/'
+        path='../../toDownload/classical_paper/mRNA_microRNA/'
     elif urlpath.endswith("imprinting_Epigenetic"):
-        path='../../classical_paper/imprinting_epigenetic/'
+        path='../../toDownload/classical_paper/imprinting_epigenetic/'
     elif urlpath.endswith("selection"):
-        path='../../classical_paper/naturalselection_artificialselection/'
+        path='../../toDownload/classical_paper/naturalselection_artificialselection/'
     elif urlpath.endswith("GeneMapping"):
-        path='../../classical_paper/geneMapping/'
+        path='../../toDownload/classical_paper/geneMapping/'
     elif urlpath.endswith("aglorithms_in_biology"):
-        path='../../ppt_for_share/aglorithms_in_biology/'
+        path='../../toDownload/ppt_for_share/aglorithms_in_biology/'
     elif urlpath.endswith("freshtoread"):
-        path='../../ppt_for_share/freshtoread/'
+        path='../../toDownload/ppt_for_share/freshtoread/'
     elif urlpath.endswith("genomics"):
-        path='../../ppt_for_share/genomics/'
+        path='../../toDownload/ppt_for_share/genomics/'
     elif urlpath.endswith("renbin"):
-        path='../../ppt_for_share/renbin/'
+        path='../../toDownload/ppt_for_share/renbin/'
+    elif urlpath.endswith("Python_study"):
+        path='../../toDownload/pythonstudy/'
     elif urlpath.endswith(".html"):
         print("sssss")
         return static_file(urlpath,root='../../index')
@@ -63,7 +65,7 @@ def server_static(urlpath):
     l=os.listdir(path=path)
     print(l,path)
     for a in l:
-        if os.path.isdir(path+a):
+        if os.path.isdir(path+a) and not urlpath.endswith("rar"):
             url=quote('/download/catalog/'+re.search(r'\.\./\.\./(.*)',path+a).group(1))
             herfs+="""<a href="""+url+""" target="_self">"""+a+"""</a></p>
             """
@@ -115,4 +117,4 @@ def send_static(urlpath):
 
 
 
-run(host='localhost',port=8080,debug=True)
+run(host='192.168.0.14',port=5000,debug=True)
