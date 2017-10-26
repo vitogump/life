@@ -4,7 +4,7 @@ Created on 2014-5-4
 @author: liurui
 '''
 
-import datetime
+
 import time
 
 import markdown2
@@ -13,13 +13,33 @@ import src.web.Entity as Entity
 from sqlalchemy import *
 from sqlalchemy.orm import *
 from sqlalchemy.sql.sqltypes import Date, DateTime
+import datetime,configparser,os
 
+currentpath=os.path.realpath(__file__)
+currentpath[:currentpath.find("life/src")]+"life/com/config.properties"
+cfparser = configparser.ConfigParser()
+cfparser.read(currentpath[:currentpath.find("life/src")]+"life/com/config.properties")
 
+ip=cfparser.get("mysqldatabase","ip")
+print(currentpath,ip)#currentpath[:currentpath.find("life/src")]+"life/com/config.properties")
+username=cfparser.get("mysqldatabase","username")
+password=cfparser.get("mysqldatabase","password")
+webdbname=cfparser.get("mysqldatabase","webdbname")
+genomeinfodbname=cfparser.get("mysqldatabase","genomeinfodbname")
+pekingduckchromtable=cfparser.get("mysqldatabase","pekingduckchromtable")
+ghostdbname=cfparser.get("mysqldatabase","ghostdbname")
+vcfdbname=cfparser.get("mysqldatabase","vcfdbname")
+TranscriptGenetable=cfparser.get("mysqldatabase","TranscriptGenetable")
+D2Bduckchromtable=cfparser.get("mysqldatabase","D2Bduckchromtable")
+KB743256_1=cfparser.get("mysqldatabase","KB743256_1")
+outgroupVCFBAMconfig_beijingref=cfparser.get("mysqldatabase","outgroupVCFBAMconfig_beijingref")
+pathtoPython=cfparser.get("mysqldatabase", "pathtoPython")
+beijingreffa=cfparser.get("mysqldatabase","beijingreffa")
 
 db_config = {
-    'host': '10.2.48.147',
-    'user': 'root',
-    'passwd': '1234567',
+    'host': ip,
+    'user': username,
+    'passwd': password,
     'db':'ninglabweb',
     'charset':'utf8'
 }

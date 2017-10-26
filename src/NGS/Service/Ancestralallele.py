@@ -128,6 +128,7 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
                         elif SNPrec_of_one_chrom_invcf[mid][0]>snp_pos:
                             high=mid-1
                         else:#find the pos
+                            print("here is a  bug still not finished",mid)
                             pos, REF, archicpop_ALT, INFO,FORMAT,samples = SNPrec_of_one_chrom_invcf[mid]
                             dp4=re.search(r"DP4=(\d*)", INFO)
                             AF=re.search(r"AF=([\d\.e-]+)", INFO).group(1)

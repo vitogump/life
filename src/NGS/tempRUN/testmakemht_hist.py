@@ -42,9 +42,8 @@ parser.add_option("-r", "--removegenelistfile", dest="removegenelistfile", help=
 # parser.add_option("-t","--numberofoutlier_to_NearestGene",dest="numberofoutlier_to_NearestGene",default=0,help="number of outlier value,for example top 10")
 (options, args) = parser.parse_args()
 columnname=options.winType.strip()
-minmaxSNP="7"
+minmaxSNP="0"#because the roh regions. in early selection . the candidate selection regions are naturally consider the minmaxSNP of 7
 if __name__ == '__main__':
-
     makeMhtGraph = Make_Picture.MakeMhtGraph()
     outfileNameWINwithGENE_Plist=[];outfileNameWIN_Plist=[]
     outfileNameWINwithGENE_Nlist=[];outfileNameWIN_Nlist=[]

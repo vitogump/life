@@ -116,6 +116,8 @@ def GOenrichment(gotablefile,outpre,genelist=None,trscptlist=None,UniProtlist=No
         x=0
         containingtrscript=[]
         genetermlist=[]
+        if len(goTermMap[goassecesion])<2:
+            continue        
         for id in sampledIDlist:
             id=id.strip()
             if id in oneGO2manyID[goassecesion]:
@@ -125,8 +127,7 @@ def GOenrichment(gotablefile,outpre,genelist=None,trscptlist=None,UniProtlist=No
         m=len(oneGO2manyID[goassecesion])
         n=m_n - m
         pvalue=stats.hypergeom.sf(x-1,m_n,m,k)
-        if len(goTermMap[goassecesion])<2:
-            continue
+
         outlist.append((goassecesion,goTermMap[goassecesion][0],goTermMap[goassecesion][1],pvalue,"FDR",x,len(oneGO2manyID[goassecesion]),containingtrscript,genetermlist))
     outlist.sort(key=lambda listRec:listRec[3])
     for e in outlist:
@@ -185,7 +186,7 @@ def collectSNP_locatInRegion(MultipleVcfMap,chrom,startpos,endpos):
     else:
         return []
 
-def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,winType,morethan_lessthan,threshold_title_list=None,percentage=None,mergeNA=False,extendtodistal=0,anchorfile=None,sexthreshold=None,found=False,mapfile=None):
+def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,winType,morethan_lessthan,threshold_title_list=None,percentage=None,mergeNA=False,extendtodistal=0,anchorfile=None,found=False,mapfile=None):
 
     if percentage!=None and threshold_title_list!=None:
         print("-t conflict with -p")
@@ -196,8 +197,8 @@ def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,win
         winfilemark,winfilearrangement=Util.mapWinvaluefileToChrOfReletiveSpecie(anchorfile, winfile, winwidth, slideSize, True,mapfile)
     else:
 #         winfile=standardseparately(anchorfile,winfile)
-        os.system("awk ' {if(NR=1){print $0"+'"\tmark"'+"}else{print $0"+'"\tunknown"'+"}}' "+winfile+">"+winfile+"marked")
-    winFileName8Field = winfile+"marked"
+        os.system("awk ' {if(NR=1){print $0"+'"\tmark"'+"}else{print $0"+'"\tunknown"'+"}}' "+winfile+">"+winfile+"marked.sexchromseperatestandard")
+    winFileName8Field = winfile+"marked.sexchromseperatestandard"
     f=open(winFileName8Field,"r")
     title=re.split(r"\s+",f.readline().strip())
     f.close()
@@ -225,9 +226,9 @@ def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,win
     totalWin = winGenome.windbtools.operateDB("select", "select count(*) from " + winGenome.wintablewithoutNA)[0][0]  
 #     selectWinNos = int(float(percentage) * totalWin)  
     if anchorfile:
-        wherestatmentmt=" where (mark='autochromosome' and "+winType+">=" + threshold_title_list[0]+") or (mark='sexchromosome' and "+winType+">=" +threshold_title_list[-1]+")"
+        wherestatmentmt=" where (mark='autosome' and "+winType+">=" + threshold_title_list[0]+") or (mark='sexchromosome' and "+winType+">=" +threshold_title_list[-1]+")"
 #         wherestatmentmp=" where 1 order by "+winType+" desc limit 0," + str(selectWinNos)
-        wherestatmentlt=" where (mark='autochromosome' and "+winType+"<=" + threshold_title_list[0]+") or (mark='sexchromosome' and "+winType+"<=" +threshold_title_list[-1]+")"
+        wherestatmentlt=" where (mark='autosome' and "+winType+"<=" + threshold_title_list[0]+") or (mark='sexchromosome' and "+winType+"<=" +threshold_title_list[-1]+")"
 #         wherestatmentlp=" where 1 order by "+winType+" asc limit 0," + str(selectWinNos)
     else:
         wherestatmentmt= " where 1 and "+winType+">=" + threshold_title_list[0]

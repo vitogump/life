@@ -424,13 +424,13 @@ class MakeMhtGraph(object):
             r('par(las=1, cex.axis=1.5, cex=2,mfrow=c('+str(len(positive_winfiles)+len(negtive_winfiles)+len(outfileNameWIN_Alist)) +',1),mar=c(2, 4, 1.5, 2),mgp=c(0,1,-6))')#rep(0,4)
             if outfileNameWIN_Alist!=[]:
                 for i in range(0,len(outfileNameWIN_Alist)):
-                    if outfileNameWIN_Alist[i][2].lower().strip()!="none":
+                    if outfileNameWIN_Alist[i][1].lower().strip()!="none":
                         ylimstr=outfileNameWIN_Alist[i][1].lower().strip().replace("_",",")
                         print('mhtplot(a_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=15,xlab="",'+"ylim=c("+ylimstr+'))',file=scriptfile)
                         r('mhtplot(a_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=15,ylab="",xlab="",'+"ylim=c("+ylimstr+'))')
                     else:
                         print('mhtplot(a_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=15,ylab="Tajimas D",xlab="")',file=scriptfile)
-                        r('mhtplot(a_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=15,ylab="Tajimas D",xlab="")')
+                        r('mhtplot(a_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=15,ylab="",xlab="")')
                     if outfileNameWIN_Alist[i][2].lower().strip()!="none":
                         print('title(main="' + outfileNameWIN_Alist[i][2].replace("_"," ") + '",cex.main=2)',file=scriptfile)
                         r('title(main="' + outfileNameWIN_Alist[i][2].replace("_"," ") + '",cex.main=2)')
@@ -447,7 +447,7 @@ class MakeMhtGraph(object):
                         r('mhtplot(p_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=15,ylab="",'  + 'xlab=""'+",ylim=c("+ylimstr+'))')
                     else:
                         print('mhtplot(p_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=15,ylab="z' + "Fst" + '",xlab="")',file=scriptfile)
-                        r('mhtplot(p_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=15,ylab="z' + "Fst" + '",xlab="")')
+                        r('mhtplot(p_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=15,ylab="' + "" + '",xlab="")')
                     if positive_winfiles[i][2].lower().strip()!="none":
                         if positive_winfiles[i][2].find("expression")!=-1:
                             print("title(main=" + positive_winfiles[i][2].replace("_"," ") + ",cex.main=2)",file=scriptfile)
@@ -468,7 +468,7 @@ class MakeMhtGraph(object):
                         r('mhtplot(n_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=15,ylab="",xlab=""'+",ylim=c("+ylimstr+'))')
                     else:
                         print('mhtplot(n_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=15,ylab="zHp",xlab="")',file=scriptfile)
-                        r('mhtplot(n_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=15,ylab="zHp",xlab="")')
+                        r('mhtplot(n_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=15,ylab="",xlab="")')
                     if negtive_winfiles[i][2].lower().strip()!="none":
                         print("title(main='" + negtive_winfiles[i][2].replace("_"," ") + "',cex.main=2)",file=scriptfile)
                         r("title(main='" + negtive_winfiles[i][2].replace("_"," ") + "',cex.main=2)")
@@ -538,11 +538,11 @@ class MakeMhtGraph(object):
 #             print('par(las=1, cex.axis=2, cex=1,mfrow=c('+str(len(positive_winfiles)+len(negtive_winfiles)+len(outfileNameWIN_Alist)) +',1),mar=c(2, 4, 1.5, 2))',file=scriptfile)
             if outfileNameWIN_Alist!=[]:
                 for i in range(0,len(outfileNameWIN_Alist)):
-                    if outfileNameWIN_Alist[i][2].lower().strip()!="none":
+                    if outfileNameWIN_Alist[i][1].lower().strip()!="none":
                         ylimstr=outfileNameWIN_Alist[i][1].lower().strip().replace("_",",")
                         r('mhtplot(a_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=15,ylab="",xlab=""'+",ylim=c("+ylimstr+'))')
                     else:
-                        r('mhtplot(a_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=15,ylab="Tajimas D",xlab="")')
+                        r('mhtplot(a_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=15,ylab="",xlab="")')
                     if outfileNameWIN_Alist[i][2].lower().strip()!="none":
                         r('title(main="' + outfileNameWIN_Alist[i][2].replace("_"," ") + '",cex.main=2)')
                     else:
@@ -557,7 +557,7 @@ class MakeMhtGraph(object):
                         ylimstr=positive_winfiles[i][1].lower().strip().replace("_",",")
                         r('mhtplot(p_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=15,ylab="",'  + 'xlab=""'+",ylim=c("+ylimstr+'))')
                     else:
-                        r('mhtplot(p_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=15,ylab="z' + "Fst" + '",xlab="")')
+                        r('mhtplot(p_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=15,ylab="' + "" + '",xlab="")')
                     if positive_winfiles[i][2].lower().strip()!="none":
                         if positive_winfiles[i][2].find("expression")!=-1:
                             print('title(main=' + positive_winfiles[i][2].replace("_"," ") + ',cex.main=2)')
@@ -576,7 +576,7 @@ class MakeMhtGraph(object):
                         ylimstr=negtive_winfiles[i][1].lower().strip().replace("_",",")
                         r('mhtplot(n_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=15,ylab="",xlab=""'+",ylim=c("+ylimstr+'))')
                     else:
-                        r('mhtplot(n_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=15,ylab="zHp",xlab="")')
+                        r('mhtplot(n_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=15,ylab="",xlab="")')
                     if negtive_winfiles[i][2].lower().strip()!="none":
                         if negtive_winfiles[i][2].find("expression")!=-1:
                             r("title(main=" + negtive_winfiles[i][2].replace("_"," ") + ",cex.main=2)")

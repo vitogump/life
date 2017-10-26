@@ -72,16 +72,18 @@ class OperatorWithData_loadintodatabase(OperatorWithData):
                         self.ancestralalleletabletools.filldata(rootStr + "/" +datafilename,tablename=tablename)
         return "OperatorWithData_loadintodatabase return"
 class OperatorWithData_mode1(OperatorWithData):
-    def __init__(self, cmdtemplatefile, scriptsstoredir,taglen=1):
+    def __init__(self, cmdtemplatefile, scriptsstoredir,taglen=1,Dtag=None):
         super().__init__(scriptsstoredir)
         self.taglen=int(taglen)
         self.cmdtemplatefilename=re.search(r"[^/]*$",cmdtemplatefile).group(0)
         scriptcontent=open(cmdtemplatefile,'r').read()
-        
+        self.Dtag=Dtag
         self.scriptcontext=re.search(r"([\s\S]*(\n)*)cmdline=.*",scriptcontent).group(1)
         
         self.inputdatapath=re.search(r"(\n)*inputdatafilesrootpath=\s*(.*)",self.scriptcontext).group(2)
         self.cmdline=re.search(r"(.*(\n)*)cmdline=\s*(.*)",scriptcontent).group(3)
+        if self.Dtag!=None and re.search(r"\${Dtag}",self.cmdline)!=None:
+            self.cmdline,no_of_Dtags=re.subn(r"\${Dtag}",self.Dtag,self.cmdline)
         print(scriptcontent,self.scriptcontext,self.inputdatapath,self.cmdline,sep="\n")
         self.outputlist=re.findall(r"\${output=\s*([^\s^\|]*)\|suffix=(.*?)}",self.cmdline)
 
@@ -107,6 +109,7 @@ class OperatorWithData_mode1(OperatorWithData):
             tagname="/"+re.search(r".*/([^/]+)"+tagname+"$", curpath).group(1)+tagname
         tagname=re.sub(r"/","_",tagname[1:])
         updirname = re.search(r".*/([^/]+)$", curpath).group(1)
+
         newcmdline,no_of_tags=re.subn(r"\${tag}",tagname,newcmdline)
 
         pathToOutputdata_createdir = ""

@@ -480,6 +480,39 @@ def generateFasterRefIndex(refFastaFileName, indexFileName,mapname=None,startcha
         refline = refFastaFile.readline()
     pickle.dump(refChromIndex,open(indexFileName, 'wb'))
     refFastaFile.close()
+def loadAnchorFile(anchorFile):
+    anchorDATASTRUCTURE={}
+    """
+    {chr1:[(53353,53806,scaffold451,558997,558537,-),(57200,62371,scaffold451,553669,548504,-),(),,],chr2:[],,,,}
+    """
+    reverseAnchorDATASTRUCTURE={}
+    """
+    {scaffold451:{chr1:[0,1,2,,,,],chr2:[],,,},C17734302:{chr1:[idx,,,],chr2:[idx,,,],,,}}  idx is idx in the list of anchorDATASTRUCTURE[chr1] 
+    """
+    newanchorfilehandler=open(anchorFile,'r')
+    print("chrNo\tstartpos\tendpos\tstrand",file=open("sexchromrecs.bed",'w'))
+    for line in newanchorfilehandler:
+        linelist=re.split(r"\s+",line.strip())
+        if linelist[0].strip() in anchorDATASTRUCTURE:
+            anchorDATASTRUCTURE[linelist[0].strip()].append((int(linelist[1].strip()),int(linelist[2].strip()),linelist[3].strip(),int(linelist[4].strip()),int(linelist[5].strip()),linelist[6].strip()))
+        else:
+            anchorDATASTRUCTURE[linelist[0].strip()]=[(int(linelist[1].strip()),int(linelist[2].strip()),linelist[3].strip(),int(linelist[4].strip()),int(linelist[5].strip()),linelist[6].strip())]
+        #fill reverseAnchorDATASTRUCTURE
+        if linelist[3].strip() in reverseAnchorDATASTRUCTURE:
+            if linelist[0].strip() in reverseAnchorDATASTRUCTURE[linelist[3].strip()]:
+                reverseAnchorDATASTRUCTURE[linelist[3].strip()][linelist[0].strip()].append(len(anchorDATASTRUCTURE[linelist[0].strip()])-1)
+            else:
+                reverseAnchorDATASTRUCTURE[linelist[3].strip()]={linelist[0].strip():[len(anchorDATASTRUCTURE[linelist[0].strip()])-1]}
+        else:
+            reverseAnchorDATASTRUCTURE[linelist[3].strip()]={linelist[0].strip():[len(anchorDATASTRUCTURE[linelist[0].strip()])-1]}
+    for scaffold in reverseAnchorDATASTRUCTURE.keys():
+        if "Z" in reverseAnchorDATASTRUCTURE[scaffold] or "z" in reverseAnchorDATASTRUCTURE[scaffold] or "W" in reverseAnchorDATASTRUCTURE[scaffold] or "w" in reverseAnchorDATASTRUCTURE[scaffold] or "X" in reverseAnchorDATASTRUCTURE[scaffold] or "x" in reverseAnchorDATASTRUCTURE[scaffold] or "Y" in reverseAnchorDATASTRUCTURE[scaffold] or "y" in reverseAnchorDATASTRUCTURE[scaffold]:
+            for chrom,recs in reverseAnchorDATASTRUCTURE[scaffold].items():
+                if "Z" ==chrom.upper() or "W" ==chrom.upper() or  "X" ==chrom.upper() or "Y" ==chrom.upper():
+                    for idx in recs:
+                        print("\t".join([str(e) for e in anchorDATASTRUCTURE[chrom][idx][2:]]) if anchorDATASTRUCTURE[chrom][idx][-1]=="+" else "\t".join((anchorDATASTRUCTURE[chrom][idx][2],str(anchorDATASTRUCTURE[chrom][idx][4]),str(anchorDATASTRUCTURE[chrom][idx][3]),anchorDATASTRUCTURE[chrom][idx][5])),file=open("sexchromrecs.bed",'a'))
+    newanchorfilehandler.close()
+    return anchorDATASTRUCTURE,reverseAnchorDATASTRUCTURE
 def generateIndexByChromForFQ(refFastaFileName, indexFileName, mapname=None,startchar=">"):
     refFastaFile = open(refFastaFileName, 'r')
     refChromIndex = {}
@@ -1151,7 +1184,7 @@ def mapWinvaluefileToChrOfReletiveSpecie(anchorfile,winfileinName,winwidth,slide
         for winNo in range(len(winMapMarked[scaffold])):
 
             if len(winMapMarked[scaffold][winNo])==5 :
-                if (scaffold in reverseAnchorDATASTRUCTURE) and (len(reverseAnchorDATASTRUCTURE[scaffold])==1 and ( "Z"  in reverseAnchorDATASTRUCTURE[scaffold] or "z" in reverseAnchorDATASTRUCTURE[scaffold] or "W" in reverseAnchorDATASTRUCTURE[scaffold] or "w" in reverseAnchorDATASTRUCTURE[scaffold] or "x" in reverseAnchorDATASTRUCTURE[scaffold] or "X" in reverseAnchorDATASTRUCTURE[scaffold] or "y" in reverseAnchorDATASTRUCTURE[scaffold] or "Y" in reverseAnchorDATASTRUCTURE[scaffold])):
+                if (scaffold in reverseAnchorDATASTRUCTURE) and ((len(reverseAnchorDATASTRUCTURE[scaffold])==1 and  re.search(r"[zwxy]" , "".join(reverseAnchorDATASTRUCTURE[scaffold].keys()).lower())!=None) or (len(reverseAnchorDATASTRUCTURE[scaffold])>1 and re.search(r"([zwxyZWXY]+)" , "".join(reverseAnchorDATASTRUCTURE[scaffold].keys()))!=None and len(reverseAnchorDATASTRUCTURE[scaffold][re.search(r"([zwxyZWXY]+)" , "".join(reverseAnchorDATASTRUCTURE[scaffold].keys())).group(1)[-1]])>3)):
                     print(scaffold,winNo,winMapMarked[scaffold][winNo][0],winMapMarked[scaffold][winNo][1],winMapMarked[scaffold][winNo][2],winMapMarked[scaffold][winNo][3],winMapMarked[scaffold][winNo][4],"sexchromosome",sep="\t",file=outwinfile)#,"unknow"
                     signal="sexchromosome"
                 else:
@@ -1168,7 +1201,7 @@ def mapWinvaluefileToChrOfReletiveSpecie(anchorfile,winfileinName,winwidth,slide
     autoexception=numpy.mean(winCrossGenomeMap["autosome"])
     autostd1=numpy.std(winCrossGenomeMap["autosome"],ddof=1)
     sexexception=numpy.mean(winCrossGenomeMap["sexchromosome"])
-    sexstd1=numpy.std(winCrossGenomeMap["autosome"],ddof=1)
+    sexstd1=numpy.std(winCrossGenomeMap["sexchromosome"],ddof=1)
     print("autoexception,autostd",autoexception,autostd1,"sexchromosome:",sexexception,sexstd1)
     outwinfile.close()
     if standardsexseperately:
@@ -1189,9 +1222,10 @@ def mapWinvaluefileToChrOfReletiveSpecie(anchorfile,winfileinName,winwidth,slide
                 print(linelist[0],linelist[1],linelist[2],linelist[3],linelist[4],linelist[5],zscore,linelist[7],sep="\t",file=markedseperatelyfile)
             else:
                 print(line,end="",file=markedseperatelyfile)
+        markedseperatelyfile.close();markedfile.close()
     else:
-        markfilname=winfileinName+"marked"
-    markedseperatelyfile.close();markedfile.close()
+        markfilname=winfileinName+"marked.sexchromseperatestandard"
+    
     return markfilname,winfileinName+"arrangemented"
 ####################
 def getRefSeqMap(refFastafilehander, currentChromNO=None, preBaseTotal=0, linesOnce=500000, mapname=None):

@@ -38,30 +38,7 @@ upextend=int(options.upextend);slideSize=int(options.slideSize);winWidth=int(opt
 downextend=int(options.downextend)
 winFileName7Field = options.winfileName
 if options.anchorfile!=None:
-    anchorDATASTRUCTURE={}
-    """
-    {chr1:[(53353,53806,scaffold451,558997,558537,-),(57200,62371,scaffold451,553669,548504,-),(),,],chr2:[],,,,}
-    """
-    reverseAnchorDATASTRUCTURE={}
-    """
-    {scaffold451:{chr1:[0,1,2,,,,]},C17734302:{chr1:[idx]}}  idx is idx in the list of anchorDATASTRUCTURE[chr1] 
-    """
-    newanchorfilehandler=open(options.anchorfile,'r')
-    for line in newanchorfilehandler:
-        linelist=re.split(r"\s+",line.strip())
-        if linelist[0].strip() in anchorDATASTRUCTURE:
-            anchorDATASTRUCTURE[linelist[0].strip()].append((int(linelist[1].strip()),int(linelist[2].strip()),linelist[3].strip(),int(linelist[4].strip()),int(linelist[5].strip()),linelist[6].strip()))
-        else:
-            anchorDATASTRUCTURE[linelist[0].strip()]=[(int(linelist[1].strip()),int(linelist[2].strip()),linelist[3].strip(),int(linelist[4].strip()),int(linelist[5].strip()),linelist[6].strip())]
-        #fill reverseAnchorDATASTRUCTURE
-        if linelist[3].strip() in reverseAnchorDATASTRUCTURE:
-            if linelist[0].strip() in reverseAnchorDATASTRUCTURE[linelist[3].strip()]:
-                reverseAnchorDATASTRUCTURE[linelist[3].strip()][linelist[0].strip()].append(len(anchorDATASTRUCTURE[linelist[0].strip()])-1)
-            else:
-                reverseAnchorDATASTRUCTURE[linelist[3].strip()]={linelist[0].strip():[len(anchorDATASTRUCTURE[linelist[0].strip()])-1]}
-        else:
-            reverseAnchorDATASTRUCTURE[linelist[3].strip()]={linelist[0].strip():[len(anchorDATASTRUCTURE[linelist[0].strip()])-1]}
-    newanchorfilehandler.close()
+    anchorDATASTRUCTURE,reverseAnchorDATASTRUCTURE=Util.loadAnchorFile(options.anchorfile)
     ##############
     winfile=open(winFileName7Field,'r')
     title=winfile.readline()

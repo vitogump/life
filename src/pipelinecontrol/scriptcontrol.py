@@ -23,6 +23,7 @@ parser.add_option("-m", "--mode", dest="mode",
 parser.add_option("-I","--Interceptor_depth",dest="Interceptor_depth",default="0",help="depth of the folder to output")
 parser.add_option("-l", "--interceptdirs", dest="interceptdirs",action="append", default=[], help="winvalue or zvalue")
 parser.add_option("-t","--dirsubtotaglen",dest="dirsubtotaglen",default=1,help="from dataupdir to -t step dir")
+parser.add_option("-T","--directsubtag",dest="directsubtag",default=None,help="from dataupdir to -t step dir")
 parser.add_option("-1","--collection_depth",dest="collection_depth",default="-1",help="depth of the folder to output")
 parser.add_option("-2","--outfilepre",dest="outfilepre",default="mode2prename",help="depth of the folder to output")
 parser.add_option("-q", "--quiet",
@@ -62,7 +63,7 @@ if __name__ == '__main__':
             print("need -1 collection_depth")
             
         #progamma logic
-        operatorwithdata_mode1=OperatorWithData_mode1(options.cmdtemplatefile,scriptsstoredir=scriptsstoredir,taglen=dirsubtotaglen)
+        operatorwithdata_mode1=OperatorWithData_mode1(options.cmdtemplatefile,scriptsstoredir=scriptsstoredir,taglen=dirsubtotaglen,Dtag=options.directsubtag)
         upTodownTravelDir(operatorwithdata_mode1.inputdatapath,operatorwithdata_mode1,datadepth,Interceptor_depth,collection_depth=collection_depth,interceptdirs=interceptdirs,rootDirnotchange=operatorwithdata_mode1.inputdatapath,Interceptor_depth_notchange=Interceptor_depth)
         
     elif mode==2:

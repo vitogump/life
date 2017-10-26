@@ -9,7 +9,7 @@ from urllib.parse import quote, unquote
 import os
 import re
 import shutil
-import src.web.DBA as dba
+# import src.web.DBA as dba
 import string
 UPLOAD_BASE = "../../classical_paper"
 @get('/login')
@@ -96,22 +96,22 @@ def send_static(urlpath):
     return static_file(filename, root=path,download=filename)
 #upload module
 
-@post('/upload')
-def do_upload():
-    
-    classname = request.forms.get('radio1')
-    filename=request.forms.get("filename")
-    papername=request.forms.get("papername")
-    data = request.files.get('data')
-    print("radio1","filename",filename,papername)
-    if filename and data.file and classname:
-#        raw = data.file.read() #当文件很大时，这个操作将十分危险
-        filename = data.filename
-        with open(os.path.join(UPLOAD_BASE, filename), 'wb') as f:
-            dba.addArticle(filename,classname)
-            shutil.copyfileobj(data.file, f, 8192)
-        return "Hello {}! You uploaded {} ( bytes).".format(classname, filename)
-    return "You missed a field"
+# @post('/upload')
+# def do_upload():
+#     
+#     classname = request.forms.get('radio1')
+#     filename=request.forms.get("filename")
+#     papername=request.forms.get("papername")
+#     data = request.files.get('data')
+#     print("radio1","filename",filename,papername)
+#     if filename and data.file and classname:
+# #        raw = data.file.read() #当文件很大时，这个操作将十分危险
+#         filename = data.filename
+#         with open(os.path.join(UPLOAD_BASE, filename), 'wb') as f:
+#             dba.addArticle(filename,classname)
+#             shutil.copyfileobj(data.file, f, 8192)
+#         return "Hello {}! You uploaded {} ( bytes).".format(classname, filename)
+#     return "You missed a field"
 
 
 

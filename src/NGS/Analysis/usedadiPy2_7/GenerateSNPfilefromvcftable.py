@@ -88,8 +88,9 @@ if __name__ == '__main__':
         sqlselectstatementpart_count_left=sqlselectstatementpart_count
         sqlselectstatementpart_count_right=sqlselectstatementpart_count
         for vcftable,minAN in vcftableslist[1:]:
-            sqlselectstatementpart_count_left=sqlselectstatementpart_count_left+" left join "+vcftable.strip()+" using(chrID,snp_pos)"
-            sqlselectstatementpart_count_right=sqlselectstatementpart_count_right+" right join "+vcftable.strip()+" using(chrID,snp_pos)"
+            sqlselectstatementpart_count_left=sqlselectstatementpart_count+" left join "+vcftable.strip()+" using(chrID,snp_pos)"
+            sqlselectstatementpart_count_right=sqlselectstatementpart_count+" right join "+vcftable.strip()+" using(chrID,snp_pos)"
+            sqlselectstatementpart_count=sqlselectstatementpart_count_left+" union "+sqlselectstatementpart_count_right
 #         print("either fanya or weigeon are fixed")
 #         sqlselectstatementpart=sqlselectstatementpart+" where chrID='"+currentchrID+"' and t.context is not null and length(t.ref_base)=length(t.alt_base)  and (t."+toplevelsnptable_titlelist[outgroupidx_in_topleveltable[0]+1] +" regexp '^0,[1234567890]+' or t."+toplevelsnptable_titlelist[outgroupidx_in_topleveltable[0]+1] +" regexp '[1234567890]+,0$' or t."+toplevelsnptable_titlelist[outgroupidx_in_topleveltable[1]+1]+" regexp '^0,[1234567890]+' or t."+toplevelsnptable_titlelist[outgroupidx_in_topleveltable[1]+1]+" regexp '[1234567890]+,0$')"
         sqlselectstatementpart=sqlselectstatementpart+" where chrID='"+currentchrID+"' and t.context is not null and length(t.ref_base)=length(t.alt_base)  and (t."+toplevelsnptable_titlelist[outgroupidx_in_topleveltable[0]+1] +" regexp '^0,[1234567890]+' or t."+toplevelsnptable_titlelist[outgroupidx_in_topleveltable[0]+1] +" regexp '[1234567890]+,0$')"# or t."+toplevelsnptable_titlelist[outgroupidx_in_topleveltable[1]+1]+" regexp '^0,[1234567890]+' or t."+toplevelsnptable_titlelist[outgroupidx_in_topleveltable[1]+1]+" regexp '[1234567890]+,0$')"
@@ -256,7 +257,8 @@ if __name__ == '__main__':
             if duiltedsnpcountforcurrentchr!=0:
                 print(currentchrID,file=randomnamef_recchr)
             print(currentchrID,"totalduiltsnp",totalduiltsnp,"duiltedsnpcountforcurrentchr",duiltedsnpcountforcurrentchr)
-
+        break
+    exit()
 
     dadisnpfile.close()
     randomnamef_recchr.close()
