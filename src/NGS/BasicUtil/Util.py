@@ -545,7 +545,7 @@ def random_str(randomlength=8):
     random.shuffle(a)
     return ''.join(a[:randomlength])
 
-def generateIndexByChrom(refFastaFileName, indexFileName, mapname=None,startchar=">"):
+def generateIndexByChrom(refFastaFileName, indexFileName, mapname=None,startchar=">",chrsignal=None):
     refFastaFile = open(refFastaFileName, 'r')
     refChromIndex = {}
     refline = refFastaFile.readline()
@@ -555,12 +555,38 @@ def generateIndexByChrom(refFastaFileName, indexFileName, mapname=None,startchar
             if mapname == "transcript:":
                 currentChromNo = re.search(r'transcript:(.*?)\s+', refline).group(1).strip()
             else:
-                currentChromNo = re.search(r'[^'+startchar+']+', (re.split(r'\s+', refline))[0]).group(0)
+                if not chrsignal:
+                    a = re.search(r'[^'+startchar+']+', (re.split(r'\s+', refline))[0]).group(0).lower()
+                else:
+                    linelist=re.split(r'\s+', refline)
+                    a=re.sub('[’!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~]+',"", linelist[linelist.index(chrsignal)+1]).lower()
+                currentChromNo=a.replace("chr","")
+                currentChromNo=transform_roman_num2_alabo(currentChromNo)
+                print(currentChromNo,type(currentChromNo))
             refChromIndex[currentChromNo] = int(refFastaFile.tell())  # from here is the sequence
         refline = refFastaFile.readline()
     pickle.dump(refChromIndex, open(indexFileName, 'wb'))
     refFastaFile.close()
-def generateFasterRefIndex(refFastaFileName, indexFileName,mapname=None,startchar=">"):
+def transform_roman_num2_alabo(one_str):  
+    ''''' 
+    将罗马数字转化为阿拉伯数字 
+    '''
+    if re.search('^M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$',one_str)!=None:  
+        define_dict={'I':1,'V':5,'X':10,'L':50,'C':100,'D':500,'M':1000}  
+        if one_str=='0':  
+            return 0  
+        else:  
+            res=0  
+            for i in range(0,len(one_str)):  
+                if i==0 or define_dict[one_str[i]]<=define_dict[one_str[i-1]]:  
+                    res+=define_dict[one_str[i]]  
+                else:  
+                    res+=define_dict[one_str[i]]-2*define_dict[one_str[i-1]]  
+            return str(res)
+    else:
+        return one_str
+def generateFasterRefIndex(refFastaFileName, indexFileName,mapname=None,startchar=">",chrsignal=None):
+
     refFastaFile = open(refFastaFileName, 'r')
     refChromIndex = {}
     refline = refFastaFile.readline()
@@ -571,7 +597,14 @@ def generateFasterRefIndex(refFastaFileName, indexFileName,mapname=None,startcha
             if mapname == "transcript:":
                 currentChromNo = re.search(r'transcript:(.*?)\s+', refline).group(1).strip()
             else:
-                currentChromNo = re.search(r'[^'+startchar+']+', (re.split(r'\s+', refline))[0]).group(0)
+                if not chrsignal:
+                    a = re.search(r'[^'+startchar+']+', (re.split(r'\s+', refline))[0]).group(0).lower()
+                else:
+                    linelist=re.split(r'\s+', refline)
+                    a=re.sub('[’!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~]+',"", linelist[linelist.index(chrsignal)+1]).lower()
+                currentChromNo=a.replace("chr","")
+                currentChromNo=transform_roman_num2_alabo(currentChromNo)
+                print(currentChromNo,type(currentChromNo))
             refChromIndex[currentChromNo] = [(basecount,int(refFastaFile.tell()))]# (no of base befor,cur file pos)
         else:
             basecount+=len(refline.strip())

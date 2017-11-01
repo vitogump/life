@@ -7,7 +7,7 @@ Created on 2014-11-7
 from optparse import OptionParser
 import re, os
 
-from src.pipelinecontrol.Util import OperatorWithData_mode1,upTodownTravelDir,OperatorWithData_mode2
+from pipelinecontrol.Util import OperatorWithData_mode1,upTodownTravelDir,OperatorWithData_mode2
 
 
 parser = OptionParser()

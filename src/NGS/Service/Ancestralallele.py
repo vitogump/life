@@ -8,8 +8,8 @@ import os, numpy, sys, re
 import pickle
 
 
-from NGS.BasicUtil import *
-from NGS.BasicUtil import Util
+
+from NGS.BasicUtil import Util,VCFutil
 import NGS.BasicUtil.DBManager as dbm
 
 
@@ -351,44 +351,57 @@ class AncestralAlleletabletools():
         if a!=0:
             print("error",shellstatment)
         os.system("rm "+vcffilename+"tempstep1")
-    def getflankseqs(self, chrom,chromlen, startpostocollecteSNP, endpostocollectSNP, idxedreffilehandler,ancestralgenomenameaddtotable, refindex, flanklen,outfile, tablename="derived_alle_ref"):
+    def getflankseqs(self, chrom,chromlen, startpostocollecteSNP, endpostocollectSNP, idxedreffilehandler,ancestralgenomenameaddtotable, refindex, flanklen,outfile,vfilelinelists, tablename="derived_alle_ref"):
 #         testfile=open("testsnpfile.txt",'a')
-        self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, tablename, "context", "char(3)", "default null"))
+#         self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, tablename, "context", "char(3)", "default null"))
         #add a temp function code block to process the snp before startpos of collecteSNP
-        tempsnps=self.dbvariant.operateDB("select","select * from " + tablename + " where chrID='" + chrom + "' and snp_pos>= 2 and snp_pos<=" + str(startpostocollecteSNP))
-        RefSeqMaptemp = Util.getRefSeqBypos(idxedreffilehandler, refindex, chrom, 1, startpostocollecteSNP+1,chromlen)
-        for snp in tempsnps:
-            self.dbvariant.operateDB("update","update "+tablename+" set context='"+''.join(RefSeqMaptemp[chrom][snp[1]-1:snp[1]+2])+"' where chrID='"+ chrom + "' and snp_pos= "+str(snp[1]))
-            l=copy.deepcopy(RefSeqMaptemp[chrom][snp[1]-1:])
-            l[1]="N"
-            print(">"+chrom+"_"+str(snp[1])+"\n"+"".join(l), file=outfile)
-            
+#         tempsnps=self.dbvariant.operateDB("select","select * from " + tablename + " where chrID='" + chrom + "' and snp_pos>= 2 and snp_pos<=" + str(startpostocollecteSNP))
+#         RefSeqMaptemp = Util.getRefSeqBypos(idxedreffilehandler, refindex, chrom, 1, startpostocollecteSNP+1,chromlen)
+#         for snp in tempsnps:
+#             self.dbvariant.operateDB("update","update "+tablename+" set context='"+''.join(RefSeqMaptemp[chrom][snp[1]-1:snp[1]+2])+"' where chrID='"+ chrom + "' and snp_pos= "+str(snp[1]))
+#             l=copy.deepcopy(RefSeqMaptemp[chrom][snp[1]-1:])
+#             l[1]="N"
+#             print(">"+chrom+"_"+str(snp[1])+"\n"+"".join(l), file=outfile)
+#             
         #temp function code block end
-        snps = self.dbvariant.operateDB("select", "select * from " + tablename + " where chrID='" + chrom + "' and snp_pos>= " + str(startpostocollecteSNP) + " and snp_pos<=" + str(endpostocollectSNP))
-        RefSeqMap = Util.getRefSeqBypos(idxedreffilehandler, refindex, chrom, startpostocollecteSNP-flanklen, endpostocollectSNP+flanklen,chromlen)
+#         snps = self.dbvariant.operateDB("select", "select * from " + tablename + " where chrID='" + chrom + "' and snp_pos>= " + str(startpostocollecteSNP) + " and snp_pos<=" + str(endpostocollectSNP))
         
-        for snp in snps:
-            currentsnpPos = snp[1]
-            if len(snp[3]) != 1 :
+        RefSeqMap = Util.getRefSeqBypos_faster(idxedreffilehandler, refindex, chrom, startpostocollecteSNP-flanklen, endpostocollectSNP+flanklen,chromlen)
+        for snp in vfilelinelists:
+            """
+            snp=
+            [chrom,  pos, snpID,  refbase, altbase,,,,]
+            """
+            
+            currentsnpPos = int(snp[1])
+            if False and len(snp[3]) != 1 :
         #                        print(snp[4])
+                """not in use
+                """
                 continue# skip indel
             currentsnpID=chrom+"_"+str(snp[1])
             if currentsnpPos + flanklen <= RefSeqMap[chrom][0] + len(RefSeqMap[chrom]) - 1 and currentsnpPos - flanklen > RefSeqMap[chrom][0] :
                 snpflankseq = ''.join(RefSeqMap[chrom][(currentsnpPos - flanklen - RefSeqMap[chrom][0]):(currentsnpPos + flanklen - RefSeqMap[chrom][0] + 1)])
-                self.dbvariant.operateDB("update","update "+tablename+" set context='"+snpflankseq[flanklen-1:flanklen+2]+"' where chrID='"+ chrom + "' and snp_pos= "+str(currentsnpPos))
+#                 self.dbvariant.operateDB("update","update "+tablename+" set context='"+snpflankseq[flanklen-1:flanklen+2]+"' where chrID='"+ chrom + "' and snp_pos= "+str(currentsnpPos))
+                currentsnpID=chrom+"_"+str(currentsnpPos)+snpflankseq[flanklen]+":"+snp[3]+snp[4]
                 snpflankseq=snpflankseq[0:flanklen]+'N'+snpflankseq[flanklen+1:]
+                
             elif currentsnpPos <= RefSeqMap[chrom][0] + len(RefSeqMap[chrom]) - 1 and currentsnpPos - flanklen > RefSeqMap[chrom][0]:
                 snpflankseq = ''.join(RefSeqMap[chrom][(currentsnpPos - flanklen - RefSeqMap[chrom][0]):(currentsnpPos - RefSeqMap[chrom][0] + 1)])
 #                 print(currentsnpID,snpflankseq[flanklen],file=testfile)
-                self.dbvariant.operateDB("update","update "+tablename+" set context='"+snpflankseq[flanklen-1:flanklen+1]+"N' where chrID='"+ chrom + "' and snp_pos= "+str(currentsnpPos))
+#                 self.dbvariant.operateDB("update","update "+tablename+" set context='"+snpflankseq[flanklen-1:flanklen+1]+"N' where chrID='"+ chrom + "' and snp_pos= "+str(currentsnpPos))
+                currentsnpID=chrom+"_"+str(currentsnpPos)+snpflankseq[flanklen]+":"+snp[3]+snp[4]
                 snpflankseq=snpflankseq[0:flanklen]+'N'
-            elif currentsnpPos - flanklen <= RefSeqMap[chrom][0]:
+                
+            elif currentsnpPos - flanklen <= RefSeqMap[chrom][0] and currentsnpPos + flanklen<=RefSeqMap[chrom][0]+len(RefSeqMap[chrom])-1:
                 snpflankseq = ''.join(RefSeqMap[chrom][(currentsnpPos - RefSeqMap[chrom][0]):(currentsnpPos + flanklen - RefSeqMap[chrom][0] + 1)])
 #                 print(currentsnpID,snpflankseq[0],file=testfile)
-                self.dbvariant.operateDB("update","update "+tablename+" set context='N"+snpflankseq[0:2]+"' where chrID='"+ chrom + "' and snp_pos= "+str(currentsnpPos))
+#                 self.dbvariant.operateDB("update","update "+tablename+" set context='N"+snpflankseq[0:2]+"' where chrID='"+ chrom + "' and snp_pos= "+str(currentsnpPos))
+                currentsnpID=chrom+"_"+str(currentsnpPos)+snpflankseq[0]+":"+snp[3]+snp[4]
                 snpflankseq = 'N'+snpflankseq[1:flanklen+1]
                 
             else:
+                print(currentsnpPos,RefSeqMap[chrom][0],len(RefSeqMap[chrom])-1)
                 print("what's wrong with the func getflankseqs ?")
                 exit(-1)
 #            if currentsnpPos + 25 <= RefSeqMap[lastchromNo][0] + len(RefSeqMap[lastchromNo]) - 1 and currentsnpPos - 25 > RefSeqMap[lastchromNo][0] :

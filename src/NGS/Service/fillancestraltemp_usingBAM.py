@@ -9,7 +9,7 @@ import pickle, re, sys,pysam
 
 from NGS.BasicUtil import VCFutil
 import NGS.BasicUtil.DBManager as dbm
-from src.NGS.BasicUtil import Util
+from NGS.BasicUtil import Util
 from src.NGS.Service.Ancestralallele import AncestralAlleletabletools
 
 

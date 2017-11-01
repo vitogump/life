@@ -7,8 +7,8 @@ Created on 2014-11-27
 from optparse import OptionParser
 
 from NGS.BasicUtil import VCFutil , Util
-from src.NGS.Service.Ancestralallele import AncestralAlleletabletools
-from src.pipelinecontrol.Util import upTodownTravelDir, \
+from NGS.Service.Ancestralallele import AncestralAlleletabletools
+from pipelinecontrol.Util import upTodownTravelDir, \
     OperatorWithData_loadintodatabase
 
 
