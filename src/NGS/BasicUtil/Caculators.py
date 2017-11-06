@@ -1220,8 +1220,8 @@ class Caculate_Fst(Caculator):
 #             Fst='NA'
         self.CDk = 0
         self.CNk = 0
-        noofsnp = copy.copy(self.COUNTED[0])
-        nooffixdifference=copy.copy(self.COUNTED[1])
+        noofsnp = self.COUNTED[0]
+        nooffixdifference=self.COUNTED[1]
         self.COUNTED = [0,0]
         if noofsnp<self.minsnps:
             Fst="NA"

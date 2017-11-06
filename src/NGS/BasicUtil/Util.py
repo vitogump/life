@@ -34,7 +34,7 @@ pathtoPython=cfparser.get("mysqldatabase", "pathtoPython")
 beijingreffa=cfparser.get("mysqldatabase","beijingreffa")
 def alinmultPopSnpPos(vcfMaplist,jointmode="i"):
     """input:
-    two map fomart like this [chrNo:[(pos,REF,ALT,INFO,FORMAT,sample,...),(pos,REF,ALT,INFO,FORMAT,sample,...),,,,,],{chrNo:[]},,,,,,]
+    two or more map fomart like this [chrNo:[(pos,REF,ALT,INFO,FORMAT,sample,...),(pos,REF,ALT,INFO,FORMAT,sample,...),,,,,],{chrNo:[]},,,,,,]
     output:
     one map like this {chrNo:[(pos,REF,ALT,(INFO,FORMAT,sample,...),(INFO,FORMAT,sample,...)),(,,,(),()),,,,,],chrNo:[],,,}
                                             from pop1                        from pop2
@@ -158,7 +158,7 @@ def alinmultPopSnpPos(vcfMaplist,jointmode="i"):
     return multipleVcfMap
 def alinmultPopSnpPos_diffrefalt(vcfMaplist,jointmode="i"):
     """input:
-    two map fomart like this [chrNo:[(pos,REF,ALT,INFO,FORMAT,sample,...),(pos,REF,ALT,INFO,FORMAT,sample,...),,,,,],{chrNo:[]},,,,,,]
+    two or more map fomart like this [chrNo:[(pos,REF,ALT,INFO,FORMAT,sample,...),(pos,REF,ALT,INFO,FORMAT,sample,...),,,,,],{chrNo:[]},,,,,,]
     output:
     one map like this {chrNo:[(pos,(REF,ALT,INFO,FORMAT,sample,...),(REF,ALT,INFO,FORMAT,sample,...)),(,,,(),()),,,,,],chrNo:[],,,}
                                             from pop1                        from pop2
@@ -256,7 +256,7 @@ def alinmultPopSnpPos_diffrefalt(vcfMaplist,jointmode="i"):
                         #ignore the rec
                         break
 
-    return multipleVcfMap
+    return copy.deepcopy(multipleVcfMap)
 def bedfiletools(bedfilename, withtitle=True):
     """
         return m={chr1:[(startpos,endpos,[optional_fields]),(),,,],chr2:[],,,,,}
@@ -567,11 +567,11 @@ def generateIndexByChrom(refFastaFileName, indexFileName, mapname=None,startchar
         refline = refFastaFile.readline()
     pickle.dump(refChromIndex, open(indexFileName, 'wb'))
     refFastaFile.close()
-def transform_roman_num2_alabo(one_str):  
+def transform_roman_num2_alabo(one_str,changesignal=True):  
     ''''' 
     将罗马数字转化为阿拉伯数字 
     '''
-    if re.search('^M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$',one_str)!=None:  
+    if re.search('^M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$',one_str)!=None and changesignal:  
         define_dict={'I':1,'V':5,'X':10,'L':50,'C':100,'D':500,'M':1000}  
         if one_str=='0':  
             return 0  
@@ -585,8 +585,8 @@ def transform_roman_num2_alabo(one_str):
             return str(res)
     else:
         return one_str
-def generateFasterRefIndex(refFastaFileName, indexFileName,mapname=None,startchar=">",chrsignal=None):
-
+def generateFasterRefIndex(refFastaFileName, indexFileName,mapname=None,startchar=">",chrsignal=None,romanSignal=False):
+    
     refFastaFile = open(refFastaFileName, 'r')
     refChromIndex = {}
     refline = refFastaFile.readline()
@@ -597,13 +597,14 @@ def generateFasterRefIndex(refFastaFileName, indexFileName,mapname=None,startcha
             if mapname == "transcript:":
                 currentChromNo = re.search(r'transcript:(.*?)\s+', refline).group(1).strip()
             else:
-                if not chrsignal:
-                    a = re.search(r'[^'+startchar+']+', (re.split(r'\s+', refline))[0]).group(0).lower()
+                if not chrsignal or chrsignal not in refline:
+                    a = re.search(r'[^'+startchar+']+', (re.split(r'\s+', refline))[0]).group(0)
                 else:
                     linelist=re.split(r'\s+', refline)
-                    a=re.sub('[’!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~]+',"", linelist[linelist.index(chrsignal)+1]).lower()
-                currentChromNo=a.replace("chr","")
-                currentChromNo=transform_roman_num2_alabo(currentChromNo)
+                    a=re.sub('[’!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~]+',"", linelist[linelist.index(chrsignal)+1])#for example chromosome 1,
+                a=a.replace("chr","")
+                currentChromNo=transform_roman_num2_alabo(a,romanSignal)
+
                 print(currentChromNo,type(currentChromNo))
             refChromIndex[currentChromNo] = [(basecount,int(refFastaFile.tell()))]# (no of base befor,cur file pos)
         else:
@@ -935,7 +936,7 @@ def getRefSeqBypos_faster(refFastahandle, fasterrefindex, currentChromNO, startp
             
 #            print(currentChromNO,myseqline, myseqn)
         if myseqline.count('>') >= 1:
-            print(currentChromNO, myseqline, myseqn)
+            print(currentChromNO, myseqline.index('>'),myseqline[myseqline.index('>')-10:myseqline.index('>')+10], myseqn)
             exit(-1)
         refSeqMap[currentChromNO].extend(list(myseqline))
     else:

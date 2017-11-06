@@ -246,12 +246,13 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
 #             print("insertsql_data_list",insertsql_data_list)
 #             print("updatesql_date_list",updatesql_date_list)
 #             snp=self.dbvariantstools.operateDB("select","select * from "+self.topleveltablejudgeancestralname+" where chrID='"+insertsql_data_list[0][0]+"' and snp_pos='"+str(insertsql_data_list[0][1])+"'")
+
 class AncestralAlleletabletools():
     def __init__(self, database="ninglabvariantdata", ip="10.2.48.140", usrname="root", pw="1234567",dbgenome="genomebasicinfo"):
         super().__init__()
         self.dbvariant = dbm.DBTools(ip, usrname, pw, database)
         self.dbgenome=dbm.DBTools(ip, usrname, pw, dbgenome)
-        
+#         self.forchenli=open("chenliidentifysheep",'w')
         #dbtmp means never use the table in the software,you can delete the table anytime without check dependency
         self.dbtmp=dbm.DBTools(ip, usrname, pw, Util.ghostdbname)
         self.dbtmpname=Util.ghostdbname#
@@ -408,7 +409,10 @@ class AncestralAlleletabletools():
 #            snpflankseq = ''.join(RefSeqMap[chrom][(currentsnpPos - 25 - RefSeqMap[chrom][0]):(currentsnpPos + 25 - RefSeqMap[chrom][0] + 1)])
 #            print(currentsnpID, snpflankseq[25], file=testfile)
 #             snpflankseq = snpflankseq[0:25] + 'N' + snpflankseq[26:]
-            print(">" + currentsnpID + "\n" + snpflankseq, end='\n', file=outfile)
+
+            print(">" + currentsnpID + "\n" + snpflankseq+"\n"+snp[5], end='\n', file=outfile)
+#             print(chrom,currentsnpPos,snpflankseq[0],snp[3],snp[4],file=self.forchenli)
+
 #         testfile.close()
         #                    print("update "+finaltable+" set fafilepos="+str(filepos)+" where snpID='"+currentsnpID+"'")
     def callblast(self,pathtoblastn,pathtorefdb,queryfaFile,BlastOutFile):

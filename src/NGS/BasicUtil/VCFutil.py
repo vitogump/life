@@ -220,9 +220,9 @@ class VCF_Data():
         mapfile.close()
         pedfile.close()   
         vcffile.close()
-    def getVcfListByChrom(self, chrom,startpos=1,endpos=9999999999999999999999999999999999999999999999999999, dilute=1, dilutetodensity="noofsnpperkb", posUniq=True, considerINDEL=False,MQfilter=28):
+    def getVcfListByChrom(self, chrom,startpos=1,endpos=9999999999999999999999999999999999999999999999999999, dilute=1, dilutetodensity="noofsnpperkb", posUniq=True, considerINDELandmultpleallele=False,MQfilter=28):
         """
-            although dilute and dilutetodensity can present at the same time,but it not make sense.
+            although dilute and dilutetodensity can exist at the same time,but it not make sense and may final produce a bug.
             return a list that contain all vcf record of a chrom
         """
         print("getVcfListByChrom",chrom,startpos,endpos,dilute,dilutetodensity)
@@ -288,7 +288,7 @@ class VCF_Data():
             REF = linelist[3].strip()
             ALT = linelist[4].strip()
             recidx += 1#line = vcfFile.readline();
-            if not considerINDEL and len(REF) > 1 and len(ALT) > 1:
+            if not considerINDELandmultpleallele and (len(REF) > 1 or len(ALT)) > 1:
                 continue
             INFO = linelist[7]
             FORMAT = linelist[8]
@@ -318,7 +318,7 @@ class VCF_Data():
         print("getVcfListByChrom",chrom, len(VcfList_A_Chrom), self.VcfIndexMap[chrom], self.NumOfRecbychromOrder[i], "total recs in this vcf belong to this chrom,dilute to", int(dilute * self.NumOfRecbychromOrder[i]),sep="\t") 
         if VcfList_A_Chrom!=[]:
             print(VcfList_A_Chrom[-1][0])
-        return copy.deepcopy(VcfList_A_Chrom)
+        return VcfList_A_Chrom
         
 
     def getVcfMap(self, vcfFileName):

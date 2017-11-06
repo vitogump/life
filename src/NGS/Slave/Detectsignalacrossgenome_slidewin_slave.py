@@ -5,9 +5,9 @@ Created on 2015-8-21
 '''
 from optparse import OptionParser
 import re, numpy, fractions, copy, os, pysam
-from src.NGS.Service import Ancestralallele
+from NGS.Service import Ancestralallele
 from NGS.BasicUtil import *
-import src.NGS.BasicUtil.DBManager as dbm
+import NGS.BasicUtil.DBManager as dbm
 
 
 parser = OptionParser()

@@ -9,7 +9,7 @@ import time
 
 import markdown2
 import mysql.connector
-import src.web.Entity as Entity
+import src.web.entity as Entity
 from sqlalchemy import *
 from sqlalchemy.orm import *
 from sqlalchemy.sql.sqltypes import Date, DateTime

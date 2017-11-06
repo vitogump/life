@@ -14,7 +14,7 @@ from src.NGS.Service.Ancestralallele import AncestralAlleletabletools
 parser = OptionParser()
 
 #"output data name is defined as 'inputdatapath folder name'+'is subfolder name'+'is subfolder name'+..."
-
+parser.add_option("-c", "--chrlist", dest="chrlist",help="chromosome")
 parser.add_option("-v", "--variantfilewithref", dest="variantfilewithref",action="append",nargs=2, help="vcflikefile corresponding_ref")
 parser.add_option("-r", "--objectref", dest="objectref", help="it's the depth of the dir from the inputdatapath which the data file that need to be process in it,the depth of the inputdatapath is 0")
 parser.add_option("-s", "--chrsignal", dest="chrsignal",help="chromosome")
@@ -29,7 +29,11 @@ flanklen=int(options.flanklen)
 ancestralalleletabletools=AncestralAlleletabletools(database=Util.vcfdbname, ip=Util.ip, usrname=Util.username, pw=Util.password,dbgenome=Util.genomeinfodbname)
 if __name__ == '__main__':
     
-    
+    chromlistfile=open(options.chrlist,"r")
+    chrmap={}
+    for rec in chromlistfile:
+        reclist=re.split(r'\s+',rec.strip())
+        chrmap[reclist[0]]=reclist[1]
     for vcflikeFileName,corresponding_ref in options.variantfilewithref:
         duckrefhandler=open(corresponding_ref,'r')
         try:
@@ -45,8 +49,8 @@ if __name__ == '__main__':
         snpsOfOneChrom=[]
         startpostocollecteSNP=1        
         while vcflinesalchr:
-            snpline=vcflinesalchr.pop(0)
-            print(snpline)
+            snpline=vcflinesalchr.pop(0).strip()
+
             if snpline[0]=="#" or snpline.lower().find("chrom")==0:#title
                 continue
             else:
@@ -60,7 +64,9 @@ if __name__ == '__main__':
 
                     endpostocollectSNP=int(snpsOfOneChrom[-1][1])
                     #2，extract flank seq of variants recs
-                    ancestralalleletabletools.getflankseqs(chrom, None, startpostocollecteSNP, endpostocollectSNP, duckrefhandler, None, duckrefindex, flanklen, outfile, snpsOfOneChrom, None)
+                    if chrom in chrmap:
+                        chrlen=int(chrmap[chrom])
+                    ancestralalleletabletools.getflankseqs(chrom, chrlen, startpostocollecteSNP, endpostocollectSNP, duckrefhandler, None, duckrefindex, flanklen, outfile, snpsOfOneChrom, None)
                     #start next chrom
                     snpsOfOneChrom=[snp]
                     chrom=snp[0]                    
@@ -71,7 +77,7 @@ if __name__ == '__main__':
         else:
             duckrefhandler.close()
             outfile.close()
-                
+            #ancestralalleletabletools.forchenli.close()
             print()#print fa seq
 #     ancestralalleletabletools.callblat()
 #     ancestralalleletabletools.extarctAncestryAlleleFromBlastOut(BlastOutFile, ancestryrefFile, ancestralgenomename, ancestryrefidx, tablename, ancestralsnptable)
