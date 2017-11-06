@@ -8,7 +8,7 @@ from optparse import OptionParser
 from os.path import sys
 
 from NGS.BasicUtil import Util, VCFutil
-import src.NGS.BasicUtil.DBManager as dbm
+import NGS.BasicUtil.DBManager as dbm
 
 
 parser = OptionParser()
