@@ -16,7 +16,7 @@ web.url_map.converters['regex'] = RegexConverter
 @web.route('/')
 def index():
     if "/"=="/":
-        print("1",os.getcwd())
+#         print(url_for(""))
         return render_template('downloadlist.html')
         
     else:
