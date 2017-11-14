@@ -9,7 +9,7 @@ import pickle
 import re
 from NGS.BasicUtil import VCFutil
 from src.NGS.BasicUtil import Util
-import src.NGS.BasicUtil.DBManager as dbm
+import NGS.BasicUtil.DBManager as dbm
 
 # testfile
 

@@ -155,7 +155,7 @@ def alinmultPopSnpPos(vcfMaplist,jointmode="i"):
 #                             multipleVcfMap[currentChrom].append(elementToAppend)                              
 #                     print("snp not found in vcfMap2",SNPrec)
 #                     self.doubleVcfMap[currentChrom].append(SNPrec+)
-    return multipleVcfMap
+    return copy.deepcopy(multipleVcfMap)
 def alinmultPopSnpPos_diffrefalt(vcfMaplist,jointmode="i"):
     """input:
     two or more map fomart like this [chrNo:[(pos,REF,ALT,INFO,FORMAT,sample,...),(pos,REF,ALT,INFO,FORMAT,sample,...),,,,,],{chrNo:[]},,,,,,]
@@ -586,7 +586,6 @@ def transform_roman_num2_alabo(one_str,changesignal=True):
     else:
         return one_str
 def generateFasterRefIndex(refFastaFileName, indexFileName,mapname=None,startchar=">",chrsignal=None,romanSignal=False):
-    
     refFastaFile = open(refFastaFileName, 'r')
     refChromIndex = {}
     refline = refFastaFile.readline()
@@ -602,9 +601,8 @@ def generateFasterRefIndex(refFastaFileName, indexFileName,mapname=None,startcha
                 else:
                     linelist=re.split(r'\s+', refline)
                     a=re.sub('[’!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~]+',"", linelist[linelist.index(chrsignal)+1])#for example chromosome 1,
-                a=a.replace("chr","")
-                currentChromNo=transform_roman_num2_alabo(a,romanSignal)
-
+                a=transform_roman_num2_alabo(a,romanSignal).lower()
+                currentChromNo=a.replace("chr","")
                 print(currentChromNo,type(currentChromNo))
             refChromIndex[currentChromNo] = [(basecount,int(refFastaFile.tell()))]# (no of base befor,cur file pos)
         else:
