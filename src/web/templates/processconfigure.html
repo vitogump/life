@@ -1,0 +1,57 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>无标题文档</title>
+<style>
+#main {
+	position: absolute;
+	width:400px;
+	height:200px;
+	left:50%;
+	top:50%;
+	margin-left:-200px;
+	margin-top:-100px;
+	border:1px solid #00F
+    background: rgba(200,200,200,0.5);
+}
+
+</style>
+</head>
+
+<body>
+<div id="main">
+<form>
+请输入项目目录：&nbsp;&nbsp;<input type="text"><br /><br />
+请输入项目所在层级：<input type="text">
+</form>
+<br /><br />     
+<form name="myform" method="post" action="">
+<select name="productsort" onchange="change(this.value)">
+  <option value="1" selected>软件1</option>
+  <option value="2">软件2</option>
+  <option value="3">软件3</option>
+</select><br />
+<div id="test">
+  <table><tr><td>请输入软件1的参数1：<input type="text" name="zx1" /></td></tr></table>
+  <table><tr><td>请输入软件1的参数2：<input type="text" name="zx2" /></td></tr></table>
+  <table><tr><td>请输入软件1的参数3：<input type="text" name="zx3" /></td></tr></table>
+</div>
+<br /><br />
+<input type="submit" name="submit" value="提交">
+</form> 
+<script language="javascript">
+function change(v){
+ if(v == 1){
+ document.getElementById("test").innerHTML = " <table><tr><td>请输入软件1的参数1：<input type='text' name='zx1' /></td></tr></table><table><tr><td>请输入软件1的参数2：<input type='text' name='zx2' /></td></tr></table><table><tr><td>请输入软件1的参数3：<input type='text' name='zx3' /></td></tr></table>"
+ }
+ if(v == 2){
+ document.getElementById("test").innerHTML = " <table><tr><td>请输入软件2的参数1：<input type='text' name='zx' /></td></tr></table> <table><tr><td>请输入软件2的参数2：<input type='text' name='zx' /></td></tr></table>"
+ }else if(v == 3){
+ document.getElementById("test").innerHTML = "<b>请输入软件3的参数：</b><input type='text' name='zx' value='请输入参数' />";
+ }
+}
+</script>
+</div>
+</body>
+</html>

@@ -12,8 +12,8 @@ from bottle import route, run, template, get, post, request, static_file
 import markdown2
 from tabulate import tabulate
 
-from src.web import Entity
-import src.web.DBA as aaa
+from src.web import entity
+import src.web.dba as aaa
 
 
 
@@ -24,7 +24,7 @@ UPLOAD_BASE = "../../com"
 @route('/monitorjobs/:urlpath#.+#')
 def server_static(urlpath):
     session=aaa.getSession()
-    l = session.query(Entity.Jobstate).all()
+    l = session.query(entity.Jobstate).all()
     header=["*scriptname*","*foldername*","*starttime*","*finishtime*"," *state*","*outputinfo*"]
     mylist=[]
     

@@ -5,20 +5,28 @@ Created on 2014-5-4
 '''
 
 
+import datetime, configparser, os
+import platform
 import time
 
 import markdown2
 import mysql.connector
-import web.entity as Entity
 from sqlalchemy import *
 from sqlalchemy.orm import *
 from sqlalchemy.sql.sqltypes import Date, DateTime
-import datetime,configparser,os
+
+import web.entity as Entity
+
 
 currentpath=os.path.realpath(__file__)
-currentpath[:currentpath.find("life/src")]+"life/com/config.properties"
-cfparser = configparser.ConfigParser()
-cfparser.read(currentpath[:currentpath.find("life/src")]+"life/com/config.properties")
+if 'Windows' in platform.system():
+    currentpath[:currentpath.find("life\\src")]+"life\\com\\config.properties"
+    cfparser = configparser.ConfigParser()
+    cfparser.read(currentpath[:currentpath.find("life\\src")]+"life\\com\\config.properties")
+else:
+    currentpath[:currentpath.find("life/src")]+"life/com/config.properties"
+    cfparser = configparser.ConfigParser()
+    cfparser.read(currentpath[:currentpath.find("life/src")]+"life/com/config.properties")  
 
 ip=cfparser.get("mysqldatabase","ip")
 print(currentpath,ip)#currentpath[:currentpath.find("life/src")]+"life/com/config.properties")

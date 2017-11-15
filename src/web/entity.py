@@ -7,7 +7,7 @@ Created on 2014-5-4
 
 import datetime,re
 import time
-
+import platform
 from sqlalchemy import Column, ForeignKey
 from sqlalchemy.engine import create_engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -18,9 +18,14 @@ from sqlalchemy.sql.sqltypes import Integer, String, Text, Date, DateTime
 import datetime,configparser,os
 
 currentpath=os.path.realpath(__file__)
-currentpath[:currentpath.find("life/src")]+"life/com/config.properties"
-cfparser = configparser.ConfigParser()
-cfparser.read(currentpath[:currentpath.find("life/src")]+"life/com/config.properties")
+if 'Windows' in platform.system():
+    currentpath[:currentpath.find("life\\src")]+"life\\com\\config.properties"
+    cfparser = configparser.ConfigParser()
+    cfparser.read(currentpath[:currentpath.find("life\\src")]+"life\\com\\config.properties")
+else:
+    currentpath[:currentpath.find("life/src")]+"life/com/config.properties"
+    cfparser = configparser.ConfigParser()
+    cfparser.read(currentpath[:currentpath.find("life/src")]+"life/com/config.properties")    
 
 ip=cfparser.get("mysqldatabase","ip")
 print(currentpath,ip)#currentpath[:currentpath.find("life/src")]+"life/com/config.properties")
