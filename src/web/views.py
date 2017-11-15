@@ -7,15 +7,8 @@ from web import web
 from flask import request,jsonify,send_from_directory,abort,render_template
 import os
 from werkzeug.routing import BaseConverter
-from flask.ext.wtf import Form
-from wtforms import StringField,SubmitField
-from wtforms.validators import Required
+from web.forms import ParaForm
 
-class ParaForm(Form):
-    projectpath=StringField("请输入项目路径：",validators=[Required()])
-    datadepth=StringField("请输入所在层级：",validators=[Required()])
-#     sftWname=StringField("请输入所在层级：",validators=[Required()])
-    submit = SubmitField('Submit')
 
 class RegexConverter(BaseConverter):
     def __init__(self, map, *args):
@@ -23,14 +16,29 @@ class RegexConverter(BaseConverter):
         self.regex = args[0]
 web.url_map.converters['regex'] = RegexConverter
 
+@web.route('/mytest',methods=['GET','POST'])        
+def testmyform():
+    if not request.form['textfield']  :
+        print(request.args.get('textfield'),"there\n",os.getcwd())
+        return "come on"
+    else:
+        return render_template('configsotware.html')
+
+# @web.route('/login',methods=['GET','POST'])
+# def login():
+#     return render_template('hello.html')
+# 
+# @web.route('/hello',methods=['POST'])
+# def hello():
+#     ccc=request.form['textfield']
+#     print(ccc,"there\n",os.getcwd())
+#     return request.form['textfield']+"come on"
+
 @web.route('/',methods=['GET','POST'])
 def configsoftware():
     form=ParaForm()
     if form.validate_on_submit():
         print("here")
     else:
-        return render_template('processconfure.html')
-        
-    #else:
-        print("there",os.getcwd())
-        return send_from_directory(os.getcwd(),'..\\..\\toDownload\\pythonstudy\\MITjisuanjikexuebianchengdaolunlec01.mp4',as_attachment=True)
+        return render_template('processconfigure.html')
+    

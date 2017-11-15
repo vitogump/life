@@ -117,4 +117,4 @@ def send_static(urlpath):
 
 
 
-run(host='192.168.0.14',port=5000,debug=True)
+run(host='192.168.0.14',port=5000)
