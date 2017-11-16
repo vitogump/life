@@ -3,10 +3,14 @@ Created on 2017年10月19日
 
 @author: liurui
 '''
-from web import web
-from flask import request,jsonify,send_from_directory,abort,render_template
+from email.utils import unquote
 import os
+import re
+
+from flask import request, jsonify, send_from_directory, abort, render_template
 from werkzeug.routing import BaseConverter
+
+from web import web
 from web.forms import ParaForm
 
 
@@ -18,11 +22,19 @@ web.url_map.converters['regex'] = RegexConverter
 
 @web.route('/mytest',methods=['GET','POST'])        
 def testmyform():
-    if not request.form['textfield']  :
-        print(request.args.get('textfield'),"there\n",os.getcwd())
-        return "come on"
-    else:
-        return render_template('configsotware.html')
+    form=ParaForm()
+    print(form.errors)
+    if request.method=='POST'  :
+        print("post",form.projectpath.data)
+        if form.is_submitted():
+            pass
+#             return form.projectpath.data+"submitted"
+        if form.validate_on_submit():
+            print(request.form['projectpath'],"there\n",os.getcwd())
+            return form.datadepth.data+"come on"
+
+    return render_template('configsotware.html',form=form)
+    
 
 # @web.route('/login',methods=['GET','POST'])
 # def login():
@@ -42,3 +54,11 @@ def configsoftware():
     else:
         return render_template('processconfigure.html')
     
+@web.route('/downloadfile/:urlpath#.+#')
+def send_static(urlpath):
+    print("send_static")
+    filename=re.search(r'[^/]*$',unquote(urlpath)).group(0)
+    path="../../"+re.search(r'^.*/',unquote(urlpath)).group(0)
+    print(path,filename,unquote(urlpath))
+#    print(urlpath,re.search(r'^.*/',urlpath).group(0),re.search(r'[^/]*$',urlpath).group(0))
+    return render_template(path+filename)

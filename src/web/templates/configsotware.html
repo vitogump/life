@@ -16,31 +16,33 @@
 
 <body>
 <div align="center" class="STYLE1">项目ddddd选择</div><br/><br/>
-<form action="/mytest" method="post" >
+<form action="{{url_for('testmyform')}}" method="post" >
+{{ form.csrf_token }}
   <table width="500" border="1" align="center">
     <tr>
-      <td width="150" height="20"><div align="right">请输入项目路径：</div></td>
+      <td width="150" height="20"><div align="right"><!-- 请输入项目路径： -->{{form.projectpath.label}}</div></td>
       <td width="325"><label>
-
-        <div align="left">
-          <input type="text"  width="250" name="textfield" />
-        </div>
+		{{form.projectpath}}
+<!--         <div align="left">
+          <input type="text"  width="250" name="projectpath" />
+        </div> -->
       </label></td>
     </tr>
-    <tr>
-      <td><div align="right">请输入所在层级：</div></td>
-      <td><label>
-
-        <div align="left">
-          <input type="text" width="250" name="textfield2" />
-        </div>
+     <tr>
+      <td><div align="right">{{form.datadepth.label}}</div></td>
+      <td><label> 
+	{{form.datadepth}}
+<!--         <div align="left">
+          <input type="text" width="250" name="datadepth" />
+        </div> -->
       </label></td>
     </tr>
+ <!--    
     <tr>
       <td><div align="right">选择软件和参数：</div></td>
       <td><label>
 
-        <div align="left">
+       <div align="left">
             <select name="select">
 				<optgroup label="软件1">
 					<option>参数1</option>
@@ -59,7 +61,7 @@
 				</optgroup>
 
 			</select> 
-        </div>
+        </div> -->
       </label></td>
     </tr>
 
@@ -68,12 +70,14 @@
       <td colspan="2"><label>
 
         <div align="center">
-          <input type="submit" name="Submit" value="提交" />
+        {{form.submit}}
+          <!-- <input type="submit" name="submit" value="提交" /> -->
           <input type="reset" name="Submit2" value="重置" />
         </div>
       </label></td>
     </tr>
   </table>
+
 </form>
 <p>&nbsp;</p>
 </body>
