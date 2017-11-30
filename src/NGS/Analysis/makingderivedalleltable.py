@@ -81,7 +81,7 @@ if __name__ == '__main__':
 #     totalChroms = dbtoolsforchrom.operateDB("select","select count(*) from "+chromstable)[0][0]
 #     for i in range(0,totalChroms,20):
 #         currentsql="select * from " + chromstable+" order by chrlength limit "+str(i)+",20"
-#         result=dbtoolsforchrom.operateDB("select",currentsql)
+        result=dbtoolsforchrom.operateDB("select",currentsql)
 #         for row in result:
 #             currentchrID=row[0]
 #             currentchrLen=int(row[2])
