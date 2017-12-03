@@ -29,9 +29,11 @@ parser.add_option("-q", "--quiet",
                   help="don't print status messages to stdout")
 
 (options,args)=parser.parse_args()
-snpoutfile=open(options.outfilename+"SNPs_flankseq.fa",'w')
-bedoutfile=open(options.outfilename+"regionsSEQ.fa",'w')
-
+snpoutfafile=open(options.outfilename+"SNPs_flankseq.fa",'w')
+bedoutfafile=open(options.outfilename+"regionsSEQ.fa",'w')
+snpoutfafile.close();bedoutfafile.close()
+snpoutfafile=open(options.outfilename+"SNPs_flankseq.fa",'a')
+bedoutfafile=open(options.outfilename+"regionsSEQ.fa",'a')
 ancestralalleletabletools=AncestralAlleletabletools(database=Util.vcfdbname, ip=Util.ip, usrname=Util.username, pw=Util.password,dbgenome=Util.genomeinfodbname)
 if __name__ == '__main__':
     
@@ -73,7 +75,7 @@ if __name__ == '__main__':
                     #2，extract flank seq of variants recs
                     if chrom in chrmap:
                         chrlen=int(chrmap[chrom])
-                    ancestralalleletabletools.getflankseqstooutfile(chrom, chrlen, startpostocollecteSNP, endpostocollectSNP, duckrefhandler, None, duckrefindex, flanklen, snpoutfile, snpsOfOneChrom, None)
+                    ancestralalleletabletools.getflankseqstooutfile(chrom, chrlen, startpostocollecteSNP, endpostocollectSNP, duckrefhandler, None, duckrefindex, flanklen, snpoutfafile, snpsOfOneChrom, None)
                     #start next chrom
                     snpsOfOneChrom=[snp]
                     chrom=snp[0]                    
@@ -81,11 +83,11 @@ if __name__ == '__main__':
                 else:#first
                     snpsOfOneChrom.append(snp);chrom=snp[0];startpostocollecteSNP=int(snp[1])
             
-        else:
-            duckrefhandler.close()
-            snpoutfile.close()
+    else:
+        duckrefhandler.close()
+        snpoutfafile.close()
             #ancestralalleletabletools.forchenli.close()
-            print()#print fa seq
+#             print()#print fa seq
     for regionbedFName,corresponding_ref,minRegionLEN in options.functionalbedlikefile:
         minRegionLEN=int(minRegionLEN)
         regionbedf=open(regionbedFName,'r')
@@ -109,16 +111,16 @@ if __name__ == '__main__':
                 #2，extract flank seq of variants recs
                 if chrom in chrmap:
                     chrlen=int(chrmap[chrom])
-                ancestralalleletabletools.getregionseqstooutfile(chrom, chrlen, startposOfFirstREGIONs, endpostocollectREGIONs, duckrefhandler, None, duckrefindex, minRegionLEN, bedoutfile, regionsOfOneChrom, None)
+                ancestralalleletabletools.getregionseqstooutfile(chrom, chrlen, startposOfFirstREGIONs, endpostocollectREGIONs, duckrefhandler, None, duckrefindex, minRegionLEN, bedoutfafile, regionsOfOneChrom, None)
                 #start next chrom
                 regionsOfOneChrom=[regionlist]
                 chrom=regionlist[0]                    
                 startposOfFirstREGIONs=int(regionlist[1])
             else:
                 regionsOfOneChrom.append(regionlist);chrom=regionlist[0];startpostocollecteSNP=int(regionlist[1])
-        else:
-            bedoutfile.close()
-            duckrefhandler.close()
+    else:
+        bedoutfafile.close()
+        duckrefhandler.close()
     #makeblastdb -in Setaria_italica.JGIv2.0.dna_sm.toplevel.fa -dbtype nucl -parse_seqids -out Setaria_italica.JGIv2.0.dna_sm.toplevel
     ancestralalleletabletools.callblast("blastn",options.targetREFblastdb,options.outfilename+"SNPs_flankseq.fa",options.outfilename+"SNPs_flankseq.blastout")
     ancestralalleletabletools.callblast("blastn",options.targetREFblastdb,options.outfilename+"regionsSEQ.fa",options.outfilename+"regionsSEQ.blastout")

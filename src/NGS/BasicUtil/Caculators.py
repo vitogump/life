@@ -5,11 +5,11 @@ Created on 2013-7-2
 @author: rui
 '''
 
-import re, copy, math, numpy, time,pysam
 from itertools import combinations
+import random
+import re, copy, math, numpy, time, pysam
+
 from NGS.BasicUtil import VCFutil
-
-
 
 
 class Caculator():
@@ -203,6 +203,31 @@ class Caculate_df(Caculator):
         self.COUNTEDadditional=[0,[0,0]]
         self.unsufficentfixediff=0
         return [noofhet,(pop1unsufficentfixed,pop2unsufficentfixed)],nooffixediff #self.COUNTEDadditional,self.COUNTED
+class CaculatorToFindTAGs(Caculator):
+    def __init__(self,vcfobj,winsize,slidesize):
+        self.curchom=None
+        self.curwinStart=0
+        self.curwinEnd=winsize
+        self.slidesize=slidesize
+        self.vcfobj=vcfobj
+        self.TAGSforAwin=[]
+    def process(self,T):
+        self.TAGSforAwin.append(T[0])
+    def getResult(self):
+        if len(self.TAGSforAwin)>=2:
+            idxlist=random.sample([j for j in range(len(self.TAGSforAwin))],2)
+            self.TAGSforAwin[idxlist[0]]
+            self.TAGSforAwin[idxlist[1]]
+            nooftags=2
+            value=[self.TAGSforAwin....]
+        else:
+            if self.TAGSforAwin==1:
+                pass
+            else:
+                snplist=self.vcfobj.getVcfListByChrom(self.curchom,self.curwinStart,self.curwinEnd,MQfilter=0)
+        self.curwinStart+=self.slidesize
+        self.curwinEnd+=self.slidesize
+        self.TAGSforAwin=[]
 class Caculate_Hp_master_slave(Caculator):
     def __init__(self, listOftargetpopvcfconfig,outfileprewithpath, minsnps=10,depth=10):
         super().__init__()
