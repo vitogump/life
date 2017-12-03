@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
-from NGS.BasicUtil import *
+from src.NGS.BasicUtil import *
 from itertools import combinations
-import NGS.BasicUtil.Util
+
 import numpy,pickle,re,sys,copy
 from optparse import OptionParser
 import src.NGS.BasicUtil.DBManager as dbm

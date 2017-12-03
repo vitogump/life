@@ -1,7 +1,7 @@
 '''
 Created on 2017年10月19日
 
-@author: zhangxiaowei
+@author: liurui
 '''
 from web import web
 
