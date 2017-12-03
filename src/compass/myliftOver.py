@@ -15,17 +15,25 @@ parser = OptionParser()
 
 #"output data name is defined as 'inputdatapath folder name'+'is subfolder name'+'is subfolder name'+..."
 parser.add_option("-c", "--chrlist", dest="chrlist",help="chromosome")
-parser.add_option("-v", "--variantfilewithref", dest="variantfilewithref",action="append",nargs=2, help="vcflikefile corresponding_ref")
-parser.add_option("-r", "--objectref", dest="objectref", help="it's the depth of the dir from the inputdatapath which the data file that need to be process in it,the depth of the inputdatapath is 0")
-parser.add_option("-s", "--chrsignal", dest="chrsignal",help="chromosome")
-parser.add_option("-f", "--flanklen", dest="flanklen",default='70',help="ref fa file mode2")
+parser.add_option("-v", "--variantfilewithref", dest="variantfilewithref",action="append",nargs=3, help="vcflikefile corresponding_ref flanklen")
+parser.add_option("-b", "--functionalbedlikefile", dest="functionalbedlikefile",action="append",nargs=3, help="functionalRegionfile corresponding_ref minRegionLen")
+"""
+functionalbedlikefile format: first line is title
+chr    startpos    endpos    other info
+"""
+parser.add_option("-o", "--outfilename", dest="outfilename", help="it's the depth of the dir from the inputdatapath which the data file that need to be process in it,the depth of the inputdatapath is 0")
+parser.add_option("-s", "--chrsignal", dest="chrsignal",default=None,help="e.g chr number follow the 'chromosome' string ")
+parser.add_option("-T", "--targetREFblastdb", dest="targetREFblastdb",help="blastdb of target reference")
 parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", default=True,
                   help="don't print status messages to stdout")
 
 (options,args)=parser.parse_args()
-outfile=open('test.txt','w')
-flanklen=int(options.flanklen)
+snpoutfafile=open(options.outfilename+"SNPs_flankseq.fa",'w')
+bedoutfafile=open(options.outfilename+"regionsSEQ.fa",'w')
+snpoutfafile.close();bedoutfafile.close()
+snpoutfafile=open(options.outfilename+"SNPs_flankseq.fa",'a')
+bedoutfafile=open(options.outfilename+"regionsSEQ.fa",'a')
 ancestralalleletabletools=AncestralAlleletabletools(database=Util.vcfdbname, ip=Util.ip, usrname=Util.username, pw=Util.password,dbgenome=Util.genomeinfodbname)
 if __name__ == '__main__':
     
@@ -34,7 +42,8 @@ if __name__ == '__main__':
     for rec in chromlistfile:
         reclist=re.split(r'\s+',rec.strip())
         chrmap[reclist[0]]=reclist[1]
-    for vcflikeFileName,corresponding_ref in options.variantfilewithref:
+    for vcflikeFileName,corresponding_ref,flanklen in options.variantfilewithref:
+        flanklen=int(flanklen)
         duckrefhandler=open(corresponding_ref,'r')
         try:
             duckrefindex = pickle.load(open(corresponding_ref + ".myfasteridx", 'rb'))
@@ -66,7 +75,7 @@ if __name__ == '__main__':
                     #2，extract flank seq of variants recs
                     if chrom in chrmap:
                         chrlen=int(chrmap[chrom])
-                    ancestralalleletabletools.getflankseqs(chrom, chrlen, startpostocollecteSNP, endpostocollectSNP, duckrefhandler, None, duckrefindex, flanklen, outfile, snpsOfOneChrom, None)
+                    ancestralalleletabletools.getflankseqstooutfile(chrom, chrlen, startpostocollecteSNP, endpostocollectSNP, duckrefhandler, None, duckrefindex, flanklen, snpoutfafile, snpsOfOneChrom, None)
                     #start next chrom
                     snpsOfOneChrom=[snp]
                     chrom=snp[0]                    
@@ -74,10 +83,45 @@ if __name__ == '__main__':
                 else:#first
                     snpsOfOneChrom.append(snp);chrom=snp[0];startpostocollecteSNP=int(snp[1])
             
-        else:
-            duckrefhandler.close()
-            outfile.close()
+    else:
+        duckrefhandler.close()
+        snpoutfafile.close()
             #ancestralalleletabletools.forchenli.close()
-            print()#print fa seq
-#     ancestralalleletabletools.callblat()
-#     ancestralalleletabletools.extarctAncestryAlleleFromBlastOut(BlastOutFile, ancestryrefFile, ancestralgenomename, ancestryrefidx, tablename, ancestralsnptable)
+#             print()#print fa seq
+    for regionbedFName,corresponding_ref,minRegionLEN in options.functionalbedlikefile:
+        minRegionLEN=int(minRegionLEN)
+        regionbedf=open(regionbedFName,'r')
+        duckrefhandler=open(corresponding_ref,'r')
+        try:
+            duckrefindex = pickle.load(open(corresponding_ref + ".myfasteridx", 'rb'))
+#             originalspeciesindex = pickle.load(open(originalspeciesref + ".myindex", 'rb'))
+        except IOError:
+            Util.generateFasterRefIndex(corresponding_ref, corresponding_ref + ".myfasteridx",chrsignal=options.chrsignal)
+            duckrefindex = pickle.load(open(corresponding_ref + ".myfasteridx", 'rb'))
+        regionbedf.readline()#title
+        regionsOfOneChrom=[]
+        startposOfFirstREGIONs=1         
+        for line in regionbedf:
+            regionlist=re.split(r"\s+",line.strip())
+            if chrom==regionlist[0]:
+                regionsOfOneChrom.append(regionlist)
+            elif regionsOfOneChrom!=[]:
+                #process last
+                endpostocollectREGIONs=int(regionsOfOneChrom[-1][2])
+                #2，extract flank seq of variants recs
+                if chrom in chrmap:
+                    chrlen=int(chrmap[chrom])
+                ancestralalleletabletools.getregionseqstooutfile(chrom, chrlen, startposOfFirstREGIONs, endpostocollectREGIONs, duckrefhandler, None, duckrefindex, minRegionLEN, bedoutfafile, regionsOfOneChrom, None)
+                #start next chrom
+                regionsOfOneChrom=[regionlist]
+                chrom=regionlist[0]                    
+                startposOfFirstREGIONs=int(regionlist[1])
+            else:
+                regionsOfOneChrom.append(regionlist);chrom=regionlist[0];startpostocollecteSNP=int(regionlist[1])
+    else:
+        bedoutfafile.close()
+        duckrefhandler.close()
+    #makeblastdb -in Setaria_italica.JGIv2.0.dna_sm.toplevel.fa -dbtype nucl -parse_seqids -out Setaria_italica.JGIv2.0.dna_sm.toplevel
+    ancestralalleletabletools.callblast("blastn",options.targetREFblastdb,options.outfilename+"SNPs_flankseq.fa",options.outfilename+"SNPs_flankseq.blastout")
+    ancestralalleletabletools.callblast("blastn",options.targetREFblastdb,options.outfilename+"regionsSEQ.fa",options.outfilename+"regionsSEQ.blastout")
+    #ancestralalleletabletools.extarctAncestryAlleleFromBlastOut(BlastOutFile, ancestryrefFile, ancestralgenomename, ancestryrefidx, tablename, ancestralsnptable)

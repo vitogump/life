@@ -1,0 +1,142 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>重测序</title>
+
+<style type="text/css">
+
+.STYLE1 {
+	font-family: "华文行楷";
+	font-size: 36px;
+}
+
+</style>
+
+<script language="javascript">
+function change(v){
+	if(v == 1){
+		document.getElementById("test").innerHTML = " <table><tr><td>-1INPUT：<input type='text' name='zx' /></td></tr>	</table><table><tr><td>-2INPUT：<input type='text' name='zx' /></td></tr></table>"
+	}
+	if(v == 2){
+		document.getElementById("test").innerHTML = " <table><tr><td>INPUT：<input type='text' name='zx' /></td></tr></table>"
+	}
+	if(v == 3){
+		document.getElementById("test").innerHTML = "INPUT：<input type='text' name='zx'/>";
+	}else if(v == 4){
+		document.getElementById("test").innerHTML = "-l：<input type='text' name='zx'/>";
+		}
+}
+function change1(value){
+	if(value == 1){
+		document.getElementById("test1").innerHTML = ""
+	}
+	if(value == 2){
+		document.getElementById("test1").innerHTML = " <table><tr><td>选&nbsp&nbsp项：<input type='text' name='zx1' /></td></tr></table<table><tr><td>目录层级：<input type='text' name='zx1' /></td></tr></table>>"
+	}
+	else if(value == 3){
+		document.getElementById("test1").innerHTML = "<table><tr><td>选&nbsp&nbsp&nbsp项：<input type='text' name='zx1' /></td></tr></table<table><tr><td>请输入标记：<input type='text' name='zx1' /></td></tr></table>";
+	}
+    }
+function add1(){ 
+
+	input1 = document.createElement('input'); 
+	input1.setAttribute('type', 'text'); 
+	
+	var btn1 = document.getElementById("org"); 
+	btn1.insertBefore(input1,null); 
+
+} 
+
+function setText(obj)
+{
+    if(obj.checked==true)
+    {
+        document.getElementById("txtName").disabled=false;
+		document.getElementById("txtName1").disabled=false;
+    }
+    else
+    {
+        document.getElementById("txtName").disabled=true;
+        document.getElementById("txtName").value="";
+			
+		document.getElementById("txtName1").disabled=true;
+        document.getElementById("txtName1").value="";
+    }
+}
+</script>
+
+</head>
+
+<body>
+
+<div align="center" class="STYLE1">项目选择</div><br/><br/>
+
+<div>
+<form>
+	在根目录：&nbsp<input type="text"><br /><br />
+	所在层级：&nbsp<input type="text"><br /><br />
+	输出路径：&nbsp<input type="text"><br /><br />
+	输出后缀：&nbsp<input type="text">&nbsp&nbsp	<br />
+	<br /> 
+    <form name="myform" method="post" action=""> 
+    <select name="software" onchange="change(this.value)">
+        <option value="1">Bowtie2</option>
+        <option value="2">SortSam.jar</option>
+        <option value="3">MarkDuplicates.jar</option>
+        <option value="4">GenomeAnalysisTK.jar</option>
+    </select><br />
+    
+    <div id="test">
+    <table><tr><td>参数：<input type="text" name="zx" /></td></tr></table>
+    </div>
+    </form>
+    <br /><br />
+    <form name="myform1" method="post" action="">
+    <select name="software1" onchange="change1(this.value)">
+        <option value="1"></option>
+        <option value="2">目录层级</option>
+        <option value="3">文本定义</option>
+    </select>
+    <br />
+    <div id="test1">
+    <table><tr><td>Marker参数：<input type="text1" name="zx1" /></td></tr></table>
+    </div>
+	</form>
+    <br /><br />
+	<select>
+		<option value="1" selected>多输入单输出</option>
+		<option value="2">一对一</option>
+	</select><br /><br />
+
+	
+	
+	是否选择过滤条件：<input name="Checkbox1" type="checkbox" onclick="setText(this)"/><br /><br />
+	<label>目录层级:</label>
+	<input id="txtName" type="text" disabled=true/><br /><br />
+	
+	
+	
+		
+<div id="org"> 
+	<label>文件夹名:</label>
+	<input id="txtName1" type="text" disabled=true/>&nbsp;&nbsp;
+	<input type="button" onclick="add1();" value="添加" /> <br /><br />
+</div>
+
+
+请输入命令参数：<br />
+    <textarea rows="8" cols="40"></textarea>
+	<input type="submit" value="提交"><br \><br \>
+	
+	
+显示结果：<br />
+    <textarea rows="8" cols="40" disabled=true></textarea><br /><br />
+	每次运行命令的个数：<input type="text"><br /><br />
+	
+	<input type="submit" value="提交运行">
+	
+</form> 
+</div>
+</body>
+</html>

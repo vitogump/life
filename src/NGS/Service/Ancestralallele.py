@@ -352,21 +352,8 @@ class AncestralAlleletabletools():
         if a!=0:
             print("error",shellstatment)
         os.system("rm "+vcffilename+"tempstep1")
-    def getflankseqs(self, chrom,chromlen, startpostocollecteSNP, endpostocollectSNP, idxedreffilehandler,ancestralgenomenameaddtotable, refindex, flanklen,outfile,vfilelinelists, tablename="derived_alle_ref"):
-#         testfile=open("testsnpfile.txt",'a')
-#         self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, tablename, "context", "char(3)", "default null"))
-        #add a temp function code block to process the snp before startpos of collecteSNP
-#         tempsnps=self.dbvariant.operateDB("select","select * from " + tablename + " where chrID='" + chrom + "' and snp_pos>= 2 and snp_pos<=" + str(startpostocollecteSNP))
-#         RefSeqMaptemp = Util.getRefSeqBypos(idxedreffilehandler, refindex, chrom, 1, startpostocollecteSNP+1,chromlen)
-#         for snp in tempsnps:
-#             self.dbvariant.operateDB("update","update "+tablename+" set context='"+''.join(RefSeqMaptemp[chrom][snp[1]-1:snp[1]+2])+"' where chrID='"+ chrom + "' and snp_pos= "+str(snp[1]))
-#             l=copy.deepcopy(RefSeqMaptemp[chrom][snp[1]-1:])
-#             l[1]="N"
-#             print(">"+chrom+"_"+str(snp[1])+"\n"+"".join(l), file=outfile)
-#             
-        #temp function code block end
-#         snps = self.dbvariant.operateDB("select", "select * from " + tablename + " where chrID='" + chrom + "' and snp_pos>= " + str(startpostocollecteSNP) + " and snp_pos<=" + str(endpostocollectSNP))
-        
+    def getflankseqstooutfile(self, chrom,chromlen, startpostocollecteSNP, endpostocollectSNP, idxedreffilehandler,ancestralgenomenameaddtotable, refindex, flanklen,outfile,vfilelinelists, tablename="derived_alle_ref"):
+                            
         RefSeqMap = Util.getRefSeqBypos_faster(idxedreffilehandler, refindex, chrom, startpostocollecteSNP-flanklen, endpostocollectSNP+flanklen,chromlen)
         for snp in vfilelinelists:
             """
@@ -375,13 +362,16 @@ class AncestralAlleletabletools():
             """
             
             currentsnpPos = int(snp[1])
+            if currentsnpPos>=chromlen:
+                print("warnning,this loci may not match this fasta file")
+                continue
             if False and len(snp[3]) != 1 :
         #                        print(snp[4])
                 """not in use
                 """
                 continue# skip indel
             currentsnpID=chrom+"_"+str(snp[1])
-            if currentsnpPos + flanklen <= RefSeqMap[chrom][0] + len(RefSeqMap[chrom]) - 1 and currentsnpPos - flanklen > RefSeqMap[chrom][0] :
+            if currentsnpPos + flanklen < RefSeqMap[chrom][0] + len(RefSeqMap[chrom]) - 1 and currentsnpPos - flanklen > RefSeqMap[chrom][0] :
                 snpflankseq = ''.join(RefSeqMap[chrom][(currentsnpPos - flanklen - RefSeqMap[chrom][0]):(currentsnpPos + flanklen - RefSeqMap[chrom][0] + 1)])
 #                 self.dbvariant.operateDB("update","update "+tablename+" set context='"+snpflankseq[flanklen-1:flanklen+2]+"' where chrID='"+ chrom + "' and snp_pos= "+str(currentsnpPos))
                 currentsnpID=chrom+"_"+str(currentsnpPos)+snpflankseq[flanklen]+":"+snp[3]+snp[4]
@@ -402,22 +392,29 @@ class AncestralAlleletabletools():
                 snpflankseq = 'N'+snpflankseq[1:flanklen+1]
                 
             else:
-                print(currentsnpPos,RefSeqMap[chrom][0],len(RefSeqMap[chrom])-1)
+                print(snp,currentsnpPos,RefSeqMap[chrom][0],len(RefSeqMap[chrom])-1)
                 print("what's wrong with the func getflankseqs ?")
                 exit(-1)
-#            if currentsnpPos + 25 <= RefSeqMap[lastchromNo][0] + len(RefSeqMap[lastchromNo]) - 1 and currentsnpPos - 25 > RefSeqMap[lastchromNo][0] :
-#            snpflankseq = ''.join(RefSeqMap[chrom][(currentsnpPos - 25 - RefSeqMap[chrom][0]):(currentsnpPos + 25 - RefSeqMap[chrom][0] + 1)])
-#            print(currentsnpID, snpflankseq[25], file=testfile)
-#             snpflankseq = snpflankseq[0:25] + 'N' + snpflankseq[26:]
 
-            print(">" + currentsnpID + "\n" + snpflankseq+"\n"+snp[5], end='\n', file=outfile)
-#             print(chrom,currentsnpPos,snpflankseq[0],snp[3],snp[4],file=self.forchenli)
-
-#         testfile.close()
-        #                    print("update "+finaltable+" set fafilepos="+str(filepos)+" where snpID='"+currentsnpID+"'")
+            print(">" + currentsnpID + "\n" + snpflankseq, end='\n', file=outfile)
+    def getregionseqstooutfile(self, chrom, chromlen, startpostocollecteREGIONs, endpostocollectREGIONs, idxedreffilehandler, ancestralgenomenameaddtotable, refindex, minRegionLEN, outfile, regionsOfOneChrom, tablename):
+        RefSeqMap = Util.getRefSeqBypos_faster(idxedreffilehandler, refindex, chrom, startpostocollecteREGIONs-minRegionLEN, endpostocollectREGIONs+minRegionLEN,chromlen)
+        for region in regionsOfOneChrom:
+            regionStart=int(region[1])
+            regionEnd=int(region[2])
+            if minRegionLEN<(regionEnd-regionStart):
+                c=minRegionLEN-(regionEnd-regionStart)
+                if regionStart -c>RefSeqMap[chrom][0] :
+                    regionStart=regionStart -c
+                elif regionEnd+c<RefSeqMap[chrom][0] + len(RefSeqMap[chrom]) - 1 :
+                    regionEnd=regionEnd+c
+            if regionEnd <= RefSeqMap[chrom][0] + len(RefSeqMap[chrom]) - 1 and regionStart > RefSeqMap[chrom][0] :
+                snpflankseq = ''.join(RefSeqMap[chrom][(regionStart - RefSeqMap[chrom][0]):(regionEnd - RefSeqMap[chrom][0] + 1)])
+                currentsnpID=chrom+"_"+str(regionStart)+"_"+str(regionEnd)
+                print(">" + currentsnpID + "\n" + snpflankseq, end='\n', file=outfile)
     def callblast(self,pathtoblastn,pathtorefdb,queryfaFile,BlastOutFile):
         #outfmt chose 6 suggest by zhaoyiqiang
-        shellstatment=pathtoblastn+" -query "+queryfaFile+" -task blastn -db "+pathtorefdb+" -out "+BlastOutFile +" -outfmt 7 -num_threads 4"
+        shellstatment=pathtoblastn+" -query "+queryfaFile+" -task blastn -db "+pathtorefdb+" -out "+BlastOutFile +" -outfmt 7 -num_threads 8"
         print(shellstatment)
         a = os.system(shellstatment)
         if a != 0:

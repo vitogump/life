@@ -11,6 +11,9 @@ from wtforms.validators import Required
 
 class ParaForm(FlaskForm):
     projectpath=StringField("请输入项目路径：",validators=[Required()])
-    datadepth=StringField("请输入所在层级：",validators=[Required()])
+    datadepth=StringField("数据所在在层级：",validators=[Required()])
 #     sftWname=StringField("请输入所在层级：",validators=[Required()])
-    submit = SubmitField('Submit')
+    sfware=
+    inputsuffix=
+    
+    submit = SubmitField('提交')

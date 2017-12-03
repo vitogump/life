@@ -51,8 +51,9 @@ def configsoftware():
     form=ParaForm()
     if form.validate_on_submit():
         print("here")
+        return form.datadepth.data+form.projectpath.data
     else:
-        return render_template('processconfigure.html')
+        return render_template('commandtemplate.html',form=form)
     
 @web.route('/downloadfile/:urlpath#.+#')
 def send_static(urlpath):

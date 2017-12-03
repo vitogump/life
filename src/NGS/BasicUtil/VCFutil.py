@@ -72,7 +72,8 @@ class VCF_Data():
             chromOrder.append(currentChrom)
             NumOfRecbychromOrder.append(i - 1)  # collect the  number of snp recs  of the lastest chrom of all chroms
             vcfChromIndex[currentChrom] = (lastChromend_currentChromstartPostion, lastPosition)
-
+#'8': (25757955057, 29473584687), '9': (29473584687, 33784528369)
+# lastPosition and the next lastChromend_currentChromstartPostion are the same , modfiy it
         vcfChromIndex.pop("temptodele")
         i = chromOrder.index("temptodele")
         if i != 0:
