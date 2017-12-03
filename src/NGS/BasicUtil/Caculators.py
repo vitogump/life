@@ -204,10 +204,10 @@ class Caculate_df(Caculator):
         self.unsufficentfixediff=0
         return [noofhet,(pop1unsufficentfixed,pop2unsufficentfixed)],nooffixediff #self.COUNTEDadditional,self.COUNTED
 class CaculatorToFindTAGs(Caculator):
-    def __init__(self,vcfobj,winsize,slidesize):
-        self.curchom=None
-        self.curwinStart=0
-        self.curwinEnd=winsize
+    def __init__(self,chrom,vcfobj,winsize,slidesize,startposOfaChr):
+        self.curchom=chrom
+        self.curwinStart=startposOfaChr
+        self.curwinEnd=self.curwinStart+winsize
         self.slidesize=slidesize
         self.vcfobj=vcfobj
         self.TAGSforAwin=[]
@@ -216,18 +216,26 @@ class CaculatorToFindTAGs(Caculator):
     def getResult(self):
         if len(self.TAGSforAwin)>=2:
             idxlist=random.sample([j for j in range(len(self.TAGSforAwin))],2)
-            self.TAGSforAwin[idxlist[0]]
-            self.TAGSforAwin[idxlist[1]]
+            tag1=self.TAGSforAwin[idxlist[0]]
+            tag2=self.TAGSforAwin[idxlist[1]]
             nooftags=2
-            value=[self.TAGSforAwin....]
+            valuetoReturn=[tag1,tag2]
         else:
-            if self.TAGSforAwin==1:
-                pass
+            snplist=self.vcfobj.getVcfListByChrom(self.curchom,self.curwinStart,self.curwinEnd,MQfilter=0)
+            if self.TAGSforAwin==1 and len(snplist)>=1:
+                idxlist=random.sample([j for j in range(len(snplist))],1)
+                valuetoReturn=[self.TAGSforAwin[0],snplist[idxlist[0]]]
+                nooftags=1
+            elif len(snplist)>=2:
+                idxlist=random.sample([j for j in range(len(snplist))],2)
+                valuetoReturn=[snplist[idxlist[0]],snplist[idxlist[1]]]
+                nooftags=0
             else:
-                snplist=self.vcfobj.getVcfListByChrom(self.curchom,self.curwinStart,self.curwinEnd,MQfilter=0)
+                nooftags=0;valuetoReturn=["NA","NA"]
         self.curwinStart+=self.slidesize
         self.curwinEnd+=self.slidesize
         self.TAGSforAwin=[]
+        return nooftags,valuetoReturn
 class Caculate_Hp_master_slave(Caculator):
     def __init__(self, listOftargetpopvcfconfig,outfileprewithpath, minsnps=10,depth=10):
         super().__init__()

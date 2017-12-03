@@ -13,6 +13,7 @@ nohup java -XX:+UseParallelGC -XX:ParallelGCThreads=6 -jar ~/software/Haploview.
 """
 # from multiprocessing.dummy import Pool
 
+import copy
 from functools import reduce
 from optparse import OptionParser
 import os, math, re
@@ -20,7 +21,7 @@ import sys
 import threading
 from time import ctime
 
-from NGS.BasicUtil import VCFutil, Util
+from NGS.BasicUtil import VCFutil, Util, Caculators
 
 
 parser = OptionParser()
@@ -147,7 +148,15 @@ if __name__ == '__main__':
             for pos in TAGSNP[chrom]:
                 tagsMap[chrom].append((pos,"."))
                 print(chrom,pos,file=atf)
-                
     win = Util.Window()
-    win.slidWindowOverlap(tagsMap[chrom],chrmap[curchr][1],winsize,winsize,findtagcaculator,chrmap[curchr][0])            
+    selectedTAGsnps={}
+    for c_chrom in chrmap.keys():
+        selectedTAGsnps[c_chrom]=[]            
+        findtagcaculator=Caculators.CaculatorToFindTAGs(c_chrom,vcfobj,winsize,winsize,chrmap[c_chrom][0])
+        win.slidWindowOverlap(tagsMap[c_chrom],chrmap[c_chrom][1],winsize,winsize,findtagcaculator,chrmap[c_chrom][0])
+        selectedTAGsnps[c_chrom]=copy.deepcopy(win.winValueL)
+    with open(options.outputfilename+".selectedTAGS",'w') as atf:
+        for c_chrom in selectedTAGsnps.keys():
+            for i in range(len(selectedTAGsnps[c_chrom])):
+                print(c_chrom + "\t" + str(i) + "\t" + str(selectedTAGsnps[c_chrom][i][2]) + "\t" + str(selectedTAGsnps[c_chrom][i][3][0]) + "\t" +str(selectedTAGsnps[c_chrom][i][3][1]), file=atf)
     vcfFile.close()
