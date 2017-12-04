@@ -69,12 +69,13 @@ def splicVcfbyChr(curchr):
         i+=1;startpos+=sizetoSelectTAG
     return mappedlistOfoneChrmOrdered
 def selectTAGsnp(filename):
-    print("java -XX:-UseGCOverheadLimit  -Xmx124g  -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+options.outputfilename+filename+" -memory 120000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
+    outvcfmappedpath=os.path.dirname(options.outputfilename)# re.findall(r'/',options.outputfilename)
+    print("java -XX:-UseGCOverheadLimit  -Xmx124g  -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 120000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
     try:
-        os.system("java -XX:-UseGCOverheadLimit  -Xmx124g  -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+options.outputfilename+filename+" -memory 120000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
+        os.system("java -XX:-UseGCOverheadLimit  -Xmx124g  -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 120000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
     except:
-        print("java -XX:-UseGCOverheadLimit  -Xmx156g  -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+options.outputfilename+filename+" -memory 150000 -maxDistance 200 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
-        os.system("java -XX:-UseGCOverheadLimit  -Xmx156g  -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+options.outputfilename+filename+" -memory 150000 -maxDistance 200 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
+        print("java -XX:-UseGCOverheadLimit  -Xmx156g  -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 150000 -maxDistance 200 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
+        os.system("java -XX:-UseGCOverheadLimit  -Xmx156g  -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 150000 -maxDistance 200 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
         return
 if __name__ == '__main__':
     #count total size of 
@@ -136,12 +137,12 @@ if __name__ == '__main__':
 #         for t in t_list:
 #             t.join()
     
-    for j in range(0,len(mappedlistordered),int(options.threads)):
-        pool=Pool(int(options.threads))        
-        pool.map(selectTAGsnp,mappedlistordered[j:j+int(options.threads)])
-        pool.close()
-        print("thread from",j,"to",j+int(options.threads))
-        pool.join()
+#     for j in range(0,len(mappedlistordered),int(options.threads)):
+    pool=Pool(int(options.threads))        
+    pool.map(selectTAGsnp,mappedlistordered)
+    pool.close()
+#     print("thread from",j,"to",j+int(options.threads))
+    pool.join()
     print("finish haploview TAGing")    
     #extract two tags by winsize, if no enough TAG in a win then seleced two snps whose AF approxmate to 0.5
     TAGSNP={}
