@@ -65,7 +65,7 @@ def splicVcfbyChr(curchr):
             os.system("vcftools --vcf "+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+".recode.vcf"+" --out "+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+"  --plink")
         os.system("""awk 'BEGIN{OFS="\t"}{print $2,$4,$1}' """+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+".map > "+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+".info")
             
-        mappedlistOfoneChrmOrdered.append(re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i))
+        mappedlistOfoneChrmOrdered.append(outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i))
         i+=1;startpos+=sizetoSelectTAG
     return mappedlistOfoneChrmOrdered
 def selectTAGsnp(filename):
