@@ -108,10 +108,10 @@ if __name__ == '__main__':
 #     mappedlistordered=[]
 #     for curchr in vcfobj.chromOrder:
         #
-    mappedlistordered=[]
+#     mappedlistordered=[]
 #     for chr_idx in range(0,len(vcfobj.chromOrder),NUMBER):
         
-    pool=Pool(len(vcfobj.chromOrder)) 
+    pool=Pool(int(options.threads)) 
     mappedlistordered=pool.map(splicVcfbyChr,vcfobj.chromOrder)
     pool.close()
     pool.join()
