@@ -102,7 +102,7 @@ if __name__ == '__main__':
         genomesnpspansize+=(endpos-startpos)
     winsize=int(genomesnpspansize/int(options.sizeOfchip))
     sizetoSelectTAG=genomesnpspansize/(int(options.numbertosplic))
-    print("genomesizewithSNP:",genomesnpspansize,". for the sizeOfchip every",winsize,"should have a tag SNP. cut genome into ",sizetoSelectTAG,"to select TAG (ie run haploview)",file=tempfile)
+    print("genomesizewithSNP:",genomesnpspansize,". for the sizeOfchip every",winsize,"should have a tag SNP. cut genome into ",sizetoSelectTAG,"to select TAG (ie run haploview)\n",NUMBER,file=tempfile)
     tempfile.close()
     #cut into snp record pieces whose amount equal threads * NUMBER to select TAGs . size that each piece span should bigger than winsize
 #     mappedlistordered=[]
@@ -136,10 +136,11 @@ if __name__ == '__main__':
 #         for t in t_list:
 #             t.join()
     
-    for j in range(0,len(mappedlistordered),NUMBER):
+    for j in range(0,len(mappedlistordered),int(options.threads)):
         pool=Pool(int(options.threads))        
-        pool.map(selectTAGsnp,mappedlistordered[j:j+NUMBER])
+        pool.map(selectTAGsnp,mappedlistordered[j:j+int(options.threads)])
         pool.close()
+        print("thread from",j,"to",j+int(options.threads))
         pool.join()
     print("finish haploview TAGing")    
     #extract two tags by winsize, if no enough TAG in a win then seleced two snps whose AF approxmate to 0.5
