@@ -11,14 +11,14 @@ awk 'BEGIN{OFS="\t"}{print $1,$4}' filtered_OutDSW33216_chr6_1.map>filtered_OutD
 nohup java -XX:+UseParallelGC -XX:ParallelGCThreads=6 -jar ~/software/Haploview.jar -nogui -pedfile filtered_OutDSW33216_chr1.ped -info filtered_OutDSW33216_chr1.info -blockoutput GAB -log filtered_OutDSW33216_chr1.log -out filtered_OutDSW33216_r2_6_chr1 -memory 1240000 -tagrsqcutoff 0.6 -aggressiveTagging > chr1.log 2>&1 &
 
 """
-# from multiprocessing.dummy import Pool
+from multiprocessing.dummy import Pool
 
 import copy
 from functools import reduce
 from optparse import OptionParser
 import os, math, re
 import sys
-import threading
+# import threading
 from time import ctime
 
 from NGS.BasicUtil import VCFutil, Util, Caculators
@@ -61,7 +61,7 @@ def splicVcfbyChr(curchr):
     while startpos<endpos:
         if True or not os.path.exists(re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+".ped"):
             os.system("vcftools --vcf "+options.vcffile+" --recode --recode-INFO-all --remove-indv DSW33216 --chr "+curchr +" --from-bp "+ str(startpos) +" --to-bp "+ str(startpos+sizetoSelectTAG) + " --out "+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i))
-            os.system("vcftools --vcf "+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+".recode.vcf"+" --out "+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+"  --plink")
+            os.system("vcftools --vcf "+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+".recode.vcf"+" --out "+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+"  --plink")
         os.system("""awk 'BEGIN{OFS="\t"}{print $2,$4,$1}' """+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+".map > "+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+".info")
             
         mappedlistOfoneChrmOrdered.append(re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i))
@@ -102,30 +102,39 @@ if __name__ == '__main__':
 #     mappedlistordered=[]
 #     for curchr in vcfobj.chromOrder:
         #
-
-    mappedlistordered=reduce(lambda x,y:x+y,map(splicVcfbyChr,vcfobj.chromOrder))
+    mappedlistordered=[]
+    for chr_idx in range(0,len(vcfobj.chromOrder),NUMBER):
+        
+        pool=Pool(int(options.threads)) 
+        t_mappedlistordered=pool.map(splicVcfbyChr,vcfobj.chromOrder[chr_idx:chr_idx+NUMBER])
+        pool.close()
+        pool.join()
+        mappedlistordered+=t_mappedlistordered
+        print(len(mappedlistordered),mappedlistordered,sep="\n")
+#     mappedlistordered=reduce(lambda x,y:x+y,map(splicVcfbyChr,vcfobj.chromOrder))
     print(NUMBER,len(mappedlistordered),mappedlistordered,sep="\n")
     sys.stdout.flush()
     #temp . this file has been TAGed as a test
     # run haplovew to selectTAG
 #     for i in range(0,)
-    for j in range(0,len(mappedlistordered),NUMBER):
-        t_list=[]
-        for i in range(j,j+NUMBER):
-            if i<len(mappedlistordered):
-                t_list.append(threading.Thread(target=selectTAGsnp,args=(mappedlistordered[i],)))
-                t_list[-1].setDaemon(True)
-                t_list[-1].start()
-        else:
-            print(j,i)
-        for t in t_list:
-            t.join()
-    print("finishe haploview TAGing")
 #     for j in range(0,len(mappedlistordered),NUMBER):
-#         pool=Pool(int(len(options.threads)))        
-#         pool.map(selectTAGsnp,mappedlistordered[j:j+NUMBER])
-#         pool.close()
-#         pool.join()
+#         t_list=[]
+#         for i in range(j,j+NUMBER):
+#             if i<len(mappedlistordered):
+#                 t_list.append(threading.Thread(target=selectTAGsnp,args=(mappedlistordered[i],)))
+#                 t_list[-1].setDaemon(True)
+#                 t_list[-1].start()
+#         else:
+#             print(j,i)
+#         for t in t_list:
+#             t.join()
+    
+    for j in range(0,len(mappedlistordered),NUMBER):
+        pool=Pool(int(options.threads))        
+        pool.map(selectTAGsnp,mappedlistordered[j:j+NUMBER])
+        pool.close()
+        pool.join()
+    print("finish haploview TAGing")    
     #extract two tags by winsize, if no enough TAG in a win then seleced two snps whose AF approxmate to 0.5
     TAGSNP={}
     for tagfile in mappedlistordered:
