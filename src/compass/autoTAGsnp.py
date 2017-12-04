@@ -112,7 +112,7 @@ if __name__ == '__main__':
 #     for chr_idx in range(0,len(vcfobj.chromOrder),NUMBER):
         
     pool=Pool(int(options.threads)) 
-    mappedlistordered=pool.map(splicVcfbyChr,vcfobj.chromOrder)
+    mappedlistordered=reduce(lambda x,y:x+y,pool.map(splicVcfbyChr,vcfobj.chromOrder))
     pool.close()
     pool.join()
 #         mappedlistordered+=t_mappedlistordered
