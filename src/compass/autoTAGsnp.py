@@ -109,14 +109,15 @@ if __name__ == '__main__':
 #     for curchr in vcfobj.chromOrder:
         #
     mappedlistordered=[]
-    for chr_idx in range(0,len(vcfobj.chromOrder),NUMBER):
+#     for chr_idx in range(0,len(vcfobj.chromOrder),NUMBER):
         
-        pool=Pool(int(options.threads)) 
-        t_mappedlistordered=pool.map(splicVcfbyChr,vcfobj.chromOrder[chr_idx:chr_idx+NUMBER])
-        pool.close()
-        pool.join()
-        mappedlistordered+=t_mappedlistordered
-        print(len(mappedlistordered),mappedlistordered,sep="\n")
+    pool=Pool(len(vcfobj.chromOrder)) 
+    mappedlistordered=pool.map(splicVcfbyChr,vcfobj.chromOrder)
+    pool.close()
+    pool.join()
+#         mappedlistordered+=t_mappedlistordered
+#         print(len(mappedlistordered),mappedlistordered,sep="\n")
+#         sys.stdout.flush()
 #     mappedlistordered=reduce(lambda x,y:x+y,map(splicVcfbyChr,vcfobj.chromOrder))
     print(NUMBER,len(mappedlistordered),mappedlistordered,sep="\n")
     sys.stdout.flush()
