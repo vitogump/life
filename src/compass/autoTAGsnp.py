@@ -41,7 +41,8 @@ parser.add_option("-q", "--quiet",
 
 (options,args)=parser.parse_args()
 print(ctime())
-tempfile=open("numberinfo.txt",'w')
+outvcfmappedPRE=re.search(r'[^/]*$',options.outputfilename).group(0)
+tempfile=open(outvcfmappedPRE+"numberinfo.txt",'w')
 NUMBER=math.ceil(int(options.numbertosplic)/int(options.threads))
 def splicVcfbyChr(curchr):
     mappedlistOfoneChrmOrdered=[]
