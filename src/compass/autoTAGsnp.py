@@ -41,6 +41,7 @@ parser.add_option("-q", "--quiet",
 
 (options,args)=parser.parse_args()
 print(ctime())
+outvcfmappedPRE=re.search(r'[^/]*$',options.outputfilename).group(0)
 tempfile=open("numberinfo.txt",'w')
 NUMBER=math.ceil(int(options.numbertosplic)/int(options.threads))
 def splicVcfbyChr(curchr):
@@ -69,7 +70,12 @@ def splicVcfbyChr(curchr):
     return mappedlistOfoneChrmOrdered
 def selectTAGsnp(filename):
     print("java -XX:-UseGCOverheadLimit  -Xmx124g  -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+options.outputfilename+filename+" -memory 120000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
-    os.system("java -XX:-UseGCOverheadLimit  -Xmx124g  -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+options.outputfilename+filename+" -memory 120000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
+    try:
+        os.system("java -XX:-UseGCOverheadLimit  -Xmx124g  -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+options.outputfilename+filename+" -memory 120000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
+    except:
+        print("java -XX:-UseGCOverheadLimit  -Xmx156g  -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+options.outputfilename+filename+" -memory 150000 -maxDistance 200 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
+        os.system("java -XX:-UseGCOverheadLimit  -Xmx156g  -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+options.outputfilename+filename+" -memory 150000 -maxDistance 200 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
+        return
 if __name__ == '__main__':
     #count total size of 
     genomesnpspansize=0
