@@ -46,6 +46,7 @@ tempfile=open(outvcfmappedPRE+"numberinfo.txt",'w')
 NUMBER=math.ceil(int(options.numbertosplic)/int(options.threads))
 def splicVcfbyChr(curchr):
     mappedlistOfoneChrmOrdered=[]
+    vcfFile=open(options.vcffile,'r')
     vcfFile.seek(vcfobj.VcfIndexMap[curchr][0])
     firstline=vcfFile.readline().strip()
     startlinelist=re.split(r'\s+',firstline)
@@ -67,6 +68,7 @@ def splicVcfbyChr(curchr):
             
         mappedlistOfoneChrmOrdered.append(outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i))
         i+=1;startpos+=sizetoSelectTAG
+    vcfFile.close()
     return mappedlistOfoneChrmOrdered
 def selectTAGsnp(filename):
     outvcfmappedpath=os.path.dirname(options.outputfilename)# re.findall(r'/',options.outputfilename)
