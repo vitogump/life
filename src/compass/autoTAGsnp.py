@@ -40,7 +40,7 @@ parser.add_option("-q", "--quiet",
                   help="don't print status messages to stdout")
 
 (options,args)=parser.parse_args()
-print(ctime())
+print(ctime());sys.stdout.flush()
 outvcfmappedPRE=re.search(r'[^/]*$',options.outputfilename).group(0)
 tempfile=open(outvcfmappedPRE+"numberinfo.txt",'w')
 NUMBER=math.ceil(int(options.numbertosplic)/int(options.threads))
@@ -61,7 +61,7 @@ def splicVcfbyChr(curchr):
     i=1
     outvcfmappedPRE=re.search(r'[^/]*$',options.outputfilename).group(0)
     while startpos<endpos:
-        if not os.path.exists(outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+".ped"):
+        if  not os.path.exists(outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+".ped"):
             os.system("vcftools --vcf "+options.vcffile+" --recode --recode-INFO-all --remove-indv DSW33216 --chr "+curchr +" --from-bp "+ str(startpos) +" --to-bp "+ str(startpos+sizetoSelectTAG) + " --out "+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i))
             os.system("vcftools --vcf "+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+".recode.vcf"+" --out "+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+"  --plink")
         os.system("""awk 'BEGIN{OFS="\t"}{print $2,$4,$1}' """+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+".map > "+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+".info")
@@ -72,10 +72,10 @@ def splicVcfbyChr(curchr):
     return mappedlistOfoneChrmOrdered
 def selectTAGsnp(filename):
     outvcfmappedpath=os.path.dirname(options.outputfilename)# re.findall(r'/',options.outputfilename)
-    print("java -XX:-UseGCOverheadLimit  -Xmx124g  -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 120000 -maxDistance 500 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
+    print("java -XX:-UseGCOverheadLimit  -Xmx124g  -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 120000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
     try:
         if not os.path.exists(outvcfmappedpath+"/"+filename+".TAGS"):
-            a=os.system("java -XX:-UseGCOverheadLimit  -Xmx124g  -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 120000 -maxDistance 500 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
+            a=os.system("java -XX:-UseGCOverheadLimit  -Xmx124g  -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 120000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
     except:
         print("java -XX:-UseGCOverheadLimit  -Xmx156g  -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 150000 -maxDistance 200 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
         a=os.system("java -XX:-UseGCOverheadLimit  -Xmx156g  -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 150000 -maxDistance 200 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
