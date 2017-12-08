@@ -74,23 +74,26 @@ def splicVcfbyChr(curchr):
     vcfFile.close()
     return mappedlistOfoneChrmOrdered
 def selectTAGsnp(filename):
-    if re.search(r'[35]$',filename)==None:
-        print("skip :",filename)
-        return
+
     #this block is for 800 fen only
     x8chrno=re.search(r'(\d+)_(\d+)$',filename).group(1)
     x8end=int(re.search(r'_(\d+)$',filename).group(1)) * sizetoSelectTAG
     x8start=(int(re.search(r'_(\d+)$',filename).group(1))-1)*sizetoSelectTAG
     x3splitno=math.ceil( x8end/1336284.436)
+    ##########and the if block below##########################
     """It is recommended that Haploview be run on a machine with at least 128M of memory. The Haploview
 jarfile should now automatically allocate extra memory when starting up, so the -Xmx flag is no longer
 required when running the program from the command line.
     """
+    if re.search(r'[35]$',x8chrno)==None:
+        print("skip :",filename)
+        return    
     print("java -XX:-UseGCOverheadLimit   -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 124000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
     try:
         if os.path.exists(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(x8chrno)+"_"+str(x3splitno)+".TAGS")  and (x8start>(x3splitno-1)*1336284.436 or os.path.exists(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(x8chrno)+"_"+str(x3splitno-1)+".TAGS")):#this if block is specific program for 800 fen, which were used to complement the running of 300 shares split 
             print("skip as corresponding 300fen exist:"+"first_200ksites_300fenfilteredchr"+str(x8chrno)+"_"+str(x3splitno)+".TAGS")
-            return
+            sys.stdout.flush()
+            return########blockend 
         elif not os.path.exists(outvcfmappedpath+"/"+filename+".TAGS"):
             a=os.system("java -XX:-UseGCOverheadLimit   -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 124000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
             
