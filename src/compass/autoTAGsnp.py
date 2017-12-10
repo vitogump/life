@@ -31,7 +31,7 @@ parser = OptionParser()
 parser.add_option("-c", "--chrlist", dest="chrlist",help="if it is not suppled , then use vcffile's information")
 parser.add_option("-v", "--vcffile", dest="vcffile", help="vcffilename")
 parser.add_option("-s", "--sizeOfchip", dest="sizeOfchip", help="400000")
-parser.add_option("-N", "--numbertosplic", dest="numbertosplic", help="DSW33216")
+parser.add_option("-N", "--numbertosplic", dest="numbertosplic", help="800 300")
 parser.add_option("-t", "--threads", dest="threads", help="it's the depth of the dir from the inputdatapath which the data file that need to be process in it,the depth of the inputdatapath is 0")
 parser.add_option("-o", "--outputfilename", dest="outputfilename",help="chromosome")
 parser.add_option("-r", "--rmindvd", dest="rmindvd", help="DSW33216")
@@ -80,18 +80,19 @@ def selectTAGsnp(filename):
     x8end=int(re.search(r'_(\d+)$',filename).group(1)) * sizetoSelectTAG
     x8start=(int(re.search(r'_(\d+)$',filename).group(1))-1)*sizetoSelectTAG
     x3splitno=math.ceil( x8end/1336284.436)
+    X3mod=x8end%1336284.436
     ##########and the if block below##########################
     """It is recommended that Haploview be run on a machine with at least 128M of memory. The Haploview
 jarfile should now automatically allocate extra memory when starting up, so the -Xmx flag is no longer
 required when running the program from the command line.
     """
     if re.search(r'[35]$',x8chrno)==None:
-        print("skip :",filename)
+        print("skip other chrom:",filename)
         return    
     print("java -XX:-UseGCOverheadLimit   -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 124000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
     try:
-        if os.path.exists(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(x8chrno)+"_"+str(x3splitno)+".TAGS")  and (x8start>(x3splitno-1)*1336284.436 or os.path.exists(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(x8chrno)+"_"+str(x3splitno-1)+".TAGS")):#this if block is specific program for 800 fen, which were used to complement the running of 300 shares split 
-            print("skip as corresponding 300fen exist:"+"first_200ksites_300fenfilteredchr"+str(x8chrno)+"_"+str(x3splitno)+".TAGS")
+        if (os.path.exists(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(x8chrno)+"_"+str(x3splitno)+".TAGS") or (os.path.exists(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(x8chrno)+"_"+str(int( x8end/1336284.436))) and X3mod>=winsize))  and (x8start>(x3splitno-1)*1336284.436 or os.path.exists(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(x8chrno)+"_"+str(x3splitno-1)+".TAGS")):#this if block is specific program for 800 fen, which were used to complement the running of 300 shares split 
+            print("skip"+ outvcfmappedpath+"/"+filename+".TAGS as corresponding 300fen exist:"+"first_200ksites_300fenfilteredchr"+str(x8chrno)+"_"+str(x3splitno)+".TAGS")
             sys.stdout.flush()
             return########blockend 
         elif not os.path.exists(outvcfmappedpath+"/"+filename+".TAGS"):
@@ -175,7 +176,7 @@ if __name__ == '__main__':
     #extract two tags by winsize, if no enough TAG in a win then seleced two snps whose AF approxmate to 0.5
     TAGSNP={}
     for tagfile in mappedlistordered:
-        tagfilename=outvcfmappedPRE+"/"+tagfile+".TAGS"
+        tagfilename=outvcfmappedpath+"/"+tagfile+".TAGS"
         if not os.path.exists(tagfilename):
             print("check the corresponding 300 fen result,if exist extract tags else continue")
             if True:
@@ -189,10 +190,10 @@ if __name__ == '__main__':
             for line in tf:
                 snpID=re.split(r":",re.split(r"\s+",line.strip())[0])
                 if snpID[0] in TAGSNP:
-                    TAGSNP[snpID[0]].append(int(snpID[1]))
+                    TAGSNP[snpID[0]].append(int(re.split(r",",snpID[1])[0]))
                 else:
-                    snppos=re.search(r'^\d+',snpID[1]).group(0)
-                    TAGSNP[snpID[0]]=[int(snppos)]
+                    snppos=int(re.split(r",",snpID[1])[0])
+                    TAGSNP[snpID[0]]=[snppos]
     tagsMap={}           
     with open(options.outputfilename+".ALLTAGS",'w') as atf:
         for chrom in sorted(TAGSNP.keys()):
