@@ -11,15 +11,17 @@ awk 'BEGIN{OFS="\t"}{print $1,$4}' filtered_OutDSW33216_chr6_1.map>filtered_OutD
 nohup java -XX:+UseParallelGC -XX:ParallelGCThreads=6 -jar ~/software/Haploview.jar -nogui -pedfile filtered_OutDSW33216_chr1.ped -info filtered_OutDSW33216_chr1.info -blockoutput GAB -log filtered_OutDSW33216_chr1.log -out filtered_OutDSW33216_r2_6_chr1 -memory 1240000 -tagrsqcutoff 0.6 -aggressiveTagging > chr1.log 2>&1 &
 
 """
-from multiprocessing.dummy import Pool
+# import threading
 
 import copy
 from functools import reduce
+from multiprocessing.dummy import Pool
 from optparse import OptionParser
 import os, math, re
-import sys
-# import threading
-from time import ctime
+import shlex  
+import signal
+import sys, subprocess
+from time import ctime, time
 
 from NGS.BasicUtil import VCFutil, Util, Caculators
 
@@ -31,7 +33,7 @@ parser = OptionParser()
 parser.add_option("-c", "--chrlist", dest="chrlist",help="if it is not suppled , then use vcffile's information")
 parser.add_option("-v", "--vcffile", dest="vcffile", help="vcffilename")
 parser.add_option("-s", "--sizeOfchip", dest="sizeOfchip", help="400000")
-parser.add_option("-N", "--numbertosplic", dest="numbertosplic", help="800 300")
+parser.add_option("-N", "--numbertosplic", dest="numbertosplic", help="800 ? 300? ...")
 parser.add_option("-t", "--threads", dest="threads", help="it's the depth of the dir from the inputdatapath which the data file that need to be process in it,the depth of the inputdatapath is 0")
 parser.add_option("-o", "--outputfilename", dest="outputfilename",help="chromosome")
 parser.add_option("-r", "--rmindvd", dest="rmindvd", help="DSW33216")
@@ -46,6 +48,7 @@ outvcfmappedPRE=re.search(r'[^/]*$',options.outputfilename).group(0)
 outvcfmappedpath=os.path.dirname(options.outputfilename)
 tempfile=open(outvcfmappedPRE+"numberinfo.txt",'w')
 NUMBER=math.ceil(int(options.numbertosplic)/int(options.threads))
+regionMap={}
 def splicVcfbyChr(curchr):
     mappedlistOfoneChrmOrdered=[]
     vcfFile=open(options.vcffile,'r')
@@ -68,7 +71,7 @@ def splicVcfbyChr(curchr):
             os.system("""awk 'BEGIN{OFS="\t"}{print $2,$4,$1}' """+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+".map > "+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+".info")
         else:
             print("use exist file",outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+".ped")
-            
+        regionMap[outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)]=(startpos,endpos) 
         mappedlistOfoneChrmOrdered.append(outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i))
         i+=1;startpos+=sizetoSelectTAG
     vcfFile.close()
@@ -76,36 +79,71 @@ def splicVcfbyChr(curchr):
 def selectTAGsnp(filename):
 
     #this block is for 800 fen only
-    x8chrno=re.search(r'(\d+)_(\d+)$',filename).group(1)
+    mainchrno=re.search(r'(\d+)_(\d+)$',filename).group(1)
+
+    
     x8end=int(re.search(r'_(\d+)$',filename).group(1)) * sizetoSelectTAG
     x8start=(int(re.search(r'_(\d+)$',filename).group(1))-1)*sizetoSelectTAG
     x3splitno=math.ceil( x8end/1336284.436)
     X3mod=x8end%1336284.436
+
     ##########and the if block below##########################
+
+    if re.search(r'[68]$',mainchrno)==None:
+        print("skip other chrom:",filename)
+        return  
     """It is recommended that Haploview be run on a machine with at least 128M of memory. The Haploview
 jarfile should now automatically allocate extra memory when starting up, so the -Xmx flag is no longer
 required when running the program from the command line.
-    """
-    if re.search(r'[35]$',x8chrno)==None:
-        print("skip other chrom:",filename)
-        return    
+    """      
     print("java -XX:-UseGCOverheadLimit   -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 124000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
-    try:
-        if (os.path.exists(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(x8chrno)+"_"+str(x3splitno)+".TAGS") or (os.path.exists(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(x8chrno)+"_"+str(int( x8end/1336284.436))) and X3mod>=winsize))  and (x8start>=(x3splitno-1)*1336284.436 or os.path.exists(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(x8chrno)+"_"+str(x3splitno-1)+".TAGS")):#this if block is specific program for 800 fen, which were used to complement the running of 300 shares split 
-            print("skip"+ outvcfmappedpath+"/"+filename+".TAGS as corresponding 300fen exist:"+"first_200ksites_300fenfilteredchr"+str(x8chrno)+"_"+str(x3splitno)+".TAGS")
-            sys.stdout.flush()
-            return########blockend 
-        elif not os.path.exists(outvcfmappedpath+"/"+filename+".TAGS"):
-            a=os.system("java -XX:-UseGCOverheadLimit   -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 124000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
-            
-        else:
-            print(outvcfmappedpath+"/"+filename+".TAGS exist")
-            a=0
-    except:
-        print("java -XX:-UseGCOverheadLimit    -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 150000 -maxDistance 200 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
-        a=os.system("java -XX:-UseGCOverheadLimit    -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 179000 -maxDistance 200 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
-    if a!=0:
-        os.system("java -XX:-UseGCOverheadLimit    -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 179000 -maxDistance 200 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
+#     try:
+    if (os.path.exists(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(x3splitno)+".TAGS") or (os.path.exists(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(int( x8end/1336284.436))) and X3mod>=winsize))  and (x8start>=(x3splitno-1)*1336284.436 or os.path.exists(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(x3splitno-1)+".TAGS")):#this if block is specific program for 800 fen, which were used to complement the running of 300 shares split 
+        print("skip"+ outvcfmappedpath+"/"+filename+".TAGS as corresponding 300fen exist:"+"first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(x3splitno)+".TAGS")
+        sys.stdout.flush()
+        return########blockend 
+    elif not os.path.exists(outvcfmappedpath+"/"+filename+".TAGS") and (not os.path.exists(outvcfmappedpath+"/"+filename+"_1.TAGS")) :
+        tagcomdstr="java -XX:-UseGCOverheadLimit   -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 124000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging"
+#                    "java -XX:-UseGCOverheadLimit   -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 124000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging" 
+#         tagcomd=shlex.split(tagcomdstr)
+        p=subprocess.Popen(tagcomdstr,shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+        while p.poll() is None:
+            line=p.stdout.readline()
+            if "Exception" in str(line) or "Error" in str(line):
+                os.kill(p.pid,signal.SIGTERM)
+                os.system("vcftools --vcf "+filename+".vcf --recode --recode-INFO-all --chr "+ mainchrno+" --from-bp "+str(regionMap[filename][0]) +" --to-bp "+str((regionMap[filename][1]+regionMap[filename][0])/2)+" --out "+filename+"_1")
+                os.system("vcftools --vcf "+filename+"_1"+".recode.vcf"+" --out "+filename+"_1 --plink")
+                os.system("""awk 'BEGIN{OFS="\t"}{print $2,$4,$1}' """+filename+"_1.map >" +filename+"_1.info")
+                
+                os.system("vcftools --vcf "+filename+".vcf --recode --recode-INFO-all --chr "+ mainchrno+" --from-bp "+str((regionMap[filename][1]+regionMap[filename][0])/2) +" --to-bp "+str(regionMap[filename][1])+" --out "+filename+"_2")
+                os.system("vcftools --vcf "+filename+"_2"+".recode.vcf"+" --out "+filename+"_2 --plink")
+                os.system("""awk 'BEGIN{OFS="\t"}{print $2,$4,$1}' """+filename+"_2.map >" +filename+"_2.info")
+                
+                a=os.system("java -XX:-UseGCOverheadLimit  -jar ~/software/Haploview.jar -nogui -pedfile "+filename+"_1.ped -info "+filename+"_1.info  -blockoutput GAB -log "+filename+"_1.log -out "+outvcfmappedpath+"/"+filename+"_1   -memory 124000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
+                b=os.system("java -XX:-UseGCOverheadLimit  -jar ~/software/Haploview.jar -nogui -pedfile "+filename+"_2.ped -info "+filename+"_2.info  -blockoutput GAB -log "+filename+"_2.log -out "+outvcfmappedpath+"/"+filename+"_2   -memory 124000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
+                try:
+                    pass
+                except:
+                    pass
+            else:
+                print(line)
+        try:
+            if p.returncode == 0:
+                return
+            elif a==0 and b==0:
+                return
+        except:
+            print(filename+"_1.ped or"+filename+"_1.ped with exception" )
+#         a=os.system("java -XX:-UseGCOverheadLimit   -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 124000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
+        
+    else:
+        print(outvcfmappedpath+"/"+filename+".TAGS exist")
+        a=0
+#     except:
+#         print("java -XX:-UseGCOverheadLimit    -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 150000 -maxDistance 200 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
+#         a=os.system("java -XX:-UseGCOverheadLimit    -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 179000 -maxDistance 200 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
+#     if p.returncode == 0: a!=0:
+#         os.system("java -XX:-UseGCOverheadLimit    -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 179000 -maxDistance 200 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
 if __name__ == '__main__':
     #count total size of 
     genomesnpspansize=0
@@ -178,22 +216,52 @@ if __name__ == '__main__':
     for tagfile in mappedlistordered:
         tagfilename=outvcfmappedpath+"/"+tagfile+".TAGS"
         if not os.path.exists(tagfilename):
-            print("check the corresponding 300 fen result,if exist extract tags else continue")
-            if True:
-                print("depending on use 800 or 300 ,300 is better")
+            mainchrno=re.search(r'(\d+)_(\d+)$',tagfilename).group(1)
+            x8end=int(re.search(r'_(\d+)$',tagfilename).group(1)) * sizetoSelectTAG
+            x8start=(int(re.search(r'_(\d+)$',tagfilename).group(1))-1)*sizetoSelectTAG
+            x3splitno=math.ceil( x8end/1336284.436)
+            X3mod=x8end%1336284.436
+            print("check the corresponding 300 fen or _1 and _2 result,if exist extract tags else continue")
+#             (os.path.exists(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(x3splitno)+".TAGS") or (os.path.exists(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(int( x8end/1336284.436))) and X3mod>=winsize))  and (x8start>=(x3splitno-1)*1336284.436 or os.path.exists(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(x3splitno-1)+".TAGS"))
+            if os.path.exists(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(x3splitno)+".TAGS"):
+                tf=open(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(x3splitno)+".TAGS",'r')
+                print("use "+outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(x3splitno)+".TAGS")
+            elif os.path.exists(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(int( x8end/1336284.436))) and X3mod>=winsize:
+                tf=open(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(int( x8end/1336284.436)),'r')
+                print("use "+outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(int( x8end/1336284.436)))
             else:
+                print(tagfilename,"does not exist and no complement file")
                 continue
-        with open(tagfilename,'r') as tf:
-            for line in tf:
+            if (x8start<(x3splitno-1)*1336284.436 and os.path.exists(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(x3splitno-1)+".TAGS")):
+                print("use "+outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(x3splitno-1)+".TAGS")
+                tf1=open(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(x3splitno-1)+".TAGS",'r')
+            else:
+                tf1=None
+        else:
+            tf=open(tagfilename,'r')
+        for line in tf:
+            if re.search(r'^Test\s+Alleles\s+Captured',line.strip())!=None:
+                break
+        for line in tf:
+            snpID=re.split(r":",re.split(r"\s+",line.strip())[0])
+            if snpID[0] in TAGSNP:
+                TAGSNP[snpID[0]].append(int(re.split(r",",snpID[1])[0]))
+            else:
+                snppos=int(re.split(r",",snpID[1])[0])
+                TAGSNP[snpID[0]]=[snppos]
+        tf.close()
+        if tf1 is not None:
+            for line in tf1:
                 if re.search(r'^Test\s+Alleles\s+Captured',line.strip())!=None:
                     break
-            for line in tf:
+            for line in tf1:
                 snpID=re.split(r":",re.split(r"\s+",line.strip())[0])
                 if snpID[0] in TAGSNP:
                     TAGSNP[snpID[0]].append(int(re.split(r",",snpID[1])[0]))
                 else:
                     snppos=int(re.split(r",",snpID[1])[0])
                     TAGSNP[snpID[0]]=[snppos]
+            tf1.close();tf1=None
     tagsMap={}           
     with open(options.outputfilename+".ALLTAGS",'w') as atf:
         for chrom in sorted(TAGSNP.keys()):
