@@ -111,11 +111,11 @@ required when running the program from the command line.
             line=p.stdout.readline()
             if "Exception" in str(line) or "Error" in str(line):
                 os.kill(p.pid,signal.SIGTERM)
-                os.system("vcftools --vcf "+filename+".vcf --recode --recode-INFO-all --chr "+ mainchrno+" --from-bp "+str(regionMap[filename][0]) +" --to-bp "+str((regionMap[filename][1]+regionMap[filename][0])/2)+" --out "+filename+"_1")
+                os.system("vcftools --vcf "+filename+".recode.vcf --recode --recode-INFO-all --chr "+ mainchrno+" --from-bp "+str(regionMap[filename][0]) +" --to-bp "+str((regionMap[filename][1]+regionMap[filename][0])/2)+" --out "+filename+"_1")
                 os.system("vcftools --vcf "+filename+"_1"+".recode.vcf"+" --out "+filename+"_1 --plink")
                 os.system("""awk 'BEGIN{OFS="\t"}{print $2,$4,$1}' """+filename+"_1.map >" +filename+"_1.info")
                 
-                os.system("vcftools --vcf "+filename+".vcf --recode --recode-INFO-all --chr "+ mainchrno+" --from-bp "+str((regionMap[filename][1]+regionMap[filename][0])/2) +" --to-bp "+str(regionMap[filename][1])+" --out "+filename+"_2")
+                os.system("vcftools --vcf "+filename+".recode.vcf --recode --recode-INFO-all --chr "+ mainchrno+" --from-bp "+str((regionMap[filename][1]+regionMap[filename][0])/2) +" --to-bp "+str(regionMap[filename][1])+" --out "+filename+"_2")
                 os.system("vcftools --vcf "+filename+"_2"+".recode.vcf"+" --out "+filename+"_2 --plink")
                 os.system("""awk 'BEGIN{OFS="\t"}{print $2,$4,$1}' """+filename+"_2.map >" +filename+"_2.info")
                 
