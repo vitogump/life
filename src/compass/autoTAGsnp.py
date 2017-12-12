@@ -93,7 +93,7 @@ def selectTAGsnp(filename):
 
     ##########and the if block below##########################
 
-    if re.search(r'[68]$',mainchrno)==None:
+    if re.search(r'[35]$',mainchrno)==None:
         print("skip other chrom:",filename)
         return  
     """It is recommended that Haploview be run on a machine with at least 128M of memory. The Haploview
@@ -114,7 +114,7 @@ required when running the program from the command line.
         while p.poll() is None:
             line=p.stdout.readline()
             if "Exception" in str(line) or "Error" in str(line):
-                print(line,p.pid)
+                print(line,p.pid,filename)
                 try:
                     k=os.kill(p.pid,signal.SIGTERM)
                     print(k)
@@ -123,14 +123,14 @@ required when running the program from the command line.
                     print("still runing?")
                 
                 
-                os.system("vcftools --vcf "+filename+".recode.vcf --recode --recode-INFO-all --chr "+ mainchrno+" --from-bp "+str(regionMap[filename][0]) +" --to-bp "+str((regionMap[filename][1]+regionMap[filename][0])/2)+" --out "+filename+"_1")
-                os.system("vcftools --vcf "+filename+"_1"+".recode.vcf"+" --out "+filename+"_1 --plink")
+                os.system(vcftools+ "--vcf "+filename+".recode.vcf --recode --recode-INFO-all --chr "+ mainchrno+" --from-bp "+str(regionMap[filename][0]) +" --to-bp "+str((regionMap[filename][1]+regionMap[filename][0])/2)+" --out "+filename+"_1")
+                os.system(vcftools+ "--vcf "+filename+"_1"+".recode.vcf"+" --out "+filename+"_1 --plink")
                 os.system("""awk 'BEGIN{OFS="\t"}{print $2,$4,$1}' """+filename+"_1.map >" +filename+"_1.info")
                 
-                os.system("vcftools --vcf "+filename+".recode.vcf --recode --recode-INFO-all --chr "+ mainchrno+" --from-bp "+str((regionMap[filename][1]+regionMap[filename][0])/2) +" --to-bp "+str(regionMap[filename][1])+" --out "+filename+"_2")
-                os.system("vcftools --vcf "+filename+"_2"+".recode.vcf"+" --out "+filename+"_2 --plink")
+                os.system(vcftools+ "--vcf "+filename+".recode.vcf --recode --recode-INFO-all --chr "+ mainchrno+" --from-bp "+str((regionMap[filename][1]+regionMap[filename][0])/2) +" --to-bp "+str(regionMap[filename][1])+" --out "+filename+"_2")
+                os.system(vcftools+ "--vcf "+filename+"_2"+".recode.vcf"+" --out "+filename+"_2 --plink")
                 os.system("""awk 'BEGIN{OFS="\t"}{print $2,$4,$1}' """+filename+"_2.map >" +filename+"_2.info")
-                
+                print("start splited threads",filename)
                 a=os.system("java -XX:-UseGCOverheadLimit  -jar "+Haploview+" -nogui -pedfile "+filename+"_1.ped -info "+filename+"_1.info  -blockoutput GAB -log "+filename+"_1.log -out "+outvcfmappedpath+"/"+filename+"_1   -memory 124000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
                 b=os.system("java -XX:-UseGCOverheadLimit  -jar "+Haploview+" -nogui -pedfile "+filename+"_2.ped -info "+filename+"_2.info  -blockoutput GAB -log "+filename+"_2.log -out "+outvcfmappedpath+"/"+filename+"_2   -memory 124000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
                 try:
@@ -144,6 +144,8 @@ required when running the program from the command line.
                 return
             elif a==0 and b==0:
                 return
+            else:
+                print("should run again")
         except:
             print(filename+"_1.ped or"+filename+"_1.ped with exception" )
 #         a=os.system("java -XX:-UseGCOverheadLimit   -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 124000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
