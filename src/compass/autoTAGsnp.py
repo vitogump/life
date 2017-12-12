@@ -42,8 +42,8 @@ parser.add_option("-q", "--quiet",
                   help="don't print status messages to stdout")
 
 "need vcftools java Haploview.jar"
-vcftools="vcftools"
-Haploview="~/software/Haploview.jar"
+vcftools="/pub/tool/vcftools_0.1.12b/bin/vcftools"
+Haploview="/home/project_pan/liangzuoxiang/comp/softw/Haploview.jar"
 (options,args)=parser.parse_args()
 print(ctime());sys.stdout.flush()
 outvcfmappedPRE=re.search(r'[^/]*$',options.outputfilename).group(0)
@@ -93,32 +93,34 @@ def selectTAGsnp(filename):
 
     ##########and the if block below##########################
 
-#     if re.search(r'[9]$',mainchrno)==None:
-#         print("skip other chrom:",filename)
-#         return  
+    if re.search(r'[68]$',mainchrno)==None:
+        print("skip other chrom:",filename)
+        return  
     """It is recommended that Haploview be run on a machine with at least 128M of memory. The Haploview
 jarfile should now automatically allocate extra memory when starting up, so the -Xmx flag is no longer
 required when running the program from the command line.
     """      
-    print("java -XX:-UseGCOverheadLimit   -jar "+Haploview+" -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 124000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
+#     print("java -XX:-UseGCOverheadLimit   -jar "+Haploview+" -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 124000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
 #     try:
     if (os.path.exists(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(x3splitno)+".TAGS") or (os.path.exists(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(int( x8end/1336284.436))) and X3mod>=winsize))  and (x8start>=(x3splitno-1)*1336284.436 or os.path.exists(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(x3splitno-1)+".TAGS")):#this if block is specific program for 800 fen, which were used to complement the running of 300 shares split 
         print("skip"+ outvcfmappedpath+"/"+filename+".TAGS as corresponding 300fen exist:"+"first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(x3splitno)+".TAGS")
         sys.stdout.flush()
         return########blockend 
     elif not os.path.exists(outvcfmappedpath+"/"+filename+".TAGS") and (not os.path.exists(outvcfmappedpath+"/"+filename+"_1.TAGS")) :
-        tagcomdstr="java -XX:-UseGCOverheadLimit   -jar "+Haploview+" -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 124000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging"
+        tagcomdstr="java -XX:-UseGCOverheadLimit   -jar "+Haploview+" -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 150000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging"
 #                    "java -XX:-UseGCOverheadLimit   -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 124000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging" 
 #         tagcomd=shlex.split(tagcomdstr)
+        print(tagcomdstr)
         p=subprocess.Popen(tagcomdstr,shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
         while p.poll() is None:
             line=p.stdout.readline()
             if "Exception" in str(line) or "Error" in str(line):
                 print(line,p.pid,filename)
                 try:
+                    p.terminate()
+                    p.kill()
                     k=os.kill(p.pid,signal.SIGTERM)
                     print(k)
-                    p.kill()
                 except:
                     print("still runing?")
                 
@@ -130,6 +132,7 @@ required when running the program from the command line.
                     pass
             else:
                 print(line)
+            print(p.stdout.readline())
         try:
             if p.returncode == 0:
                 return
@@ -144,8 +147,8 @@ required when running the program from the command line.
                 os.system(vcftools+ " --vcf "+filename+"_2"+".recode.vcf"+" --out "+filename+"_2 --plink")
                 os.system("""awk 'BEGIN{OFS="\t"}{print $2,$4,$1}' """+filename+"_2.map >" +filename+"_2.info")
                 print("start splited threads",filename)
-                a=os.system("java -XX:-UseGCOverheadLimit  -jar "+Haploview+" -nogui -pedfile "+filename+"_1.ped -info "+filename+"_1.info  -blockoutput GAB -log "+filename+"_1.log -out "+outvcfmappedpath+"/"+filename+"_1   -memory 124000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
-                b=os.system("java -XX:-UseGCOverheadLimit  -jar "+Haploview+" -nogui -pedfile "+filename+"_2.ped -info "+filename+"_2.info  -blockoutput GAB -log "+filename+"_2.log -out "+outvcfmappedpath+"/"+filename+"_2   -memory 124000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
+                a=os.system("java -XX:-UseGCOverheadLimit  -jar "+Haploview+" -nogui -pedfile "+filename+"_1.ped -info "+filename+"_1.info  -blockoutput GAB -log "+filename+"_1.log -out "+outvcfmappedpath+"/"+filename+"_1   -memory 150000 -maxDistance 150 -taglodcutoff 3 -tagrsqcutoff 0.5 -aggressiveTagging")
+                b=os.system("java -XX:-UseGCOverheadLimit  -jar "+Haploview+" -nogui -pedfile "+filename+"_2.ped -info "+filename+"_2.info  -blockoutput GAB -log "+filename+"_2.log -out "+outvcfmappedpath+"/"+filename+"_2   -memory 150000 -maxDistance 150 -taglodcutoff 3 -tagrsqcutoff 0.5 -aggressiveTagging")
                 print("should run again? mv the split block here? os.system(vcftools+...)")
         except:
             print(filename+"_1.ped or"+filename+"_1.ped with exception" )
