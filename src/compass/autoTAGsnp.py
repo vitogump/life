@@ -42,8 +42,8 @@ parser.add_option("-q", "--quiet",
                   help="don't print status messages to stdout")
 
 "need vcftools java Haploview.jar"
-vcftools="/pub/tool/vcftools/bin/vcftools"
-Haploview="/home/temporary/liangzuox/comp/softw/Haploview.jar"
+vcftools="vcftools"
+Haploview="~/software/Haploview.jar"
 (options,args)=parser.parse_args()
 print(ctime());sys.stdout.flush()
 outvcfmappedPRE=re.search(r'[^/]*$',options.outputfilename).group(0)
@@ -93,9 +93,9 @@ def selectTAGsnp(filename):
 
     ##########and the if block below##########################
 
-    if re.search(r'[9]$',mainchrno)==None:
-        print("skip other chrom:",filename)
-        return  
+#     if re.search(r'[9]$',mainchrno)==None:
+#         print("skip other chrom:",filename)
+#         return  
     """It is recommended that Haploview be run on a machine with at least 128M of memory. The Haploview
 jarfile should now automatically allocate extra memory when starting up, so the -Xmx flag is no longer
 required when running the program from the command line.
