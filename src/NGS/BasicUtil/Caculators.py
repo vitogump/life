@@ -222,6 +222,11 @@ class CaculatorToFindTAGs(Caculator):
             valuetoReturn=[tag1,tag2]
         else:
             snplist=self.vcfobj.getVcfListByChrom(self.curchom,self.curwinStart,self.curwinEnd,MQfilter=0)
+            af05dlist=[]
+#             for pos,ref,alt,info,format,samples in snplist:
+#                 af_05d=abs(float(re.search(r"AF=([\d\.e-]+)[;,]",info).group(1))-0.5)
+#                 af05dlist.append(af_05d)
+#             af05dlist.sort()
             if self.TAGSforAwin==1 and len(snplist)>=1:
                 idxlist=random.sample([j for j in range(len(snplist))],1)
                 valuetoReturn=[self.TAGSforAwin[0],snplist[idxlist[0]]]
@@ -294,9 +299,9 @@ class Caculate_Hp_master_slave(Caculator):
                     except ValueError:
                         print(sample, end="|")
             elif MethofToSeq == "indvd":
-                AF = float(re.search(r"AF=([\d\.e-]+);", T[3 + MethodToSeq_idx][0]).group(1))
-                AN = int(re.search(r"AN=(\d+);", T[3 + MethodToSeq_idx][0]).group(1))
-                AC = int(re.search(r"AC=(\d+);", T[3 + MethodToSeq_idx][0]).group(1))
+                AF = float(re.search(r"AF=([\d\.e-]+)[;,]", T[3 + MethodToSeq_idx][0]).group(1))
+                AN = int(re.search(r"AN=(\d+)[;,]", T[3 + MethodToSeq_idx][0]).group(1))
+                AC = int(re.search(r"AC=(\d+)[;,]", T[3 + MethodToSeq_idx][0]).group(1))
                 refdep = AN - AC
                 altalleledep = AC
             if refdep <= seqerrorrate * (refdep + altalleledep):  # skip fixed as altallele ,ie refdep == 0
@@ -369,9 +374,9 @@ class Caculate_Hp(Caculator):
                     except ValueError:
                         print(sample, end="|")
             elif MethofToSeq == "indvd":
-                AF = float(re.search(r"AF=([\d\.e-]+);", T[3 + MethodToSeq_idx][0]).group(1))
-                AN = int(re.search(r"AN=(\d+);", T[3 + MethodToSeq_idx][0]).group(1))
-                AC = int(re.search(r"AC=(\d+);", T[3 + MethodToSeq_idx][0]).group(1))
+                AF = float(re.search(r"AF=([\d\.e-]+)[;,]", T[3 + MethodToSeq_idx][0]).group(1))
+                AN = int(re.search(r"AN=(\d+)[;,]", T[3 + MethodToSeq_idx][0]).group(1))
+                AC = int(re.search(r"AC=(\d+)[;,]", T[3 + MethodToSeq_idx][0]).group(1))
                 refdep = AN - AC
                 altalleledep = AC
             if refdep <= seqerrorrate * (refdep + altalleledep):  # skip fixed as altallele ,ie refdep == 0
@@ -559,8 +564,8 @@ class Caculate_S_ObsExp_difference(Caculator):
                         continue
             else:
                 if self.MethodToSeqpoplist[tpopidx-3]=="indvd":
-                    AF=float(re.search(r"AF=([\d\.e-]+);", T[tpopidx][0]).group(1))
-                    AN = float(re.search(r"AN=([\d]+);", T[tpopidx][0]).group(1))
+                    AF=float(re.search(r"AF=([\d\.e-]+)[;,]", T[tpopidx][0]).group(1))
+                    AN = float(re.search(r"AN=([\d]+)[;,]", T[tpopidx][0]).group(1))
                     if AN<5:
                         continue
                 elif self.MethodToSeqpoplist[tpopidx-3]=="pool":
@@ -610,7 +615,7 @@ class Caculate_S_ObsExp_difference(Caculator):
                         continue
             else:
                 if self.MethodToSeqpoplist[rpopidx-3]=="indvd":
-                    AF=float(re.search(r"AF=([\d\.]+);", T[rpopidx][0]).group(1))
+                    AF=float(re.search(r"AF=([\d\.]+)[;,]", T[rpopidx][0]).group(1))
                 elif self.MethodToSeqpoplist[rpopidx-3]=="pool":
                     refdep = 0;altalleledep = 0
                     AD_idx = (re.split(":", T[rpopidx][1])).index("AD")
@@ -763,8 +768,8 @@ class Caculate_pairFst(Caculator):
                         continue
             else:
                 if self.MethodToSeqpoplist[tpopidx-3]=="indvd":
-                    AF=float(re.search(r"AF=([\d\.e-]+);", T[tpopidx][0]).group(1))
-                    AN = float(re.search(r"AN=([\d]+);", T[tpopidx][0]).group(1))
+                    AF=float(re.search(r"AF=([\d\.e-]+)[;,]", T[tpopidx][0]).group(1))
+                    AN = float(re.search(r"AN=([\d]+)[;,]", T[tpopidx][0]).group(1))
                     if AN<5:
                         continue
                 elif self.MethodToSeqpoplist[tpopidx-3]=="pool":
@@ -809,7 +814,7 @@ class Caculate_pairFst(Caculator):
                         continue
             else:
                 if self.MethodToSeqpoplist[rpopidx-3-self.N_of_targetpop]=="indvd":
-                    AF=float(re.search(r"AF=([\d\.]+);", T[rpopidx][0]).group(1))
+                    AF=float(re.search(r"AF=([\d\.]+)[;,]", T[rpopidx][0]).group(1))
                 elif self.MethodToSeqpoplist[rpopidx-3-self.N_of_targetpop]=="pool":
                     refdep = 0;altalleledep = 0
                     AD_idx = (re.split(":", T[rpopidx][1])).index("AD")
