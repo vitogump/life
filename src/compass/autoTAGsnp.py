@@ -42,6 +42,8 @@ parser.add_option("-q", "--quiet",
                   help="don't print status messages to stdout")
 
 "need vcftools java Haploview.jar"
+vcftools="vcftools"
+Haploview="~/software/Haploview.jar"
 (options,args)=parser.parse_args()
 print(ctime());sys.stdout.flush()
 outvcfmappedPRE=re.search(r'[^/]*$',options.outputfilename).group(0)
@@ -66,12 +68,14 @@ def splicVcfbyChr(curchr):
     i=1
     while startpos<endpos:
         if  not os.path.exists(outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+".ped"):
-            os.system("vcftools --vcf "+options.vcffile+" --recode --recode-INFO-all --remove-indv DSW33216 --chr "+curchr +" --from-bp "+ str(startpos) +" --to-bp "+ str(startpos+sizetoSelectTAG) + " --out "+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i))
-            os.system("vcftools --vcf "+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+".recode.vcf"+" --out "+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+"  --plink")
+            os.system(vcftools+" --vcf "+options.vcffile+" --recode --recode-INFO-all --remove-indv DSW33216 --chr "+curchr +" --from-bp "+ str(startpos) +" --to-bp "+ str(startpos+sizetoSelectTAG) + " --out "+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i))
+            os.system(vcftools+" --vcf "+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+".recode.vcf"+" --out "+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+"  --plink")
             os.system("""awk 'BEGIN{OFS="\t"}{print $2,$4,$1}' """+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+".map > "+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+".info")
         else:
             print("use exist file",outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+".ped")
-        regionMap[outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)]=(startpos,endpos) 
+        regionMap[outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)]=(startpos,startpos+sizetoSelectTAG) 
+        print(outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i))
+        print(startpos,startpos+sizetoSelectTAG)
         mappedlistOfoneChrmOrdered.append(outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i))
         i+=1;startpos+=sizetoSelectTAG
     vcfFile.close()
@@ -96,21 +100,29 @@ def selectTAGsnp(filename):
 jarfile should now automatically allocate extra memory when starting up, so the -Xmx flag is no longer
 required when running the program from the command line.
     """      
-    print("java -XX:-UseGCOverheadLimit   -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 124000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
+    print("java -XX:-UseGCOverheadLimit   -jar "+Haploview+" -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 124000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
 #     try:
     if (os.path.exists(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(x3splitno)+".TAGS") or (os.path.exists(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(int( x8end/1336284.436))) and X3mod>=winsize))  and (x8start>=(x3splitno-1)*1336284.436 or os.path.exists(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(x3splitno-1)+".TAGS")):#this if block is specific program for 800 fen, which were used to complement the running of 300 shares split 
         print("skip"+ outvcfmappedpath+"/"+filename+".TAGS as corresponding 300fen exist:"+"first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(x3splitno)+".TAGS")
         sys.stdout.flush()
         return########blockend 
     elif not os.path.exists(outvcfmappedpath+"/"+filename+".TAGS") and (not os.path.exists(outvcfmappedpath+"/"+filename+"_1.TAGS")) :
-        tagcomdstr="java -XX:-UseGCOverheadLimit   -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 124000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging"
+        tagcomdstr="java -XX:-UseGCOverheadLimit   -jar "+Haploview+" -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 124000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging"
 #                    "java -XX:-UseGCOverheadLimit   -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 124000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging" 
 #         tagcomd=shlex.split(tagcomdstr)
         p=subprocess.Popen(tagcomdstr,shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
         while p.poll() is None:
             line=p.stdout.readline()
             if "Exception" in str(line) or "Error" in str(line):
-                os.kill(p.pid,signal.SIGTERM)
+                print(line,p.pid)
+                try:
+                    k=os.kill(p.pid,signal.SIGTERM)
+                    print(k)
+                    p.kill()
+                except:
+                    print("still runing?")
+                
+                
                 os.system("vcftools --vcf "+filename+".recode.vcf --recode --recode-INFO-all --chr "+ mainchrno+" --from-bp "+str(regionMap[filename][0]) +" --to-bp "+str((regionMap[filename][1]+regionMap[filename][0])/2)+" --out "+filename+"_1")
                 os.system("vcftools --vcf "+filename+"_1"+".recode.vcf"+" --out "+filename+"_1 --plink")
                 os.system("""awk 'BEGIN{OFS="\t"}{print $2,$4,$1}' """+filename+"_1.map >" +filename+"_1.info")
@@ -119,8 +131,8 @@ required when running the program from the command line.
                 os.system("vcftools --vcf "+filename+"_2"+".recode.vcf"+" --out "+filename+"_2 --plink")
                 os.system("""awk 'BEGIN{OFS="\t"}{print $2,$4,$1}' """+filename+"_2.map >" +filename+"_2.info")
                 
-                a=os.system("java -XX:-UseGCOverheadLimit  -jar ~/software/Haploview.jar -nogui -pedfile "+filename+"_1.ped -info "+filename+"_1.info  -blockoutput GAB -log "+filename+"_1.log -out "+outvcfmappedpath+"/"+filename+"_1   -memory 124000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
-                b=os.system("java -XX:-UseGCOverheadLimit  -jar ~/software/Haploview.jar -nogui -pedfile "+filename+"_2.ped -info "+filename+"_2.info  -blockoutput GAB -log "+filename+"_2.log -out "+outvcfmappedpath+"/"+filename+"_2   -memory 124000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
+                a=os.system("java -XX:-UseGCOverheadLimit  -jar "+Haploview+" -nogui -pedfile "+filename+"_1.ped -info "+filename+"_1.info  -blockoutput GAB -log "+filename+"_1.log -out "+outvcfmappedpath+"/"+filename+"_1   -memory 124000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
+                b=os.system("java -XX:-UseGCOverheadLimit  -jar "+Haploview+" -nogui -pedfile "+filename+"_2.ped -info "+filename+"_2.info  -blockoutput GAB -log "+filename+"_2.log -out "+outvcfmappedpath+"/"+filename+"_2   -memory 124000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging")
                 try:
                     pass
                 except:
@@ -183,6 +195,7 @@ if __name__ == '__main__':
     mappedlistordered=reduce(lambda x,y:x+y,pool.map(splicVcfbyChr,vcfobj.chromOrder))
     pool.close()
     pool.join()
+
 #         mappedlistordered+=t_mappedlistordered
 #         print(len(mappedlistordered),mappedlistordered,sep="\n")
 #         sys.stdout.flush()
