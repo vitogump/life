@@ -93,9 +93,9 @@ def selectTAGsnp(filename):
 
     ##########and the if block below##########################
 
-    if re.search(r'[68]$',mainchrno)==None:
-        print("skip other chrom:",filename)
-        return  
+#     if re.search(r'[68]$',mainchrno)==None:
+#         print("skip other chrom:",filename)
+#         return  
     """It is recommended that Haploview be run on a machine with at least 128M of memory. The Haploview
 jarfile should now automatically allocate extra memory when starting up, so the -Xmx flag is no longer
 required when running the program from the command line.
@@ -208,17 +208,18 @@ if __name__ == '__main__':
         tflist=[]
         tagfilename=outvcfmappedpath+"/"+tagfile+".TAGS"
         if not os.path.exists(tagfilename):
-            mainchrno=re.search(r'(\d+)_(\d+)$',tagfilename).group(1)
-            x8end=int(re.search(r'_(\d+)$',tagfilename).group(1)) * sizetoSelectTAG
-            x8start=(int(re.search(r'_(\d+)$',tagfilename).group(1))-1)*sizetoSelectTAG
+            mainchrno=re.search(r'(\d+)_(\d+)$',tagfile).group(1)
+            x8end=int(re.search(r'_(\d+)$',tagfile).group(1)) * sizetoSelectTAG
+            x8start=(int(re.search(r'_(\d+)$',tagfile).group(1))-1)*sizetoSelectTAG
             x3splitno=math.ceil( x8end/1336284.436)
             X3mod=x8end%1336284.436
-            print("check the corresponding 300 fen or _1 and _2 result,if exist extract tags else continue")
 #             (os.path.exists(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(x3splitno)+".TAGS") or (os.path.exists(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(int( x8end/1336284.436))) and X3mod>=winsize))  and (x8start>=(x3splitno-1)*1336284.436 or os.path.exists(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(x3splitno-1)+".TAGS"))
             
-            if os.path.exists(outvcfmappedpath+"/"+tagfile+"_1.TAGS") and os.path.exists(outvcfmappedpath+"/"+tagfile+"_2.TAGS"):
-                tflist.append(open(outvcfmappedpath+"/"+tagfile+"_1.TAGS",'r'))
-                tflist.append(open(outvcfmappedpath+"/"+tagfile+"_2.TAGS",'r'))
+            if os.path.exists(outvcfmappedpath+"/"+tagfile+"_1.TAGS") or os.path.exists(outvcfmappedpath+"/"+tagfile+"_2.TAGS"):
+                if os.path.exists(outvcfmappedpath+"/"+tagfile+"_1.TAGS"):
+                    tflist.append(open(outvcfmappedpath+"/"+tagfile+"_1.TAGS",'r'))
+                elif os.path.exists(outvcfmappedpath+"/"+tagfile+"_2.TAGS"):
+                    tflist.append(open(outvcfmappedpath+"/"+tagfile+"_2.TAGS",'r'))
             elif os.path.exists(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(x3splitno)+".TAGS"):
                 tflist.append(open(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(x3splitno)+".TAGS",'r'))
                 print("use "+outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(x3splitno)+".TAGS")
@@ -231,7 +232,7 @@ if __name__ == '__main__':
                 print(tagfilename,"does not exist and no complement file")
                 continue
             #
-            if not (os.path.exists(outvcfmappedpath+"/"+tagfile+"_1.TAGS") and os.path.exists(outvcfmappedpath+"/"+tagfile+"_2.TAGS")) and (x8start<(x3splitno-1)*1336284.436 and os.path.exists(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(x3splitno-1)+".TAGS")):
+            if not (os.path.exists(outvcfmappedpath+"/"+tagfile+"_1.TAGS") or os.path.exists(outvcfmappedpath+"/"+tagfile+"_2.TAGS")) and (x8start<(x3splitno-1)*1336284.436 and os.path.exists(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(x3splitno-1)+".TAGS")):
                 print("use "+outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(x3splitno-1)+".TAGS")
                 tflist.append(open(outvcfmappedpath+"/first_200ksites_300fenfilteredchr"+str(mainchrno)+"_"+str(x3splitno-1)+".TAGS",'r'))
             else:
@@ -259,16 +260,20 @@ if __name__ == '__main__':
             tagsMap[chrom]=[]
             for pos in TAGSNP[chrom]:
                 tagsMap[chrom].append((pos,"."))
-                print(chrom,pos,file=atf)
+                print(chrom,pos,sep="\t",file=atf)
     win = Util.Window()
     selectedTAGsnps={}
-    for c_chrom in chrmap.keys():
-        selectedTAGsnps[c_chrom]=[]            
-        findtagcaculator=Caculators.CaculatorToFindTAGs(c_chrom,vcfobj,winsize,winsize,chrmap[c_chrom][0])
+    for c_chrom in sorted(chrmap.keys()):
+        selectedTAGsnps[c_chrom]=[]
+        findtagcaculator=Caculators.CaculatorToFindTAGs(mod="randomvcf")
+        vcflist=vcfobj.getVcfListByChrom(c_chrom,MQfilter=0)#randomselecter.vcfobj.
+        win.slidWindowOverlap(vcflist,chrmap[c_chrom][1],winsize,winsize,findtagcaculator,chrmap[c_chrom][0])
+        findtagcaculator.mod="selectTAG"
         win.slidWindowOverlap(tagsMap[c_chrom],chrmap[c_chrom][1],winsize,winsize,findtagcaculator,chrmap[c_chrom][0])
         selectedTAGsnps[c_chrom]=copy.deepcopy(win.winValueL)
     with open(options.outputfilename+".selectedTAGS",'w') as atf:
-        for c_chrom in selectedTAGsnps.keys():
+        print("chrNo\twinNo\tNoOfTags\tTAG1\tTAG2",file=atf)
+        for c_chrom in sorted(selectedTAGsnps.keys()):
             for i in range(len(selectedTAGsnps[c_chrom])):
                 print(c_chrom + "\t" + str(i) + "\t" + str(selectedTAGsnps[c_chrom][i][2]) + "\t" + str(selectedTAGsnps[c_chrom][i][3][0]) + "\t" +str(selectedTAGsnps[c_chrom][i][3][1]), file=atf)
     vcfFile.close()

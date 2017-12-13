@@ -204,43 +204,63 @@ class Caculate_df(Caculator):
         self.unsufficentfixediff=0
         return [noofhet,(pop1unsufficentfixed,pop2unsufficentfixed)],nooffixediff #self.COUNTEDadditional,self.COUNTED
 class CaculatorToFindTAGs(Caculator):
-    def __init__(self,chrom,vcfobj,winsize,slidesize,startposOfaChr):
-        self.curchom=chrom
-        self.curwinStart=startposOfaChr
-        self.curwinEnd=self.curwinStart+winsize
-        self.slidesize=slidesize
-        self.vcfobj=vcfobj
+    def __init__(self,mod):
+#         self.curchom=chrom/
+#         self.curwinStart=startposOfaChr
+#         self.curwinEnd=self.curwinStart+winsize
+#         self.slidesize=slidesize
+        #for selectTAG noly
         self.TAGSforAwin=[]
+        self.cwinNo=0
+        #pass info from randomvcf to selectTAG
+        self.rand2snpForEveryWin=[]
+        #for randomvcf only
+        self.SNPwithAFforAwin=[]
+        self.mod=mod#randomvcf,selectTAG
     def process(self,T):
-        self.TAGSforAwin.append(T[0])
+        "T=(pos, REF, ALT, INFO,FORMAT,sampleslist)"
+        if self.mod=="randomvcf":
+            af=float(re.search(r"AF=([\d\.e-]+)[;,]",T[3]).group(1))
+            self.SNPwithAFforAwin.append((T[0],af))
+        elif self.mod=="selectTAG":
+            self.TAGSforAwin.append(T[0])
     def getResult(self):
-        if len(self.TAGSforAwin)>=2:
-            idxlist=random.sample([j for j in range(len(self.TAGSforAwin))],2)
-            tag1=self.TAGSforAwin[idxlist[0]]
-            tag2=self.TAGSforAwin[idxlist[1]]
-            nooftags=2
-            valuetoReturn=[tag1,tag2]
-        else:
-            snplist=self.vcfobj.getVcfListByChrom(self.curchom,self.curwinStart,self.curwinEnd,MQfilter=0)
-            af05dlist=[]
-#             for pos,ref,alt,info,format,samples in snplist:
-#                 af_05d=abs(float(re.search(r"AF=([\d\.e-]+)[;,]",info).group(1))-0.5)
-#                 af05dlist.append(af_05d)
-#             af05dlist.sort()
-            if self.TAGSforAwin==1 and len(snplist)>=1:
-                idxlist=random.sample([j for j in range(len(snplist))],1)
-                valuetoReturn=[self.TAGSforAwin[0],snplist[idxlist[0]]]
-                nooftags=1
-            elif len(snplist)>=2:
-                idxlist=random.sample([j for j in range(len(snplist))],2)
-                valuetoReturn=[snplist[idxlist[0]],snplist[idxlist[1]]]
-                nooftags=0
+        if self.mod=="randomvcf":
+            self.SNPwithAFforAwin.sort(key=lambda x:abs(x[1]-0.5))
+            if len(self.SNPwithAFforAwin)>=2:
+                snp1=self.SNPwithAFforAwin[0]
+                snp2=self.SNPwithAFforAwin[1]
+                self.rand2snpForEveryWin.append((snp1,snp2))
             else:
-                nooftags=0;valuetoReturn=["NA","NA"]
-        self.curwinStart+=self.slidesize
-        self.curwinEnd+=self.slidesize
-        self.TAGSforAwin=[]
-        return nooftags,valuetoReturn
+                self.rand2snpForEveryWin.append(("NA","NA"))
+            print(self.SNPwithAFforAwin)
+            self.SNPwithAFforAwin=[]
+
+            
+            return -1,self.rand2snpForEveryWin[-1]
+        elif self.mod=="selectTAG":
+            self.TAGSforAwin=list(set(self.TAGSforAwin))
+            if len(self.TAGSforAwin)>=2:
+                idxlist=random.sample([j for j in range(len(self.TAGSforAwin))],2)
+                tag1=self.TAGSforAwin[idxlist[0]]
+                tag2=self.TAGSforAwin[idxlist[1]]
+                nooftags=2
+#                 print("tags:",tag1,tag2)
+                valuetoReturn=[tag1,tag2]
+            elif len(self.TAGSforAwin)==1:
+                nooftags=1
+                valuetoReturn=[self.TAGSforAwin[0],self.rand2snpForEveryWin[self.cwinNo][0]]
+            else:
+                nooftags=0
+                self.rand2snpForEveryWin[self.cwinNo]
+                valuetoReturn=[self.rand2snpForEveryWin[self.cwinNo][0],self.rand2snpForEveryWin[self.cwinNo][1]]
+
+
+#             self.curwinStart+=self.slidesize
+#             self.curwinEnd+=self.slidesize
+            self.TAGSforAwin=[]
+            self.cwinNo+=1
+            return nooftags,valuetoReturn
 class Caculate_Hp_master_slave(Caculator):
     def __init__(self, listOftargetpopvcfconfig,outfileprewithpath, minsnps=10,depth=10):
         super().__init__()
