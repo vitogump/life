@@ -37,12 +37,15 @@ bedoutfafile=open(options.outfilename+"regionsSEQ.fa",'a')
 ancestralalleletabletools=AncestralAlleletabletools(database=Util.vcfdbname, ip=Util.ip, usrname=Util.username, pw=Util.password,dbgenome=Util.genomeinfodbname)
 if __name__ == '__main__':
     
-    chromlistfile=open(options.chrlist,"r")
-    chrmap={}
-    for rec in chromlistfile:
-        reclist=re.split(r'\s+',rec.strip())
-        chrmap[reclist[0]]=reclist[1]
-    for vcflikeFileName,corresponding_ref,flanklen in options.variantfilewithref:
+
+
+    for chrlist,vcflikeFileName,corresponding_ref,flanklen in options.variantfilewithref:
+        chromlistfile=open(chrlist,"r")
+        chrmap={}
+        for rec in chromlistfile:
+            reclist=re.split(r'\s+',rec.strip())
+            chrmap[reclist[0]]=reclist[1]        
+        
         flanklen=int(flanklen)
         duckrefhandler=open(corresponding_ref,'r')
         try:
@@ -82,13 +85,18 @@ if __name__ == '__main__':
                     startpostocollecteSNP=int(snp[1])
                 else:#first
                     snpsOfOneChrom.append(snp);chrom=snp[0];startpostocollecteSNP=int(snp[1])
-            
+        chromlistfile.close()
     else:
         duckrefhandler.close()
         snpoutfafile.close()
             #ancestralalleletabletools.forchenli.close()
 #             print()#print fa seq
-    for regionbedFName,corresponding_ref,minRegionLEN in options.functionalbedlikefile:
+    for chrlist,regionbedFName,corresponding_ref,minRegionLEN in options.functionalbedlikefile:
+        chromlistfile=open(chrlist,"r")
+        chrmap={}
+        for rec in chromlistfile:
+            reclist=re.split(r'\s+',rec.strip())
+            chrmap[reclist[0]]=reclist[1]    
         minRegionLEN=int(minRegionLEN)
         regionbedf=open(regionbedFName,'r')
         duckrefhandler=open(corresponding_ref,'r')
@@ -118,6 +126,7 @@ if __name__ == '__main__':
                 startposOfFirstREGIONs=int(regionlist[1])
             else:
                 regionsOfOneChrom.append(regionlist);chrom=regionlist[0];startpostocollecteSNP=int(regionlist[1])
+        chromlistfile.close()
     else:
         bedoutfafile.close()
         duckrefhandler.close()

@@ -42,8 +42,8 @@ parser.add_option("-q", "--quiet",
                   help="don't print status messages to stdout")
 
 "need vcftools java Haploview.jar"
-vcftools="/pub/tool/vcftools_0.1.12b/bin/vcftools"
-Haploview="/home/project_pan/liangzuoxiang/comp/softw/Haploview.jar"
+vcftools="vcftools"
+Haploview="~/software/Haploview.jar"
 (options,args)=parser.parse_args()
 print(ctime());sys.stdout.flush()
 outvcfmappedPRE=re.search(r'[^/]*$',options.outputfilename).group(0)
@@ -196,11 +196,11 @@ if __name__ == '__main__':
     print(NUMBER,len(mappedlistordered),mappedlistordered,sep="\n")
     sys.stdout.flush()
 
-    pool=Pool(int(options.threads))        
-    pool.map(selectTAGsnp,mappedlistordered)
-    pool.close()
-#     print("thread from",j,"to",j+int(options.threads))
-    pool.join()
+#     pool=Pool(int(options.threads))        
+#     pool.map(selectTAGsnp,mappedlistordered)
+#     pool.close()
+
+#     pool.join()
     print("finish haploview TAGing")    
     #extract two tags by winsize, if no enough TAG in a win then seleced two snps whose AF approxmate to 0.5
     TAGSNP={}
