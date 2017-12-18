@@ -14,7 +14,7 @@ from src.NGS.Service.Ancestralallele import AncestralAlleletabletools
 parser = OptionParser()
 
 #"output data name is defined as 'inputdatapath folder name'+'is subfolder name'+'is subfolder name'+..."
-parser.add_option("-c", "--chrlist", dest="chrlist",help="chromosome")
+
 parser.add_option("-v", "--variantfilewithref", dest="variantfilewithref",action="append",nargs=3, help="vcflikefile corresponding_ref flanklen")
 parser.add_option("-b", "--functionalbedlikefile", dest="functionalbedlikefile",action="append",nargs=3, help="functionalRegionfile corresponding_ref minRegionLen")
 """

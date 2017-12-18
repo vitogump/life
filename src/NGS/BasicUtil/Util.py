@@ -601,8 +601,8 @@ def generateFasterRefIndex(refFastaFileName, indexFileName,mapname=None,startcha
                 else:
                     linelist=re.split(r'\s+', refline)
                     a=re.sub('[’!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~]+',"", linelist[linelist.index(chrsignal)+1])#for example chromosome 1,
-                a=transform_roman_num2_alabo(a,romanSignal).lower()
-                currentChromNo=a.replace("chr","")
+                a=transform_roman_num2_alabo(a,romanSignal)
+                currentChromNo=a.replace("chr","").replace("CHR", "")
                 print(currentChromNo,type(currentChromNo))
             refChromIndex[currentChromNo] = [(basecount,int(refFastaFile.tell()))]# (no of base befor,cur file pos)
         else:

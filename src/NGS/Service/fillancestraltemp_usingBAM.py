@@ -56,7 +56,7 @@ flanklen=int(options.flanklen.strip())
 if __name__ == '__main__':
     ancestralalleletabletools=AncestralAlleletabletools(database=Util.vcfdbname, ip=Util.ip, usrname=Util.username, pw=Util.password,dbgenome=Util.genomeinfodbname)
     if options.mode.strip()=="1":
-        depthFile=options.depthfile
+#         depthFile=options.depthfile
         chromlist=[]
         chromlistfile=open(options.chromlistfilename,"r")
         for chrrow in chromlistfile:
@@ -75,11 +75,11 @@ if __name__ == '__main__':
         outfile=open(options.chromlistfilename+"snpflankseq.fa",'w')
         duckrefhandler=open(options.ref,'r')
         try:
-            duckrefindex = pickle.load(open(options.ref + ".myindex", 'rb'))
+            duckrefindex = pickle.load(open(options.ref + ".myfasteridx", 'rb'))
 #             originalspeciesindex = pickle.load(open(originalspeciesref + ".myindex", 'rb'))
         except IOError:
-            Util.generateIndexByChrom(options.ref, options.ref + ".myindex")
-            duckrefindex = pickle.load(open(options.ref + ".myindex", 'rb'))
+            Util.generateFasterRefIndex(options.ref, options.ref + ".myfasteridx")
+            duckrefindex = pickle.load(open(options.ref + ".myfasteridx", 'rb'))
             
 #         try:
 #             originalspeciesindex = pickle.load(open(originalspeciesref + ".myindex", 'rb'))

@@ -65,7 +65,7 @@ class DBTools():
                     else:
                         pass
                     if data==None:
-                        cursor.execute(sql)
+                        cursor.execute(sql,)#this ',' very important
                     else:
                         cursor.execute(sql,data[i])
                     self.conn.commit()
@@ -86,7 +86,7 @@ class DBTools():
 
             self.disconnect()
             
-            a=self.operateDB(sqltype,sqls[0],data)
+            a=self.operateDB(sqltype,sqls,data)
             if a!=-1:
                 return a
             print('query error!{}'.format(e))
