@@ -9,7 +9,7 @@ import pickle, configparser
 
 from NGS.BasicUtil import Util, VCFutil
 import NGS.BasicUtil.DBManager as dbm
-
+import web.dba as dba
 
 
 
@@ -269,7 +269,7 @@ class AncestralAlleletabletools():
         #dbtmp means never use the table in the software,you can delete the table anytime without check dependency
         self.dbtmp=dbm.DBTools(ip, usrname, pw, Util.ghostdbname)
         self.dbtmpname=Util.ghostdbname#
-        
+        self.session=dba.getVarSession()
         self.dbvariant_name=database
         self.dbgenomename=dbgenome
 
@@ -658,13 +658,14 @@ class AncestralAlleletabletools():
                             popsdata_alt=ALT
                             popsdata_dep=str(sum_depth) + ",0"
 
-                    #change to insert if exist skip
-#                     print(str(snp_pos),popsdata_alt,popsdata_dep)
                     updatesql_statments.append("update " + toplevelsnptablename + " set "+archicpop_colname+"_alt = '" + popsdata_alt+"',"+archicpop_colname+"_dep= '"+popsdata_dep+"' where chrID="+"'"+currentchrID+"' and snp_pos="+str(snp[0]))
-                session=DBA.getSession()
+                
                 if  updatesql_statments:
                     print("updatesql_statments",len(updatesql_statments))
-                    self.dbvariant.operateDB("update", *updatesql_statments)
+                    for update_statments in updatesql_statments:
+                        self.session.execute(update_statments)
+                        self.session.commit()
+#                     self.dbvariant.operateDB("update", *updatesql_statments)
     def leftjoinSelectedTables(self,chromlist,outtable_file_Name,depthfilenames,vcftables=[],toplevelsnptable="ducksnp_toplevel",drop=False):
         depthobjmap={};lastposofdepthfilefp={}#
         for vcftablename in depthfilenames.keys():

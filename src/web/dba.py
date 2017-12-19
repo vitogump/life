@@ -52,15 +52,23 @@ db_config = {
     'charset':'utf8'
 }
 
-engine = create_engine('mysql+mysqlconnector://%s:%s@%s/%s?charset=%s'%(db_config['user'],
+engineweb = create_engine('mysql+mysqlconnector://%s:%s@%s/%s?charset=%s'%(db_config['user'],
                                                          db_config['passwd'],
                                                          db_config['host'],
                                                          db_config['db'],
                                                          db_config['charset']), echo=True,pool_recycle=3600)
-
+enginevar = create_engine('mysql+mysqlconnector://%s:%s@%s/%s?charset=%s'%(db_config['user'],
+                                                         db_config['passwd'],
+                                                         db_config['host'],
+                                                         vcfdbname,
+                                                         db_config['charset']), echo=False,pool_recycle=3600)
 ISOTIMEFORMAT = '%Y-%m-%d %X'
-def getSession():
-    Session = scoped_session(sessionmaker(autoflush=True,bind=engine))
+def getVarSession():
+    Session = scoped_session(sessionmaker(autoflush=True,bind=enginevar))
+    session = Session()
+    return session
+def getWebSession():
+    Session = scoped_session(sessionmaker(autoflush=True,bind=engineweb))
     session = Session()
     return session
 def addArticle(name,catalogue_id):
