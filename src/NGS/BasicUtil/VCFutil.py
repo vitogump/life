@@ -289,7 +289,7 @@ class VCF_Data():
             REF = linelist[3].strip()
             ALT = linelist[4].strip()
             recidx += 1#line = vcfFile.readline();
-            if not considerINDELandmultpleallele and (len(REF) > 1 or len(ALT)) > 1:
+            if not considerINDELandmultpleallele and (len(REF) > 1 or len(ALT)> 1) :
                 continue
             INFO = linelist[7]
             FORMAT = linelist[8]

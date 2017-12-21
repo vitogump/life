@@ -81,7 +81,7 @@ def alinmultPopSnpPos(vcfMaplist,jointmode="i"):
                             insertelem.append(SNPrec[3:])
                             multipleVcfMap[currentChrom].insert(low,insertelem)
     #list(multipleVcfMap.keys())[0]==currentChrom
-    #when a pos only exist in the former several pops,but not exist in the rear several pops,the loop block under are neccessary
+    #when a pos only exist in the former several pops,but not exist in the rear several pops (ie the length of each element of the  multipleVcfMap[currentChrom] are not same in some case),the loop block under are neccessary
         for REC_idx in range(0,len(multipleVcfMap[list(multipleVcfMap.keys())[0]])):
             #
             for i in range(len(vcfMaplist)+3-len(multipleVcfMap[list(multipleVcfMap.keys())[0]][REC_idx])):

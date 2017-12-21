@@ -61,6 +61,7 @@ if __name__ == '__main__':
         print("quantizpool",end="\t",file=dadisnpfile)
     print("Gene\tPosition",file=dadisnpfile)
     ############               finish title print ##################################
+    #######################    start make sqlstatment    ##################################
     totallength=0
     totallengthduilt=0
     allsnpcount=0
@@ -125,6 +126,7 @@ if __name__ == '__main__':
                 sqlselectstatementpart=sqlselectstatementpart+" or ("+vcftable+".AF is not NULL and "+vcftable+".AF <1 )"
         sqlselectstatementpart+=")"
 #         sqlselectstatementpart_count+=")"
+# make sql statement end start sql excute
         allsnpOfJoinTableinAchr=dbvariantstools.operateDB("select",sqlselectstatementpart)
         print(sqlselectstatementpart_count_left+" union "+sqlselectstatementpart_count_right)
         if options.countsnpnumberfromvcf==None:
@@ -174,8 +176,8 @@ if __name__ == '__main__':
                         print("search snp out of range ",direction,sampled_idx,len(allsnpOfJoinTableinAchr_sampled_idxlist),sampled_idx_find_satisfied)
                         break
                     direction=-1
-                    print("direction",direction)
-                    sampled_idx_find_satisfied=sampled_idx
+                    print("direction changed",direction)
+                    sampled_idx_find_satisfied=sampled_idx#start again, but the opposit deriction
                 else:
                     firstoutgroupbase=allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][outgroupidx_in_topleveltable[1]].upper().strip();firstoutgroupdepthlist=re.split(r",",allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][outgroupidx_in_topleveltable[1]+1])
                     secondoutgroupbase=allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][outgroupidx_in_topleveltable[0]].upper().strip();secondoutgroupdepthlist=re.split(r",",allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][outgroupidx_in_topleveltable[0]+1])

@@ -6,7 +6,7 @@ Created on 2015-8-21
 from optparse import OptionParser
 import re, numpy, fractions, copy, os, pysam
 from NGS.Service import Ancestralallele
-from NGS.BasicUtil import *
+from src.NGS.BasicUtil import *
 import NGS.BasicUtil.DBManager as dbm
 
 
