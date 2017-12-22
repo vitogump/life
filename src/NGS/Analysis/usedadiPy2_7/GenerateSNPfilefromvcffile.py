@@ -35,7 +35,7 @@ dbvariantstools=dbm.DBTools(Util.ip, Util.username,Util.password, Util.vcfdbname
 dynamicIU_toptable_obj=Ancestralallele.dynamicInsertUpdateAncestralContext(dbvariantstools,Util.beijingreffa,options.toplevelsnptable)
 
 flankseqfafile=open(options.outputfilename+re.search(r"[^/]*$",options.chromlist).group(0)+".fa","a")
-recf=open("recf","w")
+# recf=open("recf","w")
 if __name__ == '__main__':
     chromlistfile=open(options.chromlist,"r")
     selectedchroms=[]
@@ -95,12 +95,12 @@ if __name__ == '__main__':
             continue
         ############        filter MQ , minAN and ancestral info #######################################################################
         for sampled_idx in sample_idxlistOfaJoinTable:
-            continuesearch=-1;sampled_idx_find_satisfied=sampled_idx;direction=1
+            continuesearch=-1;sampled_idx_find_satisfied=sampled_idx;direction=1;A_base_idx=-1
             while continuesearch==-1:# -1 continuesearch; 1 OUTgroup1 passed; 2 secondgroupbase
 
                 if sampled_idx_find_satisfied==len(fulloutjoinSNPs[currentchrID]) or (sampled_idx!=sample_idxlistOfaJoinTable[-1] and sampled_idx_find_satisfied==sample_idxlistOfaJoinTable[sample_idxlistOfaJoinTable.index(sampled_idx)+1] ) or sampled_idx_find_satisfied==-1 or (sampled_idx!=sample_idxlistOfaJoinTable[0] and sampled_idx_find_satisfied==sample_idxlistOfaJoinTable[sample_idxlistOfaJoinTable.index(sampled_idx)-1]):
                     if direction==-1:
-                        print("search snp out of range around snppos",currentchrID,snp_pos=fulloutjoinSNPs[currentchrID][sampled_idx][0])
+                        print("search snp out of range around snppos",currentchrID,fulloutjoinSNPs[currentchrID][sampled_idx][0])
                         break
                     direction=-1
                     print("direction changed",direction)
@@ -129,7 +129,7 @@ if __name__ == '__main__':
                     ################## one pop by one pop
                     for vcftable_name,minAN in vcffilelist:
                         AN=-1;AC=-1;MQvalue=-1;pop_idx+=1
-                        print(fulloutjoinSNPs[currentchrID][sampled_idx_find_satisfied][3+pop_idx],file=recf)
+#                         print(fulloutjoinSNPs[currentchrID][sampled_idx_find_satisfied][3+pop_idx],file=recf)
                         if fulloutjoinSNPs[currentchrID][sampled_idx_find_satisfied][3+pop_idx]==None:
                             AC=0;MQvalue=28
                             AN=int(minAN)
@@ -159,11 +159,11 @@ if __name__ == '__main__':
                                     if DP/2>=int(minAN):
                                         AN=indvdNo_Of_POOL*2
                                     else:
-                                        print("DP/2<minAN",file=recf)
+#                                         print("DP/2<minAN",file=recf)
                                         break
                                     #for filter only,sometimes it will greater than indvdNo_Of_POOL
                             except:
-                                print("exception",file=recf)
+#                                 print("exception",file=recf)
                                 break
                         if MQvalue>=28 and  AN>=int(minAN) :
                             print("pop passed thersold",str(snp_pos),vcftable_name)
@@ -174,7 +174,7 @@ if __name__ == '__main__':
                                 NoAl1+=(1-AF)*(noofindvds2quantizing/len(options.quantizing))
                                 NoAl2+=AF*(noofindvds2quantizing/len(options.quantizing))
                         else:
-                            print("break threshold",file=recf)
+#                             print("break threshold",file=recf)
                             break
                     else:######## normal finished means position need to be print into dadiinputfile    ####################################
                         print("recode passed thersold",str(snp_pos))
@@ -191,7 +191,7 @@ if __name__ == '__main__':
                 contextwithinspeces=snprec_in_toplevel[0][5].upper()
                 if A_base_idx==1:
                     contextoutgroup=contextwithinspeces[0]+ALT+contextwithinspeces[2]
-                else:
+                elif A_base_idx==0:
                     contextoutgroup=contextwithinspeces
                 print(contextwithinspeces,contextoutgroup,REF,sep="\t",end="\t",file=dadisnpfile)
                 print(*NoOfAllele1Obsed,sep="\t",end="\t",file=dadisnpfile)
@@ -204,7 +204,7 @@ if __name__ == '__main__':
     print("totalsnp",totalsnp,"totalduiltsnp(shoud equal to No. of SNP in dadi inputfile)",totalduiltsnp,"realduiltelength",realduiltelength,"totallengthduilt",totallengthduilt)
     dadisnpfile.close()
     flankseqfafile.close()
-    recf.close()
+#     recf.close()
 #                 snprec_in_toplevel=dbvariantstools.operateDB("select","select * from "+toplevelsnptable+" where chrID='"+currentchrID+"' and snp_pos='"+str(fulloutjoinSNPs[currentchrID][sampled_idx_find_satisfied][0])+"'")
                 
                     
