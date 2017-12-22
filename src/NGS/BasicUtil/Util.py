@@ -38,6 +38,7 @@ def alinmultPopSnpPos(vcfMaplist,jointmode="i"):
     output:
     one map like this {chrNo:[(pos,REF,ALT,(INFO,FORMAT,sample,...),(INFO,FORMAT,sample,...)),(,,,(),()),,,,,],chrNo:[],,,}
                                             from pop1                        from pop2
+    pop in the order of vcfMaplist
     """
     multipleVcfMap={}
     if len(vcfMaplist)==1 or jointmode=="o" or jointmode=="l":
@@ -54,7 +55,7 @@ def alinmultPopSnpPos(vcfMaplist,jointmode="i"):
         vcfMap_obj_idx=0
         for vcfMap in vcfMaplist[1:]:
             vcfMap_obj_idx+=1
-            for currentChrom in vcfMap:
+            for currentChrom in vcfMap.keys():
                 for SNPrec in vcfMap[currentChrom]:
                     posInPop1 = SNPrec[0]#;print(posInPop1,file=open("testpos_8rep.txt"+str(vcfMap_obj_idx),'a'))
                     RefInPop1 = SNPrec[1]

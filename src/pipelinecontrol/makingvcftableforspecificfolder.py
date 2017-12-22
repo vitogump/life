@@ -8,7 +8,7 @@ from optparse import OptionParser
 
 from NGS.BasicUtil import VCFutil , Util
 from NGS.Service.Ancestralallele import AncestralAlleletabletools
-from pipelinecontrol.Util import upTodownTravelDir, \
+from src.pipelinecontrol.Util import upTodownTravelDir, \
     OperatorWithData_loadintodatabase
 
 

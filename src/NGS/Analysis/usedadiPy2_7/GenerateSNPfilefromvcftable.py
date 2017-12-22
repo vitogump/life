@@ -233,7 +233,7 @@ if __name__ == '__main__':
                     if allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][len(toplevelsnptable_titlelist)+vcftable_idx*2]!=None:#AC IS NOT NULL
                         print(str(int(allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][len(toplevelsnptable_titlelist)+vcftable_idx*2+1])-int(allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][len(toplevelsnptable_titlelist)+vcftable_idx*2])),end="\t",file=dadisnpfile)#AN - AC
                         if options.quantizing!=None and vcftable_idx in vcftablesidxlist_toquantizing:
-                            k+=int(round((int(allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][len(toplevelsnptable_titlelist)+vcftable_idx*2+1])-int(allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][len(toplevelsnptable_titlelist)+vcftable_idx*2]))*(round(noofindvds2quantizing/len(options.quantizing))/int(allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][len(toplevelsnptable_titlelist)+vcftable_idx*2+1]))))#(AN-AC)*()
+                            k+=int(round((int(allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][len(toplevelsnptable_titlelist)+vcftable_idx*2+1])-int(allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][len(toplevelsnptable_titlelist)+vcftable_idx*2]))*(round(noofindvds2quantizing/len(options.quantizing))/int(allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][len(toplevelsnptable_titlelist)+vcftable_idx*2+1]))))#(AN-AC)*(n/x)*(AN)
                     else:#FIXED AS REF,the no of ref alle is vcftableslist[vcftable_idx][1] that is arbitrarily assigned,but dadi will projection it into 26,so any no greater than 26 is ok
                         print(vcftableslist[vcftable_idx][1],end="\t",file=dadisnpfile)
                         if options.quantizing!=None and vcftable_idx in vcftablesidxlist_toquantizing:
@@ -244,7 +244,7 @@ if __name__ == '__main__':
                 print(ALT,end="\t",file=dadisnpfile)
                 for vcftable_idx in range(len(vcftableslist)):
                     if allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][len(toplevelsnptable_titlelist)+vcftable_idx*2]!=None:
-                        print(str(int(allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][len(toplevelsnptable_titlelist)+vcftable_idx*2])),end="\t",sep="\t",file=dadisnpfile)
+                        print(str(int(allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][len(toplevelsnptable_titlelist)+vcftable_idx*2])),end="\t",sep="\t",file=dadisnpfile)#AC
                         if options.quantizing!=None and vcftable_idx in vcftablesidxlist_toquantizing:
                             l+=int(round(int(allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][len(toplevelsnptable_titlelist)+vcftable_idx*2])*(round(noofindvds2quantizing/len(options.quantizing))/int(allsnpOfJoinTableinAchr[sampled_idx_find_satisfied][len(toplevelsnptable_titlelist)+vcftable_idx*2+1]))))  
                     else:

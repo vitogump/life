@@ -51,7 +51,7 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
                     vcfname=vcffilename_obj.group(1).strip()
                     archicpop_colname=re.search(r'[^/]*$',vcfname).group(0)
                     archicpop_colname=re.sub(r"[^\w^\d]","_",archicpop_colname)
-                    print("dynamicInsertUpdateAncestralContext",vcfname,archicpop_colname)
+                    print("init dynamicInsertUpdateAncestralContext",vcfname,archicpop_colname,end="\t")
                     for outgroupname_ALT in self.toplevelsnptable_titlelist[6::2]:
                         if archicpop_colname+"_alt"==outgroupname_ALT:
                             break
@@ -74,6 +74,12 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
         for vcfname in self.outgroupVcfnameKEY_vcfobj_pyBAMfilesVALUE.keys():
             for pysamobj in self.outgroupVcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname][1:]:
                 pysamobj.close()
+    def getRECsforCHR(self,chrom,currentchrLen=None):
+        self.currentchrLen=currentchrLen
+        self.mapofSNPrecsForeachVCFpop_mapBYchrom={}
+        self.mapofSNPrecsForeachVCFpop_mapBYchrom[chrom]={}
+        for vcfname_tmp in self.outgroupVcfnameKEY_vcfobj_pyBAMfilesVALUE.keys():
+            self.mapofSNPrecsForeachVCFpop_mapBYchrom[chrom][vcfname_tmp]=self.outgroupVcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname_tmp][0].getVcfListByChrom(chrom,MQfilter=None)
     def insertorUpdatetopleveltable(self,PopSnpAligned,flankseqfafile,SNP_flanklen):
         """
             first element of a snp is the snp position
@@ -126,10 +132,7 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
                     if chrom in  self.mapofSNPrecsForeachVCFpop_mapBYchrom:
                         pass
                     else:
-                        self.mapofSNPrecsForeachVCFpop_mapBYchrom={}
-                        self.mapofSNPrecsForeachVCFpop_mapBYchrom[chrom]={}
-                        for vcfname_tmp in self.outgroupVcfnameKEY_vcfobj_pyBAMfilesVALUE.keys():
-                            self.mapofSNPrecsForeachVCFpop_mapBYchrom[chrom][vcfname_tmp]=self.outgroupVcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname_tmp][0].getVcfListByChrom(chrom,MQfilter=None)
+                        self.getRECsforCHR(chrom)
                     SNPrec_of_one_chrom_invcf=self.mapofSNPrecsForeachVCFpop_mapBYchrom[chrom][vcfname]
                     """state: updatesql_statement= update toplevelsnptablename set processed_vcfname1_alt=%s,processed_vcfname1_dep=%s,
                             insertsql_statement=insert into toplevelsnptablename (chrID,snp_pos,snpID,ref_base,alt_base,context,processed_vcfname_m_alt,processed_vcfname_m_dep,
