@@ -131,7 +131,7 @@ if __name__ == '__main__':
                         AN=-1;AC=-1;MQvalue=-1;pop_idx+=1
 #                         print(fulloutjoinSNPs[currentchrID][sampled_idx_find_satisfied][3+pop_idx],file=recf)
                         if fulloutjoinSNPs[currentchrID][sampled_idx_find_satisfied][3+pop_idx]==None:
-                            AC=0;MQvalue=28
+                            AC=0;MQvalue=28;AF=0
                             AN=int(minAN)
 #                             print(vcftable_name,"\nAN",AN,"AC",AC)
                         else:
@@ -177,8 +177,12 @@ if __name__ == '__main__':
 #                             print("break threshold",file=recf)
                             break
                     else:######## normal finished means position need to be print into dadiinputfile    ####################################
-                        print("recode passed thersold",str(snp_pos))
-                        continuesearch=1
+                        if [0 for e in  NoOfAllele1Obsed]==NoOfAllele1Obsed or [0 for e in NoOfAllele2Obsed]==NoOfAllele2Obsed:
+                            print("skip pos that fixed in all pop")
+                            sampled_idx_find_satisfied+=direction
+                        else:
+                            print("recode passed thersold",str(snp_pos))
+                            continuesearch=1
                         continue
                     ############################### finish pop loop    #######################################
                 
