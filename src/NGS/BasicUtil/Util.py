@@ -936,6 +936,7 @@ def getRefSeqBypos_faster(refFastahandle, fasterrefindex, currentChromNO, startp
 #            print(currentChromNO,myseqline, myseqn)
         if myseqline.count('>') >= 1:
             print(currentChromNO, myseqline.index('>'),myseqline[myseqline.index('>')-10:myseqline.index('>')+10], myseqn)
+            print("may be need chrlength")
             exit(-1)
         refSeqMap[currentChromNO].extend(list(myseqline))
     else:

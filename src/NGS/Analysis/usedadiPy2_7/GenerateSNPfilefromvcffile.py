@@ -34,7 +34,8 @@ dadisnpfile=open(options.outputfilename+"dilutetodensity"+options.snpperkb.strip
 dbvariantstools=dbm.DBTools(Util.ip, Util.username,Util.password, Util.vcfdbname)
 dynamicIU_toptable_obj=Ancestralallele.dynamicInsertUpdateAncestralContext(dbvariantstools,Util.beijingreffa,options.toplevelsnptable)
 
-flankseqfafile=open(options.outputfilename+re.search(r"[^/]*$",options.chromlist).group(0)+".fa","w")
+flankseqfafile=open(options.outputfilename+re.search(r"[^/]*$",options.chromlist).group(0)+".fa","a")
+recf=open("recf","w")
 if __name__ == '__main__':
     chromlistfile=open(options.chromlist,"r")
     selectedchroms=[]
@@ -57,14 +58,14 @@ if __name__ == '__main__':
                 if quantizingvcftable.strip()==vcftfile_name.strip():
                     vcftablesidxlist_toquantizing.append(idx)
         idx+=1
-        popName=re.split(r'_',vcftfile_name)[0]
+        popName=re.split(r'\.',re.search(r"[^/]*$",vcftfile_name).group(0))[0]
         print(popName,end="\t",file=dadisnpfile)
     print("vcftablesidxlist_toquantizing",vcftablesidxlist_toquantizing)
     if options.quantizing!=None:
         print("quantizpool",end="\t",file=dadisnpfile)
     print("Allele2",end="\t",file=dadisnpfile)
     for vcftable_name,minAN in vcffilelist:
-        popName=re.split(r'_',vcftable_name)[0]
+        popName=re.split(r'\.',re.search(r"[^/]*$",vcftfile_name).group(0))[0]
         print(popName,end="\t",file=dadisnpfile)
     if options.quantizing!=None:
         print("quantizpool",end="\t",file=dadisnpfile)
@@ -72,7 +73,7 @@ if __name__ == '__main__':
     ############ #########              finish title print                       ##################################
     totalsnp=0;totallength=0;totallengthduilt=0;totalduiltsnp=0
     for currentchrID,currentchrLen in selectedchroms:
-        dynamicIU_toptable_obj.getRECsforCHR(currentchrID)
+        dynamicIU_toptable_obj.getRECsforCHR(currentchrID,currentchrLen)
         listOfpopvcfRecsMapByChr=[]
         ####################        produce input to Util.alinmultPopSnpPos  ##########################################
         for vcfname,minAN in vcffilelist:
@@ -96,16 +97,18 @@ if __name__ == '__main__':
         for sampled_idx in sample_idxlistOfaJoinTable:
             continuesearch=-1;sampled_idx_find_satisfied=sampled_idx;direction=1
             while continuesearch==-1:# -1 continuesearch; 1 OUTgroup1 passed; 2 secondgroupbase
-                snp_pos=fulloutjoinSNPs[currentchrID][sampled_idx_find_satisfied][0];REF=fulloutjoinSNPs[currentchrID][sampled_idx_find_satisfied][1];ALT=fulloutjoinSNPs[currentchrID][sampled_idx_find_satisfied][2]
-                snprec_in_toplevel=dbvariantstools.operateDB("select","select * from "+toplevelsnptable+" where chrID='"+currentchrID+"' and snp_pos='"+str(fulloutjoinSNPs[currentchrID][sampled_idx_find_satisfied][0])+"'")
+
                 if sampled_idx_find_satisfied==len(fulloutjoinSNPs[currentchrID]) or (sampled_idx!=sample_idxlistOfaJoinTable[-1] and sampled_idx_find_satisfied==sample_idxlistOfaJoinTable[sample_idxlistOfaJoinTable.index(sampled_idx)+1] ) or sampled_idx_find_satisfied==-1 or (sampled_idx!=sample_idxlistOfaJoinTable[0] and sampled_idx_find_satisfied==sample_idxlistOfaJoinTable[sample_idxlistOfaJoinTable.index(sampled_idx)-1]):
                     if direction==-1:
-                        print("search snp out of range ",currentchrID,snp_pos)
+                        print("search snp out of range around snppos",currentchrID,snp_pos=fulloutjoinSNPs[currentchrID][sampled_idx][0])
                         break
                     direction=-1
                     print("direction changed",direction)
-                    sampled_idx_find_satisfied=sampled_idx#start again, but the opposit deriction
-                elif (not snprec_in_toplevel or snprec_in_toplevel[0][outgroupidx_in_topleveltable[0]]==None):
+                    sampled_idx_find_satisfied=sampled_idx+direction#start again, but the opposit deriction
+                    continue
+                snp_pos=fulloutjoinSNPs[currentchrID][sampled_idx_find_satisfied][0];REF=fulloutjoinSNPs[currentchrID][sampled_idx_find_satisfied][1];ALT=fulloutjoinSNPs[currentchrID][sampled_idx_find_satisfied][2]
+                snprec_in_toplevel=dbvariantstools.operateDB("select","select * from "+toplevelsnptable+" where chrID='"+currentchrID+"' and snp_pos='"+str(fulloutjoinSNPs[currentchrID][sampled_idx_find_satisfied][0])+"'")                
+                if (not snprec_in_toplevel or snprec_in_toplevel[0][outgroupidx_in_topleveltable[0]]==None):
                     dynamicIU_toptable_obj.insertorUpdatetopleveltable({currentchrID:[(snp_pos,REF,ALT)]}, flankseqfafile, 5)
                     continue#shoud excute only once for one position , to add a snp recs in toplevel table
                 elif snprec_in_toplevel and snprec_in_toplevel[0][outgroupidx_in_topleveltable[0]]!=None:
@@ -122,12 +125,15 @@ if __name__ == '__main__':
                         continue
                     #check minAN and MQ
                     NoOfAllele1Obsed=[];NoOfAllele2Obsed=[];NoAl1=0;NoAl2=0
-                    pop_idx=0
+                    pop_idx=-1
                     ################## one pop by one pop
                     for vcftable_name,minAN in vcffilelist:
+                        AN=-1;AC=-1;MQvalue=-1;pop_idx+=1
+                        print(fulloutjoinSNPs[currentchrID][sampled_idx_find_satisfied][3+pop_idx],file=recf)
                         if fulloutjoinSNPs[currentchrID][sampled_idx_find_satisfied][3+pop_idx]==None:
-                            AC=0
+                            AC=0;MQvalue=28
                             AN=int(minAN)
+#                             print(vcftable_name,"\nAN",AN,"AC",AC)
                         else:
                             INFO,FORMAT,INDVDlist=fulloutjoinSNPs[currentchrID][sampled_idx_find_satisfied][3+pop_idx]
                             try:#try collect MQ,AC AN
@@ -136,6 +142,7 @@ if __name__ == '__main__':
                                     AF = float(re.search(r"AF=([\d\.e-]+)[;,]", INFO).group(1))
                                     AC = int(re.search(r"AC=(\d+)[;,]", INFO).group(1))
                                     AN = int(re.search(r"AN=(\d+)[;,]", INFO).group(1))
+#                                     print("indvd",vcftable_name,"\nAN",AN,"AC",AC)
                                 elif re.search(r"pool[^/]+",vcftable_name)!=None:
                                     refdep = 0;altalleledep = 0
                                     AD_idx = (re.split(":", FORMAT)).index("AD")
@@ -148,14 +155,18 @@ if __name__ == '__main__':
                                     DP=altalleledep+refdep
                                     AF=altalleledep/DP
                                     AC=int(indvdNo_Of_POOL*2*AF)
+#                                     print("pool",vcftable_name,AC)
                                     if DP/2>=int(minAN):
-                                        AN=indvdNo_Of_POOL
+                                        AN=indvdNo_Of_POOL*2
                                     else:
+                                        print("DP/2<minAN",file=recf)
                                         break
                                     #for filter only,sometimes it will greater than indvdNo_Of_POOL
                             except:
+                                print("exception",file=recf)
                                 break
                         if MQvalue>=28 and  AN>=int(minAN) :
+                            print("pop passed thersold",str(snp_pos),vcftable_name)
                             totalduiltsnp+=1
                             NoOfAllele1Obsed.append(AN-AC)
                             NoOfAllele2Obsed.append(AC)
@@ -163,17 +174,20 @@ if __name__ == '__main__':
                                 NoAl1+=(1-AF)*(noofindvds2quantizing/len(options.quantizing))
                                 NoAl2+=AF*(noofindvds2quantizing/len(options.quantizing))
                         else:
+                            print("break threshold",file=recf)
                             break
-                        pop_idx+=1
                     else:######## normal finished means position need to be print into dadiinputfile    ####################################
+                        print("recode passed thersold",str(snp_pos))
                         continuesearch=1
+                        continue
                     ############################### finish pop loop    #######################################
                 
                 else:
                     print("warning ! this may be a except situation")
-                print("continue search,even continuesearch!=1,loop while break in the next ")
+                print("continue search")
                 sampled_idx_find_satisfied+=direction
             else:#find
+                print("find")
                 contextwithinspeces=snprec_in_toplevel[0][5].upper()
                 if A_base_idx==1:
                     contextoutgroup=contextwithinspeces[0]+ALT+contextwithinspeces[2]
@@ -189,6 +203,8 @@ if __name__ == '__main__':
     print("totallength",totallength)
     print("totalsnp",totalsnp,"totalduiltsnp(shoud equal to No. of SNP in dadi inputfile)",totalduiltsnp,"realduiltelength",realduiltelength,"totallengthduilt",totallengthduilt)
     dadisnpfile.close()
+    flankseqfafile.close()
+    recf.close()
 #                 snprec_in_toplevel=dbvariantstools.operateDB("select","select * from "+toplevelsnptable+" where chrID='"+currentchrID+"' and snp_pos='"+str(fulloutjoinSNPs[currentchrID][sampled_idx_find_satisfied][0])+"'")
                 
                     
