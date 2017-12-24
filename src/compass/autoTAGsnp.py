@@ -68,6 +68,11 @@ def splicVcfbyChr(curchr):
     i=1
     while startpos<endpos:
         if  not os.path.exists(outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+".ped"):
+            os.system("mv "+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+" first_200ksites_800fen"+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+".recode.vcf")
+            os.system("mv "+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+".ped first_200ksites_800fen" +re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+".ped")
+            os.system("mv "+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+".info first_200ksites_800fen" +re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+".info")
+            i+=1;startpos+=sizetoSelectTAG
+            continue
             os.system(vcftools+" --vcf "+options.vcffile+" --recode --recode-INFO-all --remove-indv DSW33216 --chr "+curchr +" --from-bp "+ str(startpos) +" --to-bp "+ str(startpos+sizetoSelectTAG) + " --out "+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i))
             os.system(vcftools+" --vcf "+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+".recode.vcf"+" --out "+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+"  --plink")
             os.system("""awk 'BEGIN{OFS="\t"}{print $2,$4,$1}' """+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+".map > "+outvcfmappedPRE+re.search(r"^[^.]*",re.search(r"[^/]*$",options.vcffile).group(0)).group(0)+"chr"+curchr+"_"+str(i)+".info")
@@ -195,7 +200,8 @@ if __name__ == '__main__':
 
     print(NUMBER,len(mappedlistordered),mappedlistordered,sep="\n")
     sys.stdout.flush()
-
+    vcfFile.close()
+    exit(9327)
 #     pool=Pool(int(options.threads))        
 #     pool.map(selectTAGsnp,mappedlistordered)
 #     pool.close()
