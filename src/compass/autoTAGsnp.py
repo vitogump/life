@@ -107,7 +107,7 @@ required when running the program from the command line.
         sys.stdout.flush()
         return########blockend 
     elif not os.path.exists(outvcfmappedpath+"/"+filename+".TAGS") and (not os.path.exists(outvcfmappedpath+"/"+filename+"_1.TAGS")) :
-        tagcomdstr="java -XX:-UseGCOverheadLimit   -jar "+Haploview+" -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 150000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging"
+        tagcomdstr="java -XX:-UseGCOverheadLimit   -jar "+Haploview+" -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 50000  -minMAF 0.05 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.8 -pairwiseTagging "
 #                    "java -XX:-UseGCOverheadLimit   -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 124000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging" 
 #         tagcomd=shlex.split(tagcomdstr)
         print(tagcomdstr)
@@ -147,8 +147,8 @@ required when running the program from the command line.
                 os.system(vcftools+ " --vcf "+filename+"_2"+".recode.vcf"+" --out "+filename+"_2 --plink")
                 os.system("""awk 'BEGIN{OFS="\t"}{print $2,$4,$1}' """+filename+"_2.map >" +filename+"_2.info")
                 print("start splited threads",filename)
-                a=os.system("java -XX:-UseGCOverheadLimit  -jar "+Haploview+" -nogui -pedfile "+filename+"_1.ped -info "+filename+"_1.info  -blockoutput GAB -log "+filename+"_1.log -out "+outvcfmappedpath+"/"+filename+"_1   -memory 150000 -maxDistance 150 -taglodcutoff 3 -tagrsqcutoff 0.5 -aggressiveTagging")
-                b=os.system("java -XX:-UseGCOverheadLimit  -jar "+Haploview+" -nogui -pedfile "+filename+"_2.ped -info "+filename+"_2.info  -blockoutput GAB -log "+filename+"_2.log -out "+outvcfmappedpath+"/"+filename+"_2   -memory 150000 -maxDistance 150 -taglodcutoff 3 -tagrsqcutoff 0.5 -aggressiveTagging")
+                a=os.system("java -XX:-UseGCOverheadLimit  -jar "+Haploview+" -nogui -pedfile "+filename+"_1.ped -info "+filename+"_1.info  -blockoutput GAB -log "+filename+"_1.log -out "+outvcfmappedpath+"/"+filename+"_1   -memory 50000 -maxDistance 150 -taglodcutoff 3 -tagrsqcutoff 0.8 -pairwiseTagging ")
+                b=os.system("java -XX:-UseGCOverheadLimit  -jar "+Haploview+" -nogui -pedfile "+filename+"_2.ped -info "+filename+"_2.info  -blockoutput GAB -log "+filename+"_2.log -out "+outvcfmappedpath+"/"+filename+"_2   -memory 50000 -maxDistance 150 -taglodcutoff 3 -tagrsqcutoff 0.8 -pairwiseTagging ")
                 print("should run again? mv the split block here? os.system(vcftools+...)")
         except:
             print(filename+"_1.ped or"+filename+"_1.ped with exception" )
