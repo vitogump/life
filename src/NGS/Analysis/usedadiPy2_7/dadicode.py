@@ -1,16 +1,19 @@
+from numpy import array, savetxt, loadtxt, std
 from optparse import OptionParser
+import pickle
 
-from numpy import array
+import dadi, pylab, re, signal
 import matplotlib
+
+
 matplotlib.use('Agg')
-import dadi, numpy, pylab, re,signal
 
 
 parser = OptionParser()
 parser.add_option("-n", "--popname", dest="popname",action="append",nargs=2,help="fs_file_name projection")
 parser.add_option("-f", "--fsfile", dest="fsfile",help="fs file name ")
 parser.add_option("-l", "--genomelengthwhichsnpfrom", dest="genomelengthwhichsnpfrom",help="fs file name ")
-parser.add_option("-b", "--bootstrap", dest="bootstrap",default=False,nargs=2,help="bootnum randomstr timetoout")
+parser.add_option("-b", "--bootstrap", dest="bootstrap",default=False,nargs=3,help="bootnum randomstr timetoout")
 parser.add_option("-m", "--model", dest="model",help="1,model1 2,model2 ....")
 parser.add_option("-p","--parameters",dest="parameters",action="append",nargs=4,help="""parametername initvalue lower upper
                                                                                                                 red   blue""")
@@ -455,49 +458,98 @@ if options.bootstrap!=False:
         exit(-1)
     #######
     signal.signal(signal.SIGALRM, myHandler)
-    signal.alarm(int(options.bootstrap[1]))
-    of=open(namestr+options.tag+options.bootstrap[0]+".parameter","w")
+    signal.alarm(int(options.bootstrap[2]))
+    of=open(namestr+options.tag+options.bootstrap[1]+".parameter","w")
     for name in paramsname:
         ll_param_MAP[name]=[]
     ll_param_MAP["likelihood"]=[]
     ll_param_MAP["theta"]=[]
-    func_ex=dadi.Numerics.make_extrap_func(func)
-    p0=dadi.Misc.perturb_params(params,lower_bound=lower_bound,upper_bound=upper_bound)
-    popt=dadi.Inference.optimize_log(params,fsdata,func_ex,pts_1,lower_bound=lower_bound,upper_bound=upper_bound,verbose=len(params))
-    model=func_ex(popt,ns,pts_1)
-    theta=dadi.Inference.optimal_sfs_scaling(model,fsdata)
-    ll_opt=dadi.Inference.ll_multinom(model,fsdata)#equal to ll =dadi.Inference.ll(model*theta,fsdata)
-    
-    Nref=theta/(4*9.97e-10*float(options.genomelengthwhichsnpfrom))
-    for i in range(len(popt)):
-        if re.search(r"^T",paramsname[i])!=None:
-            ll_param_MAP[paramsname[i]]=[Nref*popt[i]*2,popt[i]]
-            print "paramname",paramsname[i],popt[i],"generation",Nref*popt[i]*2
-        elif re.search(r"^m",paramsname[i])!=None:
-            ll_param_MAP[paramsname[i]]=[popt[i]/(Nref*2),popt[i]]
-            
-            print "paramname",paramsname[i],popt[i],"migration rate",popt[i]/(Nref*2)
-        elif re.search(r"^nu",paramsname[i])!=None:
-            ll_param_MAP[paramsname[i]]=[popt[i]*Nref,popt[i]]
-            print "paramname",paramsname[i],popt[i],"effective pop size",Nref*popt[i]
+    bootstraps=[]
+    residualarraylist=[]
+    residualhistlist=[]  
+    for cycle in range(int(options.bootstrap[0])):
+        print(cycle)
+        bootstrap_data=fsdata.sample()
+        func_ex=dadi.Numerics.make_extrap_func(func)
+        p0=dadi.Misc.perturb_params(params,lower_bound=lower_bound,upper_bound=upper_bound)
+        popt=dadi.Inference.optimize_log(params,bootstrap_data,func_ex,pts_1,lower_bound=lower_bound,upper_bound=upper_bound,verbose=len(params))
+        model=func_ex(popt,ns,pts_1)
+        theta=dadi.Inference.optimal_sfs_scaling(model,bootstrap_data)
+        ll =dadi.Inference.ll(model*theta,bootstrap_data)
+        
+        Nref=theta/(4*9.97e-10*float(options.genomelengthwhichsnpfrom))
+        for i in range(len(popt)):
+            if re.search(r"^T",paramsname[i])!=None:
+                ll_param_MAP[paramsname[i]]=[Nref*popt[i]*2,popt[i]]
+                print "paramname",paramsname[i],popt[i],"generation",Nref*popt[i]*2
+            elif re.search(r"^m",paramsname[i])!=None:
+                ll_param_MAP[paramsname[i]]=[popt[i]/(Nref*2),popt[i]]
+                
+                print "paramname",paramsname[i],popt[i],"migration rate",popt[i]/(Nref*2)
+            elif re.search(r"^nu",paramsname[i])!=None:
+                ll_param_MAP[paramsname[i]]=[popt[i]*Nref,popt[i]]
+                print "paramname",paramsname[i],popt[i],"effective pop size",Nref*popt[i]
+            else:
+                ll_param_MAP[paramsname[i]]=[popt[i],popt[i]]
+        ll_param_MAP["likelihood"]=[ll,ll]
+        ll_param_MAP["theta"]=[theta,theta]
+        bootstraps.append([ll,theta].extend([e for e in popt]))
+        for a in sorted(ll_param_MAP.keys()):
+            print >>of,a,ll_param_MAP[a][0],ll_param_MAP[a][1]
         else:
-            ll_param_MAP[paramsname[i]]=[popt[i],popt[i]]
-    ll_param_MAP["likelihood"]=[ll_opt,ll_opt]
-    ll_param_MAP["theta"]=[theta,theta]
-    for a in sorted(ll_param_MAP.keys()):
-        print >>of,a,ll_param_MAP[a][0],ll_param_MAP[a][1]
-    else:
-        pass
-#         print >>of,""
-#     for i in range(len(ll_param_MAP["likelihood"])):
-#         for a in sorted(ll_param_MAP.keys()):
-#             print >>of,ll_param_MAP[a],
-#         else:
-#             print >>of,""
-    if len(popnamelist)==2:
-        dadi.Plotting.plot_2d_comp_multinom(model,fsdata,vmin=1,residualfilenamepre=options.fsfile+namestr+options.tag+options.model)
-    of.close()
-#     exit()
+            pass
+        
+        if len(popnamelist)==2:
+            fig=pylab.figure(1)
+            fig.clear()
+            dadi.Plotting.plot_single_2d_sfs(bootstrap_data,vmin=1)
+    #         pylab.show()
+            fig.savefig('fsdata_split'+namestr+options.tag+str(cycle)+options.model+'.png', dpi=600)
+            fig=pylab.figure(1)
+            fig.clear()
+            dadi.Plotting.plot_2d_comp_multinom(model,bootstrap_data,vmin=1,residualfilenamepre=options.fsfile+namestr+options.tag+options.model)
+            fig.savefig('compare_split'+namestr+options.tag+str(cycle)+options.model+'.png', dpi=600)
+        of.close()
+        u=pickle._Unpickler(open(options.fsfile+namestr+options.tag+options.model+"array.pickle","rb"))
+        u.encoding='latin1'
+        residualarray=u.load()
+        u=pickle._Unpickler(open(options.fsfile+namestr+options.tag+options.model+"hist.pickle","rb"))
+        u.encoding='latin1'
+        residualhis=u.load()
+        residualarraylist.append(residualarray)
+        residualhistlist.append(residualhis)
+        inf=open(namestr+options.tag+options.bootstrap[1]+".parameter","r")
+        for resultline in inf:
+            linelist=re.split(r"\s+",resultline.strip())
+            if len(linelist)>=2:
+                name=linelist[0]
+                convert_value=linelist[1]
+                value=linelist[2]
+                ll_param_MAP[name].append((convert_value,value))
+        inf.close()
+    fof=open(options.fsfile[:20]+"_"+namestr+options.model+options.tag+".final_parameter","w")
+    bootstraps = array(bootstraps)
+    savetxt('1Dboots.npy', bootstraps)
+    bootstraps = loadtxt('1Dboots.npy')
+    sigma_boot = std(bootstraps, axis=0)[1:]
+    fig=pylab.figure(1)
+    fig.clear()
+    fig.hist(bootstraps[:,1], bins=20, normed=True)
+    fig.savefig('hist'+namestr+options.tag+str(cycle)+options.model+'.png', dpi=600)
+    
+    for i in range(len(ll_param_MAP["likelihood"])):
+        for a in sorted(ll_param_MAP.keys()):
+            print >>fof,a+"_convertvalue\t"+a+"_value\t",
+        else:
+            print >>fof
+    for i in range(len(ll_param_MAP["likelihood"])):
+        for a in sorted(ll_param_MAP.keys()):
+            print >>fof,ll_param_MAP[a][i][0]+"\t"+ll_param_MAP[a][i][1]
+        else:
+            print >>fof
+    fof.close()
+    
+    #     exit()
 else:
     func_ex=dadi.Numerics.make_extrap_func(func)
     p0=dadi.Misc.perturb_params(params,lower_bound=lower_bound,upper_bound=upper_bound)
@@ -505,7 +557,7 @@ else:
     model=func_ex(popt,ns,pts_1)
     theta=dadi.Inference.optimal_sfs_scaling(model,fsdata)
     print theta
-    ll_opt=dadi.Inference.ll_multinom(model,fsdata)
+    ll_opt=dadi.Inference.ll_multinom(model,fsdata)#equal to ll =dadi.Inference.ll(model*theta,fsdata)
     ll=dadi.Inference.ll(model,fsdata)
     Nref=theta/(4*9.97e-10*float(options.genomelengthwhichsnpfrom))
     print 'Nref',Nref
