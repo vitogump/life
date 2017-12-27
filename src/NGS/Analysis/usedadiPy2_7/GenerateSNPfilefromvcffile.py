@@ -64,7 +64,7 @@ if __name__ == '__main__':
     if options.quantizing!=None:
         print("quantizpool",end="\t",file=dadisnpfile)
     print("Allele2",end="\t",file=dadisnpfile)
-    for vcftable_name,minAN in vcffilelist:
+    for vcftfile_name,minAN in vcffilelist:
         popName=re.split(r'\.',re.search(r"[^/]*$",vcftfile_name).group(0))[0]
         print(popName,end="\t",file=dadisnpfile)
     if options.quantizing!=None:
@@ -87,7 +87,7 @@ if __name__ == '__main__':
         if totalsnpforAchr>=snpperkb*currentchrLen / 1000:
             totallength+=currentchrLen
             totalsnp+=totalsnpforAchr
-            totallengthduilt+=dilute*totalsnpforAchr
+            totallengthduilt+=dilute*currentchrLen
             sample_idxlistOfaJoinTable=random.sample([j for j in range(totalsnpforAchr)],int(dilute*totalsnpforAchr)+1)
             sample_idxlistOfaJoinTable.sort()
         else:
@@ -167,7 +167,6 @@ if __name__ == '__main__':
                                 break
                         if MQvalue>=28 and  AN>=int(minAN) :
                             print("pop passed thersold",str(snp_pos),vcftable_name)
-                            totalduiltsnp+=1
                             NoOfAllele1Obsed.append(AN-AC)
                             NoOfAllele2Obsed.append(AC)
                             if options.quantizing!=None and pop_idx in vcftablesidxlist_toquantizing:
@@ -181,6 +180,7 @@ if __name__ == '__main__':
                             print("skip pos that fixed in all pop")
                             sampled_idx_find_satisfied+=direction
                         else:
+                            totalduiltsnp+=1
                             print("recode passed thersold",str(snp_pos))
                             continuesearch=1
                         continue

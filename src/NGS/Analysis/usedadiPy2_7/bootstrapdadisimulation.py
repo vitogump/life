@@ -29,7 +29,7 @@ parser.add_option("-T", "--tag",dest="tag", default="TAG",help="don't print stat
 (options, args) = parser.parse_args()
 ll_param_MAPlist={}
 ISOTIMEFORMAT='%Y-%m-%d %X'
-pythonpath_pre="/home/liurui/softwarepakage/Python-2.7/python /home/liurui/life/src/NGS/Analysis/usedadiPy2_7/dadicode.py "
+pythonpath_pre="/home/liurui/software/Python-2.7/python /home/liurui/life/src/NGS/Analysis/usedadiPy2_7/dadicode.py "
 def call_system(commandline):
     a=os.system(commandline)
     return a
@@ -45,6 +45,7 @@ if __name__ == '__main__':
     for name in popnamelist:
         namestr+=name        
     pythonpath_pre=pythonpath_pre+" -f "+options.fsfile+" -l "+options.genomelengthwhichsnpfrom+" -m "+options.model+" -T "+options.tag
+    print(options.model)
     ll_param_MAPlist["likelihood"]=[]
     ll_param_MAPlist["theta"]=[]
     for n,v,l,u in options.parameters:

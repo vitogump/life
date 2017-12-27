@@ -36,7 +36,8 @@ parser.add_option("-s", "--sizeOfchip", dest="sizeOfchip", help="400000")
 parser.add_option("-N", "--numbertosplic", dest="numbertosplic", help="800 ? 300? ...")
 parser.add_option("-t", "--threads", dest="threads", help="it's the depth of the dir from the inputdatapath which the data file that need to be process in it,the depth of the inputdatapath is 0")
 parser.add_option("-o", "--outputfilename", dest="outputfilename",help="chromosome")
-parser.add_option("-r", "--rmindvd", dest="rmindvd", help="DSW33216")
+parser.add_option("-r", "--rmindvd", dest="rmindvd",default=None, help="includeTagsFilestr")
+parser.add_option("-i", "--includeTag", dest="includeTag", help="DSW33216")
 parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", default=True,
                   help="don't print status messages to stdout")
@@ -46,6 +47,10 @@ vcftools="vcftools"
 Haploview="~/software/Haploview.jar"
 (options,args)=parser.parse_args()
 print(ctime());sys.stdout.flush()
+if options.includeTag!=None:
+    includeTagsFilestr=" -includeTagsFile "+options.includeTag
+else:
+    includeTagsFilestr=""
 outvcfmappedPRE=re.search(r'[^/]*$',options.outputfilename).group(0)
 outvcfmappedpath=os.path.dirname(options.outputfilename)
 tempfile=open(outvcfmappedPRE+"numberinfo.txt",'w')
@@ -107,7 +112,7 @@ required when running the program from the command line.
         sys.stdout.flush()
         return########blockend 
     elif not os.path.exists(outvcfmappedpath+"/"+filename+".TAGS") and (not os.path.exists(outvcfmappedpath+"/"+filename+"_1.TAGS")) :
-        tagcomdstr="java -XX:-UseGCOverheadLimit   -jar "+Haploview+" -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 50000  -minMAF 0.05 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.8 -pairwiseTagging "
+        tagcomdstr="java -XX:-UseGCOverheadLimit   -jar "+Haploview+" -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 50000  -minMAF 0.05 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.8 -pairwiseTagging "+includeTagsFilestr
 #                    "java -XX:-UseGCOverheadLimit   -jar ~/software/Haploview.jar -nogui -pedfile "+filename+".ped -info "+filename+".info -blockoutput GAB -log "+filename+".log -out "+outvcfmappedpath+"/"+filename+" -memory 124000 -maxDistance 300 -taglodcutoff 3 -tagrsqcutoff 0.6 -aggressiveTagging" 
 #         tagcomd=shlex.split(tagcomdstr)
         print(tagcomdstr)
@@ -147,8 +152,8 @@ required when running the program from the command line.
                 os.system(vcftools+ " --vcf "+filename+"_2"+".recode.vcf"+" --out "+filename+"_2 --plink")
                 os.system("""awk 'BEGIN{OFS="\t"}{print $2,$4,$1}' """+filename+"_2.map >" +filename+"_2.info")
                 print("start splited threads",filename)
-                a=os.system("java -XX:-UseGCOverheadLimit  -jar "+Haploview+" -nogui -pedfile "+filename+"_1.ped -info "+filename+"_1.info  -blockoutput GAB -log "+filename+"_1.log -out "+outvcfmappedpath+"/"+filename+"_1   -memory 50000 -maxDistance 150 -taglodcutoff 3 -tagrsqcutoff 0.8 -pairwiseTagging ")
-                b=os.system("java -XX:-UseGCOverheadLimit  -jar "+Haploview+" -nogui -pedfile "+filename+"_2.ped -info "+filename+"_2.info  -blockoutput GAB -log "+filename+"_2.log -out "+outvcfmappedpath+"/"+filename+"_2   -memory 50000 -maxDistance 150 -taglodcutoff 3 -tagrsqcutoff 0.8 -pairwiseTagging ")
+                a=os.system("java -XX:-UseGCOverheadLimit  -jar "+Haploview+" -nogui -pedfile "+filename+"_1.ped -info "+filename+"_1.info  -blockoutput GAB -log "+filename+"_1.log -out "+outvcfmappedpath+"/"+filename+"_1   -memory 150000 -maxDistance 150 -taglodcutoff 3 -tagrsqcutoff 0.6 -pairwiseTagging "+includeTagsFilestr)
+                b=os.system("java -XX:-UseGCOverheadLimit  -jar "+Haploview+" -nogui -pedfile "+filename+"_2.ped -info "+filename+"_2.info  -blockoutput GAB -log "+filename+"_2.log -out "+outvcfmappedpath+"/"+filename+"_2   -memory 150000 -maxDistance 150 -taglodcutoff 3 -tagrsqcutoff 0.6 -pairwiseTagging "+includeTagsFilestr)
                 print("should run again? mv the split block here? os.system(vcftools+...)")
         except:
             print(filename+"_1.ped or"+filename+"_1.ped with exception" )
@@ -195,11 +200,11 @@ if __name__ == '__main__':
 
     print(NUMBER,len(mappedlistordered),mappedlistordered,sep="\n")
     sys.stdout.flush()
-#     pool=Pool(int(options.threads))        
-#     pool.map(selectTAGsnp,mappedlistordered)
-#     pool.close()
+    pool=Pool(int(options.threads))        
+    pool.map(selectTAGsnp,mappedlistordered)
+    pool.close()
 
-#     pool.join()
+    pool.join()
     print("finish haploview TAGing")    
     #extract two tags by winsize, if no enough TAG in a win then seleced two snps whose AF approxmate to 0.5
     TAGSNP={}
