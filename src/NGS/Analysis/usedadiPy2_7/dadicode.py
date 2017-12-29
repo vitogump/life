@@ -1,6 +1,6 @@
 from numpy import array, savetxt, loadtxt, std
 from optparse import OptionParser
-import pickle
+import pickle,math
 
 import dadi, pylab, re, signal
 import matplotlib
@@ -84,7 +84,15 @@ def split_mig(params,ns,pts):
     phi=dadi.Integration.two_pops(phi,xx,Ts,nu1=nuW,nu2=nuD,m12=m12,m21=m21)
     fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
     return fs
-    
+
+def split_nm(params,ns,pts):
+    s,Ts=params
+    xx=dadi.Numerics.default_grid(pts)
+    phi=dadi.PhiManip.phi_1D(xx)
+    phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
+    phi=dadi.Integration.two_pops(phi,xx,Ts,nu1=s,nu2=(1-s))
+    fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
+    return fs    
 def split_mig_1_IM(params,ns,pts):
     nuA,s,TA,TS,m12,m21=params
     xx=dadi.Numerics.default_grid(pts)
@@ -382,7 +390,8 @@ def split_mig_2(params,ns,pts):
     fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
     return fs
 ns=fsdata.sample_sizes
-pts_1=[40,50,60]
+# pts_1=[40,50,60]
+pts_1=[60,70,80]
 if options.model=="split_mig_1_w_bottleneck":
     func=split_mig_1_w_bottleneck
 elif options.model=="split_mig_w_bottleneck":
@@ -423,8 +432,10 @@ elif options.model=="splitdom_splitwild_3d_domlineDecrease":
     func=splitdom_splitwild_3d_domlineDecrease
 elif options.model=="split_mig_Afterbottleneck":
     func=split_mig_Afterbottleneck
-elif options.model=="both_bottleneck_aftersplit":
-    func=both_bottleneck_aftersplit
+elif options.model=="IM_2":
+    func=IM_2
+elif options.model=="split_nm":
+    func=split_nm
 paramslist=[]
 upper_boundlist=[]
 lower_boundlist=[]
@@ -452,14 +463,16 @@ ll_param_MAP={}
 namestr=""
 for name in popnamelist:
     namestr+=name
+class TimeOutException(Exception):  
+    pass 
 if options.bootstrap!=False:
     def myHandler(signum, frame):
-        print("Now, it's the time")
-        exit(-1)
+        print "Now, it's the time"
+        raise TimeOutException("time out")
     #######
-    signal.signal(signal.SIGALRM, myHandler)
-    signal.alarm(int(options.bootstrap[2]))
-    of=open(namestr+options.tag+options.bootstrap[1]+".parameter","w")
+#     signal.signal(signal.SIGALRM, myHandler)
+#     signal.alarm(int(options.bootstrap[2]))
+    
     for name in paramsname:
         ll_param_MAP[name]=[]
     ll_param_MAP["likelihood"]=[]
@@ -468,12 +481,34 @@ if options.bootstrap!=False:
     residualarraylist=[]
     residualhistlist=[]  
     for cycle in range(int(options.bootstrap[0])):
+        of=open(namestr+options.tag+options.model+options.bootstrap[1]+".parameter","w")
         print(cycle)
         bootstrap_data=fsdata.sample()
+        nsbootstrap=bootstrap_data.sample_sizes
         func_ex=dadi.Numerics.make_extrap_func(func)
         p0=dadi.Misc.perturb_params(params,lower_bound=lower_bound,upper_bound=upper_bound)
-        popt=dadi.Inference.optimize_log(params,bootstrap_data,func_ex,pts_1,lower_bound=lower_bound,upper_bound=upper_bound,verbose=len(params))
-        model=func_ex(popt,ns,pts_1)
+        termitetime=int(options.bootstrap[2])*70
+        try:
+            signal.signal(signal.SIGALRM, myHandler)
+            signal.alarm(termitetime)
+            popt=dadi.Inference.optimize_log_fmin(p0,bootstrap_data,func_ex,pts_1,lower_bound=lower_bound,upper_bound=upper_bound,verbose=len(params))
+            model=func_ex(popt,nsbootstrap,pts_1)
+            signal.alarm(0)
+        except :
+            print("continue optimize_log_lbfgsb")
+            try:
+                signal.signal(signal.SIGALRM, myHandler)
+                signal.alarm(termitetime)
+                popt=dadi.Inference.optimize_log_lbfgsb(p0,bootstrap_data,func_ex,pts_1,lower_bound=lower_bound,upper_bound=upper_bound,verbose=len(params))
+                model=func_ex(popt,nsbootstrap,pts_1)
+                signal.alarm(0)
+            except:
+                popt=array([0,0,0])
+        if (math.isinf(popt[0])or popt[0]==0) and (math.isinf(popt[-1]) or popt[-1]==0):
+            pts_2=[90,100,110]
+            popt=dadi.Inference.optimize_log(p0,bootstrap_data,func_ex,pts_2,lower_bound=lower_bound,upper_bound=upper_bound,verbose=len(params))
+#             pts_1=[]
+        model=func_ex(popt,nsbootstrap,pts_1)
         theta=dadi.Inference.optimal_sfs_scaling(model,bootstrap_data)
         ll =dadi.Inference.ll(model*theta,bootstrap_data)
         
@@ -498,27 +533,32 @@ if options.bootstrap!=False:
             print >>of,a,ll_param_MAP[a][0],ll_param_MAP[a][1]
         else:
             pass
-        
-        if len(popnamelist)==2:
-            fig=pylab.figure(1)
-            fig.clear()
-            dadi.Plotting.plot_single_2d_sfs(bootstrap_data,vmin=1)
-    #         pylab.show()
-            fig.savefig('fsdata_split'+namestr+options.tag+str(cycle)+options.model+'.png', dpi=600)
-            fig=pylab.figure(1)
-            fig.clear()
-            dadi.Plotting.plot_2d_comp_multinom(model,bootstrap_data,vmin=1,residualfilenamepre=options.fsfile+namestr+options.tag+options.model)
-            fig.savefig('compare_split'+namestr+options.tag+str(cycle)+options.model+'.png', dpi=600)
         of.close()
-        u=pickle._Unpickler(open(options.fsfile+namestr+options.tag+options.model+"array.pickle","rb"))
-        u.encoding='latin1'
-        residualarray=u.load()
-        u=pickle._Unpickler(open(options.fsfile+namestr+options.tag+options.model+"hist.pickle","rb"))
-        u.encoding='latin1'
-        residualhis=u.load()
+        if len(popnamelist)==2:
+            try:
+                fig=pylab.figure(1)
+                fig.clear()
+                dadi.Plotting.plot_single_2d_sfs(bootstrap_data,vmin=1)
+        #         pylab.show()
+                fig.savefig('fsdata_split'+namestr+options.tag+str(cycle)+options.model+'.png', dpi=600)
+                fig=pylab.figure(1)
+                fig.clear()
+                dadi.Plotting.plot_2d_comp_multinom(model,bootstrap_data,vmin=1,residualfilenamepre=options.fsfile+namestr+options.tag+options.model)
+                fig.savefig('compare_split'+namestr+options.tag+str(cycle)+options.model+'.png', dpi=600)
+            except:
+                print("plot exception")
+                continue
+        
+        #collection result 
+        residualarray=pickle.load(open(options.fsfile+namestr+options.tag+options.model+"array.pickle","rb"))
+#         u.encoding='latin1'
+#         residualarray=u.load()
+        residualhis=pickle.load(open(options.fsfile+namestr+options.tag+options.model+"hist.pickle","rb"))
+#         u.encoding='latin1'
+#         residualhis=u.load()
         residualarraylist.append(residualarray)
         residualhistlist.append(residualhis)
-        inf=open(namestr+options.tag+options.bootstrap[1]+".parameter","r")
+        inf=open(namestr+options.tag+options.model+options.bootstrap[1]+".parameter","r")
         for resultline in inf:
             linelist=re.split(r"\s+",resultline.strip())
             if len(linelist)>=2:
@@ -527,15 +567,18 @@ if options.bootstrap!=False:
                 value=linelist[2]
                 ll_param_MAP[name].append((convert_value,value))
         inf.close()
+    pickle.dump(residualarraylist,open(options.fsfile+namestr+options.tag+options.model+"arraylist.pickle",'wb'))
+    pickle.dump(residualhistlist,open(options.fsfile+namestr+options.tag+options.model+"histlist.pickle",'wb'))
     fof=open(options.fsfile[:20]+"_"+namestr+options.model+options.tag+".final_parameter","w")
-    bootstraps = array(bootstraps)
-    savetxt('1Dboots.npy', bootstraps)
-    bootstraps = loadtxt('1Dboots.npy')
-    sigma_boot = std(bootstraps, axis=0)[1:]
-    fig=pylab.figure(1)
-    fig.clear()
-    fig.hist(bootstraps[:,1], bins=20, normed=True)
-    fig.savefig('hist'+namestr+options.tag+str(cycle)+options.model+'.png', dpi=600)
+    if bootstraps is not None:
+        bootstraps = array(bootstraps)
+        savetxt(namestr+options.tag+options.model+'2Dboots.npy', bootstraps)
+        bootstraps = loadtxt(namestr+options.tag+options.model+'2Dboots.npy')
+#         sigma_boot = std(bootstraps, axis=0)[1:]
+#         fig=pylab.figure(1)
+#         fig.clear()
+#         fig.hist(bootstraps[:,1], bins=20, normed=True)
+#         fig.savefig('hist'+namestr+options.tag+options.model+'.png', dpi=600)
     
     for i in range(len(ll_param_MAP["likelihood"])):
         for a in sorted(ll_param_MAP.keys()):
