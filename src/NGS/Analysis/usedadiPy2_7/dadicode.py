@@ -13,7 +13,7 @@ parser = OptionParser()
 parser.add_option("-n", "--popname", dest="popname",action="append",nargs=2,help="fs_file_name projection")
 parser.add_option("-f", "--fsfile", dest="fsfile",help="fs file name ")
 parser.add_option("-l", "--genomelengthwhichsnpfrom", dest="genomelengthwhichsnpfrom",help="fs file name ")
-parser.add_option("-b", "--bootstrap", dest="bootstrap",default=False,nargs=3,help="bootnum randomstr timetoout")
+parser.add_option("-b", "--bootstrap", dest="bootstrap",default=False,nargs=2,help="randomstr timetoout")
 parser.add_option("-m", "--model", dest="model",help="1,model1 2,model2 ....")
 parser.add_option("-p","--parameters",dest="parameters",action="append",nargs=4,help="""parametername initvalue lower upper
                                                                                                                 red   blue""")
@@ -459,139 +459,162 @@ print 'upper_bound',repr(upper_bound)
 print 'lower_bound',repr(lower_bound)
 print 'params',repr(params)
 print 'paramsname',paramsname
-ll_param_MAP={}
+ll_param_MAPlist={}
 namestr=""
 for name in popnamelist:
     namestr+=name
-class TimeOutException(Exception):  
-    pass 
+class TimeOutException(Exception):
+    print
+    pass
+def myHandler_exit(signum, frame):
+    print "Now, it's the time,exit"
+    exit(-1)
+def myHandler_continue(signum, frame):
+    print "Now, it's the time,continue"
+    raise TimeOutException("time out")
 if options.bootstrap!=False:
-    def myHandler(signum, frame):
-        print "Now, it's the time"
-        raise TimeOutException("time out")
+
     #######
 #     signal.signal(signal.SIGALRM, myHandler)
 #     signal.alarm(int(options.bootstrap[2]))
     
     for name in paramsname:
+        ll_param_MAPlist[name]=[]
+    ll_param_MAPlist["likelihood"]=[]
+    ll_param_MAPlist["theta"]=[]
+#     bootstraps=[]
+    residualarraylist=[]
+    residualhistlist=[]  
+#     for cycle in range(int(options.bootstrap[0])):
+    ll_param_MAP={}
+    for name in paramsname:
         ll_param_MAP[name]=[]
     ll_param_MAP["likelihood"]=[]
     ll_param_MAP["theta"]=[]
-    bootstraps=[]
-    residualarraylist=[]
-    residualhistlist=[]  
-    for cycle in range(int(options.bootstrap[0])):
-        of=open(namestr+options.tag+options.model+options.bootstrap[1]+".parameter","w")
-        print(cycle)
-        bootstrap_data=fsdata.sample()
-        nsbootstrap=bootstrap_data.sample_sizes
-        func_ex=dadi.Numerics.make_extrap_func(func)
-        p0=dadi.Misc.perturb_params(params,lower_bound=lower_bound,upper_bound=upper_bound)
-        termitetime=int(options.bootstrap[2])*70
+    of=open(namestr+options.tag+options.model+options.bootstrap[0]+".parameter","w")
+#         print(cycle)
+    bootstrap_data=fsdata.sample()
+    nsbootstrap=bootstrap_data.sample_sizes
+    func_ex=dadi.Numerics.make_extrap_func(func)
+    p0=dadi.Misc.perturb_params(params,lower_bound=lower_bound,upper_bound=upper_bound)
+    termitetime=int(options.bootstrap[1])*70
+    
+    try:
+        signal.signal(signal.SIGALRM, myHandler_continue)
+        signal.alarm(termitetime)
+        popt=dadi.Inference.optimize_log_fmin(p0,bootstrap_data,func_ex,pts_1,lower_bound=lower_bound,upper_bound=upper_bound,verbose=len(params))
+        model=func_ex(popt,nsbootstrap,pts_1)
+        signal.alarm(0)
+    except :
+        print("continue optimize_log_lbfgsb")
         try:
-            signal.signal(signal.SIGALRM, myHandler)
-            signal.alarm(termitetime)
-            popt=dadi.Inference.optimize_log_fmin(p0,bootstrap_data,func_ex,pts_1,lower_bound=lower_bound,upper_bound=upper_bound,verbose=len(params))
+            signal.signal(signal.SIGALRM, myHandler_exit)
+            signal.alarm(termitetime*1.5)
+            popt=dadi.Inference.optimize_log_lbfgsb(p0,bootstrap_data,func_ex,pts_1,lower_bound=lower_bound,upper_bound=upper_bound,verbose=len(params))
             model=func_ex(popt,nsbootstrap,pts_1)
             signal.alarm(0)
-        except :
-            print("continue optimize_log_lbfgsb")
-            try:
-                signal.signal(signal.SIGALRM, myHandler)
-                signal.alarm(termitetime)
-                popt=dadi.Inference.optimize_log_lbfgsb(p0,bootstrap_data,func_ex,pts_1,lower_bound=lower_bound,upper_bound=upper_bound,verbose=len(params))
-                model=func_ex(popt,nsbootstrap,pts_1)
-                signal.alarm(0)
-            except:
-                popt=array([0,0,0])
-        if (math.isinf(popt[0])or popt[0]==0) and (math.isinf(popt[-1]) or popt[-1]==0):
-            pts_2=[90,100,110]
-            popt=dadi.Inference.optimize_log(p0,bootstrap_data,func_ex,pts_2,lower_bound=lower_bound,upper_bound=upper_bound,verbose=len(params))
+        except:
+            popt=array([0,0,0])
+    if (math.isinf(popt[0])or popt[0]==0) and (math.isinf(popt[-1]) or popt[-1]==0):
+        pts_2=[90,100,110]
+        signal.signal(signal.SIGALRM, myHandler_exit)
+        signal.alarm(termitetime)
+        popt=dadi.Inference.optimize_log(p0,bootstrap_data,func_ex,pts_2,lower_bound=lower_bound,upper_bound=upper_bound,verbose=len(params))
+        signal.alarm(0)
 #             pts_1=[]
-        model=func_ex(popt,nsbootstrap,pts_1)
-        theta=dadi.Inference.optimal_sfs_scaling(model,bootstrap_data)
-        ll =dadi.Inference.ll(model*theta,bootstrap_data)
-        
-        Nref=theta/(4*9.97e-10*float(options.genomelengthwhichsnpfrom))
-        for i in range(len(popt)):
-            if re.search(r"^T",paramsname[i])!=None:
-                ll_param_MAP[paramsname[i]]=[Nref*popt[i]*2,popt[i]]
-                print "paramname",paramsname[i],popt[i],"generation",Nref*popt[i]*2
-            elif re.search(r"^m",paramsname[i])!=None:
-                ll_param_MAP[paramsname[i]]=[popt[i]/(Nref*2),popt[i]]
-                
-                print "paramname",paramsname[i],popt[i],"migration rate",popt[i]/(Nref*2)
-            elif re.search(r"^nu",paramsname[i])!=None:
-                ll_param_MAP[paramsname[i]]=[popt[i]*Nref,popt[i]]
-                print "paramname",paramsname[i],popt[i],"effective pop size",Nref*popt[i]
-            else:
-                ll_param_MAP[paramsname[i]]=[popt[i],popt[i]]
-        ll_param_MAP["likelihood"]=[ll,ll]
-        ll_param_MAP["theta"]=[theta,theta]
-        bootstraps.append([ll,theta].extend([e for e in popt]))
-        for a in sorted(ll_param_MAP.keys()):
-            print >>of,a,ll_param_MAP[a][0],ll_param_MAP[a][1]
+    model=func_ex(popt,nsbootstrap,pts_1)
+    theta=dadi.Inference.optimal_sfs_scaling(model,bootstrap_data)
+    ll =dadi.Inference.ll(model*theta,bootstrap_data)
+    
+    Nref=theta/(4*9.97e-10*float(options.genomelengthwhichsnpfrom))
+    for i in range(len(popt)):
+        if re.search(r"^T",paramsname[i])!=None:
+            ll_param_MAP[paramsname[i]]=[Nref*popt[i]*2,popt[i]]
+            print "paramname",paramsname[i],popt[i],"generation",Nref*popt[i]*2
+        elif re.search(r"^m",paramsname[i])!=None:
+            ll_param_MAP[paramsname[i]]=[popt[i]/(Nref*2),popt[i]]
+            
+            print "paramname",paramsname[i],popt[i],"migration rate",popt[i]/(Nref*2)
+        elif re.search(r"^nu",paramsname[i])!=None:
+            ll_param_MAP[paramsname[i]]=[popt[i]*Nref,popt[i]]
+            print "paramname",paramsname[i],popt[i],"effective pop size",Nref*popt[i]
         else:
-            pass
-        of.close()
-        if len(popnamelist)==2:
-            try:
-                fig=pylab.figure(1)
-                fig.clear()
-                dadi.Plotting.plot_single_2d_sfs(bootstrap_data,vmin=1)
-        #         pylab.show()
-                fig.savefig('fsdata_split'+namestr+options.tag+str(cycle)+options.model+'.png', dpi=600)
-                fig=pylab.figure(1)
-                fig.clear()
-                dadi.Plotting.plot_2d_comp_multinom(model,bootstrap_data,vmin=1,residualfilenamepre=options.fsfile+namestr+options.tag+options.model)
-                fig.savefig('compare_split'+namestr+options.tag+str(cycle)+options.model+'.png', dpi=600)
-            except:
-                print("plot exception")
-                continue
+            ll_param_MAP[paramsname[i]]=[popt[i],popt[i]]
+    ll_param_MAP["likelihood"]=[ll,ll]
+    ll_param_MAP["theta"]=[theta,theta]
+    btstrap=[ll,theta]+[e for e in popt]
+    bof=open(options.fsfile+namestr+options.tag+options.model+options.bootstrap[0]+"btstrap.temp","w")
+    for e in btstrap:
+        print >>bof,e,
+    bof.close()
+#     pickle.dump({"ss":btstrap},open(options.fsfile+namestr+options.tag+options.model+options.bootstrap[0]+"btstrap.pickle","wb"),protocol=0)
+#     bootstraps.append(btstrap)
+    for a in sorted(ll_param_MAP.keys()):
+        print >>of,a,ll_param_MAP[a][0],ll_param_MAP[a][1]
+    else:
+        pass
+    of.close()
+    if len(popnamelist)==2:
+        try:
+            fig=pylab.figure(1)
+            fig.clear()
+            dadi.Plotting.plot_single_2d_sfs(bootstrap_data,vmin=1)
+    #         pylab.show()
+            fig.savefig('fsdata_split'+namestr+options.tag+options.model+options.bootstrap[0]+'.png', dpi=600)
+            fig=pylab.figure(1)
+            fig.clear()
+            dadi.Plotting.plot_2d_comp_multinom(model,bootstrap_data,vmin=1,residualfilenamepre=options.fsfile+namestr+options.tag+options.model)
+            fig.savefig('compare_split'+namestr+options.tag+options.model+options.bootstrap[0]+'.png', dpi=600)
+        except:
+            print("plot exception")
+            exit(-1)
         
         #collection result 
-        residualarray=pickle.load(open(options.fsfile+namestr+options.tag+options.model+"array.pickle","rb"))
-#         u.encoding='latin1'
-#         residualarray=u.load()
-        residualhis=pickle.load(open(options.fsfile+namestr+options.tag+options.model+"hist.pickle","rb"))
-#         u.encoding='latin1'
-#         residualhis=u.load()
-        residualarraylist.append(residualarray)
-        residualhistlist.append(residualhis)
-        inf=open(namestr+options.tag+options.model+options.bootstrap[1]+".parameter","r")
-        for resultline in inf:
-            linelist=re.split(r"\s+",resultline.strip())
-            if len(linelist)>=2:
-                name=linelist[0]
-                convert_value=linelist[1]
-                value=linelist[2]
-                ll_param_MAP[name].append((convert_value,value))
-        inf.close()
-    pickle.dump(residualarraylist,open(options.fsfile+namestr+options.tag+options.model+"arraylist.pickle",'wb'))
-    pickle.dump(residualhistlist,open(options.fsfile+namestr+options.tag+options.model+"histlist.pickle",'wb'))
-    fof=open(options.fsfile[:20]+"_"+namestr+options.model+options.tag+".final_parameter","w")
-    if bootstraps is not None:
-        bootstraps = array(bootstraps)
-        savetxt(namestr+options.tag+options.model+'2Dboots.npy', bootstraps)
-        bootstraps = loadtxt(namestr+options.tag+options.model+'2Dboots.npy')
+#         residualarray=pickle.load(open(options.fsfile+namestr+options.tag+options.model+"array.pickle","rb"))
+# #         u.encoding='latin1'
+# #         residualarray=u.load()
+#         residualhis=pickle.load(open(options.fsfile+namestr+options.tag+options.model+"hist.pickle","rb"))
+# #         u.encoding='latin1'
+# #         residualhis=u.load()
+#         residualarraylist.append(residualarray)
+#         residualhistlist.append(residualhis)
+#         inf=open(namestr+options.tag+options.model+options.bootstrap[1]+".parameter","r")
+#         for resultline in inf:
+#             linelist=re.split(r"\s+",resultline.strip())
+#             if len(linelist)>=2:
+#                 name=linelist[0]
+#                 convert_value=linelist[1]
+#                 value=linelist[2]
+#                 ll_param_MAPlist[name].append((convert_value,value))
+#         inf.close()
+#         print ll_param_MAPlist
+#     pickle.dump(residualarraylist,open(options.fsfile+namestr+options.tag+options.model+"arraylist.pickle",'wb'))
+#     pickle.dump(residualhistlist,open(options.fsfile+namestr+options.tag+options.model+"histlist.pickle",'wb'))
+#     fof=open(options.fsfile[:20]+"_"+namestr+options.model+options.tag+".final_parameter","w")
+
 #         sigma_boot = std(bootstraps, axis=0)[1:]
 #         fig=pylab.figure(1)
 #         fig.clear()
 #         fig.hist(bootstraps[:,1], bins=20, normed=True)
 #         fig.savefig('hist'+namestr+options.tag+options.model+'.png', dpi=600)
     
-    for i in range(len(ll_param_MAP["likelihood"])):
-        for a in sorted(ll_param_MAP.keys()):
-            print >>fof,a+"_convertvalue\t"+a+"_value\t",
-        else:
-            print >>fof
-    for i in range(len(ll_param_MAP["likelihood"])):
-        for a in sorted(ll_param_MAP.keys()):
-            print >>fof,ll_param_MAP[a][i][0]+"\t"+ll_param_MAP[a][i][1]
-        else:
-            print >>fof
-    fof.close()
-    
+#     for i in range(len(ll_param_MAP["likelihood"])):
+#     for a in sorted(ll_param_MAPlist.keys()):
+#         print >>fof,a+"_convertvalue\t"+a+"_value\t",
+#     else:
+#         print >>fof
+#     for i in range(len(ll_param_MAPlist["likelihood"])):
+#         for a in sorted(ll_param_MAPlist.keys()):
+#             print a,i
+#             print >>fof,ll_param_MAPlist[a][i],
+#         else:
+#             print >>fof
+#     fof.close()
+#     if bootstraps is not None:
+#         print(bootstraps)
+#         bootstraps = array(bootstraps)
+#         savetxt(namestr+options.tag+options.model+'2Dboots.npy', bootstraps)
+#         bootstraps = loadtxt(namestr+options.tag+options.model+'2Dboots.npy')    
     #     exit()
 else:
     func_ex=dadi.Numerics.make_extrap_func(func)

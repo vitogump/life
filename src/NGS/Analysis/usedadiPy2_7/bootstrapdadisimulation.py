@@ -3,16 +3,17 @@ Created on 2015-10-17
 
 @author: liurui
 '''
+from numpy import array, savetxt, loadtxt, std
 from optparse import OptionParser
 from os.path import sys
 import pickle
 import random
 import re, os
-import time
-
-from numpy import array
+import time,math
 
 from NGS.BasicUtil import Util
+import matplotlib.pyplot as pyplot
+import pylab
 
 
 randomstr=None
@@ -48,6 +49,7 @@ if __name__ == '__main__':
     print(options.model)
     ll_param_MAPlist["likelihood"]=[]
     ll_param_MAPlist["theta"]=[]
+    bootstraps=[]
     for n,v,l,u in options.parameters:
         ll_param_MAPlist[n]=[]
     print(options.bootstrap[0])
@@ -75,11 +77,11 @@ if __name__ == '__main__':
         #produce command and run
             pythonpath=pythonpath+" -p "+n+" "+str(initvalue)+" "+l+" "+u+" "
         if randomstr!=None:
-            os.system("rm "+namestr+options.tag+randomstr+".parameter")
+            os.system("rm "+namestr+options.tag+options.model+randomstr+".parameter")
         randomstr=Util.random_str()
-        print(pythonpath+" -b "+randomstr+" "+str(70*int(options.bootstrap[1])))
+        print(pythonpath+" -b "+randomstr+" "+str(int(options.bootstrap[1])))
         sys.stdout.flush()
-        a=call_system(pythonpath+" -b "+randomstr+" "+str(70*int(options.bootstrap[1])))
+        a=call_system(pythonpath+" -b "+randomstr+" "+str(int(options.bootstrap[1])))
         if a!=0:
             print("cycle",i,a,"wrong")
             continue
@@ -91,9 +93,22 @@ if __name__ == '__main__':
         u=pickle._Unpickler(open(options.fsfile+namestr+options.tag+options.model+"hist.pickle","rb"))
         u.encoding='latin1'
         residualhis=u.load()#pickle.load(open(options.fsfile+namestr+options.tag+options.model+"hist.pickle","rb"))
+        bif=open(options.fsfile+namestr+options.tag+options.model+randomstr+"btstrap.temp",'r')
+        btstrap=[]
+        for e in bif:
+            elist=re.split(r"\s+",e.strip())
+            for ee in elist:
+                btstrap.append(float(ee))
+        bif.close()
+        os.system("rm "+options.fsfile+namestr+options.tag+options.model+randomstr+"btstrap.temp")
+            
+#         u=pickle._Unpickler(open(options.fsfile+namestr+options.tag+options.model+randomstr+"btstrap.pickle","rb"))
+#         u.encoding='latin1'
+#         btstrap=u.load()
         residualarraylist.append(residualarray)
         residualhistlist.append(residualhis)
-        inf=open(namestr+options.tag+randomstr+".parameter","r")
+        bootstraps.append(btstrap)
+        inf=open(namestr+options.tag+options.model+randomstr+".parameter","r")
         for resultline in inf:
             linelist=re.split(r"\s+",resultline.strip())
             if len(linelist)>=2:
@@ -102,6 +117,7 @@ if __name__ == '__main__':
                 value=linelist[2]
                 ll_param_MAPlist[name].append((convert_value,value))
         inf.close()
+#         os.system("rm "+namestr+options.tag+options.model+randomstr+".parameter")
         print(ll_param_MAPlist)
 ##################
     pickle.dump(residualarraylist,open(options.fsfile+namestr+options.tag+options.model+"arraylist.pickle",'wb'))
@@ -117,5 +133,25 @@ if __name__ == '__main__':
         else:
             print("",file=of)
     of.close()
+
+    print(bootstraps)
+    bootstraps = array(bootstraps)
+    savetxt(namestr+options.tag+options.model+'2Dboots.npy', bootstraps)
+    bootstraps = loadtxt(namestr+options.tag+options.model+'2Dboots.npy')    
+    sigma_boot = std(bootstraps, axis=0)[1:]
     
+    
+#     fig=pylab.figure(1)
+#     fig.clear2
+    a=math.ceil((len(options.parameters)-2)/2)
+    for i in range(len(options.parameters)):
+        fig = pyplot.figure(54, figsize=(8,10))
+        fig.clear()
+        ax = fig.add_subplot(1,1,1)
+        ax.hist(bootstraps[:,i+2], bins=20, normed=True)
+        fig.savefig('hist'+namestr+options.tag+options.model+options.parameters[i][0]+'.png', dpi=60)
+      
+
+# ax.hist(bootstraps[:,1], bins=20, normed=True)
+# lims = ax.axis()
     
