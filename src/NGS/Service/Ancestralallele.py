@@ -485,6 +485,79 @@ class AncestralAlleletabletools():
             print("Ancestralallele.py : callblast func os.system return not 0")
             exit(-1)
         print(shellstatment,a,"OK")
+    def extarctBlastOut(self,BlastOutFile,flanklen=25):
+        print(" query id, subject id, % identity, alignment length, mismatches, gap opens, q. start, q. end, s. start, s. end, evalue, bit score")
+        a = os.popen("awk '$1!~/^#/ && $5==1 && $4>40 && $6==0 {print $0}' " + BlastOutFile)
+        posfile=open(BlastOutFile+".pos",'w')
+    
+        lastbasesAccur = {}
+        onegroup=[]
+        revcom="+"
+    #    initial
+        hit = a.readline()
+        hitlist = re.split(r"\s+", hit)
+    
+        sendpos = int(hitlist[9])
+        sstartpos = int(hitlist[8])
+        qstartpos = int(hitlist[6])
+        blastlen=int(hitlist[3])
+        snp_loc_s=sstartpos+flanklen+1-qstartpos
+        snpindex = flanklen+1 - qstartpos
+        if sstartpos > sendpos:
+            temp = sstartpos
+            sstartpos = sendpos
+            sendpos = temp
+            revcom="-"
+        lastsnpID = hitlist[0]
+        chrom= hitlist[1]
+#         RefSeqMap = Util.getRefSeqBypos(refFastahander=ancestryreffile, refindex=ancestryrefidx, currentChromNO=chrom, startpos=sstartpos, endpos=sendpos)
+#         if revcom:
+#             tempStr=RefSeqMap[chrom][1:]
+#             tempStr.reverse()
+#             RefSeqMap[chrom][1:]=Util.complementary(tempStr)
+#             revcom=False
+            
+#         lastbasesAccur[RefSeqMap[chrom][snpindex + 1]] = [(chrom, sstartpos, sendpos)]
+        onegroup.append((lastsnpID,blastlen,chrom, sstartpos, sendpos))
+        for hit in a:
+            print(hit)
+            hitlist = re.split(r"\s+", hit)
+            chrom = hitlist[1]
+            sstartpos = int(hitlist[8])
+            sendpos = int(hitlist[9])
+            qstartpos = int(hitlist[6])
+            blastlen=int(hitlist[3])
+            snp_loc_s=sstartpos+flanklen+1-qstartpos
+            snpindex = flanklen+1 - qstartpos
+            if sstartpos > sendpos:
+                temp = sstartpos
+                sstartpos = sendpos
+                sendpos = temp
+                revcom="-"
+            else:
+                revcom="+"
+            if lastsnpID == hitlist[0]:
+
+                onegroup.append((lastsnpID,blastlen,chrom, sstartpos, sendpos))
+            else:
+                snppos=re.search(r"_(\d+)",lastsnpID).group(1)
+                snpChrom=re.search(r"(.+)_(\d+)",lastsnpID).group(1)
+                onegroup.sort(key=lambda listRec:listRec[1])                           
+                if len(onegroup)==1 or onegroup[0][1]-onegroup[1][1]>=15:#first , only one query id,second longest hit 15 bases greater than the second longest hit
+                    print(*onegroup[0][2:],*onegroup[0][:2],revcom,file=posfile)
+#                 RefSeqMap = Util.getRefSeqBypos(refFastahander=ancestryreffile, refindex=ancestryrefidx, currentChromNO=chrom, startpos=sstartpos, endpos=sendpos)
+#                 if revcom:
+#                     tempStr=RefSeqMap[chrom][1:]
+#                     tempStr.reverse()
+#                     RefSeqMap[chrom][1:]=Util.complementary(tempStr)
+#                     revcom=False            
+#                 print(hitlist[0],RefSeqMap[chrom][snpindex + 1],str(snp_loc_s),"".join(RefSeqMap[chrom][1:]),file=ancestrysnpflank)
+    #            dbvariant.operateDB("update", "update " + finaltable + " set chicken='" + RefSeqMap[chrom][snpindex + 1] + "' where snpID='" + hitlist[0] + "'")
+                lastsnpID = hitlist[0]
+                onegroup=[(lastsnpID,blastlen,chrom, sstartpos, sendpos)]
+        posfile.close()
+        print("finish")
+
     def extarctAncestryAlleleFromBlastOut(self,BlastOutFile,ancestryrefFile,ancestralgenomename,ancestryrefidx,tablename="derived_alle_ref",ancestralsnptable=None):
         ancestryreffile=open(ancestryrefFile,'r')
         ancestrysnpflank=open(tablename+"ancestrysnpflank.fa",'w')
@@ -577,7 +650,7 @@ class AncestralAlleletabletools():
                 print(hitlist[0],RefSeqMap[chrom][snpindex + 1],str(snp_loc_s),"".join(RefSeqMap[chrom][1:]),file=ancestrysnpflank)
     #            dbvariant.operateDB("update", "update " + finaltable + " set chicken='" + RefSeqMap[chrom][snpindex + 1] + "' where snpID='" + hitlist[0] + "'")
                 lastsnpID = hitlist[0]
-                
+                onegroup=[(RefSeqMap[chrom][snpindex + 1],blastlen)]
                 lastbasesAccur.clear()
                 lastbasesAccur[RefSeqMap[chrom][snpindex + 1]] = [(chrom, sstartpos, sendpos)]
         print("finish")

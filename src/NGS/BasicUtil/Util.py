@@ -557,7 +557,7 @@ def generateIndexByChrom(refFastaFileName, indexFileName, mapname=None,startchar
                 currentChromNo = re.search(r'transcript:(.*?)\s+', refline).group(1).strip()
             else:
                 if not chrsignal:
-                    a = re.search(r'[^'+startchar+']+', (re.split(r'\s+', refline))[0]).group(0).lower()
+                    a = re.search(r'^'+startchar+'([^'+startchar+'|]+)', (re.split(r'\s+', refline))[0]).group(1).lower()
                 else:
                     linelist=re.split(r'\s+', refline)
                     a=re.sub('[’!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~]+',"", linelist[linelist.index(chrsignal)+1]).lower()
@@ -598,7 +598,7 @@ def generateFasterRefIndex(refFastaFileName, indexFileName,mapname=None,startcha
                 currentChromNo = re.search(r'transcript:(.*?)\s+', refline).group(1).strip()
             else:
                 if not chrsignal or chrsignal not in refline:
-                    a = re.search(r'[^'+startchar+']+', (re.split(r'\s+', refline))[0]).group(0)
+                    a = re.search(r'^'+startchar+'([^'+startchar+'|]+)', (re.split(r'\s+', refline))[0]).group(1)
                 else:
                     linelist=re.split(r'\s+', refline)
                     a=re.sub('[’!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~]+',"", linelist[linelist.index(chrsignal)+1])#for example chromosome 1,

@@ -1,6 +1,6 @@
 from numpy import array, savetxt, loadtxt, std
 from optparse import OptionParser
-import pickle,math
+import pickle,math,numpy
 
 import dadi, pylab, re, signal
 import matplotlib
@@ -59,7 +59,7 @@ def IM_bottleneck(params,ns,pts):
     nuD1=s+(nuD-s)*(Ts/(Tb+Ts))
     nuD1_func=lambda t:s+(nuD1-s)*t/Ts
     phi=dadi.Integration.two_pops(phi,xx,Ts,nu1=(1-s),nu2=nuD1_func,m12=m12,m21=m21)
-    nuD2_func=lambda t:nuD1+(nuD-nuD1)*t/Tb
+    nuD2_func=lambda t:nuD1+(nuD-nuD1)*(t/Tb)
     phi=dadi.Integration.two_pops(phi,xx,Tb,nu1=nuW,nu2=nuD2_func,m12=m12,m21=m21)
     fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
     return fs
@@ -70,12 +70,39 @@ def IM_WexpgrothBottleneck_Dlineardecline(params,ns,pts):
     phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
     nuW1_func=lambda t:(1-s)*(nuW1/(1-s))**(t/Ts)
     nuD1=s+(nuD-s)*(Ts/(Tb+Ts))
-    nuD1_func=lambda t:s+(nuD1-s)*t/Ts
+    nuD1_func=lambda t:s+(nuD1-s)*(t/Ts)
     phi=dadi.Integration.two_pops(phi,xx,Ts,nu1=nuW1_func,nu2=nuD1_func,m12=m12,m21=m21)
-    nuD2_func=lambda t:nuD1+(nuD-nuD1)*t/Tb
+    nuD2_func=lambda t:nuD1+(nuD-nuD1)*(t/Tb)
     phi=dadi.Integration.two_pops(phi,xx,Tb,nu1=nuW,nu2=nuD2_func,m12=m12,m21=m21)
     fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
-    return fs    
+    return fs
+def IM_WexpgrothBottleneck_Dexpdecline(params,ns,pts):
+    s,Ts,Tb,nuW1,nuW,nuD,m12,m21=params
+    xx=dadi.Numerics.default_grid(pts)
+    phi=dadi.PhiManip.phi_1D(xx)
+    phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
+    nuW1_func=lambda t:(1-s)*(nuW1/(1-s))**(t/Ts)
+    nuD1=s*(nuD/s)**(Ts/(Tb+Ts))
+    nuD1_func=lambda t:s*(nuD1/s)**(t/Ts)
+    phi=dadi.Integration.two_pops(phi,xx,Ts,nu1=nuW1_func,nu2=nuD1_func,m12=m12,m21=m21)
+    nuD2_func=lambda t:nuD1*(nuD/nuD1)**(t/Tb)
+    phi=dadi.Integration.two_pops(phi,xx,Tb,nu1=nuW,nu2=nuD2_func,m12=m12,m21=m21)
+    fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
+    return fs
+def IM_W_Bottleneckegrowth_Dexpdecline(params,ns,pts):
+    s,Ts,Tb,nuWb,nuW,nuD,m12,m21=params
+    xx=dadi.Numerics.default_grid(pts)
+    phi=dadi.PhiManip.phi_1D(xx)
+    phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
+#     nuW1_func=lambda t:(1-s)*(nuW1/(1-s))**(t/Ts)
+    nuD1=s*(nuD/s)**(Ts/(Tb+Ts))
+    nuD1_func=lambda t:s*(nuD1/s)**(t/Ts)
+    phi=dadi.Integration.two_pops(phi,xx,Ts,nu1=(1-s),nu2=nuD1_func)
+    nuD2_func=lambda t:nuD1*(nuD/nuD1)**(t/Tb)
+    nuW2_func=lambda t:nuWb*(nuW/nuWb)**(t/Tb)
+    phi=dadi.Integration.two_pops(phi,xx,Tb,nu1=nuW2_func,nu2=nuD2_func,m12=m12,m21=m21)
+    fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
+    return fs  
 def split_mig(params,ns,pts):
     nuW,nuD,Ts,m12,m21=params
     xx=dadi.Numerics.default_grid(pts)
@@ -272,19 +299,27 @@ def splitdom_domlinerDecrease_bottledom_expIncrease_mig_1_IM(params,ns,pts):
     phi=dadi.Integration.two_pops(phi,xx,TBP,nu1=nuM0,nu2=nuP_i_func,m12=m12,m21=m21)
     fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
     return fs
-def splitdom_domlinerDecrease_mig_1_IM(params,ns,pts):
-    nuA,s,nuP1,TA,TS,m12,m21=params
-
-
+def IM_growth_bottlesplit(params,ns,pts):
+    nuA,nu1,nu2,TA,TS,m12,m21=params
     xx=dadi.Numerics.default_grid(pts)
     phi=dadi.PhiManip.phi_1D(xx)
+    nu_func=lambda t: numpy.exp(numpy.log(nuA)*t/TA)
+    phi=dadi.Integration.one_pop(phi,xx,TA,nu=nu_func)
+    phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
+    phi=dadi.Integration.two_pops(phi,xx,TS,nu1=nu1,nu2=nu2,m12=m12,m21=m21)
+
+    fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
+    return fs
+def IM_bottlesplitegrowth(params,ns,pts):
+    nuA,nu1b,nu2b,nu1,nu2,TA,TS,m12,m21=params
+    xx=dadi.Numerics.default_grid(pts)
+    phi=dadi.PhiManip.phi_1D(xx)
+#     nu_func=lambda t: numpy.exp(numpy.log(nuA)*t/TA)
     phi=dadi.Integration.one_pop(phi,xx,TA,nu=nuA)
     phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
-    nuM0=s*nuA
-    nuP0=(1-s)*nuA
-    nuP_d_func = lambda t: nuP0 + (nuP1-nuP0)*t/(TS)
-    
-    phi=dadi.Integration.two_pops(phi,xx,TS,nu1=nuM0,nu2=nuP_d_func,m12=m12,m21=m21)
+    nu1_func=lambda t:nu1b*(nu1/nu1b)**(t/TS)
+    nu2_func=lambda t:nu2b*(nu2/nu2b)**(t/TS)
+    phi=dadi.Integration.two_pops(phi,xx,TS,nu1=nu1_func,nu2=nu2_func,m12=m12,m21=m21)
 
     fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
     return fs
@@ -323,11 +358,7 @@ def splitdom_splitwild_3d_domlineDecrease(params,ns,pts):
     phi=dadi.Integration.three_pops(phi,xx,TS2,nu1=nuM,nu3=nuB,nu2=nuP_d_func,m12=mMP,m21=mPM,m13=mMB,m31=mBM,m23=mPB,m32=mBP)
     fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx,xx))
     return fs
-# def split_mig_1_w_bottleneck_split_domedcrease_increaseAfterBottle_wild_bottle_split_3d(params,ns,pts):
-#     nuA,nuP,nuW0,nuWb,nuM,nuS,nuP0,nuP1,nuPb,nuP,nuS,TA,TS1,TBW,TS2,TBP,m12,m21,mMB,mBM,mBP,mPB,mMP,mPM=params
-#     xx=dadi.Numerics.default_grid(pts)
-#     phi=dadi.PhiManip.phi_1D(xx)
-#     unfinished
+
 def splitdom_splitwild_bottledom_3d(params,ns,pts):
     nuA,nuP,s1,s2,TA,TS1,TS2,TBP,m12,m21,mMB,mBM,mBP,mPB,mMP,mPM=params
     xx=dadi.Numerics.default_grid(pts)
@@ -391,13 +422,15 @@ def split_mig_2(params,ns,pts):
     return fs
 ns=fsdata.sample_sizes
 # pts_1=[40,50,60]
-pts_1=[60,70,80]
+pts_1=[50,60,70]
 if options.model=="split_mig_1_w_bottleneck":
     func=split_mig_1_w_bottleneck
 elif options.model=="split_mig_w_bottleneck":
     func=split_mig_w_bottleneck
-elif options.model=="split_mig_1_w_bottleneck_split_domDecrease_bottle_increase_wildbottle_IM":
-    func=split_mig_1_w_bottleneck_split_domDecrease_bottle_increase_wildbottle_IM
+elif options.model=="IM_W_Bottleneckegrowth_Dexpdecline":
+    func=IM_W_Bottleneckegrowth_Dexpdecline
+elif options.model=="IM_bottlesplitegrowth":
+    func=IM_bottlesplitegrowth
 elif options.model=="split_mig_2":
     func=split_mig_2
 elif options.model=="split_mig_1_IM":
@@ -416,10 +449,12 @@ elif options.model=="split_mig":
     func=split_mig
 elif options.model=="IM_bottleneck":
     func=IM_bottleneck
+elif options.model=="IM_WexpgrothBottleneck_Dexpdecline":
+    func=IM_WexpgrothBottleneck_Dexpdecline
 elif options.model=="IM_WexpgrothBottleneck_Dlineardecline":
     func=IM_WexpgrothBottleneck_Dlineardecline
-elif options.model=="splitdom_domlinerDecrease_mig_1_IM":
-    func=splitdom_domlinerDecrease_mig_1_IM
+elif options.model=="IM_growth_bottlesplit":
+    func=IM_growth_bottlesplit
 elif options.model=="splitdom_domlinerDecrease_bottledom_mig_1_IM":
     func=splitdom_domlinerDecrease_bottledom_mig_1_IM
 elif options.model=="splitdom_domlinerDecrease_bottledom_expIncrease_mig_1_IM":
@@ -501,28 +536,34 @@ if options.bootstrap!=False:
     
     try:
         signal.signal(signal.SIGALRM, myHandler_continue)
-        signal.alarm(termitetime)
-        popt=dadi.Inference.optimize_log_fmin(p0,bootstrap_data,func_ex,pts_1,lower_bound=lower_bound,upper_bound=upper_bound,verbose=len(params))
+        signal.alarm(int(termitetime*2))
+        func_ex=dadi.Numerics.make_extrap_func(func)
+        popt=dadi.Inference.optimize(p0,bootstrap_data,func_ex,pts_1,lower_bound=lower_bound,upper_bound=upper_bound,verbose=len(params))
         model=func_ex(popt,nsbootstrap,pts_1)
         signal.alarm(0)
     except :
         print("continue optimize_log_lbfgsb")
         try:
-            signal.signal(signal.SIGALRM, myHandler_exit)
-            signal.alarm(termitetime*1.5)
+            signal.signal(signal.SIGALRM, myHandler_continue)
+            signal.alarm(int(termitetime*1.5))
+            func_ex=dadi.Numerics.make_extrap_func(func)
             popt=dadi.Inference.optimize_log_lbfgsb(p0,bootstrap_data,func_ex,pts_1,lower_bound=lower_bound,upper_bound=upper_bound,verbose=len(params))
             model=func_ex(popt,nsbootstrap,pts_1)
             signal.alarm(0)
         except:
             popt=array([0,0,0])
-    if (math.isinf(popt[0])or popt[0]==0) and (math.isinf(popt[-1]) or popt[-1]==0):
-        pts_2=[90,100,110]
+    
+    if (math.isinf(popt[0]) or int(popt[0])==0 or math.isnan(popt[0])) and (math.isinf(popt[-1]) or int(popt[-1])==0 or math.isnan(popt[-1])):
+        pts_2=[80,90,100]
         signal.signal(signal.SIGALRM, myHandler_exit)
         signal.alarm(termitetime)
-        popt=dadi.Inference.optimize_log(p0,bootstrap_data,func_ex,pts_2,lower_bound=lower_bound,upper_bound=upper_bound,verbose=len(params))
+        popt=dadi.Inference.optimize_log_fmin(p0,bootstrap_data,func_ex,pts_2,lower_bound=lower_bound,upper_bound=upper_bound,verbose=len(params))
         signal.alarm(0)
+        model=func_ex(popt,nsbootstrap,pts_2)
+        if (math.isinf(popt[0]) or int(popt[0])==0 or math.isnan(popt[0])) and (math.isinf(popt[-1]) or int(popt[-1])==0 or math.isnan(popt[-1])):
+            exit(-1)
 #             pts_1=[]
-    model=func_ex(popt,nsbootstrap,pts_1)
+    
     theta=dadi.Inference.optimal_sfs_scaling(model,bootstrap_data)
     ll =dadi.Inference.ll(model*theta,bootstrap_data)
     

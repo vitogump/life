@@ -15,8 +15,8 @@ parser = OptionParser()
 
 #"output data name is defined as 'inputdatapath folder name'+'is subfolder name'+'is subfolder name'+..."
 
-parser.add_option("-v", "--variantfilewithref", dest="variantfilewithref",action="append",nargs=3, help="vcflikefile corresponding_ref flanklen")
-parser.add_option("-b", "--functionalbedlikefile", dest="functionalbedlikefile",action="append",nargs=3, help="functionalRegionfile corresponding_ref minRegionLen")
+parser.add_option("-v", "--variantfilewithref", dest="variantfilewithref",action="append",nargs=4, default=[],help="vcflikefile corresponding_ref flanklen")
+parser.add_option("-b", "--functionalbedlikefile", dest="functionalbedlikefile",action="append",nargs=4,default=[], help="functionalRegionfile corresponding_ref minRegionLen")
 """
 functionalbedlikefile format: first line is title
 chr    startpos    endpos    other info
@@ -38,7 +38,7 @@ ancestralalleletabletools=AncestralAlleletabletools(database=Util.vcfdbname, ip=
 if __name__ == '__main__':
     
 
-
+    print(options.variantfilewithref)
     for chrlist,vcflikeFileName,corresponding_ref,flanklen in options.variantfilewithref:
         chromlistfile=open(chrlist,"r")
         chrmap={}
@@ -78,7 +78,7 @@ if __name__ == '__main__':
                     #2，extract flank seq of variants recs
                     if chrom in chrmap:
                         chrlen=int(chrmap[chrom])
-                    ancestralalleletabletools.getflankseqstooutfile(chrom, chrlen, startpostocollecteSNP, endpostocollectSNP, duckrefhandler, None, duckrefindex, flanklen, snpoutfafile, snpsOfOneChrom, None)
+#                     ancestralalleletabletools.getflankseqstooutfile(chrom, chrlen, startpostocollecteSNP, endpostocollectSNP, duckrefhandler, None, duckrefindex, flanklen, snpoutfafile, snpsOfOneChrom, None)
                     #start next chrom
                     snpsOfOneChrom=[snp]
                     chrom=snp[0]                    
@@ -130,7 +130,11 @@ if __name__ == '__main__':
     else:
         bedoutfafile.close()
         duckrefhandler.close()
+    if options.variantfilewithref!=[]:
     #makeblastdb -in Setaria_italica.JGIv2.0.dna_sm.toplevel.fa -dbtype nucl -parse_seqids -out Setaria_italica.JGIv2.0.dna_sm.toplevel
-    ancestralalleletabletools.callblast("blastn",options.targetREFblastdb,options.outfilename+"SNPs_flankseq.fa",options.outfilename+"SNPs_flankseq.blastout")
-    ancestralalleletabletools.callblast("blastn",options.targetREFblastdb,options.outfilename+"regionsSEQ.fa",options.outfilename+"regionsSEQ.blastout")
+#         ancestralalleletabletools.callblast("blastn",options.targetREFblastdb,options.outfilename+"SNPs_flankseq.fa",options.outfilename+"SNPs_flankseq.blastout")
+        ancestralalleletabletools.extarctBlastOut(options.outfilename+"SNPs_flankseq.blastout",flanklen)
+    if options.functionalbedlikefile!=[] :
+        ancestralalleletabletools.callblast("blastn",options.targetREFblastdb,options.outfilename+"regionsSEQ.fa",options.outfilename+"regionsSEQ.blastout") 
+        ancestralalleletabletools.extarctBlastOut(options.outfilename+"regionsSEQ.blastout",flanklen)
     #ancestralalleletabletools.extarctAncestryAlleleFromBlastOut(BlastOutFile, ancestryrefFile, ancestralgenomename, ancestryrefidx, tablename, ancestralsnptable)

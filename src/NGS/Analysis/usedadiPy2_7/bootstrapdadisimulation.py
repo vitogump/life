@@ -67,15 +67,17 @@ if __name__ == '__main__':
         for n,v,l,u in options.parameters:
             paramsname.append(n)
             #random initial value
-            initvalue=random.gauss(float(v),0.01)
-            while initvalue>float(u) or initvalue<float(l):
-                initvalue=random.gauss(float(v),0.01)
-            paramslist.append(float(initvalue))
+#             initvalue=random.gauss(float(v),0.01)
+#             while initvalue>float(u) or initvalue<float(l):
+#                 initvalue=random.gauss(float(v),0.01)
+#             paramslist.append(float(initvalue))
+            paramslist.append(float(v))
             lower_boundlist.append(float(l))
             upper_boundlist.append(float(u))
 #             ll_param_MAPlist[n].append()
         #produce command and run
-            pythonpath=pythonpath+" -p "+n+" "+str(initvalue)+" "+l+" "+u+" "
+            pythonpath=pythonpath+" -p "+n+" "+str(v)+" "+l+" "+u+" "
+#             pythonpath=pythonpath+" -p "+n+" "+str(initvalue)+" "+l+" "+u+" "
         if randomstr!=None:
             os.system("rm "+namestr+options.tag+options.model+randomstr+".parameter")
         randomstr=Util.random_str()
@@ -119,6 +121,7 @@ if __name__ == '__main__':
         inf.close()
 #         os.system("rm "+namestr+options.tag+options.model+randomstr+".parameter")
         print(ll_param_MAPlist)
+        print(bootstraps)
 ##################
     pickle.dump(residualarraylist,open(options.fsfile+namestr+options.tag+options.model+"arraylist.pickle",'wb'))
     pickle.dump(residualhistlist,open(options.fsfile+namestr+options.tag+options.model+"histlist.pickle",'wb'))
@@ -145,13 +148,22 @@ if __name__ == '__main__':
 #     fig.clear2
     a=math.ceil((len(options.parameters)-2)/2)
     for i in range(len(options.parameters)):
-        fig = pyplot.figure(54, figsize=(8,10))
+        fig = pyplot.figure(36, figsize=(18,18))
         fig.clear()
         ax = fig.add_subplot(1,1,1)
         ax.hist(bootstraps[:,i+2], bins=20, normed=True)
-        fig.savefig('hist'+namestr+options.tag+options.model+options.parameters[i][0]+'.png', dpi=60)
+        fig.savefig('hist'+namestr+options.tag+options.model+options.parameters[i][0]+'.png', dpi=300)
       
 
 # ax.hist(bootstraps[:,1], bins=20, normed=True)
 # lims = ax.axis()
-    
+def collectandcheckboundary(maplist,totalmaplist,bootstraps_list):
+    for i in range(len(maplist["likelihood"])):
+        btstrap=[]
+        if float(maplist["Ts"][i][0])> 1000000 or float(maplist["s"][i][1])>0.9 or float(maplist["s"][i][1])<0.1 or float(maplist["nuW"][i][1])>19 or float(maplist["nuD"][i][1])>19 or float(maplist["nuW"][i][1])<9e-05 or float(maplist["nuD"][i][1])<9e-05 or float(maplist["m12"][i][1])>19 or float(maplist["m21"][i][1])>19:
+            print(maplist["Ts"][i])
+            continue
+        for a in sorted(maplist.keys()):
+            totalmaplist[a].append((float(maplist[a][i][0]),float(maplist[a][i][1])))
+            btstrap.append(float(maplist[a][i][0]));btstrap.append(float(maplist[a][i][1]))
+        bootstraps_list.append(btstrap)    
