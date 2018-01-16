@@ -73,7 +73,7 @@ def runSlave_slidewin(a):
     if a[1]=="early" and len(a)==10:
         correlationfile=a[8];topleveltablename=a[9]
         command+=(" -t "+topleveltablename +" -C "+correlationfile)
-    elif ( a[1]=="is" or a[1]=="pairfst" or a[1]=="pbs" or a[1]=="lsbl" or a[1]=="hp") and len(a)==8:
+    elif ( a[1]=="is" or a[1]=="pairfst" or a[1]=="pbs" or a[1]=="dxy" or a[1]=="hp") and len(a)==8:
         pass
     else:
         print("error: check parameters ")
@@ -203,7 +203,7 @@ if __name__ == '__main__':
                 print("Error :-t not assigned")
                 exit(-1)
             parameterstuples_list.append((chromlistfile,options.typeOfcalculate,options.targetpopvcffile_withdepth,options.refpopvcffile_withdepth,options.winwidth,options.slideSize,options.outfileprewithpath,masterpid,freq_correlation_configFileName,options.topleveltablejudgeancestral))
-        elif options.typeOfcalculate=="pairfst":
+        elif options.typeOfcalculate=="pairfst" or options.typeOfcalculate=="dxy":
             parameterstuples_list.append((chromlistfile,options.typeOfcalculate,options.targetpopvcffile_withdepth,options.refpopvcffile_withdepth,options.winwidth,options.slideSize,options.outfileprewithpath,masterpid))
         elif options.typeOfcalculate=="is":
             parameterstuples_list.append((chromlistfile,options.typeOfcalculate,options.targetpopvcffile_withdepth,options.refpopvcffile_withdepth,options.winwidth,options.slideSize,options.outfileprewithpath,masterpid))

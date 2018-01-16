@@ -487,7 +487,7 @@ class AncestralAlleletabletools():
         print(shellstatment,a,"OK")
     def extarctBlastOut(self,BlastOutFile,flanklen=25):
         print(" query id, subject id, % identity, alignment length, mismatches, gap opens, q. start, q. end, s. start, s. end, evalue, bit score")
-        a = os.popen("awk '$1!~/^#/ && $5==1 && $4>40 && $6==0 {print $0}' " + BlastOutFile)
+        a = os.popen("awk '$1!~/^#/ && $4>60  {print $0}' " + BlastOutFile)
         posfile=open(BlastOutFile+".pos",'w')
     
         lastbasesAccur = {}

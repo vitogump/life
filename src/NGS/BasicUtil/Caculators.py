@@ -7,8 +7,8 @@ Created on 2013-7-2
 
 from itertools import combinations
 import random
-import re, copy, math, numpy, time, pysam
-
+import re, copy, math,  time, pysam
+import numpy as np
 from NGS.BasicUtil import VCFutil
 
 
@@ -21,6 +21,147 @@ class Caculator():
         pass
     def getResult(self):
         pass
+#Bits for intyerpreting and manipulating sequence data
+
+DIPLOTYPES = ['A', 'C', 'G', 'K', 'M', 'N', 'S', 'R', 'T', 'W', 'Y']
+PAIRS = ['AA', 'CC', 'GG', 'GT', 'AC', 'NN', 'CG', 'AG', 'TT', 'AT', 'CT']
+diploHaploDict = dict(zip(DIPLOTYPES,PAIRS))
+haploDiploDict = dict(zip(PAIRS,DIPLOTYPES))
+
+def haplo(diplo): return diploHaploDict[diplo]
+
+def diplo(pair): return haploDiploDict[pair]
+
+
+#convert one ambiguous sequence into two haploid pseudoPhased sequences
+
+def pseudoPhase(sequence, seqType = "diplo"):
+    if seqType == "diplo": pairs = [haplo(s) for s in sequence]
+    else: pairs = sequence
+    return [[p[0] for p in pairs], [p[1] for p in pairs]]
+
+
+################################################################################################################
+
+#modules for working with and analysing alignments
+
+numSeqDict = {"A":0,"C":1,"G":2,"T":3,"N":np.NaN}
+def numHamming(numArrayA, numArrayB):
+    dif = numArrayA - numArrayB
+    return np.nanmean(dif[~np.isnan(dif)] != 0)
+def distMatrix(numArray):
+    N,l = numArray.shape
+    distMat = np.zeros((N,N))
+    for i in range(N - 1):
+        for j in range(i + 1, N):
+            distMat[i,j] = distMat[j,i] = numHamming(numArray[i,:], numArray[j,:])
+    return distMat
+class Caculate_popDiv(Caculator):
+    def __init__(self,considerINDEL,tvcfconfig,rvcfconfig,outputname):
+        super().__init__()
+        self.outputname=outputname
+        self.considerINDEL=considerINDEL
+        self.indnamesOfEachPop=[]
+        self.MethodToSeqpoplist=[]
+        self.listOfpopvcfRecsmapByAChr=[]
+        for vcfconfigf in [tvcfconfig[0],rvcfconfig[0]]:
+            vcfconfig=open(vcfconfigf,"r")
+            self.listOfpopvcfRecsmapByAChr.append({})
+            for line in vcfconfig:
+                vcffilename_obj=re.search(r"vcffilename=(.*)",line.strip())
+                if vcffilename_obj!=None:
+                    vcfname=vcffilename_obj.group(1).strip()
+                    self.vcfnamelist.append(vcfname)
+                    self.outputname+=("_"+re.split(r"\.",re.search(r"[^/]*$",vcfname).group(0))[0])[:3]
+                    self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname]=[]
+                    self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname].append(VCFutil.VCF_Data(vcfname))
+                    self.indnamesOfEachPop.append(self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname][0].VcfIndexMap["title"][9:])
+                elif line.split():
+                    self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname].append(pysam.Samfile(line.strip(),'rb'))
+            vcfconfig.close()
+            if re.search(r"indvd[^/]+",vcfname)!=None:
+                self.MethodToSeqpoplist.append("indvd")
+    
+            elif re.search(r"pool[^/]+",vcfname)!=None:
+                self.MethodToSeqpoplist.append("pool")
+    
+            else:
+                print("vcfname must with 'pool' or 'indvd'")
+                exit(-1)    
+            
+
+        self.GQthreshold=30
+        self.DPindthreshold=10
+        print(self.indnamesOfEachPop)
+        self.N=len(self.indnamesOfEachPop[0])+len(self.indnamesOfEachPop[1])
+        self.popIndices=[[x for x in range(len(self.indnamesOfEachPop[0]))],[x for x in range(len(self.indnamesOfEachPop[0]),len(self.indnamesOfEachPop[0])+len(self.indnamesOfEachPop[1]))]]
+        #below variable should be changed every win
+        self.positions=[]
+        self.seqs=[[] for e in range(self.N)]# pop1_inds pop2_inds
+        self.numArray=[]
+        self.array=[]
+    def process(self,T):
+        """T is like (pos,REF,ALT,(INFO,FORMAT,sampleslist),(INFO,FORMAT,sampleslist)) should have only two pop
+        """
+        if self.considerINDEL == "no" and (len(T[1]) != 1 or len(T[2]) != 1):
+            return
+        site=[]#should have 
+        for popidx in range(3,5):
+            if T[popidx]==None:
+                # check depth ,if passed treat as fix as ref
+                if len(self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[self.vcfnamelist[popidx-3]])==1:
+#                     print("skip this pos",T)
+                    return
+                else:
+#                     depth_linelist=self.depthobjlist[tpopidx-3].getdepthByPos_optimized(self.currentchrID,T[0])
+                    sum_depth=0
+                    for samfile in self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[self.vcfnamelist[popidx-3]][1:]:
+                        ACGTdep=samfile.count_coverage(self.currentchrID,T[0]-1,T[0])
+                        for dep in ACGTdep:
+                            sum_depth+=dep[0]
+
+                    if sum_depth>self.DPindthreshold*len(self.indnamesOfEachPop[popidx-3]):
+                        site=[T[1].upper()*2 for x in range(len(self.indnamesOfEachPop[popidx-3]))]
+                    else:
+                        return
+            else:
+                if self.MethodToSeqpoplist[popidx-3]=="indvd":
+                    GT_idx = (re.split(":", T[popidx][1])).index("GT")
+                    GQ_idx=(re.split(":", T[popidx][1])).index("GQ")
+                    DP_idx=(re.split(":", T[popidx][1])).index("DP")
+                    for ind in T[popidx][2]:
+                        if len(re.split(":",ind))==1 or "./." in ind:# ./.
+                            site.append("NN")
+                            continue
+                        if int(re.split(":", ind)[GQ_idx])<self.GQthreshold or int(re.split(":", ind)[DP_idx])<self.DPindthreshold:
+                            break#return
+                        GT01 = re.split("/", re.split(":", ind)[GT_idx])
+                        GT_TGT=T[int(GT01[0])+1]+T[int(GT01[1])+1]
+                        site.append(GT_TGT.upper())
+                elif self.MethodToSeqpoplist[popidx-3]=="pool":
+                    print("unfinished")
+        if len(site)==self.N:
+            for x in range(self.N):
+                self.seqs[x].append(site[x])
+            self.positions.append(T[0])
+    def getResult(self):
+        pseudoPhasedSeqs=[]
+        for x in range(self.N):
+            pseudoPhasedSeqs+= pseudoPhase(self.seqs[x], "pairs")
+        if pseudoPhasedSeqs is not None:
+            self.array = np.array([list(seq) for seq in pseudoPhasedSeqs])
+            self.numArray = np.array([[numSeqDict[b] for b in seq] for seq in pseudoPhasedSeqs])
+        else:
+            self.array = np.empty((0,self.N))
+            self.numArray = np.empty((0,self.N))
+        self.nanMask = ~np.isnan(self.numArray)
+        #get distMatrix
+        distMat=distMatrix(self.numArray)
+        np.fill_diagonal(distMat, np.NaN)
+#         popIndices=[[x for x in range(len(self.indnamesOfEachPop[0]))],[x for x in range(len(self.indnamesOfEachPop[0]),len(self.indnamesOfEachPop[0])+len(self.indnamesOfEachPop[1]))]]
+        dxy=np.nanmean(distMat[np.ix_(self.popIndices[0],self.popIndices[1])])
+        print(dxy)
+        return len(self.positions), dxy
 class Caculate_SNPsPerBIN(Caculator):
     def __init__(self, winwidth, considerINDEL="no", MethodToSeq="pool"):
         self.considerINDEL = considerINDEL.lower()
@@ -681,8 +822,8 @@ class Caculate_S_ObsExp_difference(Caculator):
         S1="NA"
         S2="NA"
         try:
-            S1=math.log(numpy.sum(self.obsseq)/self.CEXP)
-            S2=0#(numpy.sum(self.obsseq)-self.CEXP)/numpy.std(self.obsseq,ddof=1)
+            S1=math.log(np.sum(self.obsseq)/self.CEXP)
+            S2=0#(np.sum(self.obsseq)-self.CEXP)/np.std(self.obsseq,ddof=1)
         except:
             S1="NA"
             S2="NA"
@@ -870,8 +1011,8 @@ class Caculate_pairFst(Caculator):
         S1="NA"
         S2="NA"
         try:
-            S1=math.log(numpy.sum(self.obsseq)/self.CEXP)
-            S2=0#(numpy.sum(self.obsseq)-self.CEXP)/numpy.std(self.obsseq,ddof=1)
+            S1=math.log(np.sum(self.obsseq)/self.CEXP)
+            S2=0#(np.sum(self.obsseq)-self.CEXP)/np.std(self.obsseq,ddof=1)
         except:
             S1="NA"
             S2="NA"
@@ -1078,7 +1219,7 @@ class Caculate_IS(Caculator):
                     noofsnp[idx_as_title]+=1
                     templist.append(e)
             if noofsnp[idx_as_title]>self.minsnps:
-                ISlist[idx_as_title]=numpy.mean(templist)
+                ISlist[idx_as_title]=np.mean(templist)
             self.IS_Tinner[(pop_1_idx,pop_2_idx)]=[self.IS_Tinner[(pop_1_idx,pop_2_idx)][0]]
         for pop_1_idx,pop_2_idx in sorted(self.IS_TR.keys()):
             templist=[]
@@ -1088,7 +1229,7 @@ class Caculate_IS(Caculator):
                     noofsnp[idx_as_title]+=1
                     templist.append(e)
             if noofsnp[idx_as_title]>self.minsnps:
-                ISlist[idx_as_title]=numpy.mean(templist)
+                ISlist[idx_as_title]=np.mean(templist)
             self.IS_TR[(pop_1_idx,pop_2_idx)]=[self.IS_TR[(pop_1_idx,pop_2_idx)][0]]
         for pop_1_idx,pop_2_idx in sorted(self.IS_Rinner.keys()):
             templist=[]
@@ -1098,7 +1239,7 @@ class Caculate_IS(Caculator):
                     noofsnp[idx_as_title]+=1
                     templist.append(e)
             if noofsnp[idx_as_title]>self.minsnps:
-                ISlist[idx_as_title]=numpy.mean(templist)
+                ISlist[idx_as_title]=np.mean(templist)
             self.IS_Rinner[(pop_1_idx,pop_2_idx)]=[self.IS_Rinner[(pop_1_idx,pop_2_idx)][0]]                          
 #         for pop_1_idx,pop_2_idx in self.combination_idx_list:
 #             if pop_1_idx<self.N_of_targetpop and pop_2_idx<self.N_of_targetpop:#

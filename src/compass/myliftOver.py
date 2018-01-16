@@ -78,7 +78,7 @@ if __name__ == '__main__':
                     #2，extract flank seq of variants recs
                     if chrom in chrmap:
                         chrlen=int(chrmap[chrom])
-#                     ancestralalleletabletools.getflankseqstooutfile(chrom, chrlen, startpostocollecteSNP, endpostocollectSNP, duckrefhandler, None, duckrefindex, flanklen, snpoutfafile, snpsOfOneChrom, None)
+                    ancestralalleletabletools.getflankseqstooutfile(chrom, chrlen, startpostocollecteSNP, endpostocollectSNP, duckrefhandler, None, duckrefindex, flanklen, snpoutfafile, snpsOfOneChrom, None)
                     #start next chrom
                     snpsOfOneChrom=[snp]
                     chrom=snp[0]                    
@@ -132,7 +132,7 @@ if __name__ == '__main__':
         duckrefhandler.close()
     if options.variantfilewithref!=[]:
     #makeblastdb -in Setaria_italica.JGIv2.0.dna_sm.toplevel.fa -dbtype nucl -parse_seqids -out Setaria_italica.JGIv2.0.dna_sm.toplevel
-#         ancestralalleletabletools.callblast("blastn",options.targetREFblastdb,options.outfilename+"SNPs_flankseq.fa",options.outfilename+"SNPs_flankseq.blastout")
+        ancestralalleletabletools.callblast("blastn",options.targetREFblastdb,options.outfilename+"SNPs_flankseq.fa",options.outfilename+"SNPs_flankseq.blastout")
         ancestralalleletabletools.extarctBlastOut(options.outfilename+"SNPs_flankseq.blastout",flanklen)
     if options.functionalbedlikefile!=[] :
         ancestralalleletabletools.callblast("blastn",options.targetREFblastdb,options.outfilename+"regionsSEQ.fa",options.outfilename+"regionsSEQ.blastout") 
