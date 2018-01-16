@@ -89,12 +89,13 @@ class Caculate_popDiv(Caculator):
                 print("vcfname must with 'pool' or 'indvd'")
                 exit(-1)    
             
-
+        self.minAN=40;self.minAC=2
         self.GQthreshold=30
         self.DPindthreshold=10
         print(self.indnamesOfEachPop)
         self.N=len(self.indnamesOfEachPop[0])+len(self.indnamesOfEachPop[1])
         self.popIndices=[[x for x in range(len(self.indnamesOfEachPop[0]))],[x for x in range(len(self.indnamesOfEachPop[0]),len(self.indnamesOfEachPop[0])+len(self.indnamesOfEachPop[1]))]]
+        print(self.popIndices)
         #below variable should be changed every win
         self.positions=[]
         self.seqs=[[] for e in range(self.N)]# pop1_inds pop2_inds
@@ -106,6 +107,7 @@ class Caculate_popDiv(Caculator):
         if self.considerINDEL == "no" and (len(T[1]) != 1 or len(T[2]) != 1):
             return
         site=[]#should have 
+        AN=AC=0
         for popidx in range(3,5):
             if T[popidx]==None:
                 # check depth ,if passed treat as fix as ref
@@ -121,31 +123,38 @@ class Caculate_popDiv(Caculator):
                             sum_depth+=dep[0]
 
                     if sum_depth>self.DPindthreshold*len(self.indnamesOfEachPop[popidx-3]):
-                        site=[T[1].upper()*2 for x in range(len(self.indnamesOfEachPop[popidx-3]))]
+                        site+=[T[1].upper()*2 for x in range(len(self.indnamesOfEachPop[popidx-3]))]
+                        AN+=(len(self.indnamesOfEachPop[popidx-3])*2)
                     else:
                         return
             else:
                 if self.MethodToSeqpoplist[popidx-3]=="indvd":
+#                     AN += int(re.search(r"AN=(\d+)[;,]", T[popidx][0]).group(1))
+                    AC += int(re.search(r"AC=(\d+)[;,]", T[popidx][0]).group(1))
                     GT_idx = (re.split(":", T[popidx][1])).index("GT")
                     GQ_idx=(re.split(":", T[popidx][1])).index("GQ")
                     DP_idx=(re.split(":", T[popidx][1])).index("DP")
                     for ind in T[popidx][2]:
-                        if len(re.split(":",ind))==1 or "./." in ind:# ./.
+                        if (len(re.split(":",ind))==1 or "./." in ind) or int(re.split(":", ind)[GQ_idx])<self.GQthreshold or int(re.split(":", ind)[DP_idx])<self.DPindthreshold:# ./.
                             site.append("NN")
                             continue
-                        if int(re.split(":", ind)[GQ_idx])<self.GQthreshold or int(re.split(":", ind)[DP_idx])<self.DPindthreshold:
-                            break#return
                         GT01 = re.split("/", re.split(":", ind)[GT_idx])
                         GT_TGT=T[int(GT01[0])+1]+T[int(GT01[1])+1]
+#                         AC +=1
+                        AN +=2
                         site.append(GT_TGT.upper())
+#                     else:
+#                         print("pass",self.vcfnamelist[popidx-3])
                 elif self.MethodToSeqpoplist[popidx-3]=="pool":
                     print("unfinished")
-        if len(site)==self.N:
+        if AN>=self.minAN and AC>=self.minAC and AC<=(self.N-self.minAC):
             for x in range(self.N):
                 self.seqs[x].append(site[x])
             self.positions.append(T[0])
     def getResult(self):
+
         pseudoPhasedSeqs=[]
+        Nsites=len(self.positions)
         for x in range(self.N):
             pseudoPhasedSeqs+= pseudoPhase(self.seqs[x], "pairs")
         if pseudoPhasedSeqs is not None:
@@ -160,8 +169,12 @@ class Caculate_popDiv(Caculator):
         np.fill_diagonal(distMat, np.NaN)
 #         popIndices=[[x for x in range(len(self.indnamesOfEachPop[0]))],[x for x in range(len(self.indnamesOfEachPop[0]),len(self.indnamesOfEachPop[0])+len(self.indnamesOfEachPop[1]))]]
         dxy=np.nanmean(distMat[np.ix_(self.popIndices[0],self.popIndices[1])])
-        print(dxy)
-        return len(self.positions), dxy
+        print(len(pseudoPhasedSeqs[random.randint(0,self.N)]),dxy)
+        self.positions=[]
+        self.seqs=[[] for e in range(self.N)]# pop1_inds pop2_inds
+        self.numArray=[]
+        self.array=[]
+        return Nsites, dxy
 class Caculate_SNPsPerBIN(Caculator):
     def __init__(self, winwidth, considerINDEL="no", MethodToSeq="pool"):
         self.considerINDEL = considerINDEL.lower()
