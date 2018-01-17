@@ -89,12 +89,18 @@ class Caculate_popDiv(Caculator):
                 print("vcfname must with 'pool' or 'indvd'")
                 exit(-1)    
             
-        self.minAN=40;self.minAC=2
+        self.minAN=40;self.minAC=3
         self.GQthreshold=30
         self.DPindthreshold=10
         print(self.indnamesOfEachPop)
         self.N=len(self.indnamesOfEachPop[0])+len(self.indnamesOfEachPop[1])
-        self.popIndices=[[x for x in range(len(self.indnamesOfEachPop[0]))],[x for x in range(len(self.indnamesOfEachPop[0]),len(self.indnamesOfEachPop[0])+len(self.indnamesOfEachPop[1]))]]
+        self.popIndices=[[],[]]
+        for ind_idx in range(len(self.indnamesOfEachPop[0])):
+            self.popIndices[0].append(2*ind_idx)
+            self.popIndices[0].append(2*ind_idx+1)
+        for ind_idx in range(len(self.indnamesOfEachPop[0]),len(self.indnamesOfEachPop[0])+len(self.indnamesOfEachPop[1])):
+            self.popIndices[1].append(2*ind_idx)
+            self.popIndices[1].append(2*ind_idx+1)
         print(self.popIndices)
         #below variable should be changed every win
         self.positions=[]
@@ -147,12 +153,11 @@ class Caculate_popDiv(Caculator):
 #                         print("pass",self.vcfnamelist[popidx-3])
                 elif self.MethodToSeqpoplist[popidx-3]=="pool":
                     print("unfinished")
-        if AN>=self.minAN and AC>=self.minAC and AC<=(self.N-self.minAC):
+        if AN>=self.minAN and AC>=self.minAC and AC<=(self.N*2-self.minAC):
             for x in range(self.N):
                 self.seqs[x].append(site[x])
             self.positions.append(T[0])
     def getResult(self):
-
         pseudoPhasedSeqs=[]
         Nsites=len(self.positions)
         for x in range(self.N):
@@ -167,9 +172,8 @@ class Caculate_popDiv(Caculator):
         #get distMatrix
         distMat=distMatrix(self.numArray)
         np.fill_diagonal(distMat, np.NaN)
-#         popIndices=[[x for x in range(len(self.indnamesOfEachPop[0]))],[x for x in range(len(self.indnamesOfEachPop[0]),len(self.indnamesOfEachPop[0])+len(self.indnamesOfEachPop[1]))]]
         dxy=np.nanmean(distMat[np.ix_(self.popIndices[0],self.popIndices[1])])
-        print(len(pseudoPhasedSeqs[random.randint(0,self.N)]),dxy)
+        print(len(pseudoPhasedSeqs[random.randint(0,self.N)]),Nsites,dxy)
         self.positions=[]
         self.seqs=[[] for e in range(self.N)]# pop1_inds pop2_inds
         self.numArray=[]

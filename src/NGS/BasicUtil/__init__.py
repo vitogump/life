@@ -1,1 +1,1 @@
-__all__=["VCFutil","SAMutil","Util","Caculators","DBManager","DerivedalleleProcessor","Mutation"]
+__all__=["VCFutil","SAMutil","Util","Caculators","DBManager","DerivedalleleProcessor","Mutation","genomics"]
