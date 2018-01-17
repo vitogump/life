@@ -89,7 +89,7 @@ class Caculate_popDiv(Caculator):
                 print("vcfname must with 'pool' or 'indvd'")
                 exit(-1)    
             
-        self.minAN=40;self.minAC=3
+        self.minAN=40;self.minAC=2
         self.GQthreshold=30
         self.DPindthreshold=10
         print(self.indnamesOfEachPop)
@@ -128,7 +128,7 @@ class Caculate_popDiv(Caculator):
                         for dep in ACGTdep:
                             sum_depth+=dep[0]
 
-                    if sum_depth>self.DPindthreshold*len(self.indnamesOfEachPop[popidx-3]):
+                    if sum_depth>self.DPindthreshold*len(self.indnamesOfEachPop[popidx-3])*1.2:#use 1.2 is ribitrarily, beacuse we don't have GQ to filter some ind so use more strength thread in depth
                         site+=[T[1].upper()*2 for x in range(len(self.indnamesOfEachPop[popidx-3]))]
                         AN+=(len(self.indnamesOfEachPop[popidx-3])*2)
                     else:
@@ -160,6 +160,8 @@ class Caculate_popDiv(Caculator):
     def getResult(self):
         pseudoPhasedSeqs=[]
         Nsites=len(self.positions)
+        if Nsites<30:
+            return 0,np.NaN
         for x in range(self.N):
             pseudoPhasedSeqs+= pseudoPhase(self.seqs[x], "pairs")
         if pseudoPhasedSeqs is not None:
