@@ -151,19 +151,48 @@ if __name__ == '__main__':
         fig = pyplot.figure(36, figsize=(18,18))
         fig.clear()
         ax = fig.add_subplot(1,1,1)
-        ax.hist(bootstraps[:,i+2], bins=20, normed=True)
+        ax.hist(bootstraps[:,i+2], bins=20, normed=True)# +2 (ll,theta)
         fig.savefig('hist'+namestr+options.tag+options.model+options.parameters[i][0]+'.png', dpi=300)
       
 
 # ax.hist(bootstraps[:,1], bins=20, normed=True)
 # lims = ax.axis()
-def collectandcheckboundary(maplist,totalmaplist,bootstraps_list):
+def collectandcheckboundary(maplist,final_parameterF,totalmaplist=None,bootstraps_list=None):
+    if totalmaplist==None :
+        totalmaplist={};bootstraps_list=[]
+        for k in maplist.keys():
+            totalmaplist[k]=[]
+    else:
+        bootstraps_list=[list(r) for r in bootstraps_list]
     for i in range(len(maplist["likelihood"])):
         btstrap=[]
-        if float(maplist["Ts"][i][0])> 1000000 or float(maplist["s"][i][1])>0.9 or float(maplist["s"][i][1])<0.1 or float(maplist["nuW"][i][1])>19 or float(maplist["nuD"][i][1])>19 or float(maplist["nuW"][i][1])<9e-05 or float(maplist["nuD"][i][1])<9e-05 or float(maplist["m12"][i][1])>19 or float(maplist["m21"][i][1])>19:
-            print(maplist["Ts"][i])
+        if float(maplist["Ts"][i][0])> 3000000 or  float(maplist["s"][i][1])>0.9 or float(maplist["s"][i][1])<0.1 or float(maplist["nuW"][i][1])>19 or float(maplist["nuD"][i][1])>19 or float(maplist["nuW"][i][1])<9e-05 or float(maplist["nuD"][i][1])<9e-05 or float(maplist["m12"][i][1])>19 or float(maplist["m21"][i][1])>19:
+            print(maplist["Ts"][i],maplist["s"][i],maplist["m12"][i])
             continue
         for a in sorted(maplist.keys()):
             totalmaplist[a].append((float(maplist[a][i][0]),float(maplist[a][i][1])))
             btstrap.append(float(maplist[a][i][0]));btstrap.append(float(maplist[a][i][1]))
-        bootstraps_list.append(btstrap)    
+        bootstraps_list.append(btstrap)
+    f=open(final_parameterF,'w')
+    for k in sorted(maplist.keys()):
+        print(k+"convert",k,sep="\t",end="\t",file=f)
+    print("",file=f)
+    for i in range(len(totalmaplist["likelihood"])):
+        print(i)
+        for k in sorted(totalmaplist.keys()):
+            print(*totalmaplist[k][i],sep="\t",end="\t",file=f)
+        print("",file=f)
+    f.close()
+    bootstraps_list = numpy.array(bootstraps_list)
+    numpy.savetxt(final_parameterF[:-16]+'2Dboots.npy', bootstraps_list)
+    i=0
+    for k in sorted(maplist.keys()):
+        print(k)
+        fig = pyplot.figure(36, figsize=(18,18))
+        fig.clear()
+        ax = fig.add_subplot(1,1,1)
+        ax.hist(bootstraps_list[:,i*2], bins=20, normed=True)
+        ax.set_title(final_parameterF[-21:-16]+k, fontsize='x-large')
+        fig.savefig(final_parameterF[:-16]+k+'hist.png', dpi=360)
+        i+=1
+    return totalmaplist,bootstraps_list

@@ -369,13 +369,13 @@ class AncestralAlleletabletools():
         if a!=0:
             print("error",shellstatment)
         os.system("rm "+vcffilename+"tempstep1")
-    def getflankseqstooutfile(self, chrom,chromlen, startpostocollecteSNP, endpostocollectSNP, idxedreffilehandler,ancestralgenomenameaddtotable, refindex, flanklen,outfile,vfilelinelists, tablename="derived_alle_ref"):
+    def getflankseqstooutfile(self, chrom,chromlen, startpostocollecteSNP, endpostocollectSNP, idxedreffilehandler,ancestralgenomenameaddtotable, refindex, flanklen,outfile,vfilelinelists,info=None, tablename="derived_alle_ref"):
                             
         RefSeqMap = Util.getRefSeqBypos_faster(idxedreffilehandler, refindex, chrom, startpostocollecteSNP-flanklen, endpostocollectSNP+flanklen,chromlen)
         for snp in vfilelinelists:
             """
             snp=
-            [chrom,  pos, snpID,  refbase, altbase,,,,]
+            [chrom,  pos, snpID,  refbase, altbase,qual,fiter,info,,,]
             """
             
             currentsnpPos = int(snp[1])
@@ -387,7 +387,7 @@ class AncestralAlleletabletools():
                 """not in use
                 """
                 continue# skip indel
-            currentsnpID=chrom+"_"+str(snp[1])
+            currentsnpID=chrom+"_"+str(snp[1])+"_" +snp[7][:70] if info==None else chrom+"_"+str(snp[1])+"_" +re.search(r"",snp[7]).group(1)
             if currentsnpPos + flanklen < RefSeqMap[chrom][0] + len(RefSeqMap[chrom]) - 1 and currentsnpPos - flanklen > RefSeqMap[chrom][0] :
                 snpflankseq = ''.join(RefSeqMap[chrom][(currentsnpPos - flanklen - RefSeqMap[chrom][0]):(currentsnpPos + flanklen - RefSeqMap[chrom][0] + 1)])
 #                 self.dbvariant.operateDB("update","update "+tablename+" set context='"+snpflankseq[flanklen-1:flanklen+2]+"' where chrID='"+ chrom + "' and snp_pos= "+str(currentsnpPos))

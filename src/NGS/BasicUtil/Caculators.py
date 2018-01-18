@@ -160,7 +160,7 @@ class Caculate_popDiv(Caculator):
     def getResult(self):
         pseudoPhasedSeqs=[]
         Nsites=len(self.positions)
-        if Nsites<30:
+        if Nsites<20:
             return 0,np.NaN
         for x in range(self.N):
             pseudoPhasedSeqs+= pseudoPhase(self.seqs[x], "pairs")
