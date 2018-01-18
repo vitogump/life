@@ -391,21 +391,21 @@ class AncestralAlleletabletools():
             if currentsnpPos + flanklen < RefSeqMap[chrom][0] + len(RefSeqMap[chrom]) - 1 and currentsnpPos - flanklen > RefSeqMap[chrom][0] :
                 snpflankseq = ''.join(RefSeqMap[chrom][(currentsnpPos - flanklen - RefSeqMap[chrom][0]):(currentsnpPos + flanklen - RefSeqMap[chrom][0] + 1)])
 #                 self.dbvariant.operateDB("update","update "+tablename+" set context='"+snpflankseq[flanklen-1:flanklen+2]+"' where chrID='"+ chrom + "' and snp_pos= "+str(currentsnpPos))
-                currentsnpID=chrom+"_"+str(currentsnpPos)+snpflankseq[flanklen]+":"+snp[3]+snp[4]
+                currentsnpID+="_"+snpflankseq[flanklen]+":"+snp[3]+snp[4]
                 snpflankseq=snpflankseq[0:flanklen]+'N'+snpflankseq[flanklen+1:]
                 
             elif currentsnpPos <= RefSeqMap[chrom][0] + len(RefSeqMap[chrom]) - 1 and currentsnpPos - flanklen > RefSeqMap[chrom][0]:
                 snpflankseq = ''.join(RefSeqMap[chrom][(currentsnpPos - flanklen - RefSeqMap[chrom][0]):(currentsnpPos - RefSeqMap[chrom][0] + 1)])
 #                 print(currentsnpID,snpflankseq[flanklen],file=testfile)
 #                 self.dbvariant.operateDB("update","update "+tablename+" set context='"+snpflankseq[flanklen-1:flanklen+1]+"N' where chrID='"+ chrom + "' and snp_pos= "+str(currentsnpPos))
-                currentsnpID=chrom+"_"+str(currentsnpPos)+snpflankseq[flanklen]+":"+snp[3]+snp[4]
+                currentsnpID+="_"+snpflankseq[flanklen]+":"+snp[3]+snp[4]
                 snpflankseq=snpflankseq[0:flanklen]+'N'
                 
             elif currentsnpPos - flanklen <= RefSeqMap[chrom][0] and currentsnpPos + flanklen<=RefSeqMap[chrom][0]+len(RefSeqMap[chrom])-1:
                 snpflankseq = ''.join(RefSeqMap[chrom][(currentsnpPos - RefSeqMap[chrom][0]):(currentsnpPos + flanklen - RefSeqMap[chrom][0] + 1)])
 #                 print(currentsnpID,snpflankseq[0],file=testfile)
 #                 self.dbvariant.operateDB("update","update "+tablename+" set context='N"+snpflankseq[0:2]+"' where chrID='"+ chrom + "' and snp_pos= "+str(currentsnpPos))
-                currentsnpID=chrom+"_"+str(currentsnpPos)+snpflankseq[0]+":"+snp[3]+snp[4]
+                currentsnpID+="_"+snpflankseq[0]+":"+snp[3]+snp[4]
                 snpflankseq = 'N'+snpflankseq[1:flanklen+1]
                 
             else:
@@ -544,7 +544,8 @@ class AncestralAlleletabletools():
                 snpChrom=re.search(r"(.+)_(\d+)",lastsnpID).group(1)
                 onegroup.sort(key=lambda listRec:listRec[1])                           
                 if len(onegroup)==1 or onegroup[0][1]-onegroup[1][1]>=15:#first , only one query id,second longest hit 15 bases greater than the second longest hit
-                    print(*onegroup[0][2:],*onegroup[0][:2],revcom,file=posfile)
+                    chr_pos_info_base=re.split(r"_",onegroup[0][0])
+                    print(*onegroup[0][2:],chr_pos_info_base[0],chr_pos_info_base[1],revcom,chr_pos_info_base[2],file=posfile)
 #                 RefSeqMap = Util.getRefSeqBypos(refFastahander=ancestryreffile, refindex=ancestryrefidx, currentChromNO=chrom, startpos=sstartpos, endpos=sendpos)
 #                 if revcom:
 #                     tempStr=RefSeqMap[chrom][1:]
