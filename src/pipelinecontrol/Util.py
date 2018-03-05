@@ -9,7 +9,7 @@ from multiprocessing.dummy import Pool
 import os, re
 import time
 
-import src.web.DBA as DBA
+import src.web.dba as dba
 
 
 ISOTIMEFORMAT = '%Y-%m-%d %X'

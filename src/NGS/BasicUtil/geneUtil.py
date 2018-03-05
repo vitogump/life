@@ -358,6 +358,7 @@ def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,win
     final_table={}
     for chrom in selectedRegion:
         for region in selectedRegion[chrom]:
+            print(chrom,region)
             if extendtodistal>0:
                 final_table[region]=winGenome.collectTrscptInWin(genomedbtools,Util.TranscriptGenetable,region,upextend,downextend,extendtodistal)
             else:

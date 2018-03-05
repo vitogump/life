@@ -47,13 +47,15 @@ if __name__ == '__main__':
     makeMhtGraph = Make_Picture.MakeMhtGraph()
     outfileNameWINwithGENE_Plist=[];outfileNameWIN_Plist=[]
     outfileNameWINwithGENE_Nlist=[];outfileNameWIN_Nlist=[]
+    outfileNameWINwithGENE_Alist_unfinished=[];outfileNameWIN_Alist=[]
     uniontpidlist=[];intertpidset=set()
     removed=[]
     if options.splitintopart==1:
         if options.multiple_positive_winfiles!=[]:
             for p_inputfileName,threshold_title,outbedfilename in options.multiple_positive_winfiles[:]:
-                outfileNameWIN_Plist.append(p_inputfileName)
+#                 outfileNameWIN_Plist.append(p_inputfileName)
                 threshold_title_list=re.split(r"_",threshold_title.strip())
+                outfileNameWIN_Plist.append(((p_inputfileName+"arrangemented","none",outbedfilename)))
                 outfileNameWINwithGENE_Plist.append((geneUtil.findTrscpt(p_inputfileName, outbedfilename, int(options.upextend), int(options.downextend), int(options.winWidth), int(options.slideSize), options.winType, "m", threshold_title_list, None, options.mergeNA, int(options.distalextend),options.anchorfile,options.trscptfound,options.mapfile),threshold_title,outbedfilename))
 #                 makeMhtGraph.makeHistonPicture(p_inputfileName, "Fst")#,"c(0,2000)","c(0,45)"
                 makeMhtGraph.makeHistonPicture(outfileNameWINwithGENE_Plist[-1][0], "Fst")
@@ -108,7 +110,7 @@ if __name__ == '__main__':
             for n_inputfileName,threshold_title,outbedfilename in options.multiple_negtive_winfiles[:]:
 
                 threshold_title_list=re.split(r"_",threshold_title.strip())
-                outfileNameWIN_Nlist.append(n_inputfileName)
+                outfileNameWIN_Nlist.append((n_inputfileName+"arrangemented","none",outbedfilename))
                 outfileNameWINwithGENE_Nlist.append((geneUtil.findTrscpt(n_inputfileName,outbedfilename, int(options.upextend), int(options.downextend), int(options.winWidth), int(options.slideSize), options.winType, "l", threshold_title_list, None, options.mergeNA, int(options.distalextend),options.anchorfile,options.trscptfound,options.mapfile),threshold_title,outbedfilename))
                 makeMhtGraph.makeHistonPicture(n_inputfileName, "Hp")#,"c(0,2000)","c(0,45)"
                 makeMhtGraph.makeHistonPicture(outfileNameWINwithGENE_Nlist[-1][0], "Hp")#,"c(0,2000)","c(0,45)"
@@ -164,8 +166,17 @@ if __name__ == '__main__':
                 os.system("grep -wFf "+outbedfilename+".Homologs_human /home/bioinfo/databases/humangenesymbl.txt|awk '{print $3}'|sort|uniq|sed '/^$/d'>"+outbedfilename+"Homologs_human_genesymbl")
                 print("""grep -wFf """+outbedfilename+""".Homologs_human /home/bioinfo/databases/humanGO.table |awk '{FS="\t";print $3}'|sort|uniq|sed '/^$/d' > """+outbedfilename+".Homologs_humanEntrezGeneID")
                 os.system("""grep -wFf """+outbedfilename+""".Homologs_human /home/bioinfo/databases/humanGO.table |awk '{FS="\t";print $3}'|sort|uniq|sed '/^$/d' > """+outbedfilename+".Homologs_humanEntrezGeneID")            
+        if options.multiple_allvalue_winfiles!=[]:
+            for a_inputfileName,threshold_title,outbedfilename in options.multiple_allvalue_winfiles[:]:
+                threshold_title_list=re.split(r"_",threshold_title.strip())
+                outfileNameWIN_Nlist.append((a_inputfileName+"arrangemented","none",outbedfilename))
+                outfileNameWINwithGENE_Alist_unfinished.append((geneUtil.findTrscpt(a_inputfileName,outbedfilename, int(options.upextend), int(options.downextend), int(options.winWidth), int(options.slideSize), options.winType, "l", threshold_title_list, None, options.mergeNA, int(options.distalextend),options.anchorfile,options.trscptfound,options.mapfile),threshold_title,outbedfilename))
+                
         print("outfileNameWINwithGENE_Plist",outfileNameWINwithGENE_Plist)
         print("outfileNameWINwithGENE_Nlist",outfileNameWINwithGENE_Nlist)
+        for a_inputfileName,threshold,outbedfilename in options.multiple_allvalue_winfiles[:]:
+            outfileNameWIN_Alist.append((a_inputfileName+"arrangemented","none",outbedfilename))
+        makeMhtGraph.makeMhtplots_compareInOnePicture(options.pathoutputfilename, outfileNameWIN_Plist, outfileNameWIN_Nlist,outfileNameWIN_Alist, 0,columnname)
         genelist,interlist=makeMhtGraph.makeMhtplots_compareInOnePicture_withgeneName(options.pathoutputfilename+".withgene", outfileNameWINwithGENE_Plist, outfileNameWINwithGENE_Nlist, 0,columnname)
         f=open(options.pathoutputfilename+".u."+str(len(genelist)),"w")
         for gene in genelist:

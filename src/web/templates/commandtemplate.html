@@ -28,15 +28,16 @@ function change(v){
 		}
 }
 
-function add1(){ 
+function add1(){
+	input1 = document.createElement('input');
+	input1.setAttribute('type', 'text');
 
-	input1 = document.createElement('input'); 
-	input1.setAttribute('type', 'text'); 
-	
-	var btn1 = document.getElementById("org"); 
-	btn1.insertBefore(input1,null); 
-
-} 
+	var btn1 = document.getElementById("org");
+	var n = document.getElementById("org").value;
+	n=n+1
+	input1.setAttribute('id', n);
+	btn1.insertBefore(input1,btn1.childNodes[0]);
+}
 
 function setText(obj)
 {
@@ -49,7 +50,7 @@ function setText(obj)
     {
         document.getElementById("txtName").disabled=true;
         document.getElementById("txtName").value="";
-			
+
 		document.getElementById("txtName1").disabled=true;
         document.getElementById("txtName1").value="";
     }
@@ -63,13 +64,14 @@ function setText(obj)
 <div align="center" class="STYLE1">项目选择</div><br/><br/>
 
 <div>
-<form>
-	在根目录：&nbsp<input type="text"><br /><br />
-	所在层级：&nbsp<input type="text"><br /><br />
-	输出路径：&nbsp<input type="text"><br /><br />
-	输出后缀：&nbsp<input type="text">&nbsp&nbsp	<br />
-	<br /> 
-    <form name="myform" method="post" action=""> 
+<form action="{{url_for('configsoftware')}}" method="post" >
+{{ form.csrf_token }}
+	{{form.projectpath.label}}&nbsp<!-- <input type="text">-->{{form.projectpath}}<br /><br />
+	{{form.datadepth.label}}&nbsp<!--<input type="text">-->{{form.datadepth}} <br /><br />
+	{{form.outputpath.label}}&nbsp<!--<input type="text">--> {{form.outputpath}}<br /><br />
+	{{form.outputperfix.label}}&nbsp<!--<input type="text">--> {{form.outputperfix}} &nbsp&nbsp	<br />
+	<br />
+    <div id="myfrom">
     <select name="software" onchange="change(this.value)">
         <option value="1">Bowtie2</option>
         <option value="2">SortSam.jar</option>
@@ -79,40 +81,38 @@ function setText(obj)
     <div id="test">
     <table><tr><td>参数：<input type="text" name="zx" /></td></tr></table>
     </div>
-	</form>
+	</div>
     <br /><br />
 	<select>
 		<option value="1" selected>多输入单输出</option>
 		<option value="2">一对一</option>
 	</select><br /><br />
 
-	
-	
+
+
 	是否选择过滤条件：<input name="Checkbox1" type="checkbox" onclick="setText(this)"/><br /><br />
 	<label>目录层级:</label>
 	<input id="txtName" type="text" disabled=true/><br /><br />
-	
-	
-	
-		
-<div id="org"> 
-	<label>文件夹名:</label>
-	<input id="txtName1" type="text" disabled=true/>&nbsp;&nbsp;
-	<input type="button" onclick="add1();" value="添加" /> <br /><br />
+
+<label>{{form.foldername.label}}</label>&nbsp;&nbsp;<div id="org" value=1>
+<!--<input id="txtName1" type="text" disabled=true/>&nbsp;&nbsp;-->
+	{{form.foldername}}&nbsp;&nbsp;
+	<input type="button" onclick="add1();"  value="添加" /> <br /><br />
 </div>
 
 
 请输入命令参数：<br />
     <textarea rows="8" cols="40"></textarea>
-	<input type="submit" value="提交"><br \><br \>
-	
-	
+
+	 <input type="submit" value="提交"><br \><br \>
+
+
 显示结果：<br />
     <textarea rows="8" cols="40" disabled=true></textarea><br /><br />
 	每次运行命令的个数：<input type="text"><br /><br />
-	
+	{{form.submit}}
 	<input type="submit" value="提交运行">
-	
-</form> 
+
+</form>
 </body>
 </html>

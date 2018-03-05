@@ -174,7 +174,7 @@ class MakeMhtGraph(object):
         
         namewithoutpath=re.search(r"[^/]*$", inputfileName).group(0)
         r("setwd('" + dir + "')")
-        r('.libPaths("/opt/Rpackages/")')
+        r('.libPaths("/home/liurui/software/Rpackages")')
         r("library(Cairo)")
         r('x=read.table("' + namewithoutpath + '",header=T)')
         print(dir,namewithoutpath)
@@ -216,7 +216,7 @@ class MakeMhtGraph(object):
         p_threshold=[0]*len(positive_winfiles)
         n_threshold=[0]*len(negtive_winfiles)
         r("setwd('" + dir + "')")
-        r('.libPaths("/opt/Rpackages/")')
+        r('.libPaths("/home/liurui/software/Rpackages")')
         r("library(gap)")
         r("library(Cairo)")
 #         r('CairoPNG("'+outname+'.png",width='+str(((len(positive_winfiles)+len(negtive_winfiles))*221.5+35)*2)+',height='+str((len(positive_winfiles)+len(negtive_winfiles))*221.5+35)+')')
@@ -232,9 +232,12 @@ class MakeMhtGraph(object):
             r('p_data'+str(i)+' <- p_dataframe'+str(i)+'[,c("chrNo","winNo","'+columnname+'")]')
             print('p_highlight'+str(i)+'<- p_dataframe'+str(i)+'[p_dataframe'+str(i)+'$'+columnname+'>='+str(p_threshold[i])+',][,c("chrNo","winNo","'+columnname+'","geneName")]',file=scriptfile)
             r('p_highlight'+str(i)+'<- p_dataframe'+str(i)+'[p_dataframe'+str(i)+'$'+columnname+'>='+str(p_threshold[i])+',][,c("chrNo","winNo","'+columnname+'","geneName")]')
-            r('p_highlight'+str(i)+'$geneName<-gsub(pattern="miRNA;",replacement="",x=p_highlight0$geneName)')
-            r('p_highlight'+str(i)+'$geneName<-gsub(pattern=";",replacement="",x=p_highlight0$geneName)')
-            r('p_highlight'+str(i)+'$geneName<-gsub(pattern="miRNA",replacement="",x=p_highlight0$geneName)')
+            try :
+                r('p_highlight'+str(i)+'$geneName<-gsub(pattern="miRNA;",replacement="",x=p_highlight0$geneName)')
+                r('p_highlight'+str(i)+'$geneName<-gsub(pattern=";",replacement="",x=p_highlight0$geneName)')
+                r('p_highlight'+str(i)+'$geneName<-gsub(pattern="miRNA",replacement="",x=p_highlight0$geneName)')
+            except:
+                print("no geneName")
             print('p_highlithcolors'+str(i)+'<- rep("red",nrow(p_highlight'+str(i)+'))',file=scriptfile)
             r('p_highlithcolors'+str(i)+'<- rep("red",nrow(p_highlight'+str(i)+'))')
         for i in range(0,len(negtive_winfiles)):
@@ -246,9 +249,12 @@ class MakeMhtGraph(object):
             print('n_dataframe'+str(i)+'=read.delim("' + negtive_filenameWithPaths[i] + '",header=T,stringsAsFactors=FALSE)',file=scriptfile)
             print('n_data'+str(i)+' <- n_dataframe'+str(i)+'[,c("chrNo","winNo","'+columnname+'")]',file=scriptfile)
             r('n_highlight'+str(i)+'<-n_dataframe'+str(i)+'[n_dataframe'+str(i)+'$'+columnname+'<='+str(n_threshold[i])+',][,c("chrNo","winNo","'+columnname+'","geneName")]')
-            r('n_highlight'+str(i)+'$geneName<-gsub(pattern="miRNA;",replacement="",x=n_highlight0$geneName)')
-            r('n_highlight'+str(i)+'$geneName<-gsub(pattern=";",replacement="",x=n_highlight0$geneName)')
-            r('n_highlight'+str(i)+'$geneName<-gsub(pattern="miRNA",replacement="",x=n_highlight0$geneName)')
+            try:
+                r('n_highlight'+str(i)+'$geneName<-gsub(pattern="miRNA;",replacement="",x=n_highlight0$geneName)')
+                r('n_highlight'+str(i)+'$geneName<-gsub(pattern=";",replacement="",x=n_highlight0$geneName)')
+                r('n_highlight'+str(i)+'$geneName<-gsub(pattern="miRNA",replacement="",x=n_highlight0$geneName)')
+            except:
+                print("no geneName")
             print('n_highlight'+str(i)+'<-n_dataframe'+str(i)+'[n_dataframe'+str(i)+'$'+columnname+'<='+str(n_threshold[i])+',][,c("chrNo","winNo","'+columnname+'","geneName")]',file=scriptfile)
             print('n_highlithcolors'+str(i)+'<- rep("red",nrow(n_highlight'+str(i)+'))',file=scriptfile)
             r('n_highlithcolors'+str(i)+'<- rep("red",nrow(n_highlight'+str(i)+'))')
@@ -360,7 +366,7 @@ class MakeMhtGraph(object):
             print(dir)
             print("setwd('" + dir + "')")
             r("setwd('" + dir + "')")
-            r('.libPaths("/opt/Rpackages/")')
+            r('.libPaths("/home/liurui/software/Rpackages")')
             r("library(gap)")
             print("library(gap)",file=scriptfile)
             r("library(Cairo)")
@@ -369,7 +375,7 @@ class MakeMhtGraph(object):
             templ=positive_winfiles+negtive_winfiles+outfileNameWIN_Alist
 #             r('CairoPS("'+outname+chromlist[NoOfcurchrom[templ[0][0]]].strip()+"_"+chromlist[math.ceil(NoOfcurchrom[templ[0][0]]+d)].strip()+"part_"+str(part_i)+'.ps",width=1800,height=900)')
             print('Cairo("'+outname+chromlist[NoOfcurchrom[templ[0][0]]].strip()+"_"+chromlist[math.ceil(NoOfcurchrom[templ[0][0]]+d)].strip()+"part_"+str(part_i)+'.png",type="png",pointsize=12,res=750,width=900,height=550,bg="white",units="mm")',file=scriptfile)
-            r('Cairo("'+outname+chromlist[NoOfcurchrom[templ[0][0]]].strip()+"_"+chromlist[math.ceil(NoOfcurchrom[templ[0][0]]+d)].strip()+"part_"+str(part_i)+'.png",type="png",width=1800,height=900,res=300)')  
+            r('Cairo("'+outname+chromlist[NoOfcurchrom[templ[0][0]]].strip()+"_"+chromlist[math.ceil(NoOfcurchrom[templ[0][0]]+d)].strip()+"part_"+str(part_i)+'.png",type="png",pointsize=12,res=300,width=6000,height=3000)')  
             if outfileNameWIN_Alist!=[]:
                 for i in range(0,len(outfileNameWIN_Alist)):
                     os.system("""awk '{if(NR==1){print$0}if($0~/"""+chromlist[NoOfcurchrom[outfileNameWIN_Alist[i][0]]].strip()+"""/){start="true"}if($0~/"""+chromlist[math.ceil(NoOfcurchrom[outfileNameWIN_Alist[i][0]]+d)].strip()+"""/){end="true"}if(start=="true" && end!="true"){print $0}}' """+outfileNameWIN_Alist[i][0]+"""> """+outfileNameWIN_Alist[i][0]+"part_"+str(part_i))
@@ -426,14 +432,16 @@ class MakeMhtGraph(object):
                 for i in range(0,len(outfileNameWIN_Alist)):
                     if outfileNameWIN_Alist[i][1].lower().strip()!="none":
                         ylimstr=outfileNameWIN_Alist[i][1].lower().strip().replace("_",",")
+                        print(ylimstr)
                         print('mhtplot(a_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=15,xlab="",'+"ylim=c("+ylimstr+'))',file=scriptfile)
                         r('mhtplot(a_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=15,ylab="",xlab="",'+"ylim=c("+ylimstr+'))')
                     else:
                         print('mhtplot(a_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=15,ylab="Tajimas D",xlab="")',file=scriptfile)
                         r('mhtplot(a_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=15,ylab="",xlab="")')
                     if outfileNameWIN_Alist[i][2].lower().strip()!="none":
-                        print('title(main="' + outfileNameWIN_Alist[i][2].replace("_"," ") + '",cex.main=2)',file=scriptfile)
-                        r('title(main="' + outfileNameWIN_Alist[i][2].replace("_"," ") + '",cex.main=2)')
+                        print(outfileNameWIN_Alist[i][2].replace("_"," "))
+                        print('title(main=' + outfileNameWIN_Alist[i][2].replace("_"," ") + ',cex.main=2)',file=scriptfile)
+                        r('title(main=' + outfileNameWIN_Alist[i][2].replace("_"," ") + ',cex.main=2)')
                     else:
                         print("title(main='" + outfileNameWIN_Alistfilenames[i] + "',cex.main=2)",file=scriptfile)
                         r("title(main='" + outfileNameWIN_Alistfilenames[i] + "',cex.main=2)")
@@ -451,6 +459,7 @@ class MakeMhtGraph(object):
                     if positive_winfiles[i][2].lower().strip()!="none":
                         if positive_winfiles[i][2].find("expression")!=-1:
                             print("title(main=" + positive_winfiles[i][2].replace("_"," ") + ",cex.main=2)",file=scriptfile)
+                            print(positive_winfiles[i][2].replace("_"," "))
                             r("title(main=" + positive_winfiles[i][2].replace("_"," ") + ",cex.main=2)")
                         else:
                             print("title(main='" + positive_winfiles[i][2].replace("_"," ") + "',cex.main=2)",file=scriptfile)
@@ -494,7 +503,7 @@ class MakeMhtGraph(object):
             if outfileNameWIN_Alist!=[]:
                 outfileNameWIN_Alistfilenames=[""]*len(outfileNameWIN_Alist);outfileNameWIN_AlistfilenamesWithPaths=[""]*len(outfileNameWIN_Alist)
             r("setwd('" + dir + "')")
-            r('.libPaths("/opt/Rpackages/")')
+            r('.libPaths("/home/liurui/software/Rpackages")')
             r("library(gap)")
             r("library(Cairo)")
             templ=positive_winfiles+negtive_winfiles+outfileNameWIN_Alist
@@ -540,10 +549,12 @@ class MakeMhtGraph(object):
                 for i in range(0,len(outfileNameWIN_Alist)):
                     if outfileNameWIN_Alist[i][1].lower().strip()!="none":
                         ylimstr=outfileNameWIN_Alist[i][1].lower().strip().replace("_",",")
+                        print(ylimstr)
                         r('mhtplot(a_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=15,ylab="",xlab=""'+",ylim=c("+ylimstr+'))')
                     else:
                         r('mhtplot(a_data'+str(i)+',control=mht.control(logscale=FALSE,colors=colors,cex=0.7),pch=15,ylab="",xlab="")')
                     if outfileNameWIN_Alist[i][2].lower().strip()!="none":
+                        print(outfileNameWIN_Alist[i][2])
                         r('title(main="' + outfileNameWIN_Alist[i][2].replace("_"," ") + '",cex.main=2)')
                     else:
                         r("title(main='" + outfileNameWIN_Alistfilenames[i] + "',cex.main=2)")

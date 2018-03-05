@@ -1264,7 +1264,7 @@ def mapWinvaluefileToChrOfReletiveSpecie(anchorfile,winfileinName,winwidth,slide
     winMapMarked=copy.deepcopy(winMap)
 
     outwinfile=open(winfileinName+"arrangemented",'w')
-    print(title.strip(),file=outwinfile)
+    print(title.strip()+"\tmark",file=outwinfile)
     for chrom in sorted(anchorDATASTRUCTURE.keys()):
         idx=0#it seems not useful
         if anchorDATASTRUCTURE[chrom][idx][5]=="-":
@@ -2028,7 +2028,7 @@ class WinInGenome():
     def loadWinDataIntoDB(self, dbname, winFileName8Field,Nocol="7", tableNamewithoutNA=None):
         chromOrder = []
         
-        tempdbtools = dbm.DBTools(ip, "root", "1234567", dbname)
+        tempdbtools = dbm.DBTools(ip, username, password, dbname)
         if tableNamewithoutNA == None:
             tableNamewithoutNA = random_str()
 #             return chromOrder, tempdbtools, tableNamewithoutNA, tableNametextValueForappendGeneName 
@@ -2074,7 +2074,7 @@ class WinInGenome():
         print("awk '$"+str(Nocol)+"!~/NA/ && NR!=1{print $0}' " + winFileName8Field + ">" + winFileName8Field + "_tmpfile" + ": ok")
         loaddatasql = "load data local infile '" + winFileName8Field + "_tmpfile' into table " + tableNamewithoutNA + " fields terminated by '\\t'"
         
-        shellstatment = "mysql -uroot -p1234567 -D" + dbname.strip() + ' -e "' + loaddatasql + '"'
+        shellstatment = "mysql -uroot -p"+password+" -D" + dbname.strip() + ' -e "' + loaddatasql + '"'
         
         a = os.system(shellstatment)
         if a != 0:
@@ -2085,7 +2085,7 @@ class WinInGenome():
         
         loaddatasql = "load data local infile '" + winFileName8Field + "' into table " + tableNametextValueForappendGeneName + " fields terminated by '\\t'"
         
-        shellstatment = "mysql -uroot -p1234567 -D" + dbname.strip() + ' -e "' + loaddatasql + '"'
+        shellstatment = "mysql -h"+ip+" -uroot -p"+password+" -D" + dbname.strip() + ' -e "' + loaddatasql + '"'
         
         a = os.system(shellstatment)
         

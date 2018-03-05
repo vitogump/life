@@ -545,7 +545,7 @@ class AncestralAlleletabletools():
                 onegroup.sort(key=lambda listRec:listRec[1])                           
                 if len(onegroup)==1 or onegroup[0][1]-onegroup[1][1]>=15:#first , only one query id,second longest hit 15 bases greater than the second longest hit
                     chr_pos_info_base=re.split(r"_",onegroup[0][0])
-                    print(*onegroup[0][2:],chr_pos_info_base[0],chr_pos_info_base[1],revcom,chr_pos_info_base[2],file=posfile)
+                    print(*onegroup[0][2:],chr_pos_info_base[0],chr_pos_info_base[1],revcom,onegroup[0][1],chr_pos_info_base[2],file=posfile)
 #                 RefSeqMap = Util.getRefSeqBypos(refFastahander=ancestryreffile, refindex=ancestryrefidx, currentChromNO=chrom, startpos=sstartpos, endpos=sendpos)
 #                 if revcom:
 #                     tempStr=RefSeqMap[chrom][1:]

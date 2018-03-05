@@ -44,4 +44,4 @@ from web import web
 #             """
 #     return herfs     
 if __name__ == '__main__':
-    web.run(host="192.168.0.33",port=8080,debug = True)
+    web.run(host="localhost",port=8080,debug = True)

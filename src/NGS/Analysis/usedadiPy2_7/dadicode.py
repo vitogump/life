@@ -119,7 +119,15 @@ def split_nm(params,ns,pts):
     phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
     phi=dadi.Integration.two_pops(phi,xx,Ts,nu1=s,nu2=(1-s))
     fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
-    return fs    
+    return fs
+def split_m(params,ns,pts):
+    s,Ts,m12,m21=params
+    xx=dadi.Numerics.default_grid(pts)
+    phi=dadi.PhiManip.phi_1D(xx)
+    phi=dadi.PhiManip.phi_1D_to_2D(xx,phi)
+    phi=dadi.Integration.two_pops(phi,xx,Ts,nu1=s,nu2=(1-s),m12=m12,m21=m21)
+    fs=dadi.Spectrum.from_phi(phi,ns,(xx,xx))
+    return fs  
 def split_mig_1_IM(params,ns,pts):
     nuA,s,TA,TS,m12,m21=params
     xx=dadi.Numerics.default_grid(pts)
@@ -471,6 +479,8 @@ elif options.model=="IM_2":
     func=IM_2
 elif options.model=="split_nm":
     func=split_nm
+elif options.model=="split_m":
+    func=split_m
 paramslist=[]
 upper_boundlist=[]
 lower_boundlist=[]
@@ -576,7 +586,7 @@ if options.bootstrap!=False:
             ll_param_MAP[paramsname[i]]=[popt[i]/(Nref*2),popt[i]]
             
             print "paramname",paramsname[i],popt[i],"migration rate",popt[i]/(Nref*2)
-        elif re.search(r"^nu",paramsname[i])!=None:
+        elif re.search(r"^nu",paramsname[i])!=None or re.search(r"^s",paramsname[i])!=None:
             ll_param_MAP[paramsname[i]]=[popt[i]*Nref,popt[i]]
             print "paramname",paramsname[i],popt[i],"effective pop size",Nref*popt[i]
         else:

@@ -224,11 +224,15 @@ if __name__ == '__main__':
     sf=open(options.outfileprewithpath+".slidwin_filelist"+str(masterpid),"r")
     for slidwinfilename in sf:
         if slidwinfilename.split():
-            orderlist[int(re.split(r"_",slidwinfilename)[-1])]=slidwinfilename
+            if int(re.split(r"_",slidwinfilename)[-1]) in orderlist:
+                orderlist[int(re.split(r"_",slidwinfilename)[-1])].append(slidwinfilename)
+            else:
+                orderlist[int(re.split(r"_",slidwinfilename)[-1])]=[slidwinfilename]
     sf.close()
     sf=open(options.outfileprewithpath+".slidwin_filelist"+str(masterpid),"w")
     for n in sorted(orderlist.keys()):
-        print(orderlist[n].strip(),file=sf)
+        for slidwinfilename in orderlist[n]:
+            print(slidwinfilename.strip(),file=sf)
     sf.close()
     sf=open(options.outfileprewithpath+".slidwin_filelist"+str(masterpid),"r")
     finalslidwinname=sf.readline().strip()
