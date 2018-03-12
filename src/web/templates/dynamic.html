@@ -16,94 +16,95 @@
 <script language="javascript">
 
 function addBanana(){
- //克隆并插入banana节点
- var node = document.getElementById(“fruitTable”); 
- var trs = node.getElementsByTagName(“tr”); 
- var tr = trs [trs.length-2]; 
- var tr2 = tr.cloneNode(true); 
- tr.parentNode.insertBefore(tr2，tr); 
- 
- //为了增加标签和输入字段id 
-函数plusone(str){
- return str.replace(
- new RegExp(“ - (\ 
-函数($ 0，$ 1){
- var i = parseInt($ 1)+ 1; 
- return“ - ”+ i +“ - “; 
-} 
-); 
-} 
- 
- //更改输入
- var inputs = tr.getElementsByTagName(“input”); (var i = 0; i< inputs.length; i ++){
- inputs [i] .setAttribute(“id”，plusone(inputs [i] .getAttribute(“ ID”))); 
- 
- $ b $ var minusbutton = 
- ['< td>'，
-'< button class =“btn”type =“button”onClick =“removeBanana ()“>< i class =”icon-black icon-minus“>< / i>< / button>'，
-'< / td>'
-] .join ( '\\\
-'); 
- 
- //只追加第一个
- //第二个自动复制减去按钮
- if(trs.length< 6){
- tr.innerHTML + = minusbutton 
- 
- 
- 
- function removeBanana(){
- var node = document.getElementById(“fruitTable”); 
- var trs = node.getElementsByTagName(“tr”); 
- var tr = trs [trs.length-2]; 
- var trParent = tr.parentNode; 
- trParent.removeChild(tr); 
- 
- $ / code>
+    // clone and insert banana node
+    var node = document.getElementById("fruitTable");
+    var trs = node.getElementsByTagName("tr");
+    var tr = trs[trs.length-2];
+    var tr2 = tr.cloneNode(true);
+    tr.parentNode.insertBefore(tr2, tr);
+
+    // in order to increment label and input field ids
+    function plusone(str){
+        return str.replace(
+            new RegExp("-(\\d+)-", "gi"),
+            function($0, $1){
+                var i = parseInt($1) + 1;
+                return "-" + i + "-";
+            }
+        );
+    }
+
+    // change inputs
+    var inputs = tr.getElementsByTagName("input");
+
+    for (var i = 0; i < inputs.length; i++){
+        inputs[i].setAttribute("id", plusone(inputs[i].getAttribute("id")));
+    }
+
+    var minusbutton = 
+        ['<td>',
+        '<button class="btn" type="button" onClick="removeBanana()"><i class="icon-black icon-minus"></i></button>',
+        '</td>'
+        ].join('\n');
+
+    // only append at the first add
+    // second add automatically copies minus button
+    if (trs.length < 6){
+        tr.innerHTML += minusbutton
+    }
+}
+
+function removeBanana(){
+    var node = document.getElementById("fruitTable");
+    var trs = node.getElementsByTagName("tr");
+    var tr = trs[trs.length-2];
+    var trParent = tr.parentNode;
+    trParent.removeChild(tr);
+}
  </script>
 
 </head>
 
 <body>
-{%macro render_field_oneline(field)%} 
-< td> {{field.label}}< / td> 
-< td> {{field(** kwargs)| safe}} 
- {%if field.errors%} 
-< ul class = errors> 
- {%for field.errors%} 
-< li> {{error}}< / li> 
- {%endfor%} 
-< / ul> 
- {%endif%} 
-< / td> 
- {%endmacro%} 
- 
- {%macro render_field(field)%} 
-< tr> 
- {{render_field_oneline(field)}} 
-< / tr> 
- {%endmacro%} 
-< form method =“POST”action =“newsubmit”> 
- {{form.hidden_​​tag()}} 
-< table id =“fruitTable”class =“table”> 
- {{render_field(form.description)}} 
-< tr>< td>< h3>香蕉< / h3>< / td>< / tr> 
- {%set counter = 0%} 
- {%for form.bananas%中的香蕉} 
-< tr> 
- {{banana.hidden_​​tag()}} 
- {%set counter = counter + 1%} 
-如果field.widget.input_type！='hidden'%} 
- {{render_field_oneline(field)}} 
- {%endfor%} 
- {%if counter> 1%} 
-< td> 
-< button class =“btn”type =“button”onClick =“removeBanana()”>< i class =“icon-black icon-minus”>< / i>< / button> ; 
-< / td> 
- {%endif%} 
-< / tr> 
- {%endfor%} 
-< tr>< td>< / td>< td>< button class =“btn”type =“button”onClick =“addBanana()” >< i class =“icon-black icon-plus”>< / i>< / button>< / td>< / tr> 
-< / table> 
-< input class =“btn btn-primary”style =“margin-left：300px;”type =“submit”value =“Submit”/> 
-< / form>
+{% macro render_field_oneline(field) %}
+<td>{{ field.label }}</td>
+<td>{{ field(**kwargs)|safe }}
+  {% if field.errors %}
+  <ul class=errors>
+    {% for error in field.errors %}
+    <li>{{ error }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</td>
+{% endmacro %}
+
+{% macro render_field(field) %}
+<tr>
+  {{ render_field_oneline(field) }} 
+</tr>
+{% endmacro %}
+<form method="POST" action="newsubmit">
+  {{ form.hidden_tag() }}
+  <table id="fruitTable" class="table">
+    {{ render_field(form.description) }}
+    <tr><td><h3>Bananas</h3></td></tr>
+    {% set counter = 0 %}
+    {% for banana in form.bananas %} 
+      <tr>
+        {{ banana.hidden_tag() }}
+        {% set counter = counter + 1%}
+        {% for field in banana if field.widget.input_type != 'hidden' %}
+          {{ render_field_oneline(field) }}
+        {% endfor %}
+        {% if counter > 1 %} 
+          <td>
+            <button class="btn" type="button" onClick="removeBanana()"><i class="icon-black icon-minus"></i></button>
+          </td>
+        {% endif  %} 
+      </tr>
+    {% endfor %}
+      <tr><td></td><td><button class="btn" type="button" onClick="addBanana()"><i class="icon-black icon-plus"></i></button></td></tr>
+  </table>
+<input class="btn btn-primary" style="margin-left:300px;"type="submit" value="Submit" />
+</form>

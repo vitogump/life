@@ -1,14 +1,62 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>Insert title here</title>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="http://apps.bdimg.com/libs/angular.js/1.4.6/angular.min.js">
+        <!-- 这里直接引入这个js文件-->
+    </script>
+    <style>
+        input.ng-invalid {
+            background-color: lightblue;
+        }
+    </style>
 </head>
 <body>
-<form action="/hello" method="post" >
-<label>sssss</label>
-<input id="first-name" type="text" name="first_name" />
-<input type="submit" />
+<h2>登录</h2>
+<form ng-app="myApp" ng-controller="validateCtrl"
+      name="myForm" novalidate>
+    <p>用户名:<br>
+        <input type="text" name="user" ng-model="user.name" required>
+        <span style="color:red" ng-show="myForm.user.$dirty && myForm.user.$invalid">
+  <span ng-show="myForm.user.$error.required">请输入用户名</span>
+  </span>
+    </p>
+    <p>密码:<br>
+        <input type="password" name="password" ng-model="user.password" required>
+        <span style="color:red" ng-show="myForm.password.$dirty && myForm.password.$invalid">
+  <span ng-show="myForm.password.$error.required">请输入密码</span>
+  </span>
+    </p>
+    <p>
+        <button ng-click="nclick()"
+                ng-disabled="myForm.user.$dirty && myForm.user.$invalid  ||
+  myForm.password.$dirty && myForm.password.$invalid  ">signin
+        </button>
+    </p>
+</form>
+<script>
+    var app = angular.module('myApp', []);
+    app.controller('validateCtrl', function ($scope, $http, $location) {
+
+        $scope.nclick = function () {
+            $http({
+                method: 'POST',
+                url: 'login',                                    //请求的路径
+                data: {                                          //放进的值
+                    post: $scope.user
+                },
+ headers: {'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8 '} }).then(function successCallback(response) { //http异步刷新  //请求成功执行代码
+         console.log(response.data);
+                $scope.names = response.data;                      //请求成功后获取请求返回的数据
+                window.location = "successlogin"                  //跳转到后台 successlogin
+            }, function errorCallback(response) {
+                // 请求失败执行代码
+                $scope.names = response.data;
+            });
+        };
+    });
+</script>
 </form>
 </body>
 </html>

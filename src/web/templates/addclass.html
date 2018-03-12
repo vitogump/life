@@ -1,0 +1,85 @@
+{% macro generate_row(entry) %}
+  <div class='form-group producetype_row'>
+    <label>Produce</label>
+    <select name='key[]'
+      {% if action == ACTION.VIEW %} disabled=disabled {% endif %}>
+
+      {# now producetypes is { key: producetype_obj } #}
+      {% for pt_key, pt in producetypes.items() %}
+        {% if entry and entry.producetype == pt_key %}
+          <option selected value="{{ pt_key.id() }}">{{ pt.name() }}</option>
+        {% else %}
+          <option value="{{ pt_key.id() }}">{{ pt.name() }}</option>
+        {% endif %}
+      {% endfor %}
+    </select>
+    <label>Quantity</label>
+    <span>
+      <input type='text' name='quantity[]' class='form-control form-control-inline'
+          {% if action == ACTION.VIEW %} disabled=disabled {% endif %}
+          value="{{ entry.quantity or '' }}" />
+    </span>
+    {% if action != ACTION.VIEW %}
+      {% if entry %}
+        <a class="remove_entry" href="#">X</a>
+      {% endif %}
+    {% endif %}
+  </div>
+{% endmacro %}
+
+
+{% block body %}
+
+{% if action == ACTION.VIEW %}
+  <h2>{{ action }} order (<a href="{{ url_for('order.edit', order_id=order.key.id()) }}">Click to edit</a>)</h2>
+{% else %}
+  <h2>{{ action }} order</h2>
+{% endif %}
+
+<form id='order_form' role="form" method="POST">
+
+  <div class='form-group'>
+    <label>Name</label>
+    <input type="text" class='form-control' name="name" value="{{ order.name or '' }}"
+        {% if action == ACTION.VIEW %} disabled=disabled {% endif %}
+        placeholder="Enter name for this order"/>
+  </div>
+
+  <div class='form-group'>
+    <label>Due Date</label>
+    <input type="text" class='form-control' name="due_date" placeholder="2014-12-31"
+        {% if action == ACTION.VIEW %} disabled=disabled {% endif %}
+        value="{{ order.due_date or '' }}" />
+  </div>
+
+  <div id='producetype_rows'>
+    {% if order.entries %}
+      {% for entry in order.entries %}
+        {{ generate_row(entry) }}
+      {% endfor %}
+    {% else %}
+      {{ generate_row(None) }}
+    {% endif %}
+  </div>
+
+  {% if action != ACTION.VIEW %}
+    <h4><a id='more_produce' href='#'>More</a></h4>
+    <br/>
+
+    {% if action == ACTION.EDIT %}
+      <a href="{{ url_for('order.view', order_id=order.key.id()) }}" class="btn btn-primary">Cancel</a>
+    {% endif %}
+
+    <button type="submit" name="submit" class="btn btn-danger">Submit</button>
+  {% endif %}
+
+</form>
+
+
+{% if action == ACTION.VIEW %}
+  <hr/>
+  {% from "task/calendar.html" import generate_calendar with context %}
+  {{ generate_calendar(dates, data_str) }}
+{% endif %}
+
+{% endblock %}

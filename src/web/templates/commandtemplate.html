@@ -12,8 +12,8 @@
 }
 
 </style>
-
-<script language="javascript">
+<script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script>
 function change(v){
 	if(v == 1){
 		document.getElementById("test").innerHTML = " <table><tr><td>-1INPUT：<input type='text' name='zx' /></td></tr>	</table><table><tr><td>-2INPUT：<input type='text' name='zx' /></td></tr></table>"
@@ -27,6 +27,42 @@ function change(v){
 		document.getElementById("test").innerHTML = "-l：<input type='text' name='zx'/>";
 		}
 }
+
+$(function() {
+    $("div[data-toggle=fieldset]").each(function() {
+        var $this = $(this);
+
+        //Add new entry
+        $this.find("button[data-toggle=fieldset-add-row]").click(function() {
+            var target = $($(this).data("target"));
+            //console.log(target);
+            var oldrow = target.find("[data-toggle=fieldset-entry]:last");
+            var row = oldrow.clone(true, true);
+            var elem_id = row.find(":input")[0].id;
+            var elem_prefix = elem_id.replace(/(.*)-(\d{1,4})/m, '$1')// max 4 digits for ids in list
+            var elem_num = parseInt(elem_id.replace(/(.*)-(\d{1,4})/m, '$2')) + 1;
+            //console.log(elem_prefix);
+            //console.log(elem_num);
+            row.children(':input').each(function() {
+                var id = $(this).attr('id').replace(elem_prefix+'-' + (elem_num - 1), elem_prefix+'-' + (elem_num));
+                $(this).attr('name', id).attr('id', id).val('').removeAttr("checked");
+            });
+            row.children('label').each(function() {
+                var id = $(this).attr('for').replace(elem_prefix+'-' + (elem_num - 1), elem_prefix+'-' + (elem_num));
+                $(this).attr('for', id);
+            });
+            row.show();
+            oldrow.after(row);
+        }); //End add new entry
+        //Remove row
+        $this.find("button[data-toggle=fieldset-remove-row]").click(function() {
+            if($this.find("[data-toggle=fieldset-entry]").length > 1) {
+                var thisRow = $(this).closest("[data-toggle=fieldset-entry]");
+                thisRow.remove();
+            }
+        }); //End remove row
+    });
+});
 
 function add1(){
 	input1 = document.createElement('input');
@@ -94,25 +130,50 @@ function setText(obj)
 	<label>目录层级:</label>
 	<input id="txtName" type="text" disabled=true/><br /><br />
 
-<label>{{form.foldername.label}}</label>&nbsp;&nbsp;<div id="org" value=1>
-<!--<input id="txtName1" type="text" disabled=true/>&nbsp;&nbsp;-->
+
+<div data-toggle="fieldset" id="persons-fieldset" >
+<button type="button" data-toggle="fieldset-add-row" data-target="#persons-fieldset" >"添加"</button>
+        <ul id="persons">
+        <label >需过滤的文件夹名:</label><br/>
+            {% for person in form.persons %}
+            <li data-toggle="fieldset-entry" >
+
+                <input id="persons-{{ loop.index0 }}" name="persons-{{ loop.index0 }}" type="text" value="{{ person.data }}">
+                <button type="button" data-toggle="fieldset-remove-row" id="persons-{{loop.index0}}-remove">-</button>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+<!--<input id="txtName1" type="text" disabled=true/>&nbsp;&nbsp;
 	{{form.foldername}}&nbsp;&nbsp;
 	<input type="button" onclick="add1();"  value="添加" /> <br /><br />
-</div>
+</div>-->
 
 
 请输入命令参数：<br />
     <textarea rows="8" cols="40"></textarea>
 
-	 <input type="submit" value="提交"><br \><br \>
-
-
+<div id="sdf" contenteditable = "true">
+<p id="ppp" >sddfd<input type="text" value="此处将被替换为目录名" disabled=true>dddf</p>
+</div>
+{{ form.tag(value= .val($(#ppp).text())) }}
+<input type="hidden" name="xxxx">
+<input type="submit" value="提交" ><br \><br \>
 显示结果：<br />
     <textarea rows="8" cols="40" disabled=true></textarea><br /><br />
-	每次运行命令的个数：<input type="text"><br /><br />
+	每次运行命令的个数：<input id="displaycommand" type="text"><br /><br />
 	{{form.submit}}
 	<input type="submit" value="提交运行">
 
 </form>
+{% if form.errors %}
+    <ul class="errors">
+        {% for field_name, field_errors in form.errors|dictsort if field_errors %}
+            {% for error in field_errors %}
+                <li>{{ form[field_name].label }}: {{ error }}</li>
+            {% endfor %}
+        {% endfor %}
+    </ul>
+{% endif %}
 </body>
 </html>
