@@ -102,14 +102,21 @@ class FieldListFromString(FieldList):
         
         ## Modification from classic FieldList
         setattr(obj, name, _delimiter.join(output))
-
+class HiddenFolderTagForm(Form):
+    firstpart=HiddenField(id="firstPart")
+    secondpart=HiddenField(id="secondPart")
 class ParaForm(FlaskForm):
     projectpath=StringField("请输入项目路径：",validators=[Required(message="根目录不能为空")])
     datadepth=StringField("数据所在在层级：",validators=[Required()])
     outputpath=StringField("输出路径：")
     outputperfix=StringField("输出后缀：")
-    tag=HiddenField("tag",id='foldtag')
-    persons = FieldListFromString(StringField('需过滤的文件夹名:',default='',validators=[wtf_validators.Length(min=0, max=_max_len_per_entry)]),
+    ######### this solution is just a temp way , should use FieldList in the further, like filteredforders does#######
+    tag1part1=HiddenField(label=None,id='foldertag1')
+    tag1part2=HiddenField(label=None,id='foldertag2')
+    tag2part1=HiddenField(label=None,id='foldertag3')
+    tag2part2=HiddenField(label=None,id='foldertag4')
+    ##############this solution is just a temp way,#####
+    filteredforders = FieldListFromString(StringField('需过滤掉的文件夹名:',default='',validators=[wtf_validators.Length(min=0, max=_max_len_per_entry)]),
                                   min_entries=1, max_entries=_max_nb_entries)
 #     foldername=FieldList(StringField("org"),label='需过滤的文件夹名:',min_entries=2)
 #     sftWname=StringField("请输入所在层级：",validators=[Required()])

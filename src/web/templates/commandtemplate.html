@@ -1,5 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
+{% import "bootstrap/wtf.html" as wtf %}
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title>重测序</title>
@@ -10,7 +11,29 @@
 	font-family: "华文行楷";
 	font-size: 36px;
 }
-
+input[type="text"][class="taginput2n"]{
+    line-height: 1.5em;
+    color:green;
+    text-align:left;
+    width:125px;
+    border-left:0px;
+    border-right:0px;
+    margin:0 0 0 -7px;
+    background:white;
+}
+input[type="text"][class="taginput1n"]{
+    line-height: 1.5em;
+    border-right:0px;
+    width:65px;
+    outline:none;
+}
+input[type="text"][class="taginput3n"]{
+    line-height: 1.5em;
+    border-left: 0px;
+    width:65px;
+    margin:0 0 0 -7px;
+    outline:none;
+}
 </style>
 <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 <script>
@@ -29,6 +52,9 @@ function change(v){
 }
 
 $(function() {
+	//$('form').bind('submit', function() { $('#foldertag').val($('#ppp').text()) });
+	$('form').bind('submit', function() { $('#foldertag1').val($('#taginput1').val());$('#foldertag3').val($('#taginput3').val())});
+	$('form').bind('submit', function() { $('#foldertag2').val($("input[id='taginput2']").val());$('#foldertag4').val($("input[id='taginput4']").val())});
     $("div[data-toggle=fieldset]").each(function() {
         var $this = $(this);
 
@@ -131,15 +157,15 @@ function setText(obj)
 	<input id="txtName" type="text" disabled=true/><br /><br />
 
 
-<div data-toggle="fieldset" id="persons-fieldset" >
-<button type="button" data-toggle="fieldset-add-row" data-target="#persons-fieldset" >"添加"</button>
-        <ul id="persons">
+<div data-toggle="fieldset" id="filteredforders-fieldset" >
+<button type="button" data-toggle="fieldset-add-row" data-target="#filteredforders-fieldset" >"添加"</button>
+        <ul id="filteredforders">
         <label >需过滤的文件夹名:</label><br/>
-            {% for person in form.persons %}
+            {% for filteredforder in form.filteredforders %}
             <li data-toggle="fieldset-entry" >
 
-                <input id="persons-{{ loop.index0 }}" name="persons-{{ loop.index0 }}" type="text" value="{{ person.data }}">
-                <button type="button" data-toggle="fieldset-remove-row" id="persons-{{loop.index0}}-remove">-</button>
+                <input id="filteredforders-{{ loop.index0 }}" name="filteredforders-{{ loop.index0 }}" type="text" value="{{ filteredforder.data }}">
+                <button type="button" data-toggle="fieldset-remove-row" id="filteredforders-{{loop.index0}}-remove">-</button>
             </li>
             {% endfor %}
         </ul>
@@ -153,16 +179,23 @@ function setText(obj)
 请输入命令参数：<br />
     <textarea rows="8" cols="40"></textarea>
 
-<div id="sdf" contenteditable = "true">
-<p id="ppp" >sddfd<input type="text" value="此处将被替换为目录名" disabled=true>dddf</p>
-</div>
-{{ form.tag(value= .val($(#ppp).text())) }}
+<!--<p id="ppp" contenteditable = "true">sddfd<input type="text" value="此处将被替换为目录名的字段" disabled=true>dddf</p>-->
+<br/>
+<input type="text" class="taginput1n" id="taginput1"/>
+<input type="text" class="taginput2n"  value="该字段替换为目录名" disabled/>
+<input type="text" class="taginput3n" id="taginput2" /><br/>
+<input type="text" class="taginput1n" id="taginput3"/>
+<input type="text" class="taginput2n"  value="该字段替换为目录名" disabled/>
+<input type="text" class="taginput3n" id="taginput4"/>
+
 <input type="hidden" name="xxxx">
-<input type="submit" value="提交" ><br \><br \>
+<input type="submit" value="提交" ><br /><br />
+{{ wtf.form_field(form.tag1part1, id="foldertag1") }}{{ wtf.form_field(form.tag1part2, id="foldertag2") }}
+{{ wtf.form_field(form.tag2part1, id="foldertag3") }}{{ wtf.form_field(form.tag2part2, id="foldertag4") }}
 显示结果：<br />
     <textarea rows="8" cols="40" disabled=true></textarea><br /><br />
 	每次运行命令的个数：<input id="displaycommand" type="text"><br /><br />
-	{{form.submit}}
+	{{ wtf.form_field(form.submit, button_map={'id':'submit_button'}) }}
 	<input type="submit" value="提交运行">
 
 </form>

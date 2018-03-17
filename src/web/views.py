@@ -56,14 +56,17 @@ def configsoftware():
     form=ParaForm()
     if form.validate_on_submit():
         print("configsoftware here",request.form)
+        print("hidden value",form.tag1part1.data,form.tag1part2.data)
         ppl=re.split(r'[/\\]',form.projectpath.data.strip('/'));scriptdir="/home/liurui/pipeline/"
+        print(ppl)
         for e in ppl:
             orde=0
             for c in e:
                 orde+=ord(c)
-            scriptdir+=chr(int(orde/len(e)));scriptdir+=time.strftime('%Y%m%d', time.localtime()).replace(":","")
+            scriptdir+=chr(int(orde/len(e)))
+        scriptdir+=time.strftime('%Y%m%d', time.localtime()).replace(":","")
         
-        return form.tag.data+scriptdir+form.datadepth.data+form.projectpath.data+"<br />"+form.outputpath.data+form.outputperfix.data+"<br />"+"<br />".join(form.persons.data)
+        return form.tag1part1.data+form.tag1part2.data+form.tag2part1.data+form.tag2part2.data+scriptdir+form.datadepth.data+form.projectpath.data+"<br />"+form.outputpath.data+form.outputperfix.data+"<br />"+"<br />".join(form.filteredforders.data)
     else:
         print("didn't validate")
         return render_template('commandtemplate.html',form=form)
@@ -126,7 +129,7 @@ def PopulateFormFromFile():
 
 @web.route('/ttt', methods=['GET', 'POST'])
 def hello_world():
-    return render_template("hello.html")
+#     return render_template("hello.html")
     form = UsersForm(users=[{}, {}, {}])
     form.users[0].experience.choices=[(1, 'One'), (2, 'Two')]
     form.users[1].experience.choices = [(1, 'Uno'), (2, 'Du')]
