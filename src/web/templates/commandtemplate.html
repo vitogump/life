@@ -15,7 +15,7 @@ input[type="text"][class="taginput2n"]{
     line-height: 1.5em;
     color:green;
     text-align:left;
-    width:125px;
+    width:136px;
     border-left:0px;
     border-right:0px;
     margin:0 0 0 -7px;
@@ -55,6 +55,9 @@ $(function() {
 	//$('form').bind('submit', function() { $('#foldertag').val($('#ppp').text()) });
 	$('form').bind('submit', function() { $('#foldertag1').val($('#taginput1').val());$('#foldertag3').val($('#taginput3').val())});
 	$('form').bind('submit', function() { $('#foldertag2').val($("input[id='taginput2']").val());$('#foldertag4').val($("input[id='taginput4']").val())});
+
+	$('form').bind('submit', function() { $('#pinput1').val($('#inputoptsufix1').val());$('#pinput3').val($('#inputoptsufix3').val())});
+	$('form').bind('submit', function() { $('#pinput2').val($("input[id='inputoptsufix2']").val());$('#pinput4').val($("input[id='inputoptsufix4']").val())});
     $("div[data-toggle=fieldset]").each(function() {
         var $this = $(this);
 
@@ -128,39 +131,54 @@ function setText(obj)
 <div>
 <form action="{{url_for('configsoftware')}}" method="post" >
 {{ form.csrf_token }}
-	{{form.projectpath.label}}&nbsp<!-- <input type="text">-->{{form.projectpath}}<br /><br />
+	{{form.projectpath.label}}&nbsp<!-- <input type="text">-->{{form.projectpath}}<br />
+	{{form.collectiondepth.label}}&nbsp<!-- <input type="text">-->{{form.collectiondepth}}<br />
 	{{form.datadepth.label}}&nbsp<!--<input type="text">-->{{form.datadepth}} <br /><br />
-	{{form.outputpath.label}}&nbsp<!--<input type="text">--> {{form.outputpath}}<br /><br />
-	{{form.outputperfix.label}}&nbsp<!--<input type="text">--> {{form.outputperfix}} &nbsp&nbsp	<br />
+
 	<br />
     <div id="myfrom">
-    <select name="software" onchange="change(this.value)">
-        <option value="1">Bowtie2</option>
-        <option value="2">SortSam.jar</option>
-        <option value="3">MarkDuplicates.jar</option>
-        <option value="4">GenomeAnalysisTK.jar</option>
-    </select><br />
-    <div id="test">
+{{ wtf.form_field(form.software, id="software") }}
+<!--    <div id="test">
     <table><tr><td>参数：<input type="text" name="zx" /></td></tr></table>
-    </div>
+    </div>-->
+{{form.input1part1.label}}&nbsp<input type="text" class="taginput1n" id="inputoptsufix1" value="-1"/>
+<input type="text" class="taginput2n"  value="+输入文件的后缀名：" disabled/>
+<input type="text" class="taginput3n" id="inputoptsufix2" value="1.fq.gz" /><br/>
+{{form.input2part1.label}}&nbsp<input type="text" class="taginput1n" id="inputoptsufix3" value="-2"/>
+<input type="text" class="taginput2n"  value="+输入文件的后缀名：" disabled/>
+<input type="text" class="taginput3n" id="inputoptsufix4" value="2.fq.gz"/>
 	</div>
     <br /><br />
-	<select>
-		<option value="1" selected>多输入单输出</option>
-		<option value="2">一对一</option>
-	</select><br /><br />
+    {{form.outputpath.label}}&nbsp&nbsp&nbsp<!--<input type="text">--> {{form.outputpath}}<br />
+	{{form.outputperfix.label}}<!--<input type="text">--> {{form.outputperfix}} &nbsp&nbsp	<br />
+	{{form.outputperfix2.label}}<!--<input type="text">--> {{form.outputperfix2}} &nbsp&nbsp	<br />
+	{{form.commandParameters.label}}</br>{{form.commandParameters(rows='8',cols='40')}}
+
+<!--<input id="txtName1" type="text" disabled=true/>&nbsp;&nbsp;
+	{{form.foldername}}&nbsp;&nbsp;
+	<input type="button" onclick="add1();"  value="添加" /> <br /><br />
+</div>-->
 
 
 
-	是否选择过滤条件：<input name="Checkbox1" type="checkbox" onclick="setText(this)"/><br /><br />
-	<label>目录层级:</label>
-	<input id="txtName" type="text" disabled=true/><br /><br />
+<!--<p id="ppp" contenteditable = "true">sddfd<input type="text" value="此处将被替换为目录名的字段" disabled=true>dddf</p>-->
+<br/>
+<input type="text" class="taginput1n" id="taginput1" value="--rg 'SM:"/>
+<input type="text" class="taginput2n"  value="+该字段替换为目录名+" disabled/>
+<input type="text" class="taginput3n" id="taginput2" value="'"/><br/>
+<input type="text" class="taginput1n" id="taginput3" value="--rg 'SM:"/>
+<input type="text" class="taginput2n"  value="+该字段替换为目录名+" disabled/>
+<input type="text" class="taginput3n" id="taginput4" value="'"/>
+{#% {{ wtf.form_field(form.iomode, id="iomode") }} %#}
+<input type="hidden" name="xxxx">
+	{{wtf.form_field(form.tagtoFolderlevel,id="tagtxtName" )}}<br /><br />
 
-
+	是否需要筛选数据：<input name="Checkbox1" type="checkbox" onclick="setText(this)"/><br /><br />
+	{{wtf.form_field(form.filteredforderlevel,id="txtName" )}}<br /><br />
 <div data-toggle="fieldset" id="filteredforders-fieldset" >
 <button type="button" data-toggle="fieldset-add-row" data-target="#filteredforders-fieldset" >"添加"</button>
         <ul id="filteredforders">
-        <label >需过滤的文件夹名:</label><br/>
+        <label >输入路径的筛选层需含有以下目录名称:</label><br/>
             {% for filteredforder in form.filteredforders %}
             <li data-toggle="fieldset-entry" >
 
@@ -170,28 +188,12 @@ function setText(obj)
             {% endfor %}
         </ul>
     </div>
-<!--<input id="txtName1" type="text" disabled=true/>&nbsp;&nbsp;
-	{{form.foldername}}&nbsp;&nbsp;
-	<input type="button" onclick="add1();"  value="添加" /> <br /><br />
-</div>-->
-
-
-请输入命令参数：<br />
-    <textarea rows="8" cols="40"></textarea>
-
-<!--<p id="ppp" contenteditable = "true">sddfd<input type="text" value="此处将被替换为目录名的字段" disabled=true>dddf</p>-->
-<br/>
-<input type="text" class="taginput1n" id="taginput1"/>
-<input type="text" class="taginput2n"  value="该字段替换为目录名" disabled/>
-<input type="text" class="taginput3n" id="taginput2" /><br/>
-<input type="text" class="taginput1n" id="taginput3"/>
-<input type="text" class="taginput2n"  value="该字段替换为目录名" disabled/>
-<input type="text" class="taginput3n" id="taginput4"/>
-
-<input type="hidden" name="xxxx">
 <input type="submit" value="提交" ><br /><br />
 {{ wtf.form_field(form.tag1part1, id="foldertag1") }}{{ wtf.form_field(form.tag1part2, id="foldertag2") }}
 {{ wtf.form_field(form.tag2part1, id="foldertag3") }}{{ wtf.form_field(form.tag2part2, id="foldertag4") }}
+
+{{ wtf.form_field(form.input1part1, id="pinput1") }}{{ wtf.form_field(form.input1part2, id="pinput2") }}
+{{ wtf.form_field(form.input2part1, id="pinput3") }}{{ wtf.form_field(form.input2part2, id="pinput4") }}
 显示结果：<br />
     <textarea rows="8" cols="40" disabled=true></textarea><br /><br />
 	每次运行命令的个数：<input id="displaycommand" type="text"><br /><br />

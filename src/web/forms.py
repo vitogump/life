@@ -7,7 +7,7 @@ Created on 2017年10月19日
 
 from flask_wtf import FlaskForm
 from flask_wtf.form import Form
-from wtforms import FieldList, StringField, SubmitField, SelectField,HiddenField
+from wtforms import FieldList, StringField, SubmitField, SelectField,HiddenField,TextAreaField
 from wtforms.fields.core import FormField
 from wtforms.validators import Required, DataRequired
 import itertools
@@ -106,17 +106,29 @@ class HiddenFolderTagForm(Form):
     firstpart=HiddenField(id="firstPart")
     secondpart=HiddenField(id="secondPart")
 class ParaForm(FlaskForm):
-    projectpath=StringField("请输入项目路径：",validators=[Required(message="根目录不能为空")])
-    datadepth=StringField("数据所在在层级：",validators=[Required()])
-    outputpath=StringField("输出路径：")
-    outputperfix=StringField("输出后缀：")
+    projectpath=StringField("请输入项目路径：",validators=[Required(message="根目录不能为空")],default="/home/liurui/originaldata")
+    datadepth=StringField("数据所在在层级：",validators=[Required()],default="2")
+#     inputperfix=StringField("输入：")
+    collectiondepth=StringField("数据收集层级：",default="2")
+    outputpath=StringField("输出路径：            \t ",default="/home/liurui/data/bamfiles/webmanage")  #waiting for changing to be addable with fixed field
+    outputperfix=StringField("输出选项 及 后缀：",default="-o bam") 
+    outputperfix2=StringField("输出选项 及 后缀：")
+    tagtoFolderlevel=StringField("tag目录层级:",default="如无替换为目录名字段，则为空")
+    filteredforderlevel=StringField("筛选目录层级:",render_kw={'disabled':'true'},default="1")
+    software=SelectField('选择软件/工具',choices=[("bowtie2","bowtie2"),("SortSam","SortSam.jar"),("MarkDuplicates","MarkDuplicates.jar"),("GenomeAnalysisTK","GenomeAnalysisTK.jar"),("linuxcommand","LinuxCommand")])
+#     iomode=SelectField('模式',choices=[("manyTomany","多输入多输出 一对一"),("manyToone","多输入单输出")])
+    commandParameters = TextAreaField('请输入命令参数（$$$$将被换为输入）：',default=" -p 8 -x /home/liurui/databases/bowtie2idx/duck_1_0_77_genome --rg-id ID --rg-id PL --rg-id PU --rg-id LB --rg-id SM --rg 'PL:illumina' --rg 'PU:indvd' --rg 'LB:ninglab'  $$$$|samtools view -@ 8 -bS - ")
     ######### this solution is just a temp way , should use FieldList in the further, like filteredforders does#######
-    tag1part1=HiddenField(label=None,id='foldertag1')
+    tag1part1=HiddenField(label=None,id='foldertag1')#waiting for changing to be addable
     tag1part2=HiddenField(label=None,id='foldertag2')
     tag2part1=HiddenField(label=None,id='foldertag3')
     tag2part2=HiddenField(label=None,id='foldertag4')
+    input1part1=HiddenField(label="输入：",id='pinput1')#waiting for change to be addable
+    input1part2=HiddenField(label="输入：",id='pinput2')
+    input2part1=HiddenField(label="输入：",id='pinput3')
+    input2part2=HiddenField(label="输入：",id='pinput4')
     ##############this solution is just a temp way,#####
-    filteredforders = FieldListFromString(StringField('需过滤掉的文件夹名:',default='',validators=[wtf_validators.Length(min=0, max=_max_len_per_entry)]),
+    filteredforders = FieldListFromString(StringField('筛选目录名称:',default='mallard',validators=[wtf_validators.Length(min=0, max=_max_len_per_entry)]),
                                   min_entries=1, max_entries=_max_nb_entries)
 #     foldername=FieldList(StringField("org"),label='需过滤的文件夹名:',min_entries=2)
 #     sftWname=StringField("请输入所在层级：",validators=[Required()])

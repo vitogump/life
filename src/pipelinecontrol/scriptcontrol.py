@@ -7,7 +7,7 @@ Created on 2014-11-7
 from optparse import OptionParser
 import re, os
 
-from pipelinecontrol.Util import OperatorWithData_mode1,upTodownTravelDir,OperatorWithData_mode2
+from src.pipelinecontrol.Util import OperatorWithData_mode1,upTodownTravelDir,OperatorWithData_mode2
 
 
 parser = OptionParser()
@@ -58,12 +58,15 @@ if __name__ == '__main__':
             collection_depth=int(options.collection_depth)
             if collection_depth<Interceptor_depth:
                 print("collection_depth<Interceptor_depth error")
-                exit(-1)
+#                 exit(-1)
         else:
             print("need -1 collection_depth")
             
         #progamma logic
         operatorwithdata_mode1=OperatorWithData_mode1(options.cmdtemplatefile,scriptsstoredir=scriptsstoredir,taglen=dirsubtotaglen,Dtag=options.directsubtag)
+        if collection_depth<datadepth:
+            operatorwithdata_mode1.datadepthequalcollectdepth=False
+        print(collection_depth,datadepth,operatorwithdata_mode1.datadepthequalcollectdepth)
         upTodownTravelDir(operatorwithdata_mode1.inputdatapath,operatorwithdata_mode1,datadepth,Interceptor_depth,collection_depth=collection_depth,interceptdirs=interceptdirs,rootDirnotchange=operatorwithdata_mode1.inputdatapath,Interceptor_depth_notchange=Interceptor_depth)
         
     elif mode==2:

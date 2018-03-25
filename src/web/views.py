@@ -4,7 +4,7 @@ Created on 2017年10月19日
 @author: liurui
 '''
 from email.utils import unquote
-import os,time
+import os,time,Service
 import re
 
 from flask import request, jsonify, send_from_directory, abort, render_template
@@ -56,16 +56,26 @@ def configsoftware():
     form=ParaForm()
     if form.validate_on_submit():
         print("configsoftware here",request.form)
-        print("hidden value",form.tag1part1.data,form.tag1part2.data)
-        ppl=re.split(r'[/\\]',form.projectpath.data.strip('/'));scriptdir="/home/liurui/pipeline/"
-        print(ppl)
+        print("hidden value",form.tag1part1.data,form.tag2part1.data)
+        ppl=re.split(r'[/\\]',form.projectpath.data.strip('/'));scriptdir="/home/liurui/pipeline/";print(ppl)
         for e in ppl:
             orde=0
             for c in e:
                 orde+=ord(c)
             scriptdir+=chr(int(orde/len(e)))
         scriptdir+=time.strftime('%Y%m%d', time.localtime()).replace(":","")
-        
+        inputList=[];tagList=[]
+        for inputpart1,inputpart2 in [(form.input1part1.data,form.input1part2.data),(form.input2part1.data,form.input2part2.data)]:
+            if  inputpart2.strip()!="":
+                inputList.append(inputpart1+" ${"+inputpart2+"}")
+        for tagpart1,tagpart2 in [(form.tag1part1.data,form.tag1part2.data),(form.tag2part1.data,form.tag2part2.data)]:
+            if tagpart1.strip()!="":
+                tagList.append(tagpart1+"${tag}"+tagpart2)
+        outputlist=[form.outputpath.data]+re.split(r"\s+",form.outputperfix.data)#,form.outputperfix2.data]
+        Service.scriptproduce(form.datadepth.data,form.collectiondepth.data,scriptdir,form.projectpath.data,form.software.data,form.commandParameters.data,inputList,outputlist,lenOfdirtotag=form.filteredforderlevel.data,taglist=tagList,selecteddepth=form.filteredforderlevel.data,selecteddirs=list(form.filteredforders.data))
+
+#         return render_template(url_for('confirm.html'),)
+        form.input1part1.data
         return form.tag1part1.data+form.tag1part2.data+form.tag2part1.data+form.tag2part2.data+scriptdir+form.datadepth.data+form.projectpath.data+"<br />"+form.outputpath.data+form.outputperfix.data+"<br />"+"<br />".join(form.filteredforders.data)
     else:
         print("didn't validate")
