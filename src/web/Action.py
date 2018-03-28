@@ -23,7 +23,7 @@ UPLOAD_BASE = "../../com"
 
 @route('/monitorjobs/:urlpath#.+#')
 def server_static(urlpath):
-    session=aaa.getSession()
+    session=aaa.getWebSession()
     l = session.query(entity.Jobstate).all()
     header=["*scriptname*","*foldername*","*starttime*","*finishtime*"," *state*","*outputinfo*"]
     mylist=[]
@@ -35,4 +35,4 @@ def server_static(urlpath):
     print(html,file=open("../../com/temppage/wikitable.html",'w'))
     return static_file(urlpath,root='../../com/temppage')
 
-run(host='localhost',port=8080,debug=True)
+run(host='localhost',port=8182,debug=True)

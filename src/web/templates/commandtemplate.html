@@ -200,7 +200,7 @@ function setText(obj)
 {{ wtf.form_field(form.input2part1, id="pinput3") }}{{ wtf.form_field(form.input2part2, id="pinput4") }}
 显示结果：<br />
     <textarea rows="8" cols="40" disabled=true></textarea><br /><br />
-	每次运行命令的个数：<input id="displaycommand" type="text"><br /><br />
+    {{wtf.form_field(form.NumOfThreads)}}<br />
 	{{ wtf.form_field(form.submit, button_map={'id':'submit_button'}) }}
 	<input type="submit" value="提交运行">
 

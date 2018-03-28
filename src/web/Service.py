@@ -3,13 +3,23 @@ Created on 2014-11-17
 
 @author: liurui
 '''
-import markdown2,time,datetime
+import time,datetime
 import re,string,os,random
 import src.web.dba as mydba
 from src.pipelinecontrol.Util import OperatorWithData_webservice, upTodownTravelDir
 
 
-
+def random_uniqScriptDir(scriptspath,randomlength=8):
+    a = list(string.ascii_letters)
+    random.shuffle(a)
+    ranUniscriptspath=(scriptspath.rstrip("/")+"/"+''.join(a[:randomlength]))
+    if  os.path.exists(ranUniscriptspath):
+        while True:
+            random.shuffle(a)
+            if  ''.join(a[:randomlength]) not in os.listdir(scriptspath): 
+                ranUniscriptspath=(scriptspath.rstrip("/")+"/"+''.join(a[:randomlength]))
+                break
+    return ranUniscriptspath
 def scriptproduce(datadepth,collectiondepth,scriptspath,inputdatapath,softwareconfig,parametersStr,inputList,outputList,lenOfdirtotag=1,taglist=[],selecteddepth=0,selecteddirs=[]):#selecteddepth=0 means check collectiondepth only
     inputstr=(" "+" ".join(taglist)+" ")
     inputstr+=" ".join(inputList)
@@ -21,7 +31,10 @@ def scriptproduce(datadepth,collectiondepth,scriptspath,inputdatapath,softwareco
     print(datadepth,collectiondepth,scriptspath,inputdatapath,softwareconfig)
     cmdline=softwareconfig+" "+parametersStr+" "+outputStr
     print(cmdline)
-    operatorwithdata=OperatorWithData_webservice(inputdatapath,cmdline,scriptspath,taglen=lenOfdirtotag)
+    ranUniscriptspath=random_uniqScriptDir(scriptspath)
+    os.makedirs(ranUniscriptspath)    
+    operatorwithdata=OperatorWithData_webservice(inputdatapath,cmdline,ranUniscriptspath,taglen=lenOfdirtotag)
     operatorwithdata.cmdtemplatefilename=softwareconfig+"Get"+outputList[2]
+
     upTodownTravelDir(inputdatapath,operatorwithdata,int(datadepth),int(selecteddepth),collection_depth=int(collectiondepth),interceptdirs=selecteddirs,rootDirnotchange=operatorwithdata.inputdatapath,Interceptor_depth_notchange=int(selecteddepth))
-    return operatorwithdata.scriptsstorediruniq
+    return ranUniscriptspath

@@ -73,21 +73,21 @@ def getWebSession():
     return session
 def addArticle(name,catalogue_id):
     print("aaaaaaaaaa")
-    session = getSession()
+    session = getWebSession()
     rc=Entity.Article(name,catalogue_id)
     session.add(rc)
     session.commit()
 
 def addJobs2jobstate(scriptslist,foldername,state=0):
     
-    session = getSession()
+    session = getWebSession()
     for scriptname in scriptslist:
         sc=Entity.Jobstate(foldername=foldername,scriptname=scriptname,state=state)
         session.add(sc)
         session.commit()
 def addJobs2jobs_recoder(scriptslist,foldername,logicalpurpose,state=0):
     
-    session = getSession()
+    session = getWebSession()
     for scriptname in scriptslist:
         sc=Entity.Jobs_recoder(foldername=foldername,scriptname=scriptname,logicalpurpose=logicalpurpose,state=state)
         session.add(sc)

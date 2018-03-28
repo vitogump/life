@@ -106,7 +106,7 @@ class HiddenFolderTagForm(Form):
     firstpart=HiddenField(id="firstPart")
     secondpart=HiddenField(id="secondPart")
 class ParaForm(FlaskForm):
-    projectpath=StringField("请输入项目路径：",validators=[Required(message="根目录不能为空")],default="/home/liurui/originaldata")
+    projectpath=StringField("请输入项目根路径：",validators=[Required(message="根目录不能为空")],default="/home/liurui/originaldata")
     datadepth=StringField("数据所在在层级：",validators=[Required()],default="2")
 #     inputperfix=StringField("输入：")
     collectiondepth=StringField("数据收集层级：",default="2")

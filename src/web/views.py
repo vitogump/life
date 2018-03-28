@@ -4,9 +4,13 @@ Created on 2017年10月19日
 @author: liurui
 '''
 from email.utils import unquote
-import os,time,Service
-import re
-
+import os, time, Service
+import re,markdown2
+from sqlalchemy.orm import session
+from tabulate import tabulate
+import src.web.dba as aaa
+from src.web import entity
+from src.web.dba import addJobs2jobstate
 from flask import request, jsonify, send_from_directory, abort, render_template
 from flask.helpers import url_for
 from werkzeug.datastructures import MultiDict
@@ -76,13 +80,52 @@ def configsoftware():
         try:
             t=int(form.NumOfThreads.data)
         except:
-            pass
+            print(form.NumOfThreads.data)
         tt=t if t>1 else 1
-#         os.system("nohup ../pipelinecontrol/JobTracker.py -d "+scriptsstorediruniq+" -t "+str(tt)+" -p purposeofthiscommand")
+#         os.system("cd "+scriptsstorediruniq)
+        os.system("chmod +x "+scriptsstorediruniq+"/*.sh")
+        os.system("nohup "+aaa.pathtoPython+" ../pipelinecontrol/JobTracker.py -d "+scriptsstorediruniq+" -t "+str(tt)+" -p purposeofthiscommand &")
 #         Service.callsh_updateDB(scriptsstorediruniq,NumOfThread=tt,"purposeofthiscommand")
-
+        session=aaa.getWebSession()
+        l = session.query(entity.Jobs_recoder).all()
+        header=["*scriptname*","*foldername*","*starttime*","*finishtime*"," *state*","*outputinfo*"]
+        mylist=[]
+        
+        for i in l:
+            print("sssssssssssssssss",i.outputinfo)
+            mylist.append([("<br>"+i.scriptname),i.foldername[10:],("&nbsp;"+str(i.startdate)+"&nbsp;"),("&nbsp;"+str(i.finishdate)+"&nbsp;"),("&nbsp;"+str(i.state)),("""<input type="button" value="outputinfo" onclick="location.href='http://www.baidu.com'">""")])
+#             mylist.append([i.scriptname,i.foldername[10:],("&nbsp;"+str(i.startdate)+"&nbsp;"),("&nbsp;"+str(i.finishdate)+"&nbsp;"),("&nbsp;"+str(i.state)),("""<input type="button" value="outputinfo" onclick="location.href='http://www.baidu.com'">""")])
+        print(mylist)
+        print(header)
+        print("======orgtbl=====================")
+        print(tabulate(mylist,header,tablefmt="orgtbl"))    
+        text=tabulate(mylist,header,tablefmt="markdown2")
+        print(text)
     
-        return form.tag1part1.data+form.tag1part2.data+form.tag2part1.data+form.tag2part2.data+scriptdir+form.datadepth.data+form.projectpath.data+"<br />"+form.outputpath.data+form.outputperfix.data+"<br />"+"<br />".join(form.filteredforders.data)
+        html=markdown2.markdown(text,extras=["wiki-tables"])
+        html.replace("<tr", "<tr bgcolor='lightgrey'",1)
+        print(html)
+        t="""
+        <html>
+    <head>
+        <title>任务监控</title>
+    </head>
+    <body>
+               <form name="myform" method="post" action="">
+           <tr><td>筛选<select name="software" onchange="change(this.value)">
+               <option value="1">本次提交</option>
+               <option value="2">按日期筛选</option>
+               <option value="3">安运行情况筛选</option>
+               <option value="4">根据数据筛选</option>
+           </select></td></tr><br />
+                  </form>
+    <br /><br />
+    %s
+        </body>
+</html>
+        """
+        return t%html
+#         return form.tag1part1.data+form.tag1part2.data+form.tag2part1.data+form.tag2part2.data+scriptdir+form.datadepth.data+form.projectpath.data+"<br />"+form.outputpath.data+form.outputperfix.data+"<br />"+"<br />".join(form.filteredforders.data)
     else:
         print("didn't validate")
         return render_template('commandtemplate.html',form=form)
