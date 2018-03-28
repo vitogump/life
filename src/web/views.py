@@ -72,10 +72,16 @@ def configsoftware():
             if tagpart1.strip()!="":
                 tagList.append(tagpart1+"${tag}"+tagpart2)
         outputlist=[form.outputpath.data]+re.split(r"\s+",form.outputperfix.data)#,form.outputperfix2.data]
-        Service.scriptproduce(form.datadepth.data,form.collectiondepth.data,scriptdir,form.projectpath.data,form.software.data,form.commandParameters.data,inputList,outputlist,lenOfdirtotag=form.filteredforderlevel.data,taglist=tagList,selecteddepth=form.filteredforderlevel.data,selecteddirs=list(form.filteredforders.data))
+        scriptsstorediruniq=Service.scriptproduce(form.datadepth.data,form.collectiondepth.data,scriptdir,form.projectpath.data,form.software.data,form.commandParameters.data,inputList,outputlist,lenOfdirtotag=form.filteredforderlevel.data,taglist=tagList,selecteddepth=form.filteredforderlevel.data,selecteddirs=list(form.filteredforders.data))
+        try:
+            t=int(form.NumOfThreads.data)
+        except:
+            pass
+        tt=t if t>1 else 1
+#         os.system("nohup ../pipelinecontrol/JobTracker.py -d "+scriptsstorediruniq+" -t "+str(tt)+" -p purposeofthiscommand")
+#         Service.callsh_updateDB(scriptsstorediruniq,NumOfThread=tt,"purposeofthiscommand")
 
-#         return render_template(url_for('confirm.html'),)
-        form.input1part1.data
+    
         return form.tag1part1.data+form.tag1part2.data+form.tag2part1.data+form.tag2part2.data+scriptdir+form.datadepth.data+form.projectpath.data+"<br />"+form.outputpath.data+form.outputperfix.data+"<br />"+"<br />".join(form.filteredforders.data)
     else:
         print("didn't validate")

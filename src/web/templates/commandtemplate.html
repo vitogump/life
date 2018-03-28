@@ -11,6 +11,10 @@
 	font-family: "华文行楷";
 	font-size: 36px;
 }
+.STYLE2 {
+
+	font-size: 18px;
+}
 input[type="text"][class="taginput2n"]{
     line-height: 1.5em;
     color:green;
@@ -126,8 +130,8 @@ function setText(obj)
 
 <body>
 <div id="main">
-<div align="center" class="STYLE1">项目选择</div><br/><br/>
-
+<div align="center" class="STYLE1">生物信息自动化分析系统</div>
+<div align="center" class="STYLE2"> 可通过该web界面对大规模二代测序数据进行分析处理，管理，任务监控与自动化投放，参数记录等</div><br/><br/>
 <div>
 <form action="{{url_for('configsoftware')}}" method="post" >
 {{ form.csrf_token }}

@@ -7,6 +7,8 @@ Created on 2014-11-8
 import copy
 from multiprocessing.dummy import Pool
 import os, re
+import random
+import string
 import time
 
 import src.web.dba as dba
@@ -48,6 +50,7 @@ def upTodownTravelDir(rootDir, OperatorWithData, datadepth=9999, Interceptor_dep
 class OperatorWithData():
     def __init__(self, scriptsstoredir="F:/work/pipelinecontrol/scripts"):
         self.scriptsstoredir = scriptsstoredir + "/"
+        self.scriptsstorediruniq=None
     def process(self, p, d):
         print(p, d)
 # myprint=OperatorWithData()
@@ -69,6 +72,16 @@ class OperatorWithData_loadintodatabase(OperatorWithData):
                         tablename=self.ancestralalleletabletools.createtable(rootStr + "/" +datafilename,drop=self.drop)
                         self.ancestralalleletabletools.filldata(rootStr + "/" +datafilename,tablename=tablename)
         return "OperatorWithData_loadintodatabase return"
+def random_uniqScriptDir(scriptspath,randomlength=8):
+    a = list(string.ascii_letters)
+    random.shuffle(a)
+    ranUniscriptspath=(scriptspath.rstrip("/")+"/"+''.join(a[:randomlength]))
+    if  os.path.exists(ranUniscriptspath):
+        while True:
+            random.shuffle(a)
+            if  ''.join(a[:randomlength]) not in os.listdir(scriptspath): 
+                ranUniscriptspath=(scriptspath.rstrip("/")+"/"+''.join(a[:randomlength]))
+    return ranUniscriptspath
 class OperatorWithData_webservice(OperatorWithData):
     def __init__(self, inputdatapath,cmdline, scriptsstoredir,taglen=1):
         super().__init__(scriptsstoredir)
@@ -78,7 +91,7 @@ class OperatorWithData_webservice(OperatorWithData):
 #         self.Dtag=Dtag
 #         self.scriptcontext=re.search(r"([\s\S]*(\n)*)cmdline=.*",scriptcontent).group(1)
         self.datadepthequalcollectdepth=True
-        self.inputdatapath=inputdatapath#re.search(r"(\n)*inputdatafilesrootpath=\s*(.*)",self.scriptcontext).group(2).rstrip("/")
+        self.inputdatapath=inputdatapath.rstrip("/")#re.search(r"(\n)*inputdatafilesrootpath=\s*(.*)",self.scriptcontext).group(2).rstrip("/")
         self.cmdline=cmdline#re.search(r"(.*(\n)*)cmdline=\s*(.*)",scriptcontent).group(3)
 #         if self.Dtag!=None and re.search(r"\${Dtag}",self.cmdline)!=None:
 #             self.cmdline,no_of_Dtags=re.subn(r"\${Dtag}",self.Dtag,self.cmdline)
@@ -173,10 +186,13 @@ class OperatorWithData_webservice(OperatorWithData):
             return newcmdline
         newcmdline=re.sub(r"myNtosub.",str(targetdata_count)+".",newcmdline)
 #         print(self.scriptcontext + newcmdline, file=open(self.scriptsstoredir + self.cmdtemplatefilename + "." + updirname + "Script.sh", "w"))
-        try:
-            print(scriptinputdata[0:-1]+"\n"+scriptoutputdata[0:-1]+"\n" + newcmdline, file=open(self.scriptsstoredir + self.cmdtemplatefilename + "." + updirname + "Script.sh", "a"))
-        except FileNotFoundError:
-            print(scriptinputdata[0:-1]+"\n"+scriptoutputdata[0:-1]+"\n" + newcmdline, file=open(self.scriptsstoredir + self.cmdtemplatefilename + "." + updirname + "Script.sh", "w"))
+#         try:
+#             print(scriptinputdata[0:-1]+"\n"+scriptoutputdata[0:-1]+"\n" + newcmdline, file=open(self.scriptsstoredir + self.cmdtemplatefilename + "." + updirname + "Script.sh", "a"))
+#         except FileNotFoundError:
+        ranUniscriptspath=random_uniqScriptDir(self.scriptsstoredir)
+        os.makedirs(ranUniscriptspath)
+        print(self.inputdatapath+"\n"+scriptinputdata[0:-1]+"\n"+scriptoutputdata[0:-1]+"\n" + newcmdline, file=open(ranUniscriptspath+"/" + self.cmdtemplatefilename + "." + updirname + "Script.sh", "w"))
+        self.scriptsstorediruniq=ranUniscriptspath
         return newcmdline
 class OperatorWithData_mode1(OperatorWithData):
     def __init__(self, cmdtemplatefile, scriptsstoredir,taglen=1,Dtag=None):
@@ -285,7 +301,7 @@ class OperatorWithData_mode1(OperatorWithData):
         try:
             print(scriptinputdata[0:-1]+"\n"+scriptoutputdata[0:-1]+"\n"+self.scriptcontext + newcmdline, file=open(self.scriptsstoredir + self.cmdtemplatefilename + "." + updirname + "Script.sh", "a"))
         except FileNotFoundError:
-            print(scriptinputdata[0:-1]+"\n"+scriptoutputdata[0:-1]+"\n"+self.scriptcontext + newcmdline, file=open(self.scriptsstoredir + self.cmdtemplatefilename + "." + updirname + "Script.sh", "w"))
+            print(scriptinputdata[0:-1]+"\n"+scriptoutputdata[0:-1]+"\n"+self.scriptcontext + newcmdline, file=open(self.scriptsstoredir + self.cmdtemplatefilename + "." + pathToOutputdata_createdir.replace("/", "_") + "Script.sh", "w"))
         return newcmdline
 
 

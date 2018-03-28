@@ -3,15 +3,16 @@ Created on 2014-11-17
 
 @author: liurui
 '''
-import os
-import re
+import markdown2,time,datetime
+import re,string,os,random
+import src.web.dba as mydba
+from src.pipelinecontrol.Util import OperatorWithData_webservice, upTodownTravelDir
 
-from src.pipelinecontrol.Util import OperatorWithData_webservice,upTodownTravelDir
 
 
 def scriptproduce(datadepth,collectiondepth,scriptspath,inputdatapath,softwareconfig,parametersStr,inputList,outputList,lenOfdirtotag=1,taglist=[],selecteddepth=0,selecteddirs=[]):#selecteddepth=0 means check collectiondepth only
     inputstr=(" "+" ".join(taglist)+" ")
-    inputstr=" ".join(inputList)
+    inputstr+=" ".join(inputList)
     
     parametersStr,N=re.subn(r"\$\$\$\$",inputstr,parametersStr)
     if not os.path.exists(scriptspath):
@@ -23,3 +24,4 @@ def scriptproduce(datadepth,collectiondepth,scriptspath,inputdatapath,softwareco
     operatorwithdata=OperatorWithData_webservice(inputdatapath,cmdline,scriptspath,taglen=lenOfdirtotag)
     operatorwithdata.cmdtemplatefilename=softwareconfig+"Get"+outputList[2]
     upTodownTravelDir(inputdatapath,operatorwithdata,int(datadepth),int(selecteddepth),collection_depth=int(collectiondepth),interceptdirs=selecteddirs,rootDirnotchange=operatorwithdata.inputdatapath,Interceptor_depth_notchange=int(selecteddepth))
+    return operatorwithdata.scriptsstorediruniq

@@ -131,8 +131,6 @@ class ParaForm(FlaskForm):
     filteredforders = FieldListFromString(StringField('筛选目录名称:',default='mallard',validators=[wtf_validators.Length(min=0, max=_max_len_per_entry)]),
                                   min_entries=1, max_entries=_max_nb_entries)
 #     foldername=FieldList(StringField("org"),label='需过滤的文件夹名:',min_entries=2)
-#     sftWname=StringField("请输入所在层级：",validators=[Required()])
-#     sfware=
-#     inputsuffix=
+    NumOfThreads=StringField("分批运行所有sh命令，每次线程数：")
     
     submit = SubmitField('提交')
