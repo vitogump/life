@@ -4,6 +4,7 @@ Created on 2014-11-17
 @author: liurui
 '''
 import datetime
+import re
 import time
 
 import markdown2
@@ -41,11 +42,12 @@ if __name__ == '__main__':
     for i in l:
         print("sssssssssssssssss",i.outputinfo)
 #         mylist.append([("<br>"+i.scriptname),i.foldername[10:],("&nbsp;"+str(i.startdate)+"&nbsp;"),("&nbsp;"+str(i.finishdate)+"&nbsp;"),("&nbsp;"+str(i.state)),("""<input type="button" value="outputinfo" onclick="location.href='http://www.baidu.com'">""")])
-        mylist.append([i.scriptname,i.foldername[10:],("&nbsp;"+str(i.startdate)+"&nbsp;"),("&nbsp;"+str(i.finishdate)+"&nbsp;"),("&nbsp;"+str(i.state)),("""<input type="button" value="outputinfo" onclick="location.href='http://www.baidu.com'">""")])
+        mylist.append([i.scriptname,i.foldername[12:],(str(i.startdate)),(str(i.finishdate)),(str(i.state)),("""<input type="button" value="outputinfo" onclick="location.href='http://www.baidu.com'">""")])
     print(mylist)
     print("======orgtbl=====================")
-    print(tabulate(mylist,header,tablefmt="orgtbl"))    
-    text=tabulate(mylist,header,tablefmt="markdown2")
+    print(tabulate(mylist,header,tablefmt="markdown"))    
+    text=tabulate(mylist,header,tablefmt="orgtbl")
+    text=re.sub('\|\|[\-\+]+\|\|\n', '', text.replace("|", "||"))
     print(text)
 
     html=markdown2.markdown(text,extras=["wiki-tables"])
@@ -58,7 +60,7 @@ if __name__ == '__main__':
            <option value="4">GenomeAnalysisTK.jar</option>
        </select><br />
     """
-    html.replace("<tr", "<tr bgcolor='lightgrey'",1)
+    html=html.replace("<tr", "<tr bgcolor='lightgrey'",1)
     print(html,file=open("F:\work\pyhtmlmarkdown\mywikitable.html",'w'))
 #    session=aaa.getSession()
  #   session.execute("update jobsstat set finishdate='"+time.strftime(ISOTIMEFORMAT, time.localtime()) +"' where id='4'")

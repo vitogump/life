@@ -5,12 +5,8 @@ Created on 2017年10月19日
 '''
 from email.utils import unquote
 import os, time, Service
-import re,markdown2
-from sqlalchemy.orm import session
-from tabulate import tabulate
-import src.web.dba as aaa
-from src.web import entity
-from src.web.dba import addJobs2jobstate
+import re
+
 from flask import request, jsonify, send_from_directory, abort, render_template
 from flask.helpers import url_for
 from werkzeug.datastructures import MultiDict
@@ -84,36 +80,28 @@ def configsoftware():
         tt=t if t>1 else 1
 #         os.system("cd "+scriptsstorediruniq)
         os.system("chmod +x "+scriptsstorediruniq+"/*.sh")
-        os.system("nohup "+aaa.pathtoPython+" ../pipelinecontrol/JobTracker.py -d "+scriptsstorediruniq+" -t "+str(tt)+" -p purposeofthiscommand &")
+        os.system("nohup "+Service.aaa.pathtoPython+" ../pipelinecontrol/JobTracker.py -d "+scriptsstorediruniq+" -t "+str(tt)+" -p purposeofthiscommand &")
+        currentUstr=scriptsstorediruniq.replace(scriptdir,"")
+#         Service.jobminitor(currentUstr)#should store in session
+        return redirect("/jobmoinitor/"+currentUstr)
 #         Service.callsh_updateDB(scriptsstorediruniq,NumOfThread=tt,"purposeofthiscommand")
-        session=aaa.getWebSession()
-        l = session.query(entity.Jobs_recoder).all()
-        header=["*scriptname*","*foldername*","*starttime*","*finishtime*"," *state*","*outputinfo*"]
-        mylist=[]
-        
-        for i in l:
-            print("sssssssssssssssss",i.outputinfo)
-            mylist.append([("<br>"+i.scriptname),i.foldername[10:],("&nbsp;"+str(i.startdate)+"&nbsp;"),("&nbsp;"+str(i.finishdate)+"&nbsp;"),("&nbsp;"+str(i.state)),("""<input type="button" value="outputinfo" onclick="location.href='http://www.baidu.com'">""")])
-#             mylist.append([i.scriptname,i.foldername[10:],("&nbsp;"+str(i.startdate)+"&nbsp;"),("&nbsp;"+str(i.finishdate)+"&nbsp;"),("&nbsp;"+str(i.state)),("""<input type="button" value="outputinfo" onclick="location.href='http://www.baidu.com'">""")])
-        print(mylist)
-        print(header)
-        print("======orgtbl=====================")
-        print(tabulate(mylist,header,tablefmt="orgtbl"))    
-        text=tabulate(mylist,header,tablefmt="markdown2")
-        print(text)
-    
-        html=markdown2.markdown(text,extras=["wiki-tables"])
-        html.replace("<tr", "<tr bgcolor='lightgrey'",1)
-        print(html)
-        t="""
-        <html>
+
+#         return form.tag1part1.data+form.tag1part2.data+form.tag2part1.data+form.tag2part2.data+scriptdir+form.datadepth.data+form.projectpath.data+"<br />"+form.outputpath.data+form.outputperfix.data+"<br />"+"<br />".join(form.filteredforders.data)
+    else:
+        print("didn't validate")
+        return render_template('commandtemplate.html',form=form)
+@web.route('/jobmoinitor/<ustr>', methods=['GET', 'POST'])
+def jobmoinitor(ustr):
+    html=Service.jobminitor(ustr)
+    t="""
+    <html>
     <head>
         <title>任务监控</title>
     </head>
     <body>
                <form name="myform" method="post" action="">
            <tr><td>筛选<select name="software" onchange="change(this.value)">
-               <option value="1">本次提交</option>
+               <option value="1">我最近提交的一批任务</option>
                <option value="2">按日期筛选</option>
                <option value="3">安运行情况筛选</option>
                <option value="4">根据数据筛选</option>
@@ -122,15 +110,9 @@ def configsoftware():
     <br /><br />
     %s
         </body>
-</html>
-        """
-        return t%html
-#         return form.tag1part1.data+form.tag1part2.data+form.tag2part1.data+form.tag2part2.data+scriptdir+form.datadepth.data+form.projectpath.data+"<br />"+form.outputpath.data+form.outputperfix.data+"<br />"+"<br />".join(form.filteredforders.data)
-    else:
-        print("didn't validate")
-        return render_template('commandtemplate.html',form=form)
-
-
+    </html>
+    """
+    return t%html
 # normally student data is read in from a file uploaded, but for this demo we use dummy data
 student_info=[("123","Bob Jones"),("234","Peter Johnson"),("345","Carly Everett"),
               ("456","Josephine Edgewood"),("567","Pat White"),("678","Jesse Black")]

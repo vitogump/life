@@ -4,11 +4,45 @@ Created on 2014-11-17
 @author: liurui
 '''
 import time,datetime
-import re,string,os,random
+import re,string,os,random,markdown2
 import src.web.dba as mydba
 from src.pipelinecontrol.Util import OperatorWithData_webservice, upTodownTravelDir
+from sqlalchemy.orm import session
+from tabulate import tabulate
+import src.web.dba as aaa
+from src.web import entity
+from src.web.dba import addJobs2jobstate
 
+SLEEP_FOR_NEXT_TRY=5
+def jobminitor(currentUstr):
+#     
+    session=aaa.getWebSession()
+    l=[]
+    while not l:
+        if not currentUstr:
+            time.sleep(SLEEP_FOR_NEXT_TRY)
+            l = session.query(entity.Jobs_recoder).all()
+            break
+        l = session.query(entity.Jobs_recoder).Query("SELECT * FROM jobs_recoder WHERE foldername REGEXP  '"+currentUstr+"$'")
+    header=["*scriptname*","*foldername*","*starttime*","*finishtime*"," *state*","*outputinfo*"]
+    mylist=[]
+    
+    for i in l:
+        print("sssssssssssssssss",i.outputinfo)
+#             mylist.append([("<br>"+i.scriptname),i.foldername[12:],("&nbsp;"+str(i.startdate)+"&nbsp;"),("&nbsp;"+str(i.finishdate)+"&nbsp;"),("&nbsp;"+str(i.state)),("""<input type="button" value="outputinfo" onclick="location.href='http://www.baidu.com'">""")])
+        mylist.append([i.scriptname,i.foldername[12:],("&nbsp;"+str(i.startdate)+"&nbsp;"),("&nbsp;"+str(i.finishdate)+"&nbsp;"),("&nbsp;"+str(i.state)),("""<input type="button" value="outputinfo" onclick="location.href='http://www.baidu.com'">""")])
+    print(mylist)
+    print(header)
+    print("======orgtbl=====================")
+    text=tabulate(mylist,header,tablefmt="orgtbl")
+    text=re.sub('\|\|[\-\+]+\|\|\n', '', text.replace("|", "||"))
+    print(text)
 
+    html=markdown2.markdown(text,extras=["wiki-tables"])
+    html=html.replace("<tr", "<tr bgcolor='lightgrey'",1)
+
+    
+    return html
 def random_uniqScriptDir(scriptspath,randomlength=8):
     a = list(string.ascii_letters)
     random.shuffle(a)

@@ -24,7 +24,7 @@ UPLOAD_BASE = "../../com"
 @route('/monitorjobs/:urlpath#.+#')
 def server_static(urlpath):
     session=aaa.getWebSession()
-    l = session.query(entity.Jobstate).all()
+    l = session.query(entity.Jobs_recoder).all()
     header=["*scriptname*","*foldername*","*starttime*","*finishtime*"," *state*","*outputinfo*"]
     mylist=[]
     
