@@ -27,13 +27,13 @@ def jobminitor(currentUstr):
             break
         l=session.query(entity.Jobs_recoder).filter(entity.Jobs_recoder.foldername.like("%"+currentUstr+"%")).all()
         
-    header=["*scriptname*","*logicalpurpose*","*foldername*","*starttime*","*finishtime*"," *state*","*outputinfo*"]
+    header=["*scriptname*","*scriptfolder*","*outputdata*","*starttime*","*finishtime*"," *state*","*outputinfo*"]
     mylist=[]
     
     for i in l:
         print("sssssssssssssssss",i.outputinfo)
 #             mylist.append([("<br>"+i.scriptname),i.foldername[12:],("&nbsp;"+str(i.startdate)+"&nbsp;"),("&nbsp;"+str(i.finishdate)+"&nbsp;"),("&nbsp;"+str(i.state)),("""<input type="button" value="outputinfo" onclick="location.href='http://www.baidu.com'">""")])
-        mylist.append([i.scriptname,i.foldername[12:],("&nbsp;"+str(i.logicalpurpose)+"&nbsp;"),("&nbsp;"+str(i.startdate)+"&nbsp;"),("&nbsp;"+str(i.finishdate)+"&nbsp;"),("&nbsp;"+str(i.state)),("""<input type="button" value="outputinfo" onclick="location.href='http://www.baidu.com'">""")])
+        mylist.append([i.scriptname,i.foldername[12:],("&nbsp;"+str(i.outputdata)+"&nbsp;"),("&nbsp;"+str(i.startdate)+"&nbsp;"),("&nbsp;"+str(i.finishdate)+"&nbsp;"),("&nbsp;"+str(i.state)),("""<input type="button" value="outputinfo" onclick="location.href='http://www.baidu.com'">""")])
     print(mylist)
     print(header)
     print("======orgtbl=====================")
