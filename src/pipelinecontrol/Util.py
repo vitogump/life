@@ -17,13 +17,13 @@ import src.web.dba as dba
 ISOTIMEFORMAT = '%Y-%m-%d %X'
 def upTodownTravelDir(rootDir, OperatorWithData, datadepth=9999, Interceptor_depth=0,curdepth=0,collection_depth=0,interceptdirs=[],rootDirnotchange="",Interceptor_depth_notchange=0):
     """
-        
+       first time if  Interceptor_depth is 0, interceptdirs should be [].
     """
     
     if Interceptor_depth==0 or collection_depth==0:
         if Interceptor_depth==0:
             if interceptdirs!=[] and re.search(r"" + rootDirnotchange + "(/.*?){" + str(Interceptor_depth_notchange-1) + "}[/]([^/]+)", rootDir)==None:
-                print(rootDir,"is not the path a")
+                print(rootDir,interceptdirs,"is not the path a")
                 return
             elif interceptdirs!=[] and  re.search(r"" + rootDirnotchange + "(/.*?){" + str(Interceptor_depth_notchange-1) + "}[/]([^/]+)", rootDir).group(2) not in interceptdirs:
                 print(rootDir,interceptdirs,"is not the path b")
@@ -111,8 +111,9 @@ class OperatorWithData_webservice(OperatorWithData):
             tagname="/"+re.search(r".*/([^/]+)"+tagname+"$", curpath).group(1)+tagname
         tagname=re.sub(r"/","_",tagname[1:])
         updirname = re.search(r".*/([^/]+)$", curpath).group(1)
-
+        print(newcmdline)
         newcmdline,no_of_tags=re.subn(r"\${tag}",tagname,newcmdline)
+
 
         pathToOutputdata_createdir = ""
 

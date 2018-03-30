@@ -18,19 +18,22 @@ def jobminitor(currentUstr):
 #     
     session=aaa.getWebSession()
     l=[]
+    whileStart=time.clock()
     while not l:
-        if not currentUstr:
+        whileEnd=time.clock ()
+        if not currentUstr or int(whileEnd-whileStart)>=18:
             time.sleep(SLEEP_FOR_NEXT_TRY)
             l = session.query(entity.Jobs_recoder).all()
             break
-        l = session.query(entity.Jobs_recoder).Query("SELECT * FROM jobs_recoder WHERE foldername REGEXP  '"+currentUstr+"$'")
-    header=["*scriptname*","*foldername*","*starttime*","*finishtime*"," *state*","*outputinfo*"]
+        l=session.query(entity.Jobs_recoder).filter(entity.Jobs_recoder.foldername.like("%"+currentUstr+"%")).all()
+        
+    header=["*scriptname*","*logicalpurpose*","*foldername*","*starttime*","*finishtime*"," *state*","*outputinfo*"]
     mylist=[]
     
     for i in l:
         print("sssssssssssssssss",i.outputinfo)
 #             mylist.append([("<br>"+i.scriptname),i.foldername[12:],("&nbsp;"+str(i.startdate)+"&nbsp;"),("&nbsp;"+str(i.finishdate)+"&nbsp;"),("&nbsp;"+str(i.state)),("""<input type="button" value="outputinfo" onclick="location.href='http://www.baidu.com'">""")])
-        mylist.append([i.scriptname,i.foldername[12:],("&nbsp;"+str(i.startdate)+"&nbsp;"),("&nbsp;"+str(i.finishdate)+"&nbsp;"),("&nbsp;"+str(i.state)),("""<input type="button" value="outputinfo" onclick="location.href='http://www.baidu.com'">""")])
+        mylist.append([i.scriptname,i.foldername[12:],("&nbsp;"+str(i.logicalpurpose)+"&nbsp;"),("&nbsp;"+str(i.startdate)+"&nbsp;"),("&nbsp;"+str(i.finishdate)+"&nbsp;"),("&nbsp;"+str(i.state)),("""<input type="button" value="outputinfo" onclick="location.href='http://www.baidu.com'">""")])
     print(mylist)
     print(header)
     print("======orgtbl=====================")
@@ -54,8 +57,9 @@ def random_uniqScriptDir(scriptspath,randomlength=8):
                 ranUniscriptspath=(scriptspath.rstrip("/")+"/"+''.join(a[:randomlength]))
                 break
     return ranUniscriptspath
-def scriptproduce(datadepth,collectiondepth,scriptspath,inputdatapath,softwareconfig,parametersStr,inputList,outputList,lenOfdirtotag=1,taglist=[],selecteddepth=0,selecteddirs=[]):#selecteddepth=0 means check collectiondepth only
-    inputstr=(" "+" ".join(taglist)+" ")
+def scriptproduce(datadepth,collectiondepth,scriptspath,inputdatapath,softwareconfig,parametersStr,inputList,outputList,lenOfdirtotag=0,taglist=[],selecteddepth=0,selecteddirs=[]):#selecteddepth=0 means check collectiondepth only
+    
+    inputstr=(" "+" ".join(taglist)+" ") if int(lenOfdirtotag)!=0 else ""
     inputstr+=" ".join(inputList)
     
     parametersStr,N=re.subn(r"\$\$\$\$",inputstr,parametersStr)
@@ -69,6 +73,7 @@ def scriptproduce(datadepth,collectiondepth,scriptspath,inputdatapath,softwareco
     os.makedirs(ranUniscriptspath)    
     operatorwithdata=OperatorWithData_webservice(inputdatapath,cmdline,ranUniscriptspath,taglen=lenOfdirtotag)
     operatorwithdata.cmdtemplatefilename=softwareconfig+"Get"+outputList[2]
-
+    if int(selecteddepth)==0:
+        selecteddirs=[]
     upTodownTravelDir(inputdatapath,operatorwithdata,int(datadepth),int(selecteddepth),collection_depth=int(collectiondepth),interceptdirs=selecteddirs,rootDirnotchange=operatorwithdata.inputdatapath,Interceptor_depth_notchange=int(selecteddepth))
     return ranUniscriptspath

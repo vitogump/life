@@ -113,7 +113,7 @@ class ParaForm(FlaskForm):
     outputpath=StringField("输出路径：            \t ",default="/home/liurui/data/bamfiles/webmanage")  #waiting for changing to be addable with fixed field
     outputperfix=StringField("输出选项 及 后缀：",default="-o bam") 
     outputperfix2=StringField("输出选项 及 后缀：")
-    tagtoFolderlevel=StringField("tag目录层级:",default="如无替换为目录名字段，则为空")
+    tagtoFolderlevel=StringField("tag目录层级:",default="1")
     filteredforderlevel=StringField("筛选目录层级:",render_kw={'disabled':'true'},default="1")
     software=SelectField('选择软件/工具',choices=[("bowtie2","bowtie2"),("SortSam","SortSam.jar"),("MarkDuplicates","MarkDuplicates.jar"),("GenomeAnalysisTK","GenomeAnalysisTK.jar"),("linuxcommand","LinuxCommand")])
 #     iomode=SelectField('模式',choices=[("manyTomany","多输入多输出 一对一"),("manyToone","多输入单输出")])

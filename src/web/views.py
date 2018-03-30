@@ -72,7 +72,9 @@ def configsoftware():
             if tagpart1.strip()!="":
                 tagList.append(tagpart1+"${tag}"+tagpart2)
         outputlist=[form.outputpath.data]+re.split(r"\s+",form.outputperfix.data)#,form.outputperfix2.data]
-        scriptsstorediruniq=Service.scriptproduce(form.datadepth.data,form.collectiondepth.data,scriptdir,form.projectpath.data,form.software.data,form.commandParameters.data,inputList,outputlist,lenOfdirtotag=form.filteredforderlevel.data,taglist=tagList,selecteddepth=form.filteredforderlevel.data,selecteddirs=list(form.filteredforders.data))
+        tagtofolder=form.tagtoFolderlevel.data if form.tagtoFolderlevel.data.isdigit() else 0
+        selectfolderlevel=form.filteredforderlevel.data if form.filteredforderlevel.data.isdigit() else "0"
+        scriptsstorediruniq=Service.scriptproduce(form.datadepth.data,form.collectiondepth.data,scriptdir,form.projectpath.data,form.software.data,form.commandParameters.data,inputList,outputlist,lenOfdirtotag=tagtofolder,taglist=tagList,selecteddepth=selectfolderlevel,selecteddirs=list(form.filteredforders.data))
         try:
             t=int(form.NumOfThreads.data)
         except:
@@ -83,7 +85,7 @@ def configsoftware():
         os.system("nohup "+Service.aaa.pathtoPython+" ../pipelinecontrol/JobTracker.py -d "+scriptsstorediruniq+" -t "+str(tt)+" -p purposeofthiscommand &")
         currentUstr=scriptsstorediruniq.replace(scriptdir,"")
 #         Service.jobminitor(currentUstr)#should store in session
-        return redirect("/jobmoinitor/"+currentUstr)
+        return redirect("/jobmoinitor"+currentUstr)
 #         Service.callsh_updateDB(scriptsstorediruniq,NumOfThread=tt,"purposeofthiscommand")
 
 #         return form.tag1part1.data+form.tag1part2.data+form.tag2part1.data+form.tag2part2.data+scriptdir+form.datadepth.data+form.projectpath.data+"<br />"+form.outputpath.data+form.outputperfix.data+"<br />"+"<br />".join(form.filteredforders.data)
@@ -107,7 +109,7 @@ def jobmoinitor(ustr):
                <option value="4">根据数据筛选</option>
            </select></td></tr><br />
                   </form>
-    <br /><br />
+    <br /><p>state:0 任务尚未启动     state:1 任务正在运行        state:2 任务已经完成       state:-1 任务运行失败</p><br />
     %s
         </body>
     </html>
