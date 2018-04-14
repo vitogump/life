@@ -115,7 +115,7 @@ class ParaForm(FlaskForm):
     outputperfix2=StringField("输出选项 及 后缀：")
     tagtoFolderlevel=StringField("tag目录层级:",default="1")
     filteredforderlevel=StringField("筛选目录层级:",render_kw={'disabled':'true'},default="1")
-    software=SelectField('选择软件/工具',choices=[("bowtie2","bowtie2"),("SortSam","SortSam.jar"),("MarkDuplicates","MarkDuplicates.jar"),("GenomeAnalysisTK","GenomeAnalysisTK.jar"),("linuxcommand","LinuxCommand")])
+    software=SelectField('选择软件/工具',choices=[("bowtie2","bowtie2"),("java -Xmx40g -Djava.io.tmpdir=/home/liurui/tmp -jar /home/liurui/software/picard-tools-1.119/SortSam.jar","SortSam.jar"),("java -Xmx40g -Djava.io.tmpdir=/home/liurui/tmp -jar /home/liurui/software/picard-tools-1.119/MarkDuplicates.jar","MarkDuplicates.jar"),("java -Xmx40g -Djava.io.tmpdir=/home/liurui/tmp  -jar /home/liurui/software/GenomeAnalysisTK.jar","GenomeAnalysisTK.jar"),("linuxcommand","LinuxCommand")])
 #     iomode=SelectField('模式',choices=[("manyTomany","多输入多输出 一对一"),("manyToone","多输入单输出")])
     commandParameters = TextAreaField('请输入命令参数（$$$$将被换为输入）：',default=" -p 8 -x /home/liurui/databases/bowtie2idx/duck_1_0_77_genome --rg-id ID --rg-id PL --rg-id PU --rg-id LB --rg-id SM --rg 'PL:illumina' --rg 'PU:indvd' --rg 'LB:ninglab'  $$$$|samtools view -@ 8 -bS - ")
     ######### this solution is just a temp way , should use FieldList in the further, like filteredforders does#######

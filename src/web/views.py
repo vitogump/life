@@ -57,6 +57,7 @@ def configsoftware():
     if form.validate_on_submit():
         print("configsoftware here",request.form)
         print("hidden value",form.tag1part1.data,form.tag2part1.data)
+#         return form.tag1part1.data+form.tag1part2.data+form.tag2part1.data+form.tag2part2.data+form.datadepth.data+form.projectpath.data+"<br />"+form.outputpath.data+form.outputperfix.data+"<br />"+"<br />".join(form.filteredforders.data)
         ppl=re.split(r'[/\\]',form.projectpath.data.strip('/'));scriptdir="/home/liurui/pipeline/";print(ppl)
         for e in ppl:
             orde=0
@@ -93,7 +94,8 @@ def configsoftware():
         print("didn't validate")
         return render_template('commandtemplate.html',form=form)
 @web.route('/jobmoinitor/<ustr>', methods=['GET', 'POST'])
-def jobmoinitor(ustr):
+@web.route('/jobmoinitor', methods=['GET', 'POST'])
+def jobmoinitor(ustr=None):
     html=Service.jobminitor(ustr)
     t="""
     <html>

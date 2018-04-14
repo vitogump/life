@@ -10,6 +10,7 @@ import random
 import re, copy, math,  time, pysam
 import numpy as np
 from NGS.BasicUtil import VCFutil
+from NGS.Analysis.DAFsAnalysis import sum_depth
 
 
 class Caculator():
@@ -248,7 +249,118 @@ class Caculate_phastConsValue(Caculator):
             self.conservationvalue = 0
             self.totalPostionsAwin = 0
             return winvalue
-
+class Caculate_ABB_BAB_BBAA(Caculator):
+    def __init__(self,considerINDEL,p1vcfconfig,p2vcfconfig,p3vcfconfig,Ovcfconfig,outputname,pseudoPoolAN):
+        super().__init__()
+        self.outputname=outputname
+        self.considerINDEL=considerINDEL
+        self.indnameOfEachPop=[[],[],[],[]]
+        self.MethodToSeqpoplist=[]
+        self.listOfpopvcfRecsmapByChr=[]
+        self.vcflistOf4Pop=[[],[],[],[]]
+        i=0
+        for vcfconfigflist in [p1vcfconfig,p2vcfconfig,p3vcfconfig,Ovcfconfig]:# notice the order
+            for vcfconfigf in vcfconfigflist:
+                vcfconfig=open(vcfconfigf,"r")
+                for line in vcfconfig:
+                    self.listOfpopvcfRecsmapByChr.append({})
+                    vcffilename_obj=re.search(r"vcffilename=(.*)", line.strip())
+                    if vcffilename_obj!=None:
+                        vcfname=vcffilename_obj.group(1).strip()
+                        self.vcflistOf4Pop[i].append(vcfname)
+                        self.outputname+=("_"+re.split(r"\.",re.search(r"[^/]*$",vcfname).group(0))[0])[:3]
+                        self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname]=[]
+                        self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname].append(VCFutil.VCF_Data(vcfname))
+                        self.indnameOfEachPop[i]+=list(self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname][0].VcfIndexMap["title"][9:])
+                    elif line.split():
+                        self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname].append(pysam.Samfile(line.strip(),"rb"))
+                vcfconfig.close()
+                if re.search(r'indvd[^/]+',vcfname)!=None:
+                    self.MethodToSeqpoplist[i].append("indvd")
+                elif re.search(r"pool[^/]+",vcfname)!=None:
+                    self.MethodToSeqpoplist[i].append("pool")
+                else:
+                    print("vcfname must with 'pool' or 'indvd'")
+                    exit(-1)
+            i+=1
+        self.pseudoAN=pseudoPoolAN#should biger than self.DPpoolthreshold
+        self.minAN=40;self.minAC=2;self.DPpoolthreshold=20;self.DPindthreshold=10;self.GQthreshold=30
+        print(self.indnameOfEachPop)
+        self.positions=[]#all four population are the same
+        self.pop1seqs=[[] for e in range(len(self.indnameOfEachPop[0]))]; self.pop1numArray=[]; self.pop1array=[]
+        self.pop2seqs=[[] for e in range(len(self.indnameOfEachPop[1]))]; self.pop2numArray=[]; self.pop2array=[]
+        self.pop3seqs=[[] for e in range(len(self.indnameOfEachPop[2]))]; self.pop3numArray=[]; self.pop3array=[]
+        self.pop4seqs=[[] for e in range(len(self.indnameOfEachPop[3]))]; self.pop4numArray=[]; self.pop4array=[]
+        self.all4popseqs=[[] for e in range(len(self.indnameOfEachPop[0]+self.indnameOfEachPop[1]+self.indnameOfEachPop[2]+self.indnameOfEachPop[3]))];self.all4popnumArray=[];self.all4poparray=[]
+    def process(self,T):
+        """T is like (pos,REF,ALT,(INFO,FORMAT,sampleslist),(INFO,FORMAT,sampleslist),(),(),) should have more than four populations
+        """       
+        if self.considerINDEL=="no" and (len(T[1])!=1 or len(T[2])!=1):
+            return
+        site=[]
+        AN=AC=0
+        startvcfidx=3
+        for Pidx in range(4):
+            AFpool=[];ANpool=[]
+            for popidx in range(startvcfidx,startvcfidx+len(self.vcflistOf4Pop[Pidx])):
+                if T[popidx]==None:
+                    if len(self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[self.vcflistOf4Pop[Pidx][popidx-startvcfidx]])==1:
+                        return
+                    else:
+                        sum_depth=0
+                        for samfile in self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[self.vcflistOf4Pop[Pidx][popidx-startvcfidx]][1:]:
+                            ACGTdep=samfile.count_coverage(self.currentchrID,T[0]-1,T[0])
+                            for dep in ACGTdep:
+                                sum_depth+=dep[0]
+                        if (self.MethodToSeqpoplist[Pidx][popidx-startvcfidx]=="pool" and sum_depth>self.DPpoolthreshold):
+                            AFpool.append(0)
+                            ANpool.append(self.pseudoAN)
+                        elif (sum_depth>self.DPindthreshold*len(self.indnameOfEachPop[Pidx][popidx-startvcfidx])*1.2 and self.MethodToSeqpoplist[Pidx][popidx-startvcfidx]=="indvd"):
+                            site+=[T[1].upper()*2 for x in range(len(self.indnameOfEachPop[Pidx][popidx-startvcfidx]))]
+                            AN+=(len(self.indnameOfEachPop[Pidx][popidx-startvcfidx])*2)
+                        else:
+                            return
+                else:
+                    AFpool.append(int(float(re.search(r"AF=([\d\.e-]+);", T[popidx][0]).group(1))))
+                    ANpool.append(int(re.search(r"AN=(\d+)[;,]", T[popidx][0]).group(1)))
+                    if self.MethodToSeqpoplist[Pidx][popidx-startvcfidx]=="indvd":
+                        AC += int(re.search(r"AC=(\d+)[;,]", T[popidx][0]).group(1))
+                        GT_idx = (re.split(":", T[popidx][1])).index("GT")
+                        GQ_idx=(re.split(":", T[popidx][1])).index("GQ")
+                        DP_idx=(re.split(":", T[popidx][1])).index("DP")
+                        for ind in T[popidx][2]:
+                            if (len(re.split(":",ind))==1 or "./." in ind) or int(re.split(":", ind)[GQ_idx])<self.GQthreshold or int(re.split(":", ind)[DP_idx])<self.DPindthreshold:# ./.
+                                site.append("NN")
+                                continue
+                            GT01 = re.split("/", re.split(":", ind)[GT_idx])
+                            GT_TGT=T[int(GT01[0])+1]+T[int(GT01[1])+1]
+    #                         AC +=1
+                            AN +=2
+                            site.append(GT_TGT.upper())
+                    elif self.MethodToSeqpoplist[Pidx][popidx-startvcfidx]=="pool":
+                        print("it seems no need")
+                        
+            if "pool" in self.MethodToSeqpoplist[Pidx]:#
+                for afidx in range(len(AFpool)):
+                    if ANpool[afidx]<self.DPpoolthreshold:
+                        AFpool.pop(afidx)
+                AC=pseudoAC=round(np.mean(AFpool)*self.pseudoAN)
+                sitestr=T[2]*(pseudoAC)+T[1]*(self.pseudoAN-pseudoAC)
+                AN=len(sitestr)
+                site=["".join(sitestr[s:s+2]) for s in range(0,len(sitestr),2)]
+            if AN>=self.minAN and AC>self.minAC and AC<=(len(locals()["self.pop"+str(Pidx)+"seqs"])*2-self.minAC):
+                for x in range(locals()["self.pop"+str(Pidx)+"seqs"]):
+                    locals()["self.pop"+str(Pidx)+"seqs"][x].append(site[x])#self.pop1seqs or self.pop2seqs ....
+                self.positions.append(T[0])
+            startvcfidx+=len(self.vcflistOf4Pop[Pidx])
+    def getResult(self):
+        pseudoPhasedSeqs=[]
+        Nsites=len(self.positions)
+        if Nsites<20:
+            return 0,np.NaN
+        for x in range()
+         
+         
 class Caculate_Dstatistics(Caculator):
     def __init__(self, considerFixed=False):
         super().__init__()
