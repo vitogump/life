@@ -1,6 +1,9 @@
 eclipse.preferences.version=1
 encoding//src/NGS/Analysis/CaculateFst.py=UTF-8
 encoding//src/NGS/Analysis/CaculateSNPratePerBin.py=UTF-8
+encoding//src/NGS/Analysis/DAFsAnalysis.py=UTF-8
+encoding//src/NGS/Analysis/IntervalValueToBoxplot.py=UTF-8
+encoding//src/NGS/Analysis/JudgebyDepthperBin.py=UTF-8
 encoding//src/NGS/Analysis/ReoderSNPrecANDcount.py=UTF-8
 encoding//src/NGS/Analysis/caculateLDUsePlinkForScaffold.py=UTF-8
 encoding//src/NGS/Analysis/usedadiPy2_7/GenerateSNPfilefromvcftable.py=UTF-8
