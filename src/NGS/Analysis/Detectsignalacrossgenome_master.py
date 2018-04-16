@@ -18,8 +18,10 @@ mindeptojudgefix=20
 parser = OptionParser()
 # parser.add_option("-c", "--chromtable", dest="chromtable",# action="callback",type="string",callback=useoptionvalue_previous2,
 #                   help="write report to FILE")
-parser.add_option("-T","--targetpopvcffile_withdepth",dest="targetpopvcffile_withdepth",action="append",help="vcftablename filerecord_allname_in_depthfiletitle_belongtothisvcfpop")
-parser.add_option("-R","--refpopvcffile_withdepth",dest="refpopvcffile_withdepth",action="append",help="vcftablename filerecord_allname_in_depthfiletitle_belongtothisvcfpop")
+parser.add_option("-T","--targetpopvcffile_withdepth",dest="targetpopvcffile_withdepth",action="append",help="regard as P1")
+parser.add_option("-U", "--P2popvcfconfig", dest="P2popvcfconfig", action="append", help="treat as P2")
+parser.add_option("-V", "--P3popvcfconfig", dest="P3popvcfconfig", action="append", help="treat as P3")
+parser.add_option("-R","--refpopvcffile_withdepth",dest="refpopvcffile_withdepth",action="append",help="regard as O")
 parser.add_option("-t","--topleveltablejudgeancestral",dest="topleveltablejudgeancestral",help="assigned only if -p early")
 parser.add_option("-w","--winwidth",dest="winwidth",help="default infile1_infile2")#
 parser.add_option("-s","--slideSize",dest="slideSize",help="default infile2_infile1")#
@@ -75,6 +77,11 @@ def runSlave_slidewin(a):
         command+=(" -t "+topleveltablename +" -C "+correlationfile)
     elif ( a[1]=="is" or a[1]=="pairfst" or a[1]=="pbs" or a[1]=="dxy" or a[1]=="hp") and len(a)==8:
         pass
+    elif a[1]=="D" and len(a)==10:
+        for vcfconfig in a[8]:
+            command+=(" -U "+vcfconfig)
+        for vcfconfig in a[9]:
+            command+=(" -V "+vcfconfig)
     else:
         print("error: check parameters ")
         exit(-1)
@@ -211,6 +218,8 @@ if __name__ == '__main__':
             parameterstuples_list.append(())
         elif options.typeOfcalculate=="lsbl":
             pass
+        elif options.typeOfcalculate=="D":
+            parameterstuples_list.append((chromlistfile,options.typeOfcalculate,options.targetpopvcffile_withdepth,options.refpopvcffile_withdepth,options.winwidth,options.slideSize,options.outfileprewithpath,masterpid,options.P2popvcfconfig,options.P3popvcfconfig))
         elif options.typeOfcalculate.lower()=="hp":
             parameterstuples_list.append((chromlistfile,options.typeOfcalculate,options.targetpopvcffile_withdepth,[],options.winwidth,options.slideSize,options.outfileprewithpath,masterpid))
         print(len(parameterstuples_list[-1]),parameterstuples_list[-1])

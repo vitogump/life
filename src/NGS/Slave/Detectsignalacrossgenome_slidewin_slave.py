@@ -14,8 +14,10 @@ parser = OptionParser()
 parser.add_option("-c", "--chromlistfilename", dest="chromlistfilename", help="early,pairfst,pbs,lsbl,is")
 parser.add_option("-p", "--typeOfcalculate", dest="typeOfcalculate")
 parser.add_option("-t", "--topleveltablejudgeancestral", dest="topleveltablejudgeancestral", help="assigned only if -p early")
-parser.add_option("-T", "--targetpopvcfconfig", dest="targetpopvcfconfig", action="append", help="firstline is vcffilename=,the rest lines can be none or bamfilename per line")
-parser.add_option("-R", "--refpopvcffileconfig", dest="refpopvcffileconfig", action="append", help="firstline is vcffilename=,the rest lines can be none or bamfilename per line")
+parser.add_option("-T", "--targetpopvcfconfig", dest="targetpopvcfconfig", action="append", help="treat as P1")
+parser.add_option("-U", "--P2popvcfconfig", dest="P2popvcfconfig", action="append", help="treat as P2")
+parser.add_option("-V", "--P3popvcfconfig", dest="P3popvcfconfig", action="append", help="treat as P3")
+parser.add_option("-R", "--refpopvcffileconfig", dest="refpopvcffileconfig", action="append", help="treat as O")
 parser.add_option("-w", "--winwidth", dest="winwidth", help="default infile1_infile2")  #
 parser.add_option("-s", "--slideSize", dest="slideSize", help="default infile2_infile1")  #
 parser.add_option("-C", "--correlationfile", dest="correlationfile", default=None, help="conflit with numberofindvdoftargetpop_todividintobin")
@@ -77,7 +79,11 @@ if __name__ == '__main__':
                 final_freq_xaxisKEY_yaxisVALUERelation[(a, b)] = yaxisfreq
         obsexpcaculator.freq_xaxisKEY_yaxisVALUERelation = final_freq_xaxisKEY_yaxisVALUERelation
         freq_correlation_config.close()
-        
+    elif options.typeOfcalculate=="D":
+        obsexpcaculator=Caculators.Caculate_ABB_BAB_BBAA("no",options.targetpopvcfconfig,options.P2popvcfconfig,options.P3popvcfconfig,options.refpopvcffileconfig,"D",30)    
+        outputname=options.outfileprewithpath
+        outfile=open(outputname+"."+options.typeOfcalculate + str(windowWidth) + "_" + str(slideSize) + str(os.getpid()) + chrlistfilewithoutpath,"w")
+        print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnp\twinvalue\tzvalue", file=outfile)
     elif options.typeOfcalculate == "pairfst" or options.typeOfcalculate == "dxy":
 #         obsexpcaculator = Caculators.Caculate_pairFst(mindeptojudgefix, options.targetpopvcfconfig, options.refpopvcffileconfig)
         obsexpcaculator = Caculators.Caculate_popDiv("no",options.targetpopvcfconfig, options.refpopvcffileconfig,options.outfileprewithpath)
@@ -87,7 +93,7 @@ if __name__ == '__main__':
         outputname = obsexpcaculator.outputname
         outfile = open(outputname + "." + options.typeOfcalculate + str(windowWidth) + "_" + str(slideSize) + str(os.getpid()) + chrlistfilewithoutpath, 'w')
         print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnp\twinvalue\tzvalue", file=outfile)
-
+    
     elif options.typeOfcalculate == "is":
         obsexpcaculator = Caculators.Caculate_IS(mindeptojudgefix / 2, options.targetpopvcfconfig, options.refpopvcffileconfig)
         plainname = re.search(r"[^/]*$", options.outfileprewithpath).group(0)
@@ -104,6 +110,7 @@ if __name__ == '__main__':
         outputname = options.outfileprewithpath
         outfile = open(outputname + "." + options.typeOfcalculate + str(windowWidth) + "_" + str(slideSize) + str(os.getpid()) + chrlistfilewithoutpath, 'w')
         print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnp\twinvalue\tzvalue", file=outfile)
+    
     if options.bedlikefile != None:
         obsexpcaculator.minsnps = 7
     elif options.chromlistfilename != None:
@@ -177,7 +184,7 @@ if __name__ == '__main__':
             currentchrLen = currentchrLenOrRegion
         if (currentchrID, currentchrLenOrRegion) in obsexpsignalmapbychrom:
             for i in range(len(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)])):
-                if options.typeOfcalculate == "early":
+                if options.typeOfcalculate == "early" or options.typeOfcalculate=="D":
                     if obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][3] == "NA":
                         print(currentchrID + "\t" + str(i) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][0]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][1]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][2]) + "\t" + "NA" + "\t" + "NA", file=outfile)
                     else:
