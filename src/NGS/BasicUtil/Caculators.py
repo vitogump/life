@@ -259,7 +259,7 @@ def binFreqs(numArr):
     if n == 0: return np.array([np.NaN]*4)
     else: return 1.* np.bincount(numArr, minlength=4) / n
 class Caculate_ABB_BAB_BBAA(Caculator):
-    def __init__(self,considerINDEL,p1vcfconfig,p2vcfconfig,p3vcfconfig,Ovcfconfig,outputname,pseudoPoolAN):
+    def __init__(self,considerINDEL,p1vcfconfig,p2vcfconfig,p3vcfconfig,Ovcfconfig,outputname,cpid,pseudoPoolAN):
         super().__init__()
         self.outputname=outputname
         self.considerINDEL=considerINDEL
@@ -300,7 +300,8 @@ class Caculate_ABB_BAB_BBAA(Caculator):
         
         self.minAN=20;self.minAC=1;self.DPpoolthreshold=20;self.DPindthreshold=10;self.GQthreshold=30
         print(self.indnameOfEachPop)
-        self.tempfile=open("mallard_spotbilled_domestic_fanya.snp",'w')
+        self.tempfile=open("mallard_spotbilled_domestic_fanya"+str(cpid)+".snp",'w')
+        print("chrNo\tREF\tALT\tP1derFreq\tP2derFreq\tP3derFreq\tP4derFreq\tBBAA\tABBA\tBABA",file=self.tempfile)
         self.positions=[]#all four population are the same
         self.popseqs=[[],[],[],[]];self.popnumArray=[[],[],[],[]];self.poparray=[[],[],[],[]]
         self.popseqs[0]=[[] for e in range(len(self.indnameOfEachPop[0]))]; self.popnumArray[0]=[]; self.poparray[0]=[]#P1
@@ -320,9 +321,7 @@ class Caculate_ABB_BAB_BBAA(Caculator):
             site=[]
             AN=AC=0#N will not count into AN,so the AN will be used as a threshold,like DPpool 
             AFpool=[];DPpool=[]#event indvd vcf compain with DPpool,because sometimes the indvd will be regard as pool when there is pool in the same group
-            print(Pidx)
             for popidx in range(startvcfidx,startvcfidx+len(self.vcflistOf4Pop[Pidx])):
-                print(self.vcfnamelist[popidx-3])
                 if T[popidx]==None:
                     if len(self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[self.vcflistOf4Pop[Pidx][popidx-startvcfidx]])==1:
                         print("no sam is avalible,treat as fixed")
@@ -338,7 +337,7 @@ class Caculate_ABB_BAB_BBAA(Caculator):
                             DPpool.append(self.DPpoolthreshold);AFpool.append(0)
                         elif (sum_depth>self.DPindthreshold*len(self.indnameOfEachPop[Pidx][popidx-startvcfidx])*1.2 and self.MethodToSeqpoplist[Pidx][popidx-startvcfidx]=="indvd"):
                             DPpool.append(self.DPpoolthreshold);AFpool.append(0)
-                            print("produce site 1",site,"\n",self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[self.vcfnamelist[popidx-3]][0].VcfIndexMap["title"][9:])
+#                             print("produce site 1",site,"\n",self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[self.vcfnamelist[popidx-3]][0].VcfIndexMap["title"][9:])
                             site+=[T[1].upper()*2 for x in range(len(self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[self.vcfnamelist[popidx-3]][0].VcfIndexMap["title"][9:]))]
                             AN+=(len(self.indnameOfEachPop[Pidx][popidx-startvcfidx])*2)
                         else:
@@ -360,7 +359,6 @@ class Caculate_ABB_BAB_BBAA(Caculator):
                             GT_TGT=T[int(GT01[0])+1]+T[int(GT01[1])+1]
     #                         AC +=1
                             AN +=2
-                            print("produce site 2")
                             site.append(GT_TGT.upper())
 #                         print("in dvd",self.vcflistOf4Pop[Pidx][popidx-startvcfidx],"should equal",self.vcfnamelist[popidx-3],site)
                     elif self.MethodToSeqpoplist[Pidx][popidx-startvcfidx]=="pool":
@@ -372,26 +370,30 @@ class Caculate_ABB_BAB_BBAA(Caculator):
                     if DPpool[afidx]<self.DPpoolthreshold:
                         AFpool.pop(afidx)
                 if len(AFpool)<len(self.vcflistOf4Pop[Pidx])/2:
+#                     print("return")
                     return
                 AC=pseudoAC=round(np.mean(AFpool)*self.pseudoAN)
                 pseudoAC=int(pseudoAC)
                 sitestr=T[2]*(pseudoAC)+T[1]*(self.pseudoAN-pseudoAC)
-                print("produce site 3",sitestr)
                 AN=len(sitestr)
                 site=["".join(sitestr[s:s+2]) for s in range(0,len(sitestr),2)]
             if AN<self.minAN:#site==[] only when AN==0
+#                 print("return")
                 return
             siteP4+=site
             startvcfidx+=len(self.vcflistOf4Pop[Pidx])
-            print(site,len(self.popseqs[Pidx]),Pidx)
+#             print(site,len(self.popseqs[Pidx]),Pidx)
 #             if Pidx==3 or AN>=self.minAN and AC>self.minAC and AC<=(len(self.popseqs[Pidx])*2-self.minAC):
-        if len(siteP4)==len(self.all4popseqs):
+        bases=set("".join(siteP4))
+        if "N" in bases: bases.remove("N")
+        if len(siteP4)==len(self.all4popseqs) and len(bases)==2:
             for Pidx in range(4):
                 for x in range(len(self.popseqs[Pidx])):
-                    print(all4popidx,len(self.all4popseqs),x,self.indnameOfEachPop[Pidx][x],end="|")
+#                     print(all4popidx,len(self.all4popseqs),x,self.indnameOfEachPop[Pidx][x],end="|")
                     self.popseqs[Pidx][x].append(siteP4[all4popidx])#self.pop1seqs or self.pop2seqs ....
                     self.all4popseqs[all4popidx].append(siteP4[all4popidx])
                     all4popidx+=1
+#                 print()
             self.positions.append(T[0])
     def getResult(self):
         Nsites=len(self.positions)
@@ -401,16 +403,16 @@ class Caculate_ABB_BAB_BBAA(Caculator):
         #initialize array from self.xxxseqs for popall ,pop1, pop2, pop3, pop4
         pseudoPhasedSeqs=[]
         for x in range(len(self.all4popseqs)):
-            print("self.all4popseqs[]",x,self.all4popseqs[x])
+#             print("self.all4popseqs[]",x,self.all4popseqs[x])
             pseudoPhasedSeqs+=pseudoPhase(self.all4popseqs[x],"pairs")
-        print(pseudoPhasedSeqs)
+#         print(pseudoPhasedSeqs)
         if pseudoPhasedSeqs is not None:
             self.all4poparray=np.array([list(seq) for seq in pseudoPhasedSeqs])
             self.all4popnumArray=np.array([[numSeqDict[b] for b in seq] for seq in pseudoPhasedSeqs])
         else:
             self.all4poparray=np.empty((0,len(self.all4popseqs)))
             self.all4popnumArray=np.empty((0,len(self.all4popseqs)))
-        print(self.all4popnumArray)
+#         print(self.all4popnumArray)
         nanMask_all4pop = ~np.isnan(self.all4popnumArray)
         nanMasklist=[[],[],[],[]]
         for Pidx in range(4):
@@ -432,6 +434,8 @@ class Caculate_ABB_BAB_BBAA(Caculator):
             P1Freqs,P2Freqs,P3Freqs,P4Freqs = [siteFreqs(refertonumArray,refertonanMask,i)[0] for refertonumArray,refertonanMask in ((self.popnumArray[0],nanMasklist[0]), (self.popnumArray[1],nanMasklist[1]), (self.popnumArray[2],nanMasklist[2]), (self.popnumArray[3],nanMasklist[3]))]    
             if np.any(np.isnan(P1Freqs)) or np.any(np.isnan(P2Freqs)) or np.any(np.isnan(P3Freqs)) or np.any(np.isnan(P4Freqs)): continue
             #if the outgroup is fixed, then that is the ancestral state - otherwise the ancestral state is the most common allele overall
+#             print(P1Freqs,P2Freqs,P3Freqs,P4Freqs,allFreqs,file=self.tempfile)
+#             print(allFreqs,np.where(allFreqs > 0))
             if np.max(P4Freqs) == 1.:
                 anc = np.where(P4Freqs == 1)[0][0]#ancetral allele is which is fixed (get the index)
                 der = [i for i in np.where(allFreqs > 0)[0] if i != anc][0]  # derived is the index that is > 0 but not anc
@@ -442,7 +446,7 @@ class Caculate_ABB_BAB_BBAA(Caculator):
             P3derFreq = P3Freqs[der]
             P4derFreq = P4Freqs[der]
             PDderFreq = max(P2derFreq,P3derFreq)
-            BBBA=P1derFreq*P2derFreq*(1 - P3derFreq)*(1 - P4derFreq)
+            BBAA=P1derFreq*P2derFreq*(1 - P3derFreq)*(1 - P4derFreq)
             ABBA=(1 - P1derFreq) * P2derFreq * P3derFreq * (1 - P4derFreq)
             BABA=P1derFreq * (1 - P2derFreq) * P3derFreq * (1 - P4derFreq)
             BBAAsum+=BBBA
@@ -450,13 +454,15 @@ class Caculate_ABB_BAB_BBAA(Caculator):
             BABAsum += BABA
             maxABBAsum += (1 - P1derFreq) * PDderFreq * PDderFreq * (1 - P4derFreq)
             maxBABAsum += P1derFreq * (1 - PDderFreq) * PDderFreq * (1 - P4derFreq)
-            try:D=(ABBAsum - BABAsum) / (ABBAsum + BABAsum)
+            try:
+                D=(ABBAsum - BABAsum) / (ABBAsum + BABAsum)
+                print(self.currentchrID,self.positions[i],SeqnumDict[anc],SeqnumDict[der],P1derFreq,P2derFreq,P3derFreq,P4derFreq,BBAA,ABBA,BABA,sep="\t",file=self.tempfile)
             except:D=np.NaN
             try: 
                 if D>=0 :fd=(ABBAsum - BABAsum) / (maxABBAsum - maxBABAsum)
                 else: fd=np.NaN
             except: fd=np.NaN
-            print(self.currentchrID,self.positions[i],SeqnumDict[anc],SeqnumDict[der],P1derFreq,P2derFreq,P3derFreq,P4derFreq,BBBA,ABBA,BABA,sep="\t",file=self.tempfile)
+            
         for Pidx in range(4):
             self.popseqs[Pidx]=[[] for e in range(len(self.indnameOfEachPop[Pidx]))]
             self.popnumArray[Pidx]=[]
@@ -464,7 +470,6 @@ class Caculate_ABB_BAB_BBAA(Caculator):
         self.all4popseqs=[[] for e in range(len(self.indnameOfEachPop[0]+self.indnameOfEachPop[1]+self.indnameOfEachPop[2]+self.indnameOfEachPop[3]))];self.all4popnumArray=[];self.all4poparray=[]
         self.positions=[]
         print(Nsites,[D,fd])
-        exit(-1)
         return Nsites,[D,fd]
          
          
