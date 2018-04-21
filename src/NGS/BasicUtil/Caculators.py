@@ -301,7 +301,7 @@ class Caculate_ABB_BAB_BBAA(Caculator):
         self.minAN=20;self.minAC=1;self.DPpoolthreshold=20;self.DPindthreshold=10;self.GQthreshold=30
         print(self.indnameOfEachPop)
         self.tempfile=open("mallard_spotbilled_domestic_fanya"+str(cpid)+".snp",'w')
-        print("chrNo\tREF\tALT\tP1derFreq\tP2derFreq\tP3derFreq\tP4derFreq\tBBAA\tABBA\tBABA",file=self.tempfile)
+        print("chrNo\tANC\tDER\tP1derFreq\tP2derFreq\tP3derFreq\tP4derFreq\tBBAA\tABBA\tBABA",file=self.tempfile)
         self.positions=[]#all four population are the same
         self.popseqs=[[],[],[],[]];self.popnumArray=[[],[],[],[]];self.poparray=[[],[],[],[]]
         self.popseqs[0]=[[] for e in range(len(self.indnameOfEachPop[0]))]; self.popnumArray[0]=[]; self.poparray[0]=[]#P1
@@ -397,7 +397,7 @@ class Caculate_ABB_BAB_BBAA(Caculator):
             self.positions.append(T[0])
     def getResult(self):
         Nsites=len(self.positions)
-        if Nsites<10:
+        if Nsites<8:
             print(Nsites)
             return 0,[np.NaN,np.NaN] #ABBAsum,BABAsum,BBAAsum,D,fd
         #initialize array from self.xxxseqs for popall ,pop1, pop2, pop3, pop4
