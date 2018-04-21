@@ -67,6 +67,7 @@ if __name__ == '__main__':
     D_weigonSNPfile=open(options.output+"P123Oweigon.joinSNP","w")
     binfile=open(options.output+".FreqStratifiedBBAA","w")
     #travel
+    BBAAcount=BABAcount=ABBAcount=0
     for SnpFile in options.snpfilelist:
         snpfile=open(SnpFile,'r');snpfile.readline();currentchrID=""
         vcflistByChrom={};listOfpopvcfRecsmapByAChr=[]
@@ -76,18 +77,18 @@ if __name__ == '__main__':
             pos = int(linelist[1].strip())
             anc = linelist[2].strip()
             der = linelist[3].strip()
-            p1 = linelist[4].strip()#mallard population
-            p2 = linelist[5].strip()#spot-billed population
+            p1 = float(linelist[4].strip())#mallard population
+            p2 = float(linelist[5].strip())#spot-billed population
             for a,b in sorted(delta_DerAf.keys()):
-                if p1-p2>a and p1-p2<=b:
+                if (p1-p2)>a and (p1-p2)<=b:
                     if p1>0 or p2>0:
                         delta_DerAf[(a,b)]["BinP1orP2"].append(linelist)
                     if linelist[-3]> linelist[-2] and linelist[-3]>linelist[-1]:
-                        delta_DerAf[(a,b)]["BBAA"].append(linelist)
+                        delta_DerAf[(a,b)]["BBAA"].append(linelist);BBAAcount+=1
                     elif linelist[-2]>linelist[-3] and linelist[-2]>linelist[-1]:
-                        delta_DerAf[(a,b)]["ABBA"].append(linelist)
+                        delta_DerAf[(a,b)]["ABBA"].append(linelist);ABBAcount+=1
                     elif linelist[-1]>linelist[-3] and linelist[-1]>linelist[-2]:
-                        delta_DerAf[(a,b)]["BABA"].append(linelist)
+                        delta_DerAf[(a,b)]["BABA"].append(linelist);BABAcount+=1
                 break
             if chrom!=currentchrID and currentchrID in vcflistByChrom:
                 listOfpopvcfRecsmapByAChr.append(vcflistByChrom,{currentchrID:arcpopvcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname][0].getVcfListByChrom(currentchrID)})
@@ -112,6 +113,7 @@ if __name__ == '__main__':
                 vcflistByChrom={currentchrID:[]}
             else:
                 vcflistByChrom[currentchrID].append((pos,anc,der,linelist[4:]))
+    print("BBAAcount,ABBAcount,BABAcount",BBAAcount,ABBAcount,BABAcount)
     print("bins\tbine",end="\t",file=binfile)
     for k in sorted(delta_DerAf[(a,b)]):
         print(k,end="\t",file=binfile)
