@@ -91,8 +91,8 @@ if __name__ == '__main__':
                         delta_DerAf[(a,b)]["BABA"].append(linelist);BABAcount+=1
                 break
             if chrom!=currentchrID and currentchrID in vcflistByChrom:
-                listOfpopvcfRecsmapByAChr.append(vcflistByChrom,{currentchrID:arcpopvcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname][0].getVcfListByChrom(currentchrID)})
-                target_ref_SNPs = Util.alinmultPopSnpPos(listOfpopvcfRecsmapByAChr, "o")
+                listOfpopvcfRecsmapByAChr=[vcflistByChrom,{currentchrID:arcpopvcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname][0].getVcfListByChrom(currentchrID)}]
+                target_ref_SNPs = Util.alinmultPopSnpPos(listOfpopvcfRecsmapByAChr, "l")
                 for cc in target_ref_SNPs.keys():
                     for T in target_ref_SNPs[cc]:
                         if T[3]==None:
@@ -108,10 +108,12 @@ if __name__ == '__main__':
                                     AF=0
                                 else:
                                     AF="unknow"
-                        print(cc,*T[:],AF,file=D_weigonSNPfile)
+                        print(cc,*T[:3],*(T[3][0]),AF,sep="\t",file=D_weigonSNPfile)
                 currentchrID=chrom
                 vcflistByChrom={currentchrID:[]}
             else:
+                if currentchrID=="":#first line
+                    currentchrID=chrom;vcflistByChrom={currentchrID:[]}
                 vcflistByChrom[currentchrID].append((pos,anc,der,linelist[4:]))
     print("BBAAcount,ABBAcount,BABAcount",BBAAcount,ABBAcount,BABAcount)
     print("bins\tbine",end="\t",file=binfile)
