@@ -66,6 +66,7 @@ if __name__ == '__main__':
     cf.close()
     D_weigonSNPfile=open(options.output+"P123Oweigon.joinSNP","w")
     binfile=open(options.output+".FreqStratifiedBBAA","w")
+    print("chrNo\tANC\tDER\tP1derFreq\tP2derFreq\tP3derFreq\tP4derFreq\tBBBA\tABBA\tBABA\twigeonAF",file=D_weigonSNPfile)
     #travel
     BBAAcount=BABAcount=ABBAcount=0
     for SnpFile in options.snpfilelist:
@@ -79,17 +80,24 @@ if __name__ == '__main__':
             der = linelist[3].strip()
             p1 = float(linelist[4].strip())#mallard population
             p2 = float(linelist[5].strip())#spot-billed population
+            print("snpline",linelist,(p1-p2))
             for a,b in sorted(delta_DerAf.keys()):
+                print("\t",(p1-p2),">",a,":",(p1-p2)>a,(p1-p2),"<",b,":",(p1-p2)<=b)
                 if (p1-p2)>a and (p1-p2)<=b:
+                    print("\t","passed bin threshold",p1,p2,linelist[-3],linelist[-2],linelist[-1])
                     if p1>0 or p2>0:
                         delta_DerAf[(a,b)]["BinP1orP2"].append(linelist)
-                    if linelist[-3]> linelist[-2] and linelist[-3]>linelist[-1]:
+                        print("\t","BinP1orP2",p1,p2)
+                    if float(linelist[-3])> float(linelist[-2]) and float(linelist[-3])>float(linelist[-1]):
+                        print("\t","BBAA",linelist[-3])
                         delta_DerAf[(a,b)]["BBAA"].append(linelist);BBAAcount+=1
-                    elif linelist[-2]>linelist[-3] and linelist[-2]>linelist[-1]:
+                    elif float(linelist[-2])>float(linelist[-3]) and float(linelist[-2])>float(linelist[-1]):
                         delta_DerAf[(a,b)]["ABBA"].append(linelist);ABBAcount+=1
-                    elif linelist[-1]>linelist[-3] and linelist[-1]>linelist[-2]:
+                        print("\t","ABBA",linelist[-2])
+                    elif float(linelist[-1])>float(linelist[-3]) and float(linelist[-1])>float(linelist[-2]):
                         delta_DerAf[(a,b)]["BABA"].append(linelist);BABAcount+=1
-                break
+                        print("\t","BABA",linelist[-1])
+                    break
             if chrom!=currentchrID and currentchrID in vcflistByChrom:
                 listOfpopvcfRecsmapByAChr=[vcflistByChrom,{currentchrID:arcpopvcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname][0].getVcfListByChrom(currentchrID)}]
                 target_ref_SNPs = Util.alinmultPopSnpPos(listOfpopvcfRecsmapByAChr, "l")
