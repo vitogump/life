@@ -66,7 +66,7 @@ if __name__ == '__main__':
     cf.close()
     D_weigonSNPfile=open(options.output+"P123Oweigon.joinSNP","w")
     binfile=open(options.output+".FreqStratifiedBBAA","w")
-    print("chrNo\tANC\tDER\tP1derFreq\tP2derFreq\tP3derFreq\tP4derFreq\tBBBA\tABBA\tBABA\twigeonAF",file=D_weigonSNPfile)
+    print("chrNo\tpos\tANC\tDER\tP1derFreq\tP2derFreq\tP3derFreq\tP4derFreq\tBBBA\tABBA\tBABA\twigeonAF",file=D_weigonSNPfile)
     #travel
     BBAAcount=BABAcount=ABBAcount=0
     for SnpFile in options.snpfilelist:
@@ -80,7 +80,7 @@ if __name__ == '__main__':
             der = linelist[3].strip()
             p1 = float(linelist[4].strip())#mallard population
             p2 = float(linelist[5].strip())#spot-billed population
-            print("snpline",linelist,(p1-p2))
+            print("snpline",linelist,"delta",(p1-p2))
             for a,b in sorted(delta_DerAf.keys()):
                 print("\t",(p1-p2),">",a,":",(p1-p2)>a,(p1-p2),"<",b,":",(p1-p2)<=b)
                 if (p1-p2)>a and (p1-p2)<=b:

@@ -298,9 +298,9 @@ class Caculate_ABB_BAB_BBAA(Caculator):
                 self.indnameOfEachPop[i]=["P"+str(i+1)+"_pseudoindvd"+str(j) for j in range(1,int(self.pseudoAN/2)+1)]
             i+=1
         
-        self.minAN=20;self.minAC=1;self.DPpoolthreshold=20;self.DPindthreshold=10;self.GQthreshold=30
+        self.minAN=10;self.minAC=1;self.DPpoolthreshold=20;self.DPindthreshold=10;self.GQthreshold=30
         print(self.indnameOfEachPop)
-        self.tempfile=open("mallard_spotbilled_domestic_fanya"+str(cpid)+".snp",'w')
+        self.tempfile=open(self.outputname+"mallard_spotbilled_domestic_fanya"+str(cpid)+".snp",'w')
         print("chrNo\tANC\tDER\tP1derFreq\tP2derFreq\tP3derFreq\tP4derFreq\tBBAA\tABBA\tBABA",file=self.tempfile)
         self.positions=[]#all four population are the same
         self.popseqs=[[],[],[],[]];self.popnumArray=[[],[],[],[]];self.poparray=[[],[],[],[]]
@@ -369,7 +369,7 @@ class Caculate_ABB_BAB_BBAA(Caculator):
                 for afidx in reversed(range(len(AFpool))):
                     if DPpool[afidx]<self.DPpoolthreshold:
                         AFpool.pop(afidx)
-                if len(AFpool)<len(self.vcflistOf4Pop[Pidx])/2:
+                if len(AFpool)<len(self.vcflistOf4Pop[Pidx])/4:
 #                     print("return")
                     return
                 AC=pseudoAC=round(np.mean(AFpool)*self.pseudoAN)
@@ -397,7 +397,7 @@ class Caculate_ABB_BAB_BBAA(Caculator):
             self.positions.append(T[0])
     def getResult(self):
         Nsites=len(self.positions)
-        if Nsites<8:
+        if Nsites==0:
             print(Nsites)
             return 0,[np.NaN,np.NaN] #ABBAsum,BABAsum,BBAAsum,D,fd
         #initialize array from self.xxxseqs for popall ,pop1, pop2, pop3, pop4
@@ -432,7 +432,10 @@ class Caculate_ABB_BAB_BBAA(Caculator):
         for i in range(Nsites):
             allFreqs=siteFreqs(self.all4popnumArray, nanMask_all4pop, i)[0]
             P1Freqs,P2Freqs,P3Freqs,P4Freqs = [siteFreqs(refertonumArray,refertonanMask,i)[0] for refertonumArray,refertonanMask in ((self.popnumArray[0],nanMasklist[0]), (self.popnumArray[1],nanMasklist[1]), (self.popnumArray[2],nanMasklist[2]), (self.popnumArray[3],nanMasklist[3]))]    
-            if np.any(np.isnan(P1Freqs)) or np.any(np.isnan(P2Freqs)) or np.any(np.isnan(P3Freqs)) or np.any(np.isnan(P4Freqs)): continue
+            if np.any(np.isnan(P1Freqs)) or np.any(np.isnan(P2Freqs)) or np.any(np.isnan(P3Freqs)) or np.any(np.isnan(P4Freqs)): 
+                print(self.currentchrID,self.positions[i],"N","N",P1Freqs[np.argsort(allFreqs)[-1]],P2Freqs[np.argsort(allFreqs)[-1]],P2Freqs[np.argsort(allFreqs)[-1]],P4Freqs[np.argsort(allFreqs)[-1]],0,0,0,sep="\t",file=self.tempfile)
+                continue
+                
             #if the outgroup is fixed, then that is the ancestral state - otherwise the ancestral state is the most common allele overall
 #             print(P1Freqs,P2Freqs,P3Freqs,P4Freqs,allFreqs,file=self.tempfile)
 #             print(allFreqs,np.where(allFreqs > 0))
@@ -449,7 +452,7 @@ class Caculate_ABB_BAB_BBAA(Caculator):
             BBAA=P1derFreq*P2derFreq*(1 - P3derFreq)*(1 - P4derFreq)
             ABBA=(1 - P1derFreq) * P2derFreq * P3derFreq * (1 - P4derFreq)
             BABA=P1derFreq * (1 - P2derFreq) * P3derFreq * (1 - P4derFreq)
-            BBAAsum+=BBBA
+            BBAAsum+=BBAA
             ABBAsum += ABBA
             BABAsum += BABA
             maxABBAsum += (1 - P1derFreq) * PDderFreq * PDderFreq * (1 - P4derFreq)
@@ -469,7 +472,9 @@ class Caculate_ABB_BAB_BBAA(Caculator):
             self.poparray[Pidx]=[]
         self.all4popseqs=[[] for e in range(len(self.indnameOfEachPop[0]+self.indnameOfEachPop[1]+self.indnameOfEachPop[2]+self.indnameOfEachPop[3]))];self.all4popnumArray=[];self.all4poparray=[]
         self.positions=[]
-        print(Nsites,[D,fd])
+        if Nsites<8:
+            print(Nsites)
+            return 0,[np.NaN,np.NaN] #ABBAsum,BABAsum,BBAAsum,D,fd
         return Nsites,[D,fd]
          
          
