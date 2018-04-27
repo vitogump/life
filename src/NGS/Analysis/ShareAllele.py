@@ -102,10 +102,11 @@ if __name__ == '__main__':
                     break
             if chrom!=currentchrID and currentchrID in vcflistByChrom:
                 listOfpopvcfRecsmapByAChr=[vcflistByChrom,{currentchrID:arcpopvcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname][0].getVcfListByChrom(currentchrID)}]
-                target_ref_SNPs = Util.alinmultPopSnpPos(listOfpopvcfRecsmapByAChr, "o") 
+                target_ref_SNPs = Util.alinmultPopSnpPos(listOfpopvcfRecsmapByAChr, "l") 
                 for cc in target_ref_SNPs.keys():
                     for T in target_ref_SNPs[cc]:
                         if T[3]==None:
+                            print("exit only in wigeon")
                             continue
                         for poprec in T[4:5]:
                             if poprec==None:
@@ -120,9 +121,12 @@ if __name__ == '__main__':
                                     AF="unknow"
                             else:
                                 AF=float(re.search(r"AF=([\d\.e-]+)[;,]", T[4][0]).group(1))
-                        print(cc,*T[:3],*(T[3][0]),AF,sep="\t",file=D_weigonSNPfile)
+                        if "," in T[2] and re.split(r",",T[2])[1][0] == re.split(r",",T[2])[0] and re.split(r",",T[2])[1][1] == T[1]:
+                            print(cc,*T[:3],*(T[3][0]),(1-AF),sep="\t",file=D_weigonSNPfile)
+                        elif "," not in T[2] :
+                            print(cc,*T[:3],*(T[3][0]),AF,sep="\t",file=D_weigonSNPfile)
                 currentchrID=chrom
-                vcflistByChrom={currentchrID:[]}
+                vcflistByChrom={currentchrID:[(pos,anc,der,linelist[4:])]}
             else:
                 if currentchrID=="":#first line
                     currentchrID=chrom;vcflistByChrom={currentchrID:[]}

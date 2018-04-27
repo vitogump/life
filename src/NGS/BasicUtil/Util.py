@@ -69,8 +69,8 @@ def alinmultPopSnpPos(vcfMaplist,jointmode="i"):
                             high=mid-1
                         else:
                             #this is a tempera way, it would make a mislead in allele freq,as some pop's freq refer to alt1,other pop's freq refer to alt2,it cant tell, one can use alinmultPopSnpPos_diffrefalt() func as a alternate strategy
-                            if AltInPop1 == multipleVcfMap[currentChrom][mid][2]:#differ alt alle
-                                multipleVcfMap[currentChrom][mid][2]=(multipleVcfMap[currentChrom][mid][2]+","+AltInPop1)
+                            if AltInPop1 != multipleVcfMap[currentChrom][mid][2]:#differ alt alle
+                                multipleVcfMap[currentChrom][mid][2]=(multipleVcfMap[currentChrom][mid][2]+","+RefInPop1+AltInPop1)
                                 
                             fillNoneNum=vcfMap_obj_idx-(len(multipleVcfMap[currentChrom][mid])-3)
                             for i in range(fillNoneNum):
