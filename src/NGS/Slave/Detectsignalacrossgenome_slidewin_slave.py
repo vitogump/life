@@ -80,7 +80,7 @@ if __name__ == '__main__':
         obsexpcaculator.freq_xaxisKEY_yaxisVALUERelation = final_freq_xaxisKEY_yaxisVALUERelation
         freq_correlation_config.close()
     elif options.typeOfcalculate=="D":
-        obsexpcaculator=Caculators.Caculate_ABB_BAB_BBAA("no",options.targetpopvcfconfig,options.P2popvcfconfig,options.P3popvcfconfig,options.refpopvcffileconfig,"D",os.getpid(),30)    
+        obsexpcaculator=Caculators.Caculate_ABB_BAB_BBAA("no",options.targetpopvcfconfig,options.P2popvcfconfig,options.P3popvcfconfig,options.refpopvcffileconfig,options.outfileprewithpath,os.getpid(),30)    
         outputname=options.outfileprewithpath
         outfile=open(outputname+"."+options.typeOfcalculate + str(windowWidth) + "_" + str(slideSize) + str(os.getpid()) + chrlistfilewithoutpath,"w")
         print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnp\twinvalue\tzvalue", file=outfile)

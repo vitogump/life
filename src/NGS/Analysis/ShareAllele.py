@@ -24,9 +24,9 @@ dincrease = (maxvalue - minvalue) / breaks
 delta_DerAf={}
 while minvalue<=maxvalue - dincrease :
     print(minvalue,minvalue + dincrease)
-    delta_DerAf[(minvalue,minvalue + dincrease)]={"BinP1orP2":[],"BBAA":[],"BABA":[],"ABBA":[]}
+    delta_DerAf[(minvalue,minvalue + dincrease)]={"BinP1andP2":[],"BinP1orP2":[],"BBAA":[],"BABA":[],"ABBA":[]}
     minvalue += dincrease
-delta_DerAf.pop(minvalue-dincrease,minvalue);delta_DerAf[(minvalue-dincrease,maxvalue)]={"BinP1orP2":[],"BBAA":[],"BABA":[],"ABBA":[]}
+delta_DerAf.pop(minvalue-dincrease,minvalue);delta_DerAf[(minvalue-dincrease,maxvalue)]={"BinP1andP2":[],"BinP1orP2":[],"BBAA":[],"BABA":[],"ABBA":[]}
 print(delta_DerAf)
 WIGEONDEPThreshold=30
 if __name__ == '__main__':
@@ -80,27 +80,29 @@ if __name__ == '__main__':
             der = linelist[3].strip()
             p1 = float(linelist[4].strip())#mallard population
             p2 = float(linelist[5].strip())#spot-billed population
-            print("snpline",linelist,"delta",(p1-p2))
+#             print("snpline",linelist,"delta",(p1-p2))
             for a,b in sorted(delta_DerAf.keys()):
-                print("\t",(p1-p2),">",a,":",(p1-p2)>a,(p1-p2),"<",b,":",(p1-p2)<=b)
+#                 print("\t",(p1-p2),">",a,":",(p1-p2)>a,(p1-p2),"<",b,":",(p1-p2)<=b)
                 if (p1-p2)>a and (p1-p2)<=b:
-                    print("\t","passed bin threshold",p1,p2,linelist[-3],linelist[-2],linelist[-1])
+#                     print("\t","passed bin threshold",p1,p2,linelist[-3],linelist[-2],linelist[-1])
+                    if p1>0 and p2>0:
+                        delta_DerAf[(a,b)]["BinP1andP2"].append(linelist)
                     if p1>0 or p2>0:
                         delta_DerAf[(a,b)]["BinP1orP2"].append(linelist)
-                        print("\t","BinP1orP2",p1,p2)
+#                         print("\t","BinP1orP2",p1,p2)
                     if float(linelist[-3])> float(linelist[-2]) and float(linelist[-3])>float(linelist[-1]):
-                        print("\t","BBAA",linelist[-3])
+#                         print("\t","BBAA",linelist[-3])
                         delta_DerAf[(a,b)]["BBAA"].append(linelist);BBAAcount+=1
                     elif float(linelist[-2])>float(linelist[-3]) and float(linelist[-2])>float(linelist[-1]):
                         delta_DerAf[(a,b)]["ABBA"].append(linelist);ABBAcount+=1
-                        print("\t","ABBA",linelist[-2])
+#                         print("\t","ABBA",linelist[-2])
                     elif float(linelist[-1])>float(linelist[-3]) and float(linelist[-1])>float(linelist[-2]):
                         delta_DerAf[(a,b)]["BABA"].append(linelist);BABAcount+=1
-                        print("\t","BABA",linelist[-1])
+#                         print("\t","BABA",linelist[-1])
                     break
             if chrom!=currentchrID and currentchrID in vcflistByChrom:
                 listOfpopvcfRecsmapByAChr=[vcflistByChrom,{currentchrID:arcpopvcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname][0].getVcfListByChrom(currentchrID)}]
-                target_ref_SNPs = Util.alinmultPopSnpPos(listOfpopvcfRecsmapByAChr, "l")
+                target_ref_SNPs = Util.alinmultPopSnpPos(listOfpopvcfRecsmapByAChr, "o") 
                 for cc in target_ref_SNPs.keys():
                     for T in target_ref_SNPs[cc]:
                         if T[3]==None:
@@ -116,6 +118,8 @@ if __name__ == '__main__':
                                     AF=0
                                 else:
                                     AF="unknow"
+                            else:
+                                AF=float(re.search(r"AF=([\d\.e-]+)[;,]", T[4][0]).group(1))
                         print(cc,*T[:3],*(T[3][0]),AF,sep="\t",file=D_weigonSNPfile)
                 currentchrID=chrom
                 vcflistByChrom={currentchrID:[]}

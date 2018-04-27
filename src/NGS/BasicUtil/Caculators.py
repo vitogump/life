@@ -92,7 +92,7 @@ class Caculate_popDiv(Caculator):
             
         self.minAN=40;self.minAC=2
         self.GQthreshold=30
-        self.DPindthreshold=10
+        self.DPindthreshold=6
         print(self.indnamesOfEachPop)
         self.N=len(self.indnamesOfEachPop[0])+len(self.indnamesOfEachPop[1])
         self.popIndices=[[],[]]
@@ -298,7 +298,7 @@ class Caculate_ABB_BAB_BBAA(Caculator):
                 self.indnameOfEachPop[i]=["P"+str(i+1)+"_pseudoindvd"+str(j) for j in range(1,int(self.pseudoAN/2)+1)]
             i+=1
         
-        self.minAN=10;self.minAC=1;self.DPpoolthreshold=20;self.DPindthreshold=10;self.GQthreshold=30
+        self.minAN=12;self.minAC=1;self.DPpoolthreshold=20;self.DPindthreshold=6;self.GQthreshold=30
         print(self.indnameOfEachPop)
         self.tempfile=open(self.outputname+"mallard_spotbilled_domestic_fanya"+str(cpid)+".snp",'w')
         print("chrNo\tANC\tDER\tP1derFreq\tP2derFreq\tP3derFreq\tP4derFreq\tBBAA\tABBA\tBABA",file=self.tempfile)
@@ -343,10 +343,9 @@ class Caculate_ABB_BAB_BBAA(Caculator):
                         else:
                             continue#AN will be zero,this time site is 0,no AFpool no DPpool,
                 else:
-                    AFpool.append(int(float(re.search(r"AF=([\d\.e-]+);", T[popidx][0]).group(1))))
-                    
                     if self.MethodToSeqpoplist[Pidx][popidx-startvcfidx]=="indvd":
-                        DPpool.append(int(re.search(r"AN=(\d+)[;,]", T[popidx][0]).group(1)))
+                        AFpool.append(int(float(re.search(r"AF=([\d\.e-]+);", T[popidx][0]).group(1))))
+                        DPpool.append(int(re.search(r"AN=(\d+)[;,]", T[popidx][0]).group(1)))#just take a position
                         AC += int(re.search(r"AC=(\d+)[;,]", T[popidx][0]).group(1))
                         GT_idx = (re.split(":", T[popidx][1])).index("GT")
                         GQ_idx=(re.split(":", T[popidx][1])).index("GQ")
@@ -362,8 +361,18 @@ class Caculate_ABB_BAB_BBAA(Caculator):
                             site.append(GT_TGT.upper())
 #                         print("in dvd",self.vcflistOf4Pop[Pidx][popidx-startvcfidx],"should equal",self.vcfnamelist[popidx-3],site)
                     elif self.MethodToSeqpoplist[Pidx][popidx-startvcfidx]=="pool":
-                        DPpool.append(self.DPpoolthreshold)
-                        pass
+                        AD_idx = (re.split(":", T[popidx][1])).index("AD")
+                        refdep = 0;altalleledep = 0
+                        for indsample in T[popidx][2]:
+                            if len(re.split(":",indsample))==1:#./.
+                                continue
+                            AD_depth=re.split(",", re.split(":", indsample)[AD_idx])
+                            refdep += int(AD_depth[0])
+                            altalleledep += int(AD_depth[1])
+                        DP=altalleledep+refdep
+                        DPpool.append(DP)
+                        AF=altalleledep/DP
+                        AFpool.append(AF)
                         
             if "pool" in self.MethodToSeqpoplist[Pidx]:#
                 for afidx in reversed(range(len(AFpool))):
