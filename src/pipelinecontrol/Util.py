@@ -159,14 +159,13 @@ class OperatorWithData_webservice(OperatorWithData):
                         if re.search(r".*?" + targetdatasuffix[i]+"$", datafilename) != None:
                             targetdata_count+=1
                             scriptinputdata+=(rootStr + "/"+datafilename+";")
-                            option_suffix_obj = re.search(r"([-\w\d]*[=\s]*)\${(\s*" + targetdatasuffix[i] + "\s*)}", newcmdline)  # for example "INPUT=${.bam} -i ${.sam}"
+                            option_suffix_obj = re.search(r"([-\w\d]*[=\s]*)\${(\s*" + targetdatasuffix[i] + "\s*)}", newcmdline)  # for example "INPUT=${.bam} -i ${.sam}"  may be this patter should be change as the 4th,6th line behind dose 
                             print("option_suffix_obj",option_suffix_obj.group(0),"make new cmdline:",newcmdline)
                             optionstr = option_suffix_obj.group(1)
                             suffixstr = option_suffix_obj.group(2)
-                            newcmdline=re.sub(r"[-\w\d]*[=\s]*\${\s*" + targetdatasuffix[i] + "\s*}", optionstr  + rootStr + "/" + datafilename.strip() + " " + option_suffix_obj.group(0), newcmdline)                
-
-        newcmdline = re.sub(r"[-\w\d]*[=\s]*\${.*?}", " ", newcmdline)
+                            newcmdline=re.sub(r"(-{1,2}[\w\d]*\s+|[\w\d]+=\s*|\s+)\${\s*" + targetdatasuffix[i] + "\s*}", optionstr  + rootStr + "/" + datafilename.strip() + " " + option_suffix_obj.group(0), newcmdline)                
         print(newcmdline)
+        newcmdline = re.sub(r"(-{1,2}[\w\d]*\s+|[\w\d]+=\s*|\s+)\${.*?}", " ", newcmdline)
                     # sub was acted from the first to the rear most
         print("pathToOutputdata_createdir", pathToOutputdata_createdir)
         print("targetdatasuffix",targetdatasuffix)

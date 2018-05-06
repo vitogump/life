@@ -72,7 +72,7 @@ def scriptproduce(datadepth,collectiondepth,scriptspath,inputdatapath,softwareco
     ranUniscriptspath=random_uniqScriptDir(scriptspath)
     os.makedirs(ranUniscriptspath)    
     operatorwithdata=OperatorWithData_webservice(inputdatapath,cmdline,ranUniscriptspath,taglen=lenOfdirtotag)
-    operatorwithdata.cmdtemplatefilename=softwareconfig+"Get"+outputList[2]
+    operatorwithdata.cmdtemplatefilename=re.split(r'\s+',softwareconfig.strip())[0]+"Get"+outputList[2]
     if int(selecteddepth)==0:
         selecteddirs=[]
     upTodownTravelDir(inputdatapath,operatorwithdata,int(datadepth),int(selecteddepth),collection_depth=int(collectiondepth),interceptdirs=selecteddirs,rootDirnotchange=operatorwithdata.inputdatapath,Interceptor_depth_notchange=int(selecteddepth))
