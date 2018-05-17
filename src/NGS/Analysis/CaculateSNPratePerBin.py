@@ -80,7 +80,7 @@ if __name__ == '__main__':
                 currentchrID=row[0]
                 currentchrLen=int(row[1])
                 if currentchrID in pop.VcfIndexMap:
-                    vcflist_A_chrom = pop.getVcfListByChrom(currentchrID)
+                    vcflist_A_chrom = pop.getVcfListByChrom(currentchrID,MQfilter=None)
                     win.slidWindowOverlap(vcflist_A_chrom, currentchrLen, windowWidth, slideSize, snpcounter)
                     snpbinmap.SNPsPerBINMap[currentchrID]=copy.deepcopy(win.winValueL)
                 else:

@@ -189,6 +189,8 @@ class Caculate_SNPsPerBIN(Caculator):
         self.COUNTED = 0
         self.MethodToSeq = MethodToSeq
     def process(self, T, seqerrorrate=0.01):
+        self.COUNTED += 1
+        return
         if self.considerINDEL == "no" and (len(T[1]) != 1 or len(T[2]) != 1):
             return
         if self.considerINDEL == "just" and (len(T[1]) == 1 and len(T[2]) == 1):

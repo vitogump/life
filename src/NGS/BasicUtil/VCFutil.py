@@ -148,10 +148,15 @@ class VCF_Data():
         genofile.close()
         snpfile.close()
     @staticmethod
-    def Vcf2Ped(vcfFileName, outputfileprefix, software, VcfIndexMap=None, withheader=False):
+    def Vcf2Ped_WapperForpoolthreads(a):
+        positionlist,pedmap=VCF_Data.Vcf2Ped(**a)
+        return positionlist,pedmap
+    @staticmethod
+    def Vcf2Ped(vcfFileName, software,VcfIndexMap=None, withheader=False, chrom=None,affectedlist=[],unaffectedlist=[],chromchangemap={},geno=1,maf=0,excludesits=[]):
+        #when chromchangemap is not empty, then change if chrom in to the value corresponding  the k in chromchangemap
         vcffile = open(vcfFileName, "r")
-        mapfile = open(outputfileprefix + ".map", "w")
-        pedfile = open(outputfileprefix + ".ped", "w")
+#         mapfile = open(outputfileprefix + ".map", "w")
+#         pedfile = open(outputfileprefix + ".ped", "w")
         positionlist = []
         pedmap = {}
         if withheader:
@@ -171,14 +176,29 @@ class VCF_Data():
                 pedmap[outName] = []
 
         currentChromSome = None
-        
+        excludesitsForAchr=[]
+        if chrom!=None:
+            vcffile.seek(VcfIndexMap[chrom][0])
+            excludesitsForAchr=excludesits
         for line in vcffile:
             linelist = re.split(r"\s+", line)
+            if linelist[0].strip()!=chrom:
+                break
             if linelist[3].strip().upper() == 'N' :#or len(linelist[3].strip()) > 1 or len(linelist[4].strip()) > 1:  # when ref is N ,or INDEL ,or multiple allels 
                 print("exclude those sites which ref is not N ,INDEL ,or multiple alleles")
-                continue     
-            positionlist.append((linelist[0].replace("scaffold", ""), linelist[0] + "_" + linelist[1], 0, linelist[1]))
+                continue
+            AF=float(re.search(r"AF=([\d\.]+)[;,]", linelist[7]).group(1))
+            AN = float(re.search(r"AN=([\d]+);", linelist[7]).group(1))
+            if (total_individ*2-AN)/(total_individ*2)>geno or AF<maf or int(linelist[1].strip()) in excludesitsForAchr:
+#                 print(line,total_individ*2-AN)
+                continue
+            if linelist[0] in chromchangemap:
+                positionlist.append((chromchangemap[linelist[0]],chromchangemap[linelist[0]]+"_"+linelist[1],0,linelist[1]))
+            else:
+                positionlist.append((re.sub(r"[\D\W]+","",linelist[0]),re.sub(r"\..*$","",linelist[0])+"_"+linelist[1],0,linelist[1]))
+#             positionlist.append((linelist[0].replace("scaffold", ""), linelist[0] + "_" + linelist[1], 0, linelist[1]))
             if software.upper() == "GATK":
+
                 GT_idx = (re.split(":", linelist[8])).index("GT")  # gatk GT:AD:DP:GQ:PL
                 PL_idx = (re.split(":", linelist[8])).index("PL")
                 for i in range(total_individ):
@@ -211,16 +231,18 @@ class VCF_Data():
                         pedmap[title[9 + i]] += [alle1, alle2]
                     else:
                         pedmap[title[9 + i]] += ['0', '0']
-                    
-        for elem in positionlist:
-            print(elem[0], elem[1], elem[2], elem[3], sep='\t', file=mapfile)
-        i = 1
-        for name in sorted(pedmap.keys()):
-            print(i, name, "0", "0", "1", "1", "\t".join(pedmap[name]), sep='\t', file=pedfile)
-            i += 1       
-        mapfile.close()
-        pedfile.close()   
-        vcffile.close()
+#         pickle.dump(pedmap,open(chrom+".pedmap", 'wb'))
+#         pickle.dump(positionlist,open(chrom+".positionlist", 'wb'))
+        return positionlist,pedmap
+#         for elem in positionlist:
+#             print(elem[0], elem[1], elem[2], elem[3], sep='\t', file=mapfile)
+#         i = 1
+#         for name in sorted(pedmap.keys()):
+#             print(i, name, "0", "0", "1", "1", "\t".join(pedmap[name]), sep='\t', file=pedfile)
+#             i += 1       
+#         mapfile.close()
+#         pedfile.close()   
+#         vcffile.close()
     def getVcfListByChrom(self, chrom,startpos=1,endpos=9999999999999999999999999999999999999999999999999999, dilute=1, dilutetodensity="noofsnpperkb", posUniq=True, considerINDELandmultpleallele=False,MQfilter=28):
         """
             although dilute and dilutetodensity can exist at the same time,but it not make sense and may final produce a bug.
@@ -246,7 +268,7 @@ class VCF_Data():
         line=vcfFile.readline()
         
         while line:
-#         for line in vcfFile:
+#         find the startpos
 
             linelist = re.split(r'\s+', line.strip())
             samples = linelist[9:len(linelist)]
@@ -262,7 +284,7 @@ class VCF_Data():
             filepos=vcfFile.tell()
             line=vcfFile.readline()
 
-            
+        #from startpos to collected recs    
         vcfFile.seek(filepos)
         linescontent=vcfFile.read(self.VcfIndexMap[chrom][1]-filepos)
         vcflineslist=re.split(r"\n",linescontent.strip())
