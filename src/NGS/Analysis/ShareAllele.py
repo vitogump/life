@@ -25,10 +25,12 @@ dincrease = (maxvalue - minvalue) / breaks
 delta_DerAftotal={}
 while minvalue<=maxvalue - dincrease :
     print(minvalue,minvalue + dincrease)
-    delta_DerAftotal[(minvalue,minvalue + dincrease)]={"BinP1andP2":0,"BinP1orP2":0,"BBAA":0,"BABA":0,"ABBA":0}
+    delta_DerAftotal[(minvalue,minvalue + dincrease)]={"BinP1andP2":0,"BinP1orP2":0,"BBAA":0,"BABA":0,"ABBA":0,"meanvalue":0}
 #     delta_DerAf[(minvalue,minvalue + dincrease)]={"BinP1andP2":[],"BinP1orP2":[],"BBAA":[],"BABA":[],"ABBA":[]}
     minvalue += dincrease
-delta_DerAftotal.pop(minvalue-dincrease,minvalue);delta_DerAftotal[(minvalue-dincrease,maxvalue)]={"BinP1andP2":0,"BinP1orP2":0,"BBAA":0,"BABA":0,"ABBA":0}
+delta_DerAftotal.pop(minvalue-dincrease,minvalue);delta_DerAftotal[(minvalue-dincrease,maxvalue)]={"BinP1andP2":0,"BinP1orP2":0,"BBAA":0,"BABA":0,"ABBA":0,"meanvalue":0}
+delta_DerAftotalP1P3=copy.deepcopy(delta_DerAftotal)
+delta_DerAftotalP2P3=copy.deepcopy(delta_DerAftotal)
 # print(delta_DerAf)
 WIGEONDEPThreshold=30
 if options.filelistfile==None:
@@ -44,13 +46,14 @@ def countJoinFile(FileNamrPre):
     dincrease= (maxvalue - minvalue) / breaks
     while minvalue<=maxvalue - dincrease :
         print(minvalue,minvalue + dincrease)
-        delta_DerAf[(minvalue,minvalue + dincrease)]={"BinP1andP2":[],"BinP1orP2":[],"BBAA":[],"BABA":[],"ABBA":[]}
+        delta_DerAf[(minvalue,minvalue + dincrease)]={"BinP1andP2":[],"BinP1orP2":[],"BBAA":[],"BABA":[],"ABBA":[],"meanvalue":0}
         minvalue += dincrease
-    delta_DerAf.pop(minvalue-dincrease,minvalue);delta_DerAf[(minvalue-dincrease,maxvalue)]={"BinP1andP2":[],"BinP1orP2":[],"BBAA":[],"BABA":[],"ABBA":[]}
+    delta_DerAf.pop(minvalue-dincrease,minvalue);delta_DerAf[(minvalue-dincrease,maxvalue)]={"BinP1andP2":[],"BinP1orP2":[],"BBAA":[],"BABA":[],"ABBA":[],"meanvalue":0}
     print(delta_DerAf)
-    
+    delta_DerAfP1P3=copy.deepcopy(delta_DerAf)
+    delta_DerAfP2P3=copy.deepcopy(delta_DerAf)
     BBAAcount=BABAcount=ABBAcount=0
-    snpfile=open(FileNamrPre+"P123Oweigon.joinSNP",'r');
+    snpfile=open(FileNamrPre+".snp",'r');print(snpfile.readline())
     for line in snpfile:
         linelist = re.split(r'\s+', line.strip())
 #         print(linelist)
@@ -59,28 +62,41 @@ def countJoinFile(FileNamrPre):
         pos = int(linelist[1].strip())
         anc = linelist[2].strip()
         der = linelist[3].strip()
-        p1 = float(linelist[4].strip())#mallard population
-        p2 = float(linelist[5].strip())#spot-billed population
-        for a,b in sorted(delta_DerAf.keys()):
-#                 print("\t",(p1-p2),">",a,":",(p1-p2)>a,(p1-p2),"<",b,":",(p1-p2)<=b)
-            if (p1-p2)>a and (p1-p2)<=b:
-#                     print("\t","passed bin threshold",p1,p2,linelist[-3],linelist[-2],linelist[-1])
-                if p1>0 and p2>0:
-                    delta_DerAf[(a,b)]["BinP1andP2"].append(linelist)
-                if p1>0 or p2>0:
-                    delta_DerAf[(a,b)]["BinP1orP2"].append(linelist)
-#                         print("\t","BinP1orP2",p1,p2)
-                if float(linelist[8])> float(linelist[9]) and float(linelist[8])>float(linelist[10]):
-#                         print("\t","BBAA",linelist[-3])
-                    delta_DerAf[(a,b)]["BBAA"].append(linelist);BBAAcount+=1
-                elif float(linelist[9])>float(linelist[8]) and float(linelist[9])>float(linelist[10]):
-                    delta_DerAf[(a,b)]["ABBA"].append(linelist);ABBAcount+=1
-#                         print("\t","ABBA",linelist[-2])
-                elif float(linelist[10])>float(linelist[8]) and float(linelist[10])>float(linelist[9]):
-                    delta_DerAf[(a,b)]["BABA"].append(linelist);BABAcount+=1
-#                         print("\t","BABA",linelist[-1])
-                break
-    pickle.dump(delta_DerAf,open(FileNamrPre+".FreqStratifiedBBAA", 'wb'))
+        p=[0,1,2,3]
+        p[1] = float(linelist[4].strip())#mallard population
+        p[2] = float(linelist[5].strip())#spot-billed population
+        p[3] = float(linelist[6].strip())#domestic population
+        i=1;j=2;k=0
+        for dDAF in [delta_DerAf,delta_DerAfP1P3,delta_DerAfP2P3]:
+            k+=1
+            if k==1:
+                i=1;j=2#P1P2
+            elif k==2:
+                i=1;j=3#P1P3
+            elif k==3:
+                i=2;j=3#P2P3 FOCUS ON ABBA
+            for a,b in sorted(dDAF.keys()):
+    #                 print("\t",(p1-p2),">",a,":",(p1-p2)>a,(p1-p2),"<",b,":",(p1-p2)<=b)
+                if (p[i]-p[j])>a and (p[i]-p[j])<=b:
+    #                     print("\t","passed bin threshold",p1,p2,linelist[-3],linelist[-2],linelist[-1])
+                    if p[i]>0 and p[j]>0:
+                        dDAF[(a,b)]["BinP1andP2"].append(linelist)
+                    if p[i]>0 or p[j]>0:
+                        dDAF[(a,b)]["BinP1orP2"].append(linelist)
+    #                         print("\t","BinP1orP2",p1,p2)
+                    if float(linelist[8])> float(linelist[9]) and float(linelist[8])>float(linelist[10]):
+    #                         print("\t","BBAA",linelist[-3])
+                        dDAF[(a,b)]["BBAA"].append(linelist);BBAAcount+=1
+                    elif float(linelist[9])>float(linelist[8]) and float(linelist[9])>float(linelist[10]):
+                        dDAF[(a,b)]["ABBA"].append(linelist);ABBAcount+=1
+    #                         print("\t","ABBA",linelist[-2])
+                    elif float(linelist[10])>float(linelist[8]) and float(linelist[10])>float(linelist[9]):
+                        dDAF[(a,b)]["BABA"].append(linelist);BABAcount+=1
+    #                         print("\t","BABA",linelist[-1])
+                    break
+    pickle.dump(delta_DerAf,open(FileNamrPre+".FreqStratifiedP1P2BBAA", 'wb'))
+    pickle.dump(delta_DerAfP1P3,open(FileNamrPre+".FreqStratifiedP1P3BABA", 'wb'))
+    pickle.dump(delta_DerAfP2P3,open(FileNamrPre+".FreqStratifiedP2P3ABBA", 'wb'))
     print("BBAAcount,ABBAcount,BABAcount",BBAAcount,ABBAcount,BABAcount)
     global BBAAcountsum
     global ABBAcountsum
@@ -249,21 +265,25 @@ if __name__ == '__main__':
         filelistfile=open(options.output+'prefix.filelist','r')    
 #     for SnpFile in options.snpfilelist:
 #         pass
-    D_weigonSNPfilemerged=open(options.output+"merged.P123Oweigon.joinSNP","w")
+#     D_weigonSNPfilemerged=open(options.output+"merged.P123Oweigon.joinSNP","w")
 
 #     filelistfile=open(options.output+'prefix.filelist','r')
 
     filelistfile.seek(0)
     filelist=filelistfile.readlines()
     for fn in filelist:
-        delta_DerAf=pickle.load(open(fn.strip()+".FreqStratifiedBBAA","rb"))
-        for a,b in sorted(delta_DerAftotal.keys()):
-            for k in sorted(delta_DerAftotal[(a,b)]):                
-                print(fn.strip(),len(delta_DerAf[(a,b)][k]),end="|")
-                delta_DerAftotal[(a,b)][k]+=len(delta_DerAf[(a,b)][k])
-    print(BBAAcountsum,ABBAcountsum,BABAcountsum) 
+        for daftotal,n in [[delta_DerAftotal,".FreqStratifiedP1P2BBAA"],[delta_DerAftotalP1P3,'FreqStratifiedP1P3BABA'],[delta_DerAftotalP2P3,'FreqStratifiedP2P3ABBA']]:
+            delta_DerAf=pickle.load(open(fn.strip()+n,"rb"))
+            for a,b in sorted(daftotal.keys()):
+                for k in sorted(daftotal[(a,b)]):
+                    if k!="meanvalue":            
+                        print(fn.strip(),len(delta_DerAf[(a,b)][k]),end="|")
+                        daftotal[(a,b)][k]+=len(delta_DerAf[(a,b)][k])
+                    else:
+                        daftotal[(a,b)][k]=numpy.mean(delta_DerAf[(a,b)][n[-4:]])
+    print(BBAAcountsum,ABBAcountsum,BABAcountsum)
+    #BBAA
     binfile=open(options.output+"total.FreqStratifiedBBAA","w")
-    
     print("bins\tbine",end="\t",file=binfile)
     for k in sorted(delta_DerAftotal[(a,b)]):
         print(k,end="\t",file=binfile)
@@ -273,13 +293,37 @@ if __name__ == '__main__':
         for k in  sorted(delta_DerAftotal[(a,b)]):
             print(delta_DerAftotal[(a,b)][k],end="\t",file=binfile)
         print("",file=binfile)
+    binfile.close()
+    #BABA
+    binfile=open(options.output+"total.FreqStratifiedBABA","w")
+    print("bins\tbine",end="\t",file=binfile)
+    for k in sorted(delta_DerAftotalP1P3[(a,b)]):
+        print(k,end="\t",file=binfile)
+    print("",file=binfile)
+    for a,b in sorted(delta_DerAftotalP1P3.keys()):
+        print(a,b,sep="\t",end="\t",file=binfile)
+        for k in  sorted(delta_DerAftotalP1P3[(a,b)]):
+            print(delta_DerAftotalP1P3[(a,b)][k],end="\t",file=binfile)
+        print("",file=binfile)
+    binfile.close()
+    #ABBA
+    binfile=open(options.output+"total.FreqStratifiedABBA","w")
+    print("bins\tbine",end="\t",file=binfile)
+    for k in sorted(delta_DerAftotalP2P3[(a,b)]):
+        print(k,end="\t",file=binfile)
+    print("",file=binfile)
+    for a,b in sorted(delta_DerAftotalP2P3.keys()):
+        print(a,b,sep="\t",end="\t",file=binfile)
+        for k in  sorted(delta_DerAftotalP2P3[(a,b)]):
+            print(delta_DerAftotalP2P3[(a,b)][k],end="\t",file=binfile)
+        print("",file=binfile)
     print(BBAAcountsum,ABBAcountsum,BABAcountsum)
-    filelistfile.seek(0)
-    fn1=filelist[0].strip()
-    rstr2=Util.random_str()
-    for fn in filelist[1:]:
-        os.system("cat "+fn1+"P123Oweigon.joinSNP "+ fn.strip()+"P123Oweigon.joinSNP > "+rstr2+"temp")
-        os.system("mv "+rstr2+"temp "+fn1+"P123Oweigon.joinSNP ")
-    print("chrNo\tpos\tANC\tDER\tP1derFreq\tP2derFreq\tP3derFreq\tP4derFreq\tBBBA\tABBA\tBABA\twigeonAF",file=D_weigonSNPfilemerged)
-    binfile.close();D_weigonSNPfilemerged.close();filelistfile.close()
+#     filelistfile.seek(0)
+#     fn1=filelist[0].strip()
+#     rstr2=Util.random_str()
+#     for fn in filelist[1:]:
+#         os.system("cat "+fn1+"P123Oweigon.joinSNP "+ fn.strip()+"P123Oweigon.joinSNP > "+rstr2+"temp")
+#         os.system("mv "+rstr2+"temp "+fn1+"P123Oweigon.joinSNP ")
+#     print("chrNo\tpos\tANC\tDER\tP1derFreq\tP2derFreq\tP3derFreq\tP4derFreq\tBBBA\tABBA\tBABA\twigeonAF",file=D_weigonSNPfilemerged)
+    binfile.close();filelistfile.close()#;D_weigonSNPfilemerged.close()
 #     os.system("cat "+options.output+"merged.P123Oweigon.joinSNP "+fn1+"P123Oweigon.joinSNP ")

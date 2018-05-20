@@ -21,6 +21,25 @@ class Caculator():
         pass
     def getResult(self):
         pass
+    
+class Caculate_ddaf(Caculator):
+    def __init__(self,delta_DerAftotal,absdelta_DerAftotal):
+        super().__init__()
+        self.count = 0
+        self.ddaf = 0
+        self.absddaf=0
+        self.delta_DerAftotal=copy.deepcopy(delta_DerAftotal)
+        self.absdelta_DerAftotal=copy.deepcopy(absdelta_DerAftotal)
+    def process(self, T):
+        self.count+=1
+        self.ddaf += float(T[4])-float(T[5])
+        self.absddaf += abs(float(T[4])-float(T[5]))
+    def getResult(self):
+        c=self.count
+        absddaf=self.absddaf
+        ddaf=self.ddaf
+        self.count = 0;self.ddaf = 0;self.absddaf=0
+        return c,[absddaf,ddaf]
 #Bits for intyerpreting and manipulating sequence data
 
 DIPLOTYPES = ['A', 'C', 'G', 'K', 'M', 'N', 'S', 'R', 'T', 'W', 'Y']
