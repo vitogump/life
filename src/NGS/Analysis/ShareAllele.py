@@ -46,9 +46,9 @@ def countJoinFile(FileNamrPre):
     dincrease= (maxvalue - minvalue) / breaks
     while minvalue<=maxvalue - dincrease :
         print(minvalue,minvalue + dincrease)
-        delta_DerAf[(minvalue,minvalue + dincrease)]={"BinP1andP2":[],"BinP1orP2":[],"BBAA":[],"BABA":[],"ABBA":[],"meanvalue":0}
+        delta_DerAf[(minvalue,minvalue + dincrease)]={"BinP1andP2":[],"BinP1orP2":[],"BBAA":[],"BABA":[],"ABBA":[],"meanvalue":[]}
         minvalue += dincrease
-    delta_DerAf.pop(minvalue-dincrease,minvalue);delta_DerAf[(minvalue-dincrease,maxvalue)]={"BinP1andP2":[],"BinP1orP2":[],"BBAA":[],"BABA":[],"ABBA":[],"meanvalue":0}
+    delta_DerAf.pop(minvalue-dincrease,minvalue);delta_DerAf[(minvalue-dincrease,maxvalue)]={"BinP1andP2":[],"BinP1orP2":[],"BBAA":[],"BABA":[],"ABBA":[],"meanvalue":[]}
     print(delta_DerAf)
     delta_DerAfP1P3=copy.deepcopy(delta_DerAf)
     delta_DerAfP2P3=copy.deepcopy(delta_DerAf)
@@ -67,18 +67,19 @@ def countJoinFile(FileNamrPre):
         p[2] = float(linelist[5].strip())#spot-billed population
         p[3] = float(linelist[6].strip())#domestic population
         i=1;j=2;k=0
-        for dDAF in [delta_DerAf,delta_DerAfP1P3,delta_DerAfP2P3]:
+        for dDAF in [delta_DerAf,delta_DerAfP2P3,delta_DerAfP1P3]:
             k+=1
             if k==1:
                 i=1;j=2#P1P2
             elif k==2:
-                i=1;j=3#P1P3
-            elif k==3:
                 i=2;j=3#P2P3 FOCUS ON ABBA
+            elif k==3:
+                i=1;j=3#P1P3
             for a,b in sorted(dDAF.keys()):
     #                 print("\t",(p1-p2),">",a,":",(p1-p2)>a,(p1-p2),"<",b,":",(p1-p2)<=b)
                 if (p[i]-p[j])>a and (p[i]-p[j])<=b:
     #                     print("\t","passed bin threshold",p1,p2,linelist[-3],linelist[-2],linelist[-1])
+                    dDAF[(a,b)]["meanvalue"].append(linelist[-k])
                     if p[i]>0 and p[j]>0:
                         dDAF[(a,b)]["BinP1andP2"].append(linelist)
                     if p[i]>0 or p[j]>0:
@@ -86,12 +87,12 @@ def countJoinFile(FileNamrPre):
     #                         print("\t","BinP1orP2",p1,p2)
                     if float(linelist[8])> float(linelist[9]) and float(linelist[8])>float(linelist[10]):
     #                         print("\t","BBAA",linelist[-3])
-                        dDAF[(a,b)]["BBAA"].append(linelist);BBAAcount+=1
+                        dDAF[(a,b)]["BBAA"].append(linelist[-3]);BBAAcount+=1
                     elif float(linelist[9])>float(linelist[8]) and float(linelist[9])>float(linelist[10]):
-                        dDAF[(a,b)]["ABBA"].append(linelist);ABBAcount+=1
+                        dDAF[(a,b)]["ABBA"].append(linelist[-2]);ABBAcount+=1
     #                         print("\t","ABBA",linelist[-2])
                     elif float(linelist[10])>float(linelist[8]) and float(linelist[10])>float(linelist[9]):
-                        dDAF[(a,b)]["BABA"].append(linelist);BABAcount+=1
+                        dDAF[(a,b)]["BABA"].append(linelist[-1]);BABAcount+=1
     #                         print("\t","BABA",linelist[-1])
                     break
     pickle.dump(delta_DerAf,open(FileNamrPre+".FreqStratifiedP1P2BBAA", 'wb'))
@@ -159,12 +160,12 @@ def travelCountjoinWg(SnpFile):
 #                         print("\t","BinP1orP2",p1,p2)
                 if float(linelist[8])> float(linelist[9]) and float(linelist[8])>float(linelist[10]):
 #                         print("\t","BBAA",linelist[-3])
-                    delta_DerAf[(a,b)]["BBAA"].append(linelist);BBAAcount+=1
+                    delta_DerAf[(a,b)]["BBAA"].append(linelist[-3]);BBAAcount+=1
                 elif float(linelist[9])>float(linelist[8]) and float(linelist[9])>float(linelist[10]):
-                    delta_DerAf[(a,b)]["ABBA"].append(linelist);ABBAcount+=1
+                    delta_DerAf[(a,b)]["ABBA"].append(linelist[-2]);ABBAcount+=1
 #                         print("\t","ABBA",linelist[-2])
                 elif float(linelist[10])>float(linelist[8]) and float(linelist[10])>float(linelist[9]):
-                    delta_DerAf[(a,b)]["BABA"].append(linelist);BABAcount+=1
+                    delta_DerAf[(a,b)]["BABA"].append(linelist[-1]);BABAcount+=1
 #                         print("\t","BABA",linelist[-1])
                 break
         if options.archaic !=None and chrom!=currentchrID and currentchrID in vcflistByChrom:
@@ -268,7 +269,8 @@ if __name__ == '__main__':
 #     D_weigonSNPfilemerged=open(options.output+"merged.P123Oweigon.joinSNP","w")
 
 #     filelistfile=open(options.output+'prefix.filelist','r')
-
+    
+    print(BBAAcountsum,ABBAcountsum,BABAcountsum)
     filelistfile.seek(0)
     filelist=filelistfile.readlines()
     for fn in filelist:
@@ -280,8 +282,9 @@ if __name__ == '__main__':
                         print(fn.strip(),len(delta_DerAf[(a,b)][k]),end="|")
                         daftotal[(a,b)][k]+=len(delta_DerAf[(a,b)][k])
                     else:
-                        daftotal[(a,b)][k]=numpy.mean(delta_DerAf[(a,b)][n[-4:]])
-    print(BBAAcountsum,ABBAcountsum,BABAcountsum)
+                        print(n[-4:],delta_DerAf[(a,b)].keys())
+                        daftotal[(a,b)][k]=numpy.mean(delta_DerAf[(a,b)][k])
+    
     #BBAA
     binfile=open(options.output+"total.FreqStratifiedBBAA","w")
     print("bins\tbine",end="\t",file=binfile)
