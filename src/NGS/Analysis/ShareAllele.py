@@ -79,7 +79,7 @@ def countJoinFile(FileNamrPre):
     #                 print("\t",(p1-p2),">",a,":",(p1-p2)>a,(p1-p2),"<",b,":",(p1-p2)<=b)
                 if (p[i]-p[j])>a and (p[i]-p[j])<=b:
     #                     print("\t","passed bin threshold",p1,p2,linelist[-3],linelist[-2],linelist[-1])
-                    dDAF[(a,b)]["meanvalue"].append(linelist[-k])
+                    dDAF[(a,b)]["meanvalue"].append(float(linelist[-k]))
                     if p[i]>0 and p[j]>0:
                         dDAF[(a,b)]["BinP1andP2"].append(linelist)
                     if p[i]>0 or p[j]>0:
@@ -282,7 +282,7 @@ if __name__ == '__main__':
                         print(fn.strip(),len(delta_DerAf[(a,b)][k]),end="|")
                         daftotal[(a,b)][k]+=len(delta_DerAf[(a,b)][k])
                     else:
-                        print(n[-4:],delta_DerAf[(a,b)].keys())
+                        print(n[-4:],k,delta_DerAf[(a,b)].keys())
                         daftotal[(a,b)][k]=numpy.mean(delta_DerAf[(a,b)][k])
     
     #BBAA
