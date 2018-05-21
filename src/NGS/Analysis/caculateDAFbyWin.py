@@ -32,10 +32,10 @@ dincrease = (maxvalue - minvalue) / breaks
 delta_DerAftotal={}
 while minvalue<=maxvalue - dincrease :
     print(minvalue,minvalue + dincrease)
-    delta_DerAftotal[(minvalue,minvalue + dincrease)]={"AVRfst":0,"AVRdxy":0}
+    delta_DerAftotal[(minvalue,minvalue + dincrease)]={"fstlist":0,"dxylist":0}
 #     delta_DerAf[(minvalue,minvalue + dincrease)]={"BinP1andP2":[],"BinP1orP2":[],"BBAA":[],"BABA":[],"ABBA":[]}
     minvalue += dincrease
-delta_DerAftotal.pop(minvalue-dincrease,minvalue);delta_DerAftotal[(minvalue-dincrease,maxvalue)]={"AVRfst":0,"AVRdxy":0}
+delta_DerAftotal.pop(minvalue-dincrease,minvalue);delta_DerAftotal[(minvalue-dincrease,maxvalue)]={"fstlist":0,"dxylist":0}
 
 minvalue = 0
 maxvalue = 1
@@ -44,12 +44,12 @@ dincrease = (maxvalue - minvalue) / breaks
 absdelta_DerAftotal={}
 while minvalue<=maxvalue - dincrease :
     print(minvalue,minvalue + dincrease)
-    absdelta_DerAftotal[(minvalue,minvalue + dincrease)]={"AVRfst":0,"AVRdxy":0}
+    absdelta_DerAftotal[(minvalue,minvalue + dincrease)]={"fstlist":0,"dxylist":0}
 #     delta_DerAf[(minvalue,minvalue + dincrease)]={"BinP1andP2":[],"BinP1orP2":[],"BBAA":[],"BABA":[],"ABBA":[]}
     minvalue += dincrease
-absdelta_DerAftotal.pop(minvalue-dincrease,minvalue);absdelta_DerAftotal[(minvalue-dincrease,maxvalue)]={"AVRfst":0,"AVRdxy":0}
-ddafcaculator=Caculators.Caculate_daf(delta_DerAftotal,absdelta_DerAftotal)
-maporder=[];infile1map={}
+absdelta_DerAftotal.pop(minvalue-dincrease,minvalue);absdelta_DerAftotal[(minvalue-dincrease,maxvalue)]={"fstlist":0,"dxylist":0}
+ddafcaculator=Caculators.Caculate_ddaf(delta_DerAftotal,absdelta_DerAftotal)
+maporder=[];infile1fstmap={}
 infileref=open(options.fstwinfile,'r')
 for line in infileref:
     linelist=re.split(r"\s+",line.strip())
@@ -59,22 +59,22 @@ for line in infileref:
             continue
     maporder.append((linelist[0].strip(),linelist[1].strip()))
     try:
-        infile1map[linelist[0].strip()][linelist[1].strip()]=linelist
+        infile1fstmap[linelist[0].strip()][linelist[1].strip()]=linelist
     except KeyError:
-        infile1map[linelist[0].strip()]={linelist[1].strip():linelist}
+        infile1fstmap[linelist[0].strip()]={linelist[1].strip():linelist}
 infileref.close()  
-infileref=open(options.dxywinfile,'r')
+infileref=open(options.dxywinfile,'r');infile1dxymap={}
 for line in infileref:
     linelist=re.split(r"\s+",line.strip())
     if options.rmna and len(linelist)>5:
         if linelist[5]=="na" or linelist[5]=="NA" or re.search(r"inf", linelist[5])!=None or linelist[6]=="na" or linelist[6]=="NA" or re.search(r"inf", linelist[5])!=None:
             print("skip",linelist)
             continue
-    maporder.append((linelist[0].strip(),linelist[1].strip()))
+#     maporder.append((linelist[0].strip(),linelist[1].strip()))
     try:
-        infile1map[linelist[0].strip()][linelist[1].strip()]=linelist
+        infile1dxymap[linelist[0].strip()][linelist[1].strip()]=linelist
     except KeyError:
-        infile1map[linelist[0].strip()]={linelist[1].strip():linelist}
+        infile1dxymap[linelist[0].strip()]={linelist[1].strip():linelist}
 infileref.close() 
 if __name__ == '__main__':
     #read high heterogeneous region
@@ -102,12 +102,12 @@ if __name__ == '__main__':
                     win.slidWindowOverlap(winLinAchr,e,e-s,e-s,ddafcaculator,s)
                     regionvalue[curchrom]=copy.deepcopy(win.winValueL)
                     win.slidWindowOverlap(winLinAchr,s,s-pe,s-pe,ddafcaculator,pe)
-                    backgroundvalue[curchrom]=copy.deepcopy(win.winValueL)
+                    backgroundvalue[curchrom]=copy.deepcopy(win.winValueL)# between divergence region or before 
                     ps=s;pe=e
                 else:
                     win.slidWindowOverlap(winLinAchr,chrlenmap[curchrom],chrlenmap[curchrom]-pe,chrlenmap[curchrom]-pe,ddafcaculator,pe)
-                    backgroundvalue[curchrom]=copy.deepcopy(win.winValueL)
-            else:
+                    backgroundvalue[curchrom]=copy.deepcopy(win.winValueL)# end of the last divergence to end of the chromosome. 
+            else:#no divergence region
                 win.slidWindowOverlap(winLinAchr,chrlenmap[curchrom],chrlenmap[curchrom],chrlenmap[curchrom],ddafcaculator)
                 backgroundvalue[curchrom]=copy.deepcopy(win.winValueL)
             #win
@@ -121,8 +121,11 @@ if __name__ == '__main__':
             curchrom=snplist[0]
             winLinAchr=[snplist[1:]]
     # stratified by ddaf bin
-    for a,b in sorted(delta_DerAf.keys()):
-        if (p1-p2)>a and (p1-p2)<=b:
+    for chrom in sorted(obsexpsignalmapbychrom):
+        for i in range(len(obsexpsignalmapbychrom[chrom])):
+            absddaf,ddaf=obsexpsignalmapbychrom[chrom][i][3]
+            for a,b in sorted(absdelta_DerAftotal.keys()):#delta_DerAftotal
+                if absddaf>a and absddaf<=b:
     for chrom in obsexpsignalmapbychrom.keys():
         for s,e,n,v in backgroundvalue
         print(chrom+"\t"+)
