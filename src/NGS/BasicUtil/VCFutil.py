@@ -150,6 +150,7 @@ class VCF_Data():
     @staticmethod
     def Vcf2Ped_WapperForpoolthreads(a):
         positionlist,pedmap=VCF_Data.Vcf2Ped(**a)
+        print(a["chrom"],"finished")
         return positionlist,pedmap
     @staticmethod
     def Vcf2Ped(vcfFileName, software,VcfIndexMap=None, withheader=False, chrom=None,affectedlist=[],unaffectedlist=[],chromchangemap={},geno=1,maf=0,excludesits=[]):

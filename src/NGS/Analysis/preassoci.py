@@ -61,13 +61,15 @@ if __name__ == '__main__':
     f.close()
     parameterstuples_list=[]
     for chromNo in vcfobj.chromOrder:
+        excludesitesAchr=excludesitesMapBchr[chromNo] if chromNo in excludesitesMapBchr else []
 #         parameterstuples_list.append((options.vcffile[0],"GATK",vcfobj.VcfIndexMap,True,chromNo,options.affectedlist,options.unaffectedlist,chromchangemap,float(options.geno),float(options.maf),excludesitesMapBchr[chromNo]))
-        parameterstuples_list.append({"vcfFileName":options.vcffile[0],"software":"GATK","VcfIndexMap":vcfobj.VcfIndexMap,"withheader":True,"chrom":chromNo,"affectedlist":options.affectedlist,"unaffectedlist":options.unaffectedlist,"chromchangemap":chromchangemap,"geno":float(options.geno),"maf":float(options.maf),"excludesits":excludesitesMapBchr[chromNo]})
-    pool=Pool(len(vcfobj.chromOrder))
-    print("vcfobj.chromOrder",vcfobj.chromOrder)
+        parameterstuples_list.append({"vcfFileName":options.vcffile[0],"software":"GATK","VcfIndexMap":vcfobj.VcfIndexMap,"withheader":True,"chrom":chromNo,"affectedlist":options.affectedlist,"unaffectedlist":options.unaffectedlist,"chromchangemap":chromchangemap,"geno":float(options.geno),"maf":float(options.maf),"excludesits":excludesitesAchr})
+    print("vcfobj.chromOrder",len(vcfobj.chromOrder))
+    pool=Pool(36)
+    
 #     print("parameterstuples_list",parameterstuples_list,len(parameterstuples_list[0]),len(parameterstuples_list[1]))
     positionlist,pedmap=reduce(mergeMapPed,pool.map(VCFutil.VCF_Data.Vcf2Ped_WapperForpoolthreads,parameterstuples_list))
-    pool.map(VCFutil.VCF_Data.Vcf2Ped_WapperForpoolthreads,parameterstuples_list)
+#     pool.map(VCFutil.VCF_Data.Vcf2Ped_WapperForpoolthreads,parameterstuples_list)
     pool.close()
     pool.join()
 
