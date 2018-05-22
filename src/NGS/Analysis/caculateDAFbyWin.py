@@ -6,7 +6,7 @@ Created on 2018-5-20
 from src.NGS.BasicUtil import Caculators
 from src.NGS.BasicUtil.Util import Window
 from optparse import OptionParser
-import re,copy
+import re,copy,numpy
 
 
 parser = OptionParser()
@@ -32,10 +32,10 @@ dincrease = (maxvalue - minvalue) / breaks
 delta_DerAftotal={}
 while minvalue<=maxvalue - dincrease :
     print(minvalue,minvalue + dincrease)
-    delta_DerAftotal[(minvalue,minvalue + dincrease)]={"fstlist":0,"dxylist":0}
+    delta_DerAftotal[(minvalue,minvalue + dincrease)]={"fstlist":[],"dxylist":[]}
 #     delta_DerAf[(minvalue,minvalue + dincrease)]={"BinP1andP2":[],"BinP1orP2":[],"BBAA":[],"BABA":[],"ABBA":[]}
     minvalue += dincrease
-delta_DerAftotal.pop(minvalue-dincrease,minvalue);delta_DerAftotal[(minvalue-dincrease,maxvalue)]={"fstlist":0,"dxylist":0}
+delta_DerAftotal.pop(minvalue-dincrease,minvalue);delta_DerAftotal[(minvalue-dincrease,maxvalue)]={"fstlist":[],"dxylist":[]}
 
 minvalue = 0
 maxvalue = 1
@@ -44,10 +44,10 @@ dincrease = (maxvalue - minvalue) / breaks
 absdelta_DerAftotal={}
 while minvalue<=maxvalue - dincrease :
     print(minvalue,minvalue + dincrease)
-    absdelta_DerAftotal[(minvalue,minvalue + dincrease)]={"fstlist":0,"dxylist":0}
+    absdelta_DerAftotal[(minvalue,minvalue + dincrease)]={"fstlist":[],"dxylist":[]}
 #     delta_DerAf[(minvalue,minvalue + dincrease)]={"BinP1andP2":[],"BinP1orP2":[],"BBAA":[],"BABA":[],"ABBA":[]}
     minvalue += dincrease
-absdelta_DerAftotal.pop(minvalue-dincrease,minvalue);absdelta_DerAftotal[(minvalue-dincrease,maxvalue)]={"fstlist":0,"dxylist":0}
+absdelta_DerAftotal.pop(minvalue-dincrease,minvalue);absdelta_DerAftotal[(minvalue-dincrease,maxvalue)]={"fstlist":[],"dxylist":[]}
 ddafcaculator=Caculators.Caculate_ddaf(delta_DerAftotal,absdelta_DerAftotal)
 maporder=[];infile1fstmap={}
 infileref=open(options.fstwinfile,'r')
@@ -88,7 +88,7 @@ if __name__ == '__main__':
         else:
             seletedregionMapByChr[regionlist[0]]=[(float(regionlist[1]),float(regionlist[2]))]
     seletedtablefile.close()
-    # start calculated ddaf 
+    # start calculated ddaf absddaf, meanwhile, collect ddaf in high divergence and genome background
     snpfile=open(options.snpfile,'r')
     winLinAchr=[];obsexpsignalmapbychrom={};regionvalue={};backgroundvalue={}
     curchrom=re.split(r'\s+',snpfile.readline())[0]
@@ -100,16 +100,16 @@ if __name__ == '__main__':
                 ps=0;pe=0
                 for s,e in seletedregionMapByChr[curchrom]:
                     win.slidWindowOverlap(winLinAchr,e,e-s,e-s,ddafcaculator,s)
-                    regionvalue[curchrom]=copy.deepcopy(win.winValueL)
+                    regionvalue[curchrom].append(copy.deepcopy(win.winValueL))
                     win.slidWindowOverlap(winLinAchr,s,s-pe,s-pe,ddafcaculator,pe)
-                    backgroundvalue[curchrom]=copy.deepcopy(win.winValueL)# between divergence region or before 
+                    backgroundvalue[curchrom].append(copy.deepcopy(win.winValueL))# between divergence region or before 
                     ps=s;pe=e
                 else:
                     win.slidWindowOverlap(winLinAchr,chrlenmap[curchrom],chrlenmap[curchrom]-pe,chrlenmap[curchrom]-pe,ddafcaculator,pe)
-                    backgroundvalue[curchrom]=copy.deepcopy(win.winValueL)# end of the last divergence to end of the chromosome. 
+                    backgroundvalue[curchrom].append(copy.deepcopy(win.winValueL))# end of the last divergence to end of the chromosome. 
             else:#no divergence region
                 win.slidWindowOverlap(winLinAchr,chrlenmap[curchrom],chrlenmap[curchrom],chrlenmap[curchrom],ddafcaculator)
-                backgroundvalue[curchrom]=copy.deepcopy(win.winValueL)
+                backgroundvalue[curchrom].append(copy.deepcopy(win.winValueL))
             #win
             win.slidWindowOverlap(winLinAchr,chrlenmap[curchrom],40000,20000,ddafcaculator)
             obsexpsignalmapbychrom[curchrom]=copy.deepcopy(win.winValueL)
@@ -120,13 +120,48 @@ if __name__ == '__main__':
         else:#first time
             curchrom=snplist[0]
             winLinAchr=[snplist[1:]]
-    # stratified by ddaf bin
+    # stratified fst,dxy by ddaf bin
     for chrom in sorted(obsexpsignalmapbychrom):
         for i in range(len(obsexpsignalmapbychrom[chrom])):
             absddaf,ddaf=obsexpsignalmapbychrom[chrom][i][3]
             for a,b in sorted(absdelta_DerAftotal.keys()):#delta_DerAftotal
-                if absddaf>a and absddaf<=b:
-    for chrom in obsexpsignalmapbychrom.keys():
-        for s,e,n,v in backgroundvalue
-        print(chrom+"\t"+)
-        
+                if absddaf>=a and absddaf<=b:
+                    fstvalue=infile1fstmap[chrom][str(i)][5]
+                    dxyvalue=infile1dxymap[chrom][str(i)][5]
+                    if fstvalue!="NA": absdelta_DerAftotal[(a,b)]["fstlist"].append(fstvalue)
+                    if dxyvalue!="NA": absdelta_DerAftotal[(a,b)]["dxylist"].append(dxyvalue)
+            for a,b in sorted(delta_DerAftotal.keys()):
+                if ddaf>=a and ddaf<=b:
+                    fstvalue=infile1fstmap[chrom][str(i)][5]
+                    dxyvalue=infile1dxymap[chrom][str(i)][5]
+                    if fstvalue!="NA": delta_DerAftotal[(a,b)]["fstlist"].append(fstvalue)
+                    if dxyvalue!="NA": delta_DerAftotal[(a,b)]["dxylist"].append(dxyvalue)
+    #test show result
+    hdvf=open("highdivergenceregion",'w')
+    for chrom in regionvalue.keys():
+        for winvaluesl in regionvalue[chrom]:
+            for s,e,n,v in winvaluesl:
+                print(chrom,s,e,n,v,file=hdvf)
+    bgf=open("genomicbackgroundegion",'w')
+    for chrom in backgroundvalue.keys():
+        for winvaluesl in backgroundvalue[chrom]:
+            for s,e,n,v in winvaluesl:
+                print(chrom,s,e,n,v,file=bgf)
+    
+    binfile=open(options.output+".Stratifiedfstdxybydaf","w")
+    print("bins\tbine",end="\t",file=binfile)    
+    for a,b in sorted(delta_DerAftotal.keys()):
+        print(a,b,sep="\t",end="\t",file=binfile)
+        for k in  sorted(delta_DerAftotal[(a,b)]):
+            print(numpy.mean(delta_DerAftotal[(a,b)][k]),end="\t",file=binfile)
+        print("",file=binfile)
+    binfile.close()
+
+    binfile=open(options.output+".Stratifiedfstdxybyabsdaf","w")
+    print("bins\tbine",end="\t",file=binfile)    
+    for a,b in sorted(absdelta_DerAftotal.keys()):
+        print(a,b,sep="\t",end="\t",file=binfile)
+        for k in  sorted(absdelta_DerAftotal[(a,b)]):
+            print(numpy.mean(absdelta_DerAftotal[(a,b)][k]),end="\t",file=binfile)
+        print("",file=binfile)
+    binfile.close()

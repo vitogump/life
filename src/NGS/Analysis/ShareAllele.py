@@ -77,7 +77,7 @@ def countJoinFile(FileNamrPre):
                 i=1;j=3#P1P3 FOCUS ON BABA
             for a,b in sorted(dDAF.keys()):
     #                 print("\t",(p1-p2),">",a,":",(p1-p2)>a,(p1-p2),"<",b,":",(p1-p2)<=b)
-                if (p[i]-p[j])>a and (p[i]-p[j])<=b:
+                if (p[i]-p[j])>=a and (p[i]-p[j])<=b:
     #                     print("\t","passed bin threshold",p1,p2,linelist[-3],linelist[-2],linelist[-1])
                     dDAF[(a,b)]["type1meanvalue"].append(float(linelist[-k]))
                     if p[i]>0 and p[j]>0:
