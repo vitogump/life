@@ -117,12 +117,12 @@ if __name__ == '__main__':
             #win
             win.slidWindowOverlap(winLinAchr,chrlenmap[curchrom],40000,20000,ddafcaculator)
             obsexpsignalmapbychrom[curchrom]=copy.deepcopy(win.winValueL)
-            curchrom=snplist[0]
+            curchrom=snplist[0];snplist[1]=int(snplist[1])
             winLinAchr=[snplist[1:]]
         elif curchrom!="chrNo":
-            winLinAchr.append(snplist[1:])
+            snplist[1]=int(snplist[1]);winLinAchr.append(snplist[1:])
         else:#first time
-            curchrom=snplist[0]
+            curchrom=snplist[0];snplist[1]=int(snplist[1])
             winLinAchr=[snplist[1:]]
     # stratified fst,dxy by ddaf bin
     for chrom in sorted(obsexpsignalmapbychrom):
