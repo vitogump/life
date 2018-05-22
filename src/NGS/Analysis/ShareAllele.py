@@ -25,10 +25,10 @@ dincrease = (maxvalue - minvalue) / breaks
 delta_DerAftotal={}
 while minvalue<=maxvalue - dincrease :
     print(minvalue,minvalue + dincrease)
-    delta_DerAftotal[(minvalue,minvalue + dincrease)]={"BinP1andP2":0,"BinP1orP2":0,"BBAA":0,"BABA":0,"ABBA":0,"type1meanvalue":0,"type2meanvlaue":0}
+    delta_DerAftotal[(minvalue,minvalue + dincrease)]={"BinP1andP2":0,"BinP1orP2":0,"BBAA":0,"BABA":0,"ABBA":0,"type1meanvalue":0,"type2meanvalue":0}
 #     delta_DerAf[(minvalue,minvalue + dincrease)]={"BinP1andP2":[],"BinP1orP2":[],"BBAA":[],"BABA":[],"ABBA":[]}
     minvalue += dincrease
-delta_DerAftotal.pop(minvalue-dincrease,minvalue);delta_DerAftotal[(minvalue-dincrease,maxvalue)]={"BinP1andP2":0,"BinP1orP2":0,"BBAA":0,"BABA":0,"ABBA":0,"type1meanvalue":0,"type2meanvlaue":0}
+delta_DerAftotal.pop(minvalue-dincrease,minvalue);delta_DerAftotal[(minvalue-dincrease,maxvalue)]={"BinP1andP2":0,"BinP1orP2":0,"BBAA":0,"BABA":0,"ABBA":0,"type1meanvalue":0,"type2meanvalue":0}
 delta_DerAftotalP1P3=copy.deepcopy(delta_DerAftotal)
 delta_DerAftotalP2P3=copy.deepcopy(delta_DerAftotal)
 # print(delta_DerAf)
@@ -46,9 +46,9 @@ def countJoinFile(FileNamrPre):
     dincrease= (maxvalue - minvalue) / breaks
     while minvalue<=maxvalue - dincrease :
         print(minvalue,minvalue + dincrease)
-        delta_DerAf[(minvalue,minvalue + dincrease)]={"BinP1andP2":[],"BinP1orP2":[],"BBAA":[],"BABA":[],"ABBA":[],"type1meanvalue":[],"type2meanvlaue":[]}
+        delta_DerAf[(minvalue,minvalue + dincrease)]={"BinP1andP2":[],"BinP1orP2":[],"BBAA":[],"BABA":[],"ABBA":[],"type1meanvalue":[],"type2meanvalue":[]}
         minvalue += dincrease
-    delta_DerAf.pop(minvalue-dincrease,minvalue);delta_DerAf[(minvalue-dincrease,maxvalue)]={"BinP1andP2":[],"BinP1orP2":[],"BBAA":[],"BABA":[],"ABBA":[],"type1meanvalue":[],"type2meanvlaue":[]}
+    delta_DerAf.pop(minvalue-dincrease,minvalue);delta_DerAf[(minvalue-dincrease,maxvalue)]={"BinP1andP2":[],"BinP1orP2":[],"BBAA":[],"BABA":[],"ABBA":[],"type1meanvalue":[],"type2meanvalue":[]}
     print(delta_DerAf)
     delta_DerAfP1P3=copy.deepcopy(delta_DerAf)
     delta_DerAfP2P3=copy.deepcopy(delta_DerAf)
