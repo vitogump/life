@@ -57,7 +57,7 @@ maporder=[];infile1fstmap={}
 infileref=open(options.fstwinfile,'r')
 for line in infileref:
     linelist=re.split(r"\s+",line.strip())
-    if options.rmna and len(linelist)>5:
+    if  len(linelist)>5:
         if linelist[5]=="na" or linelist[5]=="NA" or re.search(r"inf", linelist[5])!=None or linelist[6]=="na" or linelist[6]=="NA" or re.search(r"inf", linelist[5])!=None:
             print("skip",linelist)
             continue
@@ -70,7 +70,7 @@ infileref.close()
 infileref=open(options.dxywinfile,'r');infile1dxymap={}
 for line in infileref:
     linelist=re.split(r"\s+",line.strip())
-    if options.rmna and len(linelist)>5:
+    if  len(linelist)>5:
         if linelist[5]=="na" or linelist[5]=="NA" or re.search(r"inf", linelist[5])!=None or linelist[6]=="na" or linelist[6]=="NA" or re.search(r"inf", linelist[5])!=None:
             print("skip",linelist)
             continue
