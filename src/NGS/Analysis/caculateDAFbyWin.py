@@ -15,7 +15,11 @@ parser.add_option("-b", "--seletedtable", dest="seletedtable")
 parser.add_option("-c", "--chrfile", dest="chrfile")
 parser.add_option("-f", "--fstwinfile", dest="fstwinfile")
 parser.add_option("-d", "--dxywinfile", dest="dxywinfile")
+parser.add_option("-o", "--output", dest="output")
+
 (options, args) = parser.parse_args()
+
+print(options.output)
 chrlenmap={}
 f=open(options.chrfile,'r')
 for line in f:
@@ -137,17 +141,18 @@ if __name__ == '__main__':
                     if fstvalue!="NA": delta_DerAftotal[(a,b)]["fstlist"].append(fstvalue)
                     if dxyvalue!="NA": delta_DerAftotal[(a,b)]["dxylist"].append(dxyvalue)
     #test show result
-    hdvf=open("highdivergenceregion",'w')
+    hdvf=open(options.output+"highdivergenceregion",'w')
     for chrom in regionvalue.keys():
         for winvaluesl in regionvalue[chrom]:
             for s,e,n,v in winvaluesl:
                 print(chrom,s,e,n,v,file=hdvf)
-    bgf=open("genomicbackgroundegion",'w')
+    hdvf.close()
+    bgf=open(options.output+"genomicbackgroundegion",'w')
     for chrom in backgroundvalue.keys():
         for winvaluesl in backgroundvalue[chrom]:
             for s,e,n,v in winvaluesl:
                 print(chrom,s,e,n,v,file=bgf)
-    
+    bgf.close()
     binfile=open(options.output+".Stratifiedfstdxybydaf","w")
     print("bins\tbine",end="\t",file=binfile)    
     for a,b in sorted(delta_DerAftotal.keys()):
