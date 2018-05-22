@@ -104,6 +104,8 @@ if __name__ == '__main__':
                 ps=0;pe=0
                 for s,e in seletedregionMapByChr[curchrom]:
                     win.slidWindowOverlap(winLinAchr,e,e-s,e-s,ddafcaculator,s)
+                    if curchrom not in regionvalue:
+                        regionvalue[curchrom]=[];backgroundvalue[curchrom]=[]
                     regionvalue[curchrom].append(copy.deepcopy(win.winValueL))
                     win.slidWindowOverlap(winLinAchr,s,s-pe,s-pe,ddafcaculator,pe)
                     backgroundvalue[curchrom].append(copy.deepcopy(win.winValueL))# between divergence region or before 
@@ -113,7 +115,7 @@ if __name__ == '__main__':
                     backgroundvalue[curchrom].append(copy.deepcopy(win.winValueL))# end of the last divergence to end of the chromosome. 
             else:#no divergence region
                 win.slidWindowOverlap(winLinAchr,chrlenmap[curchrom],chrlenmap[curchrom],chrlenmap[curchrom],ddafcaculator)
-                backgroundvalue[curchrom].append(copy.deepcopy(win.winValueL))
+                backgroundvalue[curchrom]=[copy.deepcopy(win.winValueL)]
             #win
             win.slidWindowOverlap(winLinAchr,chrlenmap[curchrom],40000,20000,ddafcaculator)
             obsexpsignalmapbychrom[curchrom]=copy.deepcopy(win.winValueL)
