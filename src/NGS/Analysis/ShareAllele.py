@@ -25,10 +25,10 @@ dincrease = (maxvalue - minvalue) / breaks
 delta_DerAftotal={}
 while minvalue<=maxvalue - dincrease :
     print(minvalue,minvalue + dincrease)
-    delta_DerAftotal[(minvalue,minvalue + dincrease)]={"BinP1andP2":0,"BinP1orP2":0,"BBAA":0,"BABA":0,"ABBA":0,"meanvalue":0}
+    delta_DerAftotal[(minvalue,minvalue + dincrease)]={"BinP1andP2":0,"BinP1orP2":0,"BBAA":0,"BABA":0,"ABBA":0,"type1meanvalue":0,"type2meanvlaues":0}
 #     delta_DerAf[(minvalue,minvalue + dincrease)]={"BinP1andP2":[],"BinP1orP2":[],"BBAA":[],"BABA":[],"ABBA":[]}
     minvalue += dincrease
-delta_DerAftotal.pop(minvalue-dincrease,minvalue);delta_DerAftotal[(minvalue-dincrease,maxvalue)]={"BinP1andP2":0,"BinP1orP2":0,"BBAA":0,"BABA":0,"ABBA":0,"meanvalue":0}
+delta_DerAftotal.pop(minvalue-dincrease,minvalue);delta_DerAftotal[(minvalue-dincrease,maxvalue)]={"BinP1andP2":0,"BinP1orP2":0,"BBAA":0,"BABA":0,"ABBA":0,"type1meanvalue":0,"type2meanvlaues":0}
 delta_DerAftotalP1P3=copy.deepcopy(delta_DerAftotal)
 delta_DerAftotalP2P3=copy.deepcopy(delta_DerAftotal)
 # print(delta_DerAf)
@@ -46,9 +46,9 @@ def countJoinFile(FileNamrPre):
     dincrease= (maxvalue - minvalue) / breaks
     while minvalue<=maxvalue - dincrease :
         print(minvalue,minvalue + dincrease)
-        delta_DerAf[(minvalue,minvalue + dincrease)]={"BinP1andP2":[],"BinP1orP2":[],"BBAA":[],"BABA":[],"ABBA":[],"meanvalue":[]}
+        delta_DerAf[(minvalue,minvalue + dincrease)]={"BinP1andP2":[],"BinP1orP2":[],"BBAA":[],"BABA":[],"ABBA":[],"type1meanvalue":[],"type2meanvlaues":[]}
         minvalue += dincrease
-    delta_DerAf.pop(minvalue-dincrease,minvalue);delta_DerAf[(minvalue-dincrease,maxvalue)]={"BinP1andP2":[],"BinP1orP2":[],"BBAA":[],"BABA":[],"ABBA":[],"meanvalue":[]}
+    delta_DerAf.pop(minvalue-dincrease,minvalue);delta_DerAf[(minvalue-dincrease,maxvalue)]={"BinP1andP2":[],"BinP1orP2":[],"BBAA":[],"BABA":[],"ABBA":[],"type1meanvalue":[],"type2meanvlaues":[]}
     print(delta_DerAf)
     delta_DerAfP1P3=copy.deepcopy(delta_DerAf)
     delta_DerAfP2P3=copy.deepcopy(delta_DerAf)
@@ -70,30 +70,33 @@ def countJoinFile(FileNamrPre):
         for dDAF in [delta_DerAf,delta_DerAfP2P3,delta_DerAfP1P3]:
             k+=1
             if k==1:
-                i=1;j=2#P1P2
+                i=1;j=2#P1P2 FOCUS ON BBAA
             elif k==2:
                 i=2;j=3#P2P3 FOCUS ON ABBA
             elif k==3:
-                i=1;j=3#P1P3
+                i=1;j=3#P1P3 FOCUS ON BABA
             for a,b in sorted(dDAF.keys()):
     #                 print("\t",(p1-p2),">",a,":",(p1-p2)>a,(p1-p2),"<",b,":",(p1-p2)<=b)
-                if (p[i]-p[j])>a and (p[i]-p[j])<=b:
+                if (p[i]-p[j])>=a and (p[i]-p[j])<=b:
     #                     print("\t","passed bin threshold",p1,p2,linelist[-3],linelist[-2],linelist[-1])
-                    dDAF[(a,b)]["meanvalue"].append(float(linelist[-k]))
+                    dDAF[(a,b)]["type1meanvalue"].append(float(linelist[-k]))
                     if p[i]>0 and p[j]>0:
                         dDAF[(a,b)]["BinP1andP2"].append(linelist)
                     if p[i]>0 or p[j]>0:
                         dDAF[(a,b)]["BinP1orP2"].append(linelist)
     #                         print("\t","BinP1orP2",p1,p2)
+                    judge=0
                     if float(linelist[8])> float(linelist[9]) and float(linelist[8])>float(linelist[10]):
     #                         print("\t","BBAA",linelist[-3])
-                        dDAF[(a,b)]["BBAA"].append(linelist[-3]);BBAAcount+=1
+                        dDAF[(a,b)]["BBAA"].append(linelist[-3]);BBAAcount+=1;judge=1
                     elif float(linelist[9])>float(linelist[8]) and float(linelist[9])>float(linelist[10]):
-                        dDAF[(a,b)]["ABBA"].append(linelist[-2]);ABBAcount+=1
+                        dDAF[(a,b)]["ABBA"].append(linelist[-2]);ABBAcount+=1;judge=2
     #                         print("\t","ABBA",linelist[-2])
                     elif float(linelist[10])>float(linelist[8]) and float(linelist[10])>float(linelist[9]):
-                        dDAF[(a,b)]["BABA"].append(linelist[-1]);BABAcount+=1
+                        dDAF[(a,b)]["BABA"].append(linelist[-1]);BABAcount+=1;judge=3
     #                         print("\t","BABA",linelist[-1])
+                    if judge==k:
+                        dDAF[(a,b)]["type2meanvalue"].append(float(linelist[-k]))
                     break
     pickle.dump(delta_DerAf,open(FileNamrPre+".FreqStratifiedP1P2BBAA", 'wb'))
     pickle.dump(delta_DerAfP1P3,open(FileNamrPre+".FreqStratifiedP1P3BABA", 'wb'))
@@ -274,11 +277,11 @@ if __name__ == '__main__':
     filelistfile.seek(0)
     filelist=filelistfile.readlines()
     for fn in filelist:
-        for daftotal,n in [[delta_DerAftotal,".FreqStratifiedP1P2BBAA"],[delta_DerAftotalP1P3,'FreqStratifiedP1P3BABA'],[delta_DerAftotalP2P3,'FreqStratifiedP2P3ABBA']]:
+        for daftotal,n in [[delta_DerAftotal,".FreqStratifiedP1P2BBAA"],[delta_DerAftotalP1P3,'.FreqStratifiedP1P3BABA'],[delta_DerAftotalP2P3,'.FreqStratifiedP2P3ABBA']]:
             delta_DerAf=pickle.load(open(fn.strip()+n,"rb"))
             for a,b in sorted(daftotal.keys()):
                 for k in sorted(daftotal[(a,b)]):
-                    if k!="meanvalue":            
+                    if k!="type1meanvalue" and k!="type2meanvalue":            
                         print(fn.strip(),len(delta_DerAf[(a,b)][k]),end="|")
                         daftotal[(a,b)][k]+=len(delta_DerAf[(a,b)][k])
                     else:
