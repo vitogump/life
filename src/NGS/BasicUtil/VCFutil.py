@@ -6,7 +6,7 @@ Created on 2013-6-30
 '''
 
 
-import random
+import random,sys
 import re, pickle, copy
 
 
@@ -192,6 +192,8 @@ class VCF_Data():
             AN = float(re.search(r"AN=([\d]+);", linelist[7]).group(1))
             if (total_individ*2-AN)/(total_individ*2)>geno or AF<maf or int(linelist[1].strip()) in excludesitsForAchr:
 #                 print(line,total_individ*2-AN)
+                if int(linelist[0])>50000000:
+                    print(line);sys.stdout.flush()
                 continue
             if linelist[0] in chromchangemap:
                 positionlist.append((chromchangemap[linelist[0]],chromchangemap[linelist[0]]+"_"+linelist[1],0,linelist[1]))

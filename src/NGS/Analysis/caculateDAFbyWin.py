@@ -101,17 +101,17 @@ if __name__ == '__main__':
         if snplist[0]!=curchrom and curchrom!="chrNo":
             #region
             if curchrom in seletedregionMapByChr:
-                ps=0;pe=0
+                ps=1;pe=1
                 for s,e in seletedregionMapByChr[curchrom]:
                     win.slidWindowOverlap(winLinAchr,e,e-s,e-s,ddafcaculator,s)
                     if curchrom not in regionvalue:
                         regionvalue[curchrom]=[];backgroundvalue[curchrom]=[]
                     regionvalue[curchrom].append(copy.deepcopy(win.winValueL))
-                    win.slidWindowOverlap(winLinAchr,s,s-pe,s-pe,ddafcaculator,pe)
+                    win.slidWindowOverlap(winLinAchr,s,s-pe,s-pe,ddafcaculator,pe+1)
                     backgroundvalue[curchrom].append(copy.deepcopy(win.winValueL))# between divergence region or before 
                     ps=s;pe=e
                 else:
-                    win.slidWindowOverlap(winLinAchr,chrlenmap[curchrom],chrlenmap[curchrom]-pe,chrlenmap[curchrom]-pe,ddafcaculator,pe)
+                    win.slidWindowOverlap(winLinAchr,chrlenmap[curchrom],chrlenmap[curchrom]-pe,chrlenmap[curchrom]-pe,ddafcaculator,pe+1)
                     backgroundvalue[curchrom].append(copy.deepcopy(win.winValueL))# end of the last divergence to end of the chromosome. 
             else:#no divergence region
                 win.slidWindowOverlap(winLinAchr,chrlenmap[curchrom],chrlenmap[curchrom],chrlenmap[curchrom],ddafcaculator)
