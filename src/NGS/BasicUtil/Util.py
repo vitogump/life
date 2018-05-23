@@ -1878,6 +1878,7 @@ class Window():
     def slidWindowOverlap(self, L, L_End_Pos, windowWidth, slideSize, Caculator,L_Start_Pos=0):
         print("L_End_Pos",L_End_Pos,L_Start_Pos)
         """
+        require at least one SNP pos in L in sliding window
         window slide from L_Start_Pos to L_End_Pos
         L = [(pos,p1,p2,p3,A_base_idx),(pos,"a,b","c,d","e,f",0),(pos,"a,b","c,d","e,f",1),....] for D-statistics wihtout "no covered"
         or 

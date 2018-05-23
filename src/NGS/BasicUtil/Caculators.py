@@ -30,15 +30,18 @@ class Caculate_ddaf(Caculator):
         self.absddaf=0
         self.delta_DerAftotal=copy.deepcopy(delta_DerAftotal)
         self.absdelta_DerAftotal=copy.deepcopy(absdelta_DerAftotal)
+#         self.T=""
     def process(self, T):
         self.count+=1
         self.ddaf += float(T[4])-float(T[5])
         self.absddaf += abs(float(T[4])-float(T[5]))
+#         self.T=T
     def getResult(self):
         c=self.count
         absddaf=self.absddaf
         ddaf=self.ddaf
         self.count = 0;self.ddaf = 0;self.absddaf=0
+#         print(c,[absddaf,ddaf],self.T)
         return c,[absddaf,ddaf]
 #Bits for intyerpreting and manipulating sequence data
 
