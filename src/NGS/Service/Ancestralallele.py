@@ -487,7 +487,7 @@ class AncestralAlleletabletools():
         print(shellstatment,a,"OK")
     def extarctBlastOut(self,BlastOutFile,flanklen=25):
         print(" query id, subject id, % identity, alignment length, mismatches, gap opens, q. start, q. end, s. start, s. end, evalue, bit score")
-        a = os.popen("awk '$1!~/^#/ && $4>60  {print $0}' " + BlastOutFile)
+        a = os.popen("awk '$1!~/^#/ && $4==121 && $5==1  {print $0}' " + BlastOutFile)
         posfile=open(BlastOutFile+".pos",'w')
     
         lastbasesAccur = {}
@@ -501,13 +501,14 @@ class AncestralAlleletabletools():
         sstartpos = int(hitlist[8])
         qstartpos = int(hitlist[6])
         blastlen=int(hitlist[3])
-        snp_loc_s=sstartpos+flanklen+1-qstartpos
+        
         snpindex = flanklen+1 - qstartpos
         if sstartpos > sendpos:
             temp = sstartpos
             sstartpos = sendpos
             sendpos = temp
             revcom="-"
+        snp_loc_s=sstartpos+flanklen
         lastsnpID = hitlist[0]
         chrom= hitlist[1]
 #         RefSeqMap = Util.getRefSeqBypos(refFastahander=ancestryreffile, refindex=ancestryrefidx, currentChromNO=chrom, startpos=sstartpos, endpos=sendpos)
@@ -527,7 +528,7 @@ class AncestralAlleletabletools():
             sendpos = int(hitlist[9])
             qstartpos = int(hitlist[6])
             blastlen=int(hitlist[3])
-            snp_loc_s=sstartpos+flanklen+1-qstartpos
+            snp_loc_s=sstartpos+flanklen
             snpindex = flanklen+1 - qstartpos
             if sstartpos > sendpos:
                 temp = sstartpos
