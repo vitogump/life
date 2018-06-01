@@ -22,7 +22,7 @@ parser.add_option("-v", "--variantstable", dest="variantstable", help="variants"
 parser.add_option("-V", "--vcffilename", dest="vcffilename", help="variants")
 parser.add_option("-b", "--bedfiles", dest="bedfiles", action="append", default=[], help="bedfiles")
 parser.add_option("-o", "--outputpath", dest="outputpath", help="default infile1_infile2")
-
+parser.add_option("-c", "--chromtablename", dest="chromtablename")
 parser.add_option("-m", "--minlength", dest="minlength")
 parser.add_option("-5", "--TSSregion", dest="TSSregion", default="0", help="")
 parser.add_option("-3", "--utr3_region", dest="utr3_region", default="0")
@@ -32,12 +32,12 @@ parser.add_option("-q", "--quiet",
                                                                                                                                                           
 (options, args) = parser.parse_args()
 refFastaName = options.reffa
-reffastaidxName = refFastaName + ".myindex"
-reffahandler = open(options.reffa, "r")
+reffa=options.reffa
+reffahandler=open(reffa,"r")
 
 
 minlength = options.minlength
-chromtable = Util.pekingduckchromtable#options.chromtablename
+chromtable = options.chromtablename#Util.pekingduckchromtable#
 dbchromtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname)
 if options.vcffilename!=None:
     variantstablename = re.search(r"[^/]*$",options.vcffilename).group(0)
@@ -100,10 +100,13 @@ CodonTable = {     'ttt': 'F', 'tct': 'S', 'tat': 'Y', 'tgt': 'C',
       'gtg': 'V', 'gcg': 'A', 'gag': 'E', 'ggg': 'G'}
 if __name__ == '__main__':
     try:
-        refidxByChr = pickle.load(open(reffastaidxName, 'rb'))
+        refidxByChr = pickle.load(open(reffa+ ".myfasteridx", 'rb'))
+#         refidxByChr = pickle.load(open(reffastaidxName, 'rb'))
     except IOError:
-        Util.generateIndexByChrom(refFastaName, reffastaidxName)
-        refidxByChr = pickle.load(open(reffastaidxName, 'rb'))
+        Util.generateFasterRefIndex(reffa, reffa+ ".myfasteridx")
+        refidxByChr = pickle.load(open(reffa+ ".myfasteridx", 'rb'))
+#         Util.generateIndexByChrom(refFastaName, reffastaidxName)
+#         refidxByChr = pickle.load(open(reffastaidxName, 'rb'))
         
     totalChroms = dbchromtools.operateDB("select", "select count(*) from " + chromtable + " where chrlength>=" + minlength)[0][0]
     for i in range(0, totalChroms, 20):
@@ -174,7 +177,7 @@ if __name__ == '__main__':
 #                     intergennicsnps=dbvariantstools.operateDB("select","select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>=" + str(lasttscptID_endpos) + " and snp_pos<" + str(geneGroup[1][2]) + " order by snp_pos");
 #                     for snp in intergennicsnps:
 #                         print(*snp,sep='\t',file=intergenicVF)
-                RefSeqMap = Util.getRefSeqBypos(reffahandler, refidxByChr, currentchrID, geneGroup[1][2], geneGroup[0], currentchrLen, seektuple)
+                RefSeqMap = Util.getRefSeqBypos_faster(reffahandler, refidxByChr, currentchrID, geneGroup[1][2], geneGroup[0], currentchrLen, seektuple)
                 seektuple = (reffahandler.tell(), len(RefSeqMap[currentchrID]) + RefSeqMap[currentchrID][0] - 1)
                 
                 tscptSeqAllCds = {};tscptSeqAllCds_mut = {};cds_frame = {};mutat_amino_seq = {};ref_amino_seq = {}

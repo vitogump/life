@@ -6,8 +6,10 @@ Created on 2013-6-30
 '''
 
 
-import random,sys
+import random, sys
 import re, pickle, copy
+
+# from pip._vendor.requests.packages import chardet
 
 
 class VCF_Data():
@@ -286,10 +288,18 @@ class VCF_Data():
 
             filepos=vcfFile.tell()
             line=vcfFile.readline()
-
+        else:
+            if linelist is  None or pos<startpos:
+                return VcfList_A_Chrom
         #from startpos to collected recs    
         vcfFile.seek(filepos)
         linescontent=vcfFile.read(self.VcfIndexMap[chrom][1]-filepos)
+        print("need check encoding is utf-8")
+#         encoding=chardet.detect(linescontent)
+#         print(chardet.detect(linescontent))
+#         if encoding["encoding"]!='utf-8':
+#             exit(-1)
+#         print("in it",filepos,self.VcfIndexMap[chrom][1]-filepos-1,encoding["encoding"])
         vcflineslist=re.split(r"\n",linescontent.strip())
 #         line = vcfFile.readline().strip()
         recidx = 0
