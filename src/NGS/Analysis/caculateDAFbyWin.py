@@ -108,6 +108,7 @@ if __name__ == '__main__':
                 for s,e in seletedregionMapByChr[curchrom]:
                     if (winLinAchr[0][0]>s and winLinAchr[0][0]<e) or (winLinAchr[-1][0]>s and winLinAchr[-1][0]<e) or (winLinAchr[0][0]<=s and winLinAchr[-1][0]>=e):
                         print(curchrom,s,e,file=open("adsfasdf",'a'))
+                        print(curchrom)
                         win.slidWindowOverlap(winLinAchr,e,e-s+1,e-s+1,ddafcaculator,s)
                         regionvalue[curchrom].append(copy.deepcopy(win.winValueL))
                     if s>pe+1 and winLinAchr[0][0]>pe and winLinAchr[-1][0]<s:

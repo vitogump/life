@@ -1975,7 +1975,7 @@ class Window():
 #                         self.winValueL.append((0, 0, noofsnps, value))
 #            
         
-        n = int((L_End_Pos - (len(self.winValueL) * slideSize + windowWidth)) / slideSize) + 1
+        n = int((L_End_Pos-L_Start_Pos - (len(self.winValueL) * slideSize + windowWidth)) / slideSize) + 1
         for i in range(n):
             noofsnps, value = Caculator.getResult()
             self.winValueL.append((0, 0, noofsnps, value))
