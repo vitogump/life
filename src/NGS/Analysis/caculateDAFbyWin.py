@@ -92,6 +92,7 @@ if __name__ == '__main__':
         else:
             seletedregionMapByChr[regionlist[0]]=[(int(regionlist[1]),int(regionlist[2]))]
     seletedtablefile.close()
+    print(seletedregionMapByChr)
     # start calculated ddaf absddaf, meanwhile, collect ddaf in high divergence and genome background
     snpfile=open(options.snpfile,'r')
     winLinAchr=[];obsexpsignalmapbychrom={};regionvalue={};backgroundvalue={}
@@ -105,21 +106,22 @@ if __name__ == '__main__':
             if curchrom in seletedregionMapByChr:
                 ps=1;pe=1;regionvalue[curchrom]=[]
                 for s,e in seletedregionMapByChr[curchrom]:
-                    if winLinAchr[0][0]>s and winLinAchr[-1][0]<e:
-                        win.slidWindowOverlap(winLinAchr,e,e-s,e-s,ddafcaculator,s)
+                    if (winLinAchr[0][0]>s and winLinAchr[0][0]<e) or (winLinAchr[-1][0]>s and winLinAchr[-1][0]<e) or (winLinAchr[0][0]<=s and winLinAchr[-1][0]>=e):
+                        print(curchrom,s,e,file=open("adsfasdf",'a'))
+                        win.slidWindowOverlap(winLinAchr,e,e-s+1,e-s+1,ddafcaculator,s)
                         regionvalue[curchrom].append(copy.deepcopy(win.winValueL))
                     if s>pe+1 and winLinAchr[0][0]>pe and winLinAchr[-1][0]<s:
-                        win.slidWindowOverlap(winLinAchr,s,s-pe,s-pe,ddafcaculator,pe)
+                        win.slidWindowOverlap(winLinAchr,s,s-pe+1,s-pe+1,ddafcaculator,pe)
                         backgroundvalue[curchrom].append(copy.deepcopy(win.winValueL))# between divergence region or before 
                     ps=s;pe=e
                 else:
                     if chrlenmap[curchrom]<=pe+1 or winLinAchr[-1][0]<=pe:
                         print(curchrom,chrlenmap[curchrom],"or",winLinAchr[-1][0],"<",pe+1)
                     else:
-                        win.slidWindowOverlap(winLinAchr,chrlenmap[curchrom],chrlenmap[curchrom]-pe,chrlenmap[curchrom]-pe,ddafcaculator,pe)
+                        win.slidWindowOverlap(winLinAchr,chrlenmap[curchrom],chrlenmap[curchrom]-pe+1,chrlenmap[curchrom]-pe+1,ddafcaculator,pe)
                         backgroundvalue[curchrom].append(copy.deepcopy(win.winValueL))# end of the last divergence to end of the chromosome. 
             else:#no divergence region
-                win.slidWindowOverlap(winLinAchr,chrlenmap[curchrom],chrlenmap[curchrom],chrlenmap[curchrom],ddafcaculator)
+                win.slidWindowOverlap(winLinAchr,chrlenmap[curchrom],chrlenmap[curchrom]+1,chrlenmap[curchrom]+1,ddafcaculator)
                 backgroundvalue[curchrom]=[copy.deepcopy(win.winValueL)]
             #win
 #             print(len(winLinAchr),winLinAchr[0],curchrom)
@@ -154,7 +156,7 @@ if __name__ == '__main__':
     for chrom in regionvalue.keys():
         for winvaluesl in regionvalue[chrom]:
             for s,e,n,v in winvaluesl:
-                print(chrom,s,e,n,*v,file=hdvf)
+                print(chrom,s,e,n,*v,sep="\t",file=hdvf)
     hdvf.close()
     
     bgf=open(options.output+"genomicbackgroundegion",'w')
@@ -162,7 +164,7 @@ if __name__ == '__main__':
     for chrom in backgroundvalue.keys():
         for winvaluesl in backgroundvalue[chrom]:
             for s,e,n,v in winvaluesl:
-                print(chrom,s,e,n,*v,file=bgf)
+                print(chrom,s,e,n,*v,sep="\t",file=bgf)
     bgf.close()
     binfile=open(options.output+".Stratifiedfstdxybydaf","w")
     print("bins\tbine",end="\t",file=binfile)

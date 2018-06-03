@@ -1902,7 +1902,7 @@ class Window():
             if L[findfirstidx][0]>winStart:
                 currentIdx=findfirstidx
                 break
-        while currentIdx != len(L):
+        while currentIdx != len(L) and L[currentIdx][0]<= L_End_Pos:
 #             print(L[currentIdx][0],L[currentIdx])
             if L[currentIdx][0] > winStart and  L[currentIdx][0] <= (winStart + windowWidth):
 #                if notjustforsnp or (len(L[currentIdx][1])==1 and re.search(r'[^a-zA-Z]', L[currentIdx][2]) != None and len(L[currentIdx][2])==1):# it's not a snp? indel or cnv
