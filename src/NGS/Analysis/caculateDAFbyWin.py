@@ -136,21 +136,25 @@ if __name__ == '__main__':
             curchrom=snplist[0];snplist[1]=int(snplist[1])
             winLinAchr=[snplist[1:]]
     # stratified fst,dxy by ddaf bin
+    f=open("correlation.fstdxy_daf",'w')
     for chrom in sorted(obsexpsignalmapbychrom):
         for i in range(len(obsexpsignalmapbychrom[chrom])):
-            absddaf,ddaf=obsexpsignalmapbychrom[chrom][i][3]
+            absddaf,ddaf=obsexpsignalmapbychrom[chrom][i][3];sitscountforddaf=obsexpsignalmapbychrom[chrom][i][2]
+            print(infile1fstmap[chrom][str(i)][5])
+            if sitscountforddaf!=0: print(chrom,i,infile1fstmap[chrom][str(i)][5],infile1dxymap[chrom][str(i)][5],absddaf/sitscountforddaf,ddaf/sitscountforddaf,file=f);meanabsddaf=absddaf/sitscountforddaf;meanddaf=ddaf/sitscountforddaf
             for a,b in sorted(absdelta_DerAftotal.keys()):#delta_DerAftotal
-                if absddaf>=a and absddaf<=b:
+                if meanabsddaf>=a and meanabsddaf<=b:
                     fstvalue=infile1fstmap[chrom][str(i)][5]
                     dxyvalue=infile1dxymap[chrom][str(i)][5]
                     if fstvalue!="NA": absdelta_DerAftotal[(a,b)]["fstlist"].append(float(fstvalue))
                     if dxyvalue!="NA": absdelta_DerAftotal[(a,b)]["dxylist"].append(float(dxyvalue))
             for a,b in sorted(delta_DerAftotal.keys()):
-                if ddaf>=a and ddaf<=b:
+                if meanddaf>=a and meanddaf<=b:
                     fstvalue=infile1fstmap[chrom][str(i)][5]
                     dxyvalue=infile1dxymap[chrom][str(i)][5]
                     if fstvalue!="NA": delta_DerAftotal[(a,b)]["fstlist"].append(float(fstvalue))
                     if dxyvalue!="NA": delta_DerAftotal[(a,b)]["dxylist"].append(float(dxyvalue))
+    f.close()
     #test show result
     hdvf=open(options.output+"highdivergenceregion",'w')
     print("chrNo\tstartpos\tendpos\tabsddaf\tddaf",file=hdvf)
@@ -170,9 +174,11 @@ if __name__ == '__main__':
     binfile=open(options.output+".Stratifiedfstdxybydaf","w")
     print("bins\tbine",end="\t",file=binfile)
     for k in sorted(delta_DerAftotal[(a,b)]):
+        
         print(k,end="\t",file=binfile)
     print("",file=binfile) 
     for a,b in sorted(delta_DerAftotal.keys()):
+        print(*delta_DerAftotal[(a,b)]["fstlist"],sep="\n",file=open("fstddaf.winvalue",'a'))
         print(a,b,sep="\t",end="\t",file=binfile)
         for k in  sorted(delta_DerAftotal[(a,b)]):
             print(numpy.mean(delta_DerAftotal[(a,b)][k]),end="\t",file=binfile)
@@ -182,9 +188,11 @@ if __name__ == '__main__':
     binfile=open(options.output+".Stratifiedfstdxybyabsdaf","w")
     print("bins\tbine",end="\t",file=binfile)
     for k in sorted(absdelta_DerAftotal[list(absdelta_DerAftotal.keys())[0]]):
+        
         print(k,end="\t",file=binfile)
     print("",file=binfile)
     for a,b in sorted(absdelta_DerAftotal.keys()):
+        print(*absdelta_DerAftotal[(a,b)]["fstlist"],sep="\n",file=open("fstabsddaf.winvalue",'a'))
         print(a,b,sep="\t",end="\t",file=binfile)
         for k in  sorted(absdelta_DerAftotal[(a,b)]):
             print(numpy.mean(absdelta_DerAftotal[(a,b)][k]),end="\t",file=binfile)
