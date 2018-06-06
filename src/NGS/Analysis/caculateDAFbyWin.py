@@ -140,18 +140,20 @@ if __name__ == '__main__':
     for chrom in sorted(obsexpsignalmapbychrom):
         for i in range(len(obsexpsignalmapbychrom[chrom])):
             absddaf,ddaf=obsexpsignalmapbychrom[chrom][i][3];sitscountforddaf=obsexpsignalmapbychrom[chrom][i][2]
-            print(infile1fstmap[chrom][str(i)][5])
+            print(infile1dxymap[chrom][str(i)][5])
             if sitscountforddaf!=0: print(chrom,i,infile1fstmap[chrom][str(i)][5],infile1dxymap[chrom][str(i)][5],absddaf/sitscountforddaf,ddaf/sitscountforddaf,file=f);meanabsddaf=absddaf/sitscountforddaf;meanddaf=ddaf/sitscountforddaf
             for a,b in sorted(absdelta_DerAftotal.keys()):#delta_DerAftotal
                 if meanabsddaf>=a and meanabsddaf<=b:
                     fstvalue=infile1fstmap[chrom][str(i)][5]
                     dxyvalue=infile1dxymap[chrom][str(i)][5]
+                    absdelta_DerAftotal[(a,b)]["snpcount"].append(sitscountforddaf)
                     if fstvalue!="NA": absdelta_DerAftotal[(a,b)]["fstlist"].append(float(fstvalue))
                     if dxyvalue!="NA": absdelta_DerAftotal[(a,b)]["dxylist"].append(float(dxyvalue))
             for a,b in sorted(delta_DerAftotal.keys()):
                 if meanddaf>=a and meanddaf<=b:
                     fstvalue=infile1fstmap[chrom][str(i)][5]
                     dxyvalue=infile1dxymap[chrom][str(i)][5]
+                    absdelta_DerAftotal[(a,b)]["snpcount"].append(sitscountforddaf)
                     if fstvalue!="NA": delta_DerAftotal[(a,b)]["fstlist"].append(float(fstvalue))
                     if dxyvalue!="NA": delta_DerAftotal[(a,b)]["dxylist"].append(float(dxyvalue))
     f.close()
@@ -178,7 +180,7 @@ if __name__ == '__main__':
         print(k,end="\t",file=binfile)
     print("",file=binfile) 
     for a,b in sorted(delta_DerAftotal.keys()):
-        print(*delta_DerAftotal[(a,b)]["fstlist"],sep="\n",file=open("fstddaf.winvalue",'a'))
+        print(*delta_DerAftotal[(a,b)]["dxylist"],sep="\n",file=open("dxyddaf.winvalue",'a'))
         print(a,b,sep="\t",end="\t",file=binfile)
         for k in  sorted(delta_DerAftotal[(a,b)]):
             print(numpy.mean(delta_DerAftotal[(a,b)][k]),end="\t",file=binfile)
@@ -192,7 +194,7 @@ if __name__ == '__main__':
         print(k,end="\t",file=binfile)
     print("",file=binfile)
     for a,b in sorted(absdelta_DerAftotal.keys()):
-        print(*absdelta_DerAftotal[(a,b)]["fstlist"],sep="\n",file=open("fstabsddaf.winvalue",'a'))
+        print(*absdelta_DerAftotal[(a,b)]["dxylist"],sep="\n",file=open("dxyabsddaf.winvalue",'a'))
         print(a,b,sep="\t",end="\t",file=binfile)
         for k in  sorted(absdelta_DerAftotal[(a,b)]):
             print(numpy.mean(absdelta_DerAftotal[(a,b)][k]),end="\t",file=binfile)

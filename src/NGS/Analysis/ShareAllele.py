@@ -280,12 +280,14 @@ if __name__ == '__main__':
         for daftotal,n in [[delta_DerAftotal,".FreqStratifiedP1P2BBAA"],[delta_DerAftotalP1P3,'.FreqStratifiedP1P3BABA'],[delta_DerAftotalP2P3,'.FreqStratifiedP2P3ABBA']]:
             delta_DerAf=pickle.load(open(fn.strip()+n,"rb"))
             for a,b in sorted(daftotal.keys()):
+                print(a,b)
                 for k in sorted(daftotal[(a,b)]):
                     if k!="type1meanvalue" and k!="type2meanvalue":            
                         print(fn.strip(),len(delta_DerAf[(a,b)][k]),end="|")
                         daftotal[(a,b)][k]+=len(delta_DerAf[(a,b)][k])
                     else:
                         print(n[-4:],k,delta_DerAf[(a,b)].keys())
+                        print(delta_DerAf[(a,b)][k])
                         daftotal[(a,b)][k]=numpy.mean(delta_DerAf[(a,b)][k])
     
     #BBAA
