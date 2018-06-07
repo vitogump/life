@@ -2146,8 +2146,8 @@ class WinInGenome():
             else:
                 print(*win, sep="\t", file=outfile)
         outfile.close()
-
-    def collectTrscptInWin(self, genomedbtools, trscptableName, region, upextend=0, downextend=0,extendtodistal=0):
+    @staticmethod
+    def collectTrscptInWin( genomedbtools, trscptableName, region, upextend=0, downextend=0,extendtodistal=0,treatallasPROTEINGENE=True):
         """select trscpt overlaped with the region
         reture a list of trscpts [tp_generecord1+overlapcode,tp_generecord2+overlapcode,,,]
         """
@@ -2172,42 +2172,42 @@ class WinInGenome():
         for row in result:
             row += tuple([1])
             trscptlist.append(row)
-            if row[0].find("ENS")==0:
+            if row[0].find("ENS")==0 or treatallasPROTEINGENE:
                 findPROTEINGENE=True
         #2
         result = genomedbtools.operateDB("select", selectType2OverlapGenesql)
         for row in result:
             row += tuple([2])
             trscptlist.append(row)
-            if row[0].find("ENS")==0:
+            if row[0].find("ENS")==0 or treatallasPROTEINGENE:
                 findPROTEINGENE=True
         #3
         result = genomedbtools.operateDB("select", selectType3OverlapGenesql)
         for row in result:
             row += tuple([3])
             trscptlist.append(row)
-            if row[0].find("ENS")==0:
+            if row[0].find("ENS")==0 or treatallasPROTEINGENE:
                 findPROTEINGENE=True
         #4
         result = genomedbtools.operateDB("select", selectType4OverlapGenesql)
         for row in result:
             row += tuple([4])
             trscptlist.append(row)
-            if row[0].find("ENS")==0:
+            if row[0].find("ENS")==0 or treatallasPROTEINGENE:
                 findPROTEINGENE=True
         #5
         result = genomedbtools.operateDB("select", selectType5OverlapGenesql)
         for row in result:
             row += tuple([5])
             trscptlist.append(row)
-            if row[0].find("ENS")==0:
+            if row[0].find("ENS")==0 or treatallasPROTEINGENE:
                 findPROTEINGENE=True
         #6
         result = genomedbtools.operateDB("select", selectType6OverlapGenesql)
         for row in result:
             row += tuple([6])
             trscptlist.append(row)
-            if row[0].find("ENS")==0:
+            if row[0].find("ENS")==0 or treatallasPROTEINGENE:
                 findPROTEINGENE=True
             
         if not findPROTEINGENE and extendtodistal>max(upextend,downextend):
