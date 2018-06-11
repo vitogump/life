@@ -36,10 +36,10 @@ dincrease = (maxvalue - minvalue) / breaks
 delta_DerAftotal={}
 while minvalue<=maxvalue - dincrease :
     print(minvalue,minvalue + dincrease)
-    delta_DerAftotal[(minvalue,minvalue + dincrease)]={"fstlist":[],"dxylist":[]}
+    delta_DerAftotal[(minvalue,minvalue + dincrease)]={"fstlist":[],"dxylist":[],"snpcount":[]}
 #     delta_DerAf[(minvalue,minvalue + dincrease)]={"BinP1andP2":[],"BinP1orP2":[],"BBAA":[],"BABA":[],"ABBA":[]}
     minvalue += dincrease
-delta_DerAftotal.pop(minvalue-dincrease,minvalue);delta_DerAftotal[(minvalue-dincrease,maxvalue)]={"fstlist":[],"dxylist":[]}
+delta_DerAftotal.pop(minvalue-dincrease,minvalue);delta_DerAftotal[(minvalue-dincrease,maxvalue)]={"fstlist":[],"dxylist":[],"snpcount":[]}
 
 minvalue = 0
 maxvalue = 1
@@ -48,10 +48,10 @@ dincrease = (maxvalue - minvalue) / breaks
 absdelta_DerAftotal={}
 while minvalue<=maxvalue - dincrease :
     print(minvalue,minvalue + dincrease)
-    absdelta_DerAftotal[(minvalue,minvalue + dincrease)]={"fstlist":[],"dxylist":[]}
+    absdelta_DerAftotal[(minvalue,minvalue + dincrease)]={"fstlist":[],"dxylist":[],"snpcount":[]}
 #     delta_DerAf[(minvalue,minvalue + dincrease)]={"BinP1andP2":[],"BinP1orP2":[],"BBAA":[],"BABA":[],"ABBA":[]}
     minvalue += dincrease
-absdelta_DerAftotal.pop(minvalue-dincrease,minvalue);absdelta_DerAftotal[(minvalue-dincrease,maxvalue)]={"fstlist":[],"dxylist":[]}
+absdelta_DerAftotal.pop(minvalue-dincrease,minvalue);absdelta_DerAftotal[(minvalue-dincrease,maxvalue)]={"fstlist":[],"dxylist":[],"snpcount":[]}
 ddafcaculator=Caculators.Caculate_ddaf(delta_DerAftotal,absdelta_DerAftotal)
 maporder=[];infile1fstmap={}
 infileref=open(options.fstwinfile,'r')
@@ -153,7 +153,7 @@ if __name__ == '__main__':
                 if meanddaf>=a and meanddaf<=b:
                     fstvalue=infile1fstmap[chrom][str(i)][5]
                     dxyvalue=infile1dxymap[chrom][str(i)][5]
-                    absdelta_DerAftotal[(a,b)]["snpcount"].append(sitscountforddaf)
+                    delta_DerAftotal[(a,b)]["snpcount"].append(sitscountforddaf)
                     if fstvalue!="NA": delta_DerAftotal[(a,b)]["fstlist"].append(float(fstvalue))
                     if dxyvalue!="NA": delta_DerAftotal[(a,b)]["dxylist"].append(float(dxyvalue))
     f.close()
