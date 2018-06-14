@@ -625,41 +625,38 @@ class Caculate_df(Caculator):
         self.COUNTEDadditional=[0,[0,0]]
         self.unsufficentfixediff=0
         return [noofhet,(pop1unsufficentfixed,pop2unsufficentfixed)],nooffixediff #self.COUNTEDadditional,self.COUNTED
+
 class CaculatorToFindTAGs(Caculator):
     def __init__(self,mod):
-#         self.curchom=chrom/
-#         self.curwinStart=startposOfaChr
-#         self.curwinEnd=self.curwinStart+winsize
-#         self.slidesize=slidesize
-        #for selectTAG noly
         self.TAGSforAwin=[]
         self.cwinNo=0
-        #pass info from randomvcf to selectTAG
         self.rand2snpForEveryWin=[]
-        #for randomvcf only
-        self.SNPwithAFforAwin=[]
+        self.SNPwithAFforAwin=[]#element (pos,af,upstreamdistance,downstreamdistance)
         self.mod=mod#randomvcf,selectTAG
+        self.previousPos=1
     def process(self,T):
         "T=(pos, REF, ALT, INFO,FORMAT,sampleslist)"
         if self.mod=="randomvcf":
             af=float(re.search(r"AF=([\d\.e-]+)[;,]",T[3]).group(1))
-            self.SNPwithAFforAwin.append((T[0],af))
+            if len(self.SNPwithAFforAwin)>=1: self.SNPwithAFforAwin[-1][3]=T[0]-self.previousPos 
+            self.SNPwithAFforAwin.append([T[0],af,T[0]-self.previousPos,35,T[1],T[2]])
+            self.previousPos=T[0]
         elif self.mod=="selectTAG":
             self.TAGSforAwin.append(T[0])
     def getResult(self):
         if self.mod=="randomvcf":
-            self.SNPwithAFforAwin.sort(key=lambda x:abs(x[1]-0.5))
-            if len(self.SNPwithAFforAwin)>=2:
-                snp1=self.SNPwithAFforAwin[0]
-                snp2=self.SNPwithAFforAwin[1]
+            passedsites=[e6 for e6 in self.SNPwithAFforAwin if (e6[2]>=35 or e6[3]>=35)]
+            passedsites.sort(key=lambda x:abs(x[2]-0.5))
+            if len(passedsites)>=2:
+                snp1=passedsites[0]
+                snp2=passedsites[1]
                 self.rand2snpForEveryWin.append((snp1,snp2))
+            elif len(passedsites)==1:
+                self.rand2snpForEveryWin.append((passedsites[0],"NA"))
             else:
                 self.rand2snpForEveryWin.append(("NA","NA"))
-            print(self.SNPwithAFforAwin)
             self.SNPwithAFforAwin=[]
-
-            
-            return -1,self.rand2snpForEveryWin[-1]
+            return -1,self.rand2snpForEveryWin[-1]#-1,(snp1_6info,snp2_6info)
         elif self.mod=="selectTAG":
             self.TAGSforAwin=list(set(self.TAGSforAwin))
             if len(self.TAGSforAwin)>=2:
@@ -667,7 +664,6 @@ class CaculatorToFindTAGs(Caculator):
                 tag1=self.TAGSforAwin[idxlist[0]]
                 tag2=self.TAGSforAwin[idxlist[1]]
                 nooftags=2
-#                 print("tags:",tag1,tag2)
                 valuetoReturn=[tag1,tag2]
             elif len(self.TAGSforAwin)==1:
                 nooftags=1
@@ -676,10 +672,6 @@ class CaculatorToFindTAGs(Caculator):
                 nooftags=0
                 self.rand2snpForEveryWin[self.cwinNo]
                 valuetoReturn=[self.rand2snpForEveryWin[self.cwinNo][0],self.rand2snpForEveryWin[self.cwinNo][1]]
-
-
-#             self.curwinStart+=self.slidesize
-#             self.curwinEnd+=self.slidesize
             self.TAGSforAwin=[]
             self.cwinNo+=1
             return nooftags,valuetoReturn
