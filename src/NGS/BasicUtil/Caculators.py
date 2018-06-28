@@ -21,7 +21,26 @@ class Caculator():
         pass
     def getResult(self):
         pass
-    
+
+class Caculator_addpriority():
+    def __init__(self):
+        #every Caculator which need two or more vcf have the follow two variable
+        self.vcfnamelist=[]
+        self.vcfnameKEY_vcfobj_pyBAMfilesVALUE={}
+        self.contained=[]
+        self.restATCT={"2":[],"3":[],"4":[]}
+        self.restNonATCT={"2":[],"3":[],"4":[]}
+        self.markedrecs=[]
+    def process(self, T):
+        if T[2].strip()=="1":
+            self.contained.append(T)
+        elif "A/T" in T[1] or "C/G" in T[1]:
+            self.restATCT[T[2].strip()].append(T)
+        else:
+            self.restNonATCT[T[2].strip()].append(T)
+    def getResult(self):
+        if len(self.contained)!=0:
+            self.markedrecs==
 class Caculate_ddaf(Caculator):
     def __init__(self,delta_DerAftotal,absdelta_DerAftotal):
         super().__init__()
