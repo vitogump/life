@@ -627,13 +627,15 @@ class Caculate_df(Caculator):
         return [noofhet,(pop1unsufficentfixed,pop2unsufficentfixed)],nooffixediff #self.COUNTEDadditional,self.COUNTED
 
 class CaculatorToFindTAGs(Caculator):
-    def __init__(self,mod):
+    def __init__(self,mod,Interferingf):
         self.TAGSforAwin=[]
         self.cwinNo=0
         self.rand2snpForEveryWin=[]
         self.SNPwithAFforAwin=[]#element (pos,af,upstreamdistance,downstreamdistance)
         self.mod=mod#randomvcf,selectTAG
         self.previousPos=1
+        self.Interferingf=Interferingf
+        self.curchrom=""
     def process(self,T):
         "T=(pos, REF, ALT, INFO,FORMAT,sampleslist)"
         if self.mod=="randomvcf":
@@ -649,10 +651,34 @@ class CaculatorToFindTAGs(Caculator):
             passedsites.sort(key=lambda x:abs(x[2]-0.5))
             if len(passedsites)>=2:
                 snp1=passedsites[0]
+                if snp1[2]<35 :
+                    idx1=self.SNPwithAFforAwin.index(snp1)
+                    for e6 in reversed(self.SNPwithAFforAwin[:idx1]):
+                        if e6[0]>snp1[0]-35 and e6[0]!=snp1[0]: print(self.curchrom,*e6,file=self.Interferingf)
+                elif snp1[3]<35:
+                    idx1=self.SNPwithAFforAwin.index(snp1)
+                    for e6 in self.SNPwithAFforAwin[idx1:]:
+                        if e6[0]<snp1[0]+35 and e6[0]!=snp1[0]: print(self.curchrom,*e6,file=self.Interferingf)
                 snp2=passedsites[1]
+                if snp2[2]<35 :
+                    idx2=self.SNPwithAFforAwin.index(snp2)
+                    for e6 in reversed(self.SNPwithAFforAwin[:idx2]):
+                        if e6[0]>snp2[0]-35 and e6[0]!=snp2[0]: print(self.curchrom,*e6,file=self.Interferingf)
+                elif snp2[3]<35:
+                    idx2=self.SNPwithAFforAwin.index(snp2)
+                    for e6 in self.SNPwithAFforAwin[idx2:]:
+                        if e6[0]<snp2[0]+35 and e6[0]!=snp2[0]: print(self.curchrom,*e6,file=self.Interferingf)                
                 self.rand2snpForEveryWin.append((snp1,snp2))
             elif len(passedsites)==1:
                 self.rand2snpForEveryWin.append((passedsites[0],"NA"))
+                if passedsites[0][2]<35 :
+                    idx1=self.SNPwithAFforAwin.index(passedsites[0])
+                    for e6 in reversed(self.SNPwithAFforAwin[:idx1]):
+                        if e6[0]>passedsites[0][0]-35 and e6[0]!=passedsites[0][0]: print(self.curchrom,*e6,file=self.Interferingf)
+                elif passedsites[0][3]<35:
+                    idx1=self.SNPwithAFforAwin.index(passedsites[0])
+                    for e6 in self.SNPwithAFforAwin[idx1:]:
+                        if e6[0]<passedsites[0][0]+35 and e6[0]!=passedsites[0][0]: print(self.curchrom,*e6,file=self.Interferingf)                
             else:
                 self.rand2snpForEveryWin.append(("NA","NA"))
             self.SNPwithAFforAwin=[]
