@@ -5,6 +5,7 @@ Created on 2018年5月24日
 '''
 from multiprocessing.dummy import Pool
 import os,re,sys
+from src.NGS.BasicUtil import *
 SNPIDmissedinextract=[]
 def extarctBlastOutvariablelenwaper(a):
     extarctBlastOutvariablelen(**a)
@@ -114,7 +115,28 @@ def extarctBlastOut(BlastOutFile,queryFaFile,filterlen=100,mismatch=6):
     ambigousfile.close()
     print("finish")
 if __name__ == '__main__':
-    if len(sys.argv)<3:
+    ###add priority to scored file
+    if len(sys.argv)!=3:
+        print("python chip_design.py scoredfile winsize")
+    
+    os.system("sort -t$'\t'  -k5,5 -k6,6n "+sys.argv[1]+">"+sys.argv[1]+".sorted")
+    f=open(sys.argv[1],'r');title=re.split(r"\t",f.readline().strip())
+    tidx=title.index("tiling_order");curchr=title[4]
+    win = Util.Window()
+    hp_caculator = Caculators.Caculate_Hp(SeqMethodlist=methodlist,minsnps=10,depth=int(options.mindepth))
+    for line in f:
+        recl=re.split(r"\t",line.strip())
+        recs=[]
+        if curchr==recl[4]:
+            currentchrLen=int(recl[5])
+            print("collect rec in a win")
+            recs.append(recl)
+        elif recl[4]!="cust_chr":
+            print("sliding win")
+            win.slidWindowOverlap(recs, currentchrLen, 800, 800, hp_caculator)
+            
+    ###
+    if len(sys.argv)<4:
         print("python chip_design.py chrchangemapfile blastout.pos out.pos")
         exit(-1)
     f=open(sys.argv[1],'r')
