@@ -23,24 +23,74 @@ class Caculator():
         pass
 
 class Caculator_addpriority():
-    def __init__(self):
+    def __init__(self,f):
         #every Caculator which need two or more vcf have the follow two variable
         self.vcfnamelist=[]
         self.vcfnameKEY_vcfobj_pyBAMfilesVALUE={}
         self.contained=[]
-        self.restATCT={"2":[],"3":[],"4":[]}
-        self.restNonATCT={"2":[],"3":[],"4":[]}
-        self.markedrecs=[]
+        self.mmm={"2":"2","3":"3","4":"4","5":"1"}
+        self.restNonATCT={"2":[],"3":[],"4":[],"5":[]}
+        self.restATCT={"2":[],"3":[],"4":[],"5":[]}
+        
+        self.classedrecs=[]
+        self.notrecommand=[]
+        self.pf=f
     def process(self, T):
-        if T[2].strip()=="1":
-            self.contained.append(T)
-        elif "A/T" in T[1] or "C/G" in T[1]:
-            self.restATCT[T[2].strip()].append(T)
+        if T[-2]=="not_recommended" or T[-1]=="not_recommended" :
+            self.notrecommand.append(T)
         else:
-            self.restNonATCT[T[2].strip()].append(T)
+            print("should not be here",T)
+            self.classedrecs.append(T)
+            if T[3].strip()=="1":
+                self.contained.append(len(self.classedrecs)-1)
+            elif "A/T" in T[2] or "C/G" in T[2]:
+                if T[-2]=="recommended":
+                    self.restATCT[T[3].strip()].insert(0,len(self.classedrecs)-1)
+                else:
+                    self.restATCT[T[3].strip()].append(len(self.classedrecs)-1)
+            else:
+                if T[-2]=="recommended":
+                    self.restNonATCT[T[3].strip()].insert(0,len(self.classedrecs)-1)
+                else:
+                    self.restNonATCT[T[3].strip()].append(len(self.classedrecs)-1)
     def getResult(self):
+        print(self.restATCT,self.restNonATCT,self.contained,len(self.classedrecs))
+#         if self.classedrecs==[]:
+#             self.classedrecs=self.notrecommand
         if len(self.contained)!=0:
-            self.markedrecs==
+            for recidx in reversed(self.contained):
+                e=self.classedrecs.pop(recidx)
+                print(*e[1:],"1",sep="\t",file=self.pf)
+            for e in self.classedrecs:
+                if e[-2]=="recommended":
+                    print(*e[1:],"6",sep="\t",file=self.pf)
+                else:
+                    print(*e[1:],"7",sep="\t",file=self.pf)
+        else:
+            for k in ["2","3","4","5"]:
+                if self.restNonATCT[k]!=[]:
+                    e=self.classedrecs.pop(self.restNonATCT[k][0])
+                    print(*e[1:],self.mmm[k],sep="\t",file=self.pf)
+                    break
+            else:
+                for k in ["2","3","4","5"]:
+                    if self.restATCT[k]!=[]:
+                        e=self.classedrecs.pop(self.restATCT[k][0])
+                        print(*e[1:],self.mmm[k],sep="\t",file=self.pf)
+                        break
+            for e in self.classedrecs:
+                if e[-2]=="recommended":
+                    print(*e[1:],"6",sep="\t",file=self.pf)
+                else:
+                    print(*e[1:],"7",sep="\t",file=self.pf)
+        self.contained=[]
+        self.restNonATCT={"2":[],"3":[],"4":[],"5":[]}
+        self.restATCT={"2":[],"3":[],"4":[],"5":[]}
+        self.pf.flush()
+        self.classedrecs=[]
+        self.notrecommand=[]
+        return 1,2
+#             self.markedrecs
 class Caculate_ddaf(Caculator):
     def __init__(self,delta_DerAftotal,absdelta_DerAftotal):
         super().__init__()
@@ -657,7 +707,7 @@ class CaculatorToFindTAGs(Caculator):
         self.curchrom=""
     def process(self,T):
         "T=(pos, REF, ALT, INFO,FORMAT,sampleslist)"
-        if self.mod=="randomvcf":
+        if self.mod=="randomvcf" and re.search(r"AF=([\d\.e-]+)[;,]",T[3])!=None:
             af=float(re.search(r"AF=([\d\.e-]+)[;,]",T[3]).group(1))
             if len(self.SNPwithAFforAwin)>=1: self.SNPwithAFforAwin[-1][3]=T[0]-self.previousPos 
             self.SNPwithAFforAwin.append([T[0],af,T[0]-self.previousPos,35,T[1],T[2]])

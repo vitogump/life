@@ -116,26 +116,66 @@ def extarctBlastOut(BlastOutFile,queryFaFile,filterlen=100,mismatch=6):
     print("finish")
 if __name__ == '__main__':
     ###add priority to scored file
+    infile1map={}
+    if len(sys.argv)==2:
+        print("print duprecs")
+        f=open(sys.argv[1],'r');f.readline();ofo=open(sys.argv[1]+"dup",'w')
+        for line in f:
+            recl=re.split(r"\t",line.strip())
+            if recl[2].strip() in infile1map:
+                print(*recl,sep="\t",file=ofo)
+                print(*infile1map[recl[2].strip()],sep="\t",file=ofo)
+            else:
+                infile1map[recl[2].strip()]=recl
+        f.close();ofo.close()
+        print(recl[2].strip())
+        exit()
+    
+    dupmap={};dupids={}
+    if len(sys.argv)==3 and os.path.exists(sys.argv[2]):
+        print("remove dup,input command: python recswithdup duprecs")
+        f=open(sys.argv[1],'r');dupf=open(sys.argv[2],'r');remdupf=open(sys.argv[1]+"redup",'w');print(f.readline().strip(),file=remdupf)
+        for line in dupf:
+            recl=re.split(r"\t",line.strip())
+            if recl[0] in dupmap:
+                dupmap[recl[0]].append(recl)
+            else:
+                dupids.append(recl[0])
+                dupmap[recl[0]]=[recl]
+        print(len(dupids))
+        for line in f:
+            recl=re.split(r"\t",line.strip())
+            if (recl[0] in dupmap and recl[-1]=="5") or recl[0] not in dupids:
+                print(*recl,sep="\t",file=remdupf)
+        remdupf.close();f.close();dupf.close()
+        exit()
     if len(sys.argv)!=3:
         print("python chip_design.py scoredfile winsize")
-    
+    print("add prority accord tiling_order and win; i.e repriority")
     os.system("sort -t$'\t'  -k5,5 -k6,6n "+sys.argv[1]+">"+sys.argv[1]+".sorted")
-    f=open(sys.argv[1],'r');title=re.split(r"\t",f.readline().strip())
-    tidx=title.index("tiling_order");curchr=title[4]
+    f=open(sys.argv[1]+".sorted",'r');title=re.split(r"\t",f.readline().strip())
+    tidx=title.index("tiling_order");curchr=title[4];print(curchr)
     win = Util.Window()
-    hp_caculator = Caculators.Caculate_Hp(SeqMethodlist=methodlist,minsnps=10,depth=int(options.mindepth))
+    ofo=open(sys.argv[1]+sys.argv[2],'w')
+    addprortycaculator = Caculators.Caculator_addpriority(f=ofo)
+    recs=[]
     for line in f:
         recl=re.split(r"\t",line.strip())
-        recs=[]
+        
         if curchr==recl[4]:
             currentchrLen=int(recl[5])
-            print("collect rec in a win")
-            recs.append(recl)
-        elif recl[4]!="cust_chr":
-            print("sliding win")
-            win.slidWindowOverlap(recs, currentchrLen, 800, 800, hp_caculator)
-            
-    ###
+#             print("collect rec in a win")
+            recs.append([int(recl[5])]+recl)
+        elif curchr!="cust_chr":
+            print(recl,"sliding win",len(recs),currentchrLen)
+            win.slidWindowOverlap(recs, currentchrLen, int(sys.argv[2]), int(sys.argv[2]), addprortycaculator)
+            recs=[[int(recl[5])]+recl];curchr=recl[4]
+        else:#first line
+            print(recl)
+            recs=[[int(recl[5])]+recl];curchr=recl[4];currentchrLen=int(recl[5])
+    ofo.close()
+    exit()        
+    ###other firt function
     if len(sys.argv)<4:
         print("python chip_design.py chrchangemapfile blastout.pos out.pos")
         exit(-1)
