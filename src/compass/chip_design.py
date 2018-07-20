@@ -115,20 +115,20 @@ def extarctBlastOut(BlastOutFile,queryFaFile,filterlen=100,mismatch=6):
     ambigousfile.close()
     print("finish")
 if __name__ == '__main__':
-    ###add priority to scored file
     infile1map={}
     if len(sys.argv)==2:
         print("print duprecs")
         f=open(sys.argv[1],'r');f.readline();ofo=open(sys.argv[1]+"dup",'w')
         for line in f:
             recl=re.split(r"\t",line.strip())
-            if recl[2].strip() in infile1map:
+            seql=re.split(r"\[.+\]",recl[2].strip())#############
+            if seql[0]+seql[1] in infile1map:
                 print(*recl,sep="\t",file=ofo)
-                print(*infile1map[recl[2].strip()],sep="\t",file=ofo)
+                print(*infile1map[seql[0]+seql[1]],sep="\t",file=ofo)
             else:
-                infile1map[recl[2].strip()]=recl
+                infile1map[seql[0]+seql[1]]=recl
         f.close();ofo.close()
-        print(recl[2].strip())
+        print(recl[2].strip(),seql[0]+seql[1])
         exit()
     
     dupmap={};dupids={}
@@ -149,17 +149,40 @@ if __name__ == '__main__':
                 print(*recl,sep="\t",file=remdupf)
         remdupf.close();f.close();dupf.close()
         exit()
+    ###add priority to scored file
     if len(sys.argv)!=3:
         print("python chip_design.py scoredfile winsize")
     print("add prority accord tiling_order and win; i.e repriority")
-    os.system("sort -t$'\t'  -k5,5 -k6,6n "+sys.argv[1]+">"+sys.argv[1]+".sorted")
-    f=open(sys.argv[1]+".sorted",'r');title=re.split(r"\t",f.readline().strip())
-    tidx=title.index("tiling_order");curchr=title[4];print(curchr)
+    
+    mustincludef=open("lkjltail603uniq417",'r');musctincludes=set()
+    for line in mustincludef:
+        mustinl=re.split(r"\t",line.strip())
+        musctincludes.add(mustinl[1])
+    mustincludef.close()
+    dupf=open("fillgapMergeOldmarker.txtdup",'r');dupseqmap={}
+    """{seq1:[highestpriority,id1,id2,id3],seq2:[highestpriority,id1,id2],seq3:[highestpriority,id1,id2],,}"""
+#     os.system("sort -t$'\t'  -k5,5 -k6,6n "+sys.argv[1]+">"+sys.argv[1]+".sorted")
+    f=open(sys.argv[1],'r');title=re.split(r"\t",f.readline().strip())
+    tidx=title.index("tiling_order");curchr=title[4];print(curchr,"tilingorder idx:",tidx)
+    for drec in dupf:
+        drecl=re.split(r"\t",drec.strip())
+        seql=re.split(r"\[.+\]",drecl[2].strip())
+        
+        seqmerge=seql[0]+seql[1]
+        if seqmerge in dupseqmap:
+            dupseqmap[seqmerge].append(drecl[1])
+            dupseqmap[seqmerge][0]=max(dupseqmap[seql[0]+seql[1]][0],int(drecl[3]))
+        else:
+            dupseqmap[seqmerge]=[int(drecl[3]),drecl[1]]
+    
+    
+#     print(dupseqmap);exit()
     win = Util.Window()
     ofo=open(sys.argv[1]+sys.argv[2],'w')
-    addprortycaculator = Caculators.Caculator_addpriority(f=ofo)
-    recs=[]
+    addprortycaculator = Caculators.Caculator_addpriority(of=ofo,tilingorderidx=tidx,best_recommendation=31,rmdupmap=dupseqmap,mustin=musctincludes)
+    recs=[];count=0;tcount=0
     for line in f:
+        tcount+=1
         recl=re.split(r"\t",line.strip())
         
         if curchr==recl[4]:
@@ -168,12 +191,19 @@ if __name__ == '__main__':
             recs.append([int(recl[5])]+recl)
         elif curchr!="cust_chr":
             print(recl,"sliding win",len(recs),currentchrLen)
+            count+=len(recs)
+            if count!=tcount-1:
+                print(line,count,tcount);exit()
             win.slidWindowOverlap(recs, currentchrLen, int(sys.argv[2]), int(sys.argv[2]), addprortycaculator)
+            print("win",count)
             recs=[[int(recl[5])]+recl];curchr=recl[4]
         else:#first line
             print(recl)
             recs=[[int(recl[5])]+recl];curchr=recl[4];currentchrLen=int(recl[5])
+    else:
+        win.slidWindowOverlap(recs, currentchrLen, int(sys.argv[2]), int(sys.argv[2]), addprortycaculator)
     ofo.close()
+    f.close();addprortycaculator.temp.close()
     exit()        
     ###other firt function
     if len(sys.argv)<4:

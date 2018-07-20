@@ -23,69 +23,89 @@ class Caculator():
         pass
 
 class Caculator_addpriority():
-    def __init__(self,f):
+    def __init__(self,of,tilingorderidx=2,best_recommendation=32,rmdupmap={},mustin=set()):
         #every Caculator which need two or more vcf have the follow two variable
         self.vcfnamelist=[]
         self.vcfnameKEY_vcfobj_pyBAMfilesVALUE={}
         self.contained=[]
         self.mmm={"2":"2","3":"3","4":"4","5":"1"}
-        self.restNonATCT={"2":[],"3":[],"4":[],"5":[]}
-        self.restATCT={"2":[],"3":[],"4":[],"5":[]}
-        
+        self.restNonATCT={"1":[],"2":[],"3":[],"4":[],"5":[],"6":[],"7":[]}#{"2":[],"3":[],"4":[],"5":[]}
+        self.restATCT={"1":[],"2":[],"3":[],"4":[],"5":[],"6":[],"7":[]}#{"2":[],"3":[],"4":[],"5":[]}
+        self.tidx=tilingorderidx+1#first element is position info
+        self.rcmidx=best_recommendation+1
+        self.rmdupmap=rmdupmap
         self.classedrecs=[]
         self.notrecommand=[]
-        self.pf=f
+        self.pf=of
+        self.count=0
+        self.temp=open("dupidnotequal.txt",'w')
+        self.musctincludes=mustin
     def process(self, T):
-        if T[-2]=="not_recommended" or T[-1]=="not_recommended" :
+        self.count+=1
+        seql=re.split(r"\[.+\]",T[2].strip())
+        if seql[0]+seql[1]  in self.rmdupmap:
+            if len(set(self.rmdupmap[seql[0]+seql[1]][1:]))>1:
+                print(T,file=self.temp)
+                return
+            else:
+                T[self.tidx]==str(self.rmdupmap[seql[0]+seql[1]][0])
+        if T[1] in self.musctincludes:
+            self.classedrecs.append(T)
+            self.contained.append(len(self.classedrecs)-1)
+            return
+            
+        if T[self.rcmidx]=="not_recommended"  :#or T[-1]=="not_recommended"
             self.notrecommand.append(T)
         else:
-            print("should not be here",T)
+#             print("should not be here",T)
             self.classedrecs.append(T)
-            if T[3].strip()=="1":
+            if T[self.tidx].strip()=="2" and T[self.rcmidx]=="recommended":#"1"
                 self.contained.append(len(self.classedrecs)-1)
             elif "A/T" in T[2] or "C/G" in T[2]:
-                if T[-2]=="recommended":
-                    self.restATCT[T[3].strip()].insert(0,len(self.classedrecs)-1)
+                if T[self.rcmidx]=="recommended":#keep the recommended first
+                    self.restATCT[T[self.tidx].strip()].insert(0,len(self.classedrecs)-1)
                 else:
-                    self.restATCT[T[3].strip()].append(len(self.classedrecs)-1)
+                    self.restATCT[T[self.tidx].strip()].append(len(self.classedrecs)-1)
             else:
-                if T[-2]=="recommended":
-                    self.restNonATCT[T[3].strip()].insert(0,len(self.classedrecs)-1)
+                if T[self.rcmidx]=="recommended":
+                    self.restNonATCT[T[self.tidx].strip()].insert(0,len(self.classedrecs)-1)
                 else:
-                    self.restNonATCT[T[3].strip()].append(len(self.classedrecs)-1)
+                    self.restNonATCT[T[self.tidx].strip()].append(len(self.classedrecs)-1)
     def getResult(self):
+        print(self.count)
         print(self.restATCT,self.restNonATCT,self.contained,len(self.classedrecs))
-#         if self.classedrecs==[]:
-#             self.classedrecs=self.notrecommand
+
         if len(self.contained)!=0:
             for recidx in reversed(self.contained):
                 e=self.classedrecs.pop(recidx)
-                print(*e[1:],"1",sep="\t",file=self.pf)
+                print(*e[1:],"2",sep="\t",file=self.pf)
             for e in self.classedrecs:
-                if e[-2]=="recommended":
-                    print(*e[1:],"6",sep="\t",file=self.pf)
+                if e[self.rcmidx]=="recommended":
+                    print(*e[1:],"8",sep="\t",file=self.pf)
                 else:
-                    print(*e[1:],"7",sep="\t",file=self.pf)
+                    print(*e[1:],"9",sep="\t",file=self.pf)
         else:
-            for k in ["2","3","4","5"]:
+            for k in ["1","2","3","4","5","6","7"]:#["2","3","4","5"]
                 if self.restNonATCT[k]!=[]:
                     e=self.classedrecs.pop(self.restNonATCT[k][0])
-                    print(*e[1:],self.mmm[k],sep="\t",file=self.pf)
+                    print(*e[1:],k,sep="\t",file=self.pf)#self.mmm[k]
                     break
             else:
-                for k in ["2","3","4","5"]:
+                for k in ["1","2","3","4","5","6","7"]:
                     if self.restATCT[k]!=[]:
                         e=self.classedrecs.pop(self.restATCT[k][0])
-                        print(*e[1:],self.mmm[k],sep="\t",file=self.pf)
+                        print(*e[1:],k,sep="\t",file=self.pf)#self.mmm[k]
                         break
             for e in self.classedrecs:
-                if e[-2]=="recommended":
-                    print(*e[1:],"6",sep="\t",file=self.pf)
+                if e[self.rcmidx]=="recommended":
+                    print(*e[1:],"8",sep="\t",file=self.pf)
                 else:
-                    print(*e[1:],"7",sep="\t",file=self.pf)
+                    print(*e[1:],"9",sep="\t",file=self.pf)
+            for ne in self.notrecommand:
+                print(*ne[1:],"9",sep="\t",file=self.pf)
         self.contained=[]
-        self.restNonATCT={"2":[],"3":[],"4":[],"5":[]}
-        self.restATCT={"2":[],"3":[],"4":[],"5":[]}
+        self.restNonATCT={"1":[],"2":[],"3":[],"4":[],"5":[],"6":[],"7":[]}#{"2":[],"3":[],"4":[],"5":[]}
+        self.restATCT={"1":[],"2":[],"3":[],"4":[],"5":[],"6":[],"7":[]}#{"2":[],"3":[],"4":[],"5":[]}
         self.pf.flush()
         self.classedrecs=[]
         self.notrecommand=[]
