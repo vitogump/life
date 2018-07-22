@@ -101,8 +101,8 @@ class Caculator_addpriority():
                     print(*e[1:],"8",sep="\t",file=self.pf)
                 else:
                     print(*e[1:],"9",sep="\t",file=self.pf)
-            for ne in self.notrecommand:
-                print(*ne[1:],"9",sep="\t",file=self.pf)
+        for ne in self.notrecommand:
+            print(*ne[1:],"9",sep="\t",file=self.pf)
         self.contained=[]
         self.restNonATCT={"1":[],"2":[],"3":[],"4":[],"5":[],"6":[],"7":[]}#{"2":[],"3":[],"4":[],"5":[]}
         self.restATCT={"1":[],"2":[],"3":[],"4":[],"5":[],"6":[],"7":[]}#{"2":[],"3":[],"4":[],"5":[]}
