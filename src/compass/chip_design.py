@@ -179,6 +179,7 @@ if __name__ == '__main__':
 #     print(dupseqmap);exit()
     win = Util.Window()
     ofo=open(sys.argv[1]+sys.argv[2],'w')
+    print(*title,"priority",sep="\t",file=ofo)
     addprortycaculator = Caculators.Caculator_addpriority(of=ofo,tilingorderidx=tidx,best_recommendation=31,rmdupmap=dupseqmap,mustin=musctincludes)
     recs=[];count=0;tcount=0
     for line in f:
