@@ -37,7 +37,7 @@ class Caculator_addpriority():
         self.classedrecs=[]
         self.notrecommand=[]
         self.pf=of
-        self.count=0
+        self.count=0   
         self.temp=open("dupidnotequal.txt",'w')
         self.musctincludes=mustin
     def process(self, T):
@@ -86,16 +86,23 @@ class Caculator_addpriority():
                     print(*e[1:],"9",sep="\t",file=self.pf)
         else:
             for k in ["1","2","3","4","5","6","7"]:#["2","3","4","5"]
-                if self.restNonATCT[k]!=[]:
+                if self.restNonATCT[k]!=[] and self.classedrecs[self.restNonATCT[k][0]][self.rcmidx]=="recommended":
                     e=self.classedrecs.pop(self.restNonATCT[k][0])
                     print(*e[1:],k,sep="\t",file=self.pf)#self.mmm[k]
                     break
             else:
                 for k in ["1","2","3","4","5","6","7"]:
-                    if self.restATCT[k]!=[]:
-                        e=self.classedrecs.pop(self.restATCT[k][0])
+                    if self.restNonATCT[k]!=[]:
+                        e=self.classedrecs.pop(self.restNonATCT[k][0])
                         print(*e[1:],k,sep="\t",file=self.pf)#self.mmm[k]
                         break
+                else:
+                    print("test",file=open("test.txt","a"))
+                    for k in ["1","2","3","4","5","6","7"]:
+                        if self.restATCT[k]!=[] :
+                            e=self.classedrecs.pop(self.restATCT[k][0])
+                            print(*e[1:],k,sep="\t",file=self.pf)#self.mmm[k]
+                            break
             for e in self.classedrecs:
                 if e[self.rcmidx]=="recommended":
                     print(*e[1:],"8",sep="\t",file=self.pf)

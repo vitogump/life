@@ -205,6 +205,10 @@ if __name__ == '__main__':
         win.slidWindowOverlap(recs, currentchrLen, int(sys.argv[2]), int(sys.argv[2]), addprortycaculator)
     ofo.close()
     f.close();addprortycaculator.temp.close()
+    os.system("""awk 'BEGIN{FS="\t";OFS="\t"}{if(NF==33){print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,"",$33}else{print $0}}' Axiom_KPSmilet_redo_scored.txt.sorted3700 >Axiom_KPSmilet_redo_scored.txt.sorted3700withtitle.miodifylastcol""")
+    os.system("""awk 'BEGIN{FS="\t"}{if($34!=8 && $34!=9){print $0}}' Axiom_KPSmilet_redo_scored.txt.sorted3700withtitle.miodifylastcol|awk 'BEGIN{FS="\t"}{if($32=="neutral"){print $0}}' > Axiom_KPSmilet_redo_scored.txt.sorted3700withtitle.miodifylastcol1_7netural""")
+    os.system("""awk 'BEGIN{FS="\t"}{if($34==8){print $0}}' Axiom_KPSmilet_redo_scored.txt.sorted3700withtitle.miodifylastcol|cat - Axiom_KPSmilet_redo_scored.txt.sorted3700withtitle.miodifylastcol1_7netural|sort -t$'\t'  -k5,5 -k6,6n > Axiom_KPSmilet_redo_scored.txt.sorted3700.sorted8M1_7netural""")
+    
     exit()        
     ###other firt function
     if len(sys.argv)<4:
