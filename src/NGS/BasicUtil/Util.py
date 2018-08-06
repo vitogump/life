@@ -716,7 +716,7 @@ def getGtfMap(gtfFileName, elementTypes=["CDS", "stop_codon"]):
                 jumpout = True
                 protein_codingMap[chromNo] = [[transcript_id, gtfColList[6], int(gtfColList[3]), int(gtfColList[4]), (gtfColList[2], int(gtfColList[3]), int(gtfColList[4]), gtfColList[7])]]
         else:
-            if gtfColList[2].strip()=="UTR":
+            if gtfColList[2].strip()=="UTR" or "utr" in gtfColList[2].strip().lower():
                 if int(gtfColList[3])!=int(gtfColList[4]):#ensembl's bug
                     utrMap[chromNo]={transcript_id:[("UTR",int(gtfColList[3]), int(gtfColList[4]))]}
             print(getfirstcds)
@@ -737,7 +737,7 @@ def getGtfMap(gtfFileName, elementTypes=["CDS", "stop_codon"]):
             if elementType == gtfColList[2].strip():
                 break
         else:
-            if gtfColList[2].strip()=="UTR" and int(gtfColList[3])!=int(gtfColList[4]):#ensembl's bug
+            if (gtfColList[2].strip()=="UTR"  or "utr" in gtfColList[2].strip().lower()) and int(gtfColList[3])!=int(gtfColList[4]):#ensembl's bug
                 if chromNo in utrMap:
                     if transcript_id in utrMap[chromNo]:
                         utrMap[chromNo][transcript_id].append(("UTR",int(gtfColList[3]), int(gtfColList[4])))
