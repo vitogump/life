@@ -8,15 +8,16 @@ from optparse import OptionParser
 import os,re,sys
 
 parser = OptionParser()
+parser.add_option("-N", "--No_ofsites", dest="No_ofsites",default=18)
 parser.add_option("-l", "--seqlib", dest="seqlib",default=None,# action="callback",type="string",callback=useoptionvalue_previous2,
                   help="first col corresponding vcf's, second corresponding new. all vcf's chrom is not necessary. transchr only occur in outfile")
-parser.add_option("-i","--indgenotypefile",dest="indgenotype",nargs=2,help="default infile1_infile2")
+parser.add_option("-i","--indgenotypefile",dest="indgenotype",nargs=2,help="inputtestfile firstcolofindgenotype (start from 1)")
 parser.add_option("-u","--update",dest="identifiedresultoupdatelib",nargs=2,default=None,help="if this option exist, then updatelib, otherwise identify samples")
 parser.add_option("-o", "--output", dest="output", default=True,
                   help="don't print status messages to stdout")
 (options, args) = parser.parse_args()
 
-No_ofsites=18
+No_ofsites=int(options.No_ofsites)
 DIPLOTYPES = ['A', 'C', 'G', 'K',"k","m", 'M', 'N', 'S',"s","r", 'R', 'T', 'W',"w","y", 'Y']
 PAIRS = ['AA', 'CC', 'GG', 'GT',"TG","CA", 'AC', 'NN', 'CG',"GC","GA",'AG', 'TT', 'AT',"TA",'TC','CT']
 diploHaploDict = dict(zip(DIPLOTYPES,PAIRS))
@@ -60,6 +61,7 @@ if __name__ == '__main__':
     print(options.indgenotype)
     titleline=toBeTestindf.readline()
     #read tobetest ind info
+    fs=open("sdflkj",'w')
     for pos in re.split(r"\t",titleline.strip())[int(options.indgenotype[1])-1:]: positionlist.append(pos.strip())
     for indGenoType in toBeTestindf:
         linelist=re.split(r"\t",indGenoType.strip())
@@ -70,11 +72,13 @@ if __name__ == '__main__':
                 seq.append(g.upper())
             elif len(g.strip())==0:
                 seq.append("N")
+            elif "0" in g.strip() or "N" in g.strip() or "-9" in g.strip():
+                seq.append("N")
             else:
                 seq.append(haploDiploDict[g.strip().upper()])
         seq+=["N"]*(No_ofsites-len(seq))
         genotypeOfeachInd.append(seq)
-    print(*genotypeOfeachInd,sep="\n")
+    print(*genotypeOfeachInd,sep="\n",file=fs);fs.close()
     print(positionlist)
     print(len(genotypeOfeachInd),len(positionlist))
     if options.identifiedresultoupdatelib!=None:
@@ -97,11 +101,11 @@ if __name__ == '__main__':
                         NumlibMapBy4Pos[(pos1,pos2,pos3,pos4)][i]=(NoOfT,NoOfNT)
                         print("update",anslist[0].strip())
                     elif "N" not in indseq.upper():
-                        seqlibMapBy4Pos[(pos1,pos2,pos3,pos4)].append(indseq.upper())
+                        
                         if len(anslist)>=int(options.identifiedresultoupdatelib[1]) and anslist[int(options.identifiedresultoupdatelib[1])-1].lower()=="y":
-                            NumlibMapBy4Pos[(pos1,pos2,pos3,pos4)].append((1,0))
+                            NumlibMapBy4Pos[(pos1,pos2,pos3,pos4)].append((1,0));seqlibMapBy4Pos[(pos1,pos2,pos3,pos4)].append(indseq.upper())
                         elif len(anslist)>=int(options.identifiedresultoupdatelib[1]) and anslist[int(options.identifiedresultoupdatelib[1])-1].lower()=="n":
-                            NumlibMapBy4Pos[(pos1,pos2,pos3,pos4)].append((0,1))
+                            NumlibMapBy4Pos[(pos1,pos2,pos3,pos4)].append((0,1));seqlibMapBy4Pos[(pos1,pos2,pos3,pos4)].append(indseq.upper())
         print("writing new lib...")
         nlibf=open(options.output+".lib",'w')
         print(libtitle.strip(),file=nlibf)
@@ -109,24 +113,31 @@ if __name__ == '__main__':
             for fourPosBase in seqlibMapBy4Pos[(pos1,pos2,pos3,pos4)]:
                 print(pos1,pos2,pos3,pos4,sep="+",end="\t",file=nlibf)
                 print(diploHaploDict[fourPosBase[0]],diploHaploDict[fourPosBase[1]],diploHaploDict[fourPosBase[2]],diploHaploDict[fourPosBase[3]],sep="_",end="\t",file=nlibf)
+                print(seqlibMapBy4Pos[(pos1,pos2,pos3,pos4)],len(seqlibMapBy4Pos[(pos1,pos2,pos3,pos4)]),fourPosBase,NumlibMapBy4Pos[(pos1,pos2,pos3,pos4)],len(NumlibMapBy4Pos[(pos1,pos2,pos3,pos4)]))
                 print(*NumlibMapBy4Pos[(pos1,pos2,pos3,pos4)][seqlibMapBy4Pos[(pos1,pos2,pos3,pos4)].index(fourPosBase)],sep="\t",file=nlibf)
         nlibf.close()
         print("writing new lib done",options.output+".lib")
         exit()
     #start test
-    fo=open(options.output,'w')
+    fo=open(options.output,'w');cnt=open("cantdetermin.genotype","w")
+    print(indnamelist)
     for indidx in reversed(range(len(indnamelist))):
-        #exclude all combination has a N  
+        #exclude all combination has a N
+        print("indidx",indidx,indnamelist[indidx],len(indnamelist))
         for pos1,pos2,pos3,pos4 in seqlibMapBy4Pos.keys():
             pos1idx,pos2idx,pos3idx,pos4idx=positionlist.index(pos1),positionlist.index(pos2),positionlist.index(pos3),positionlist.index(pos4)
+            print(genotypeOfeachInd[indidx])
             indseq=genotypeOfeachInd[indidx][pos1idx]+genotypeOfeachInd[indidx][pos2idx]+genotypeOfeachInd[indidx][pos3idx]+genotypeOfeachInd[indidx][pos4idx]      
             if "N" in indseq.upper():
                 continue
             else:
                 break
         else:
-            print(indnamelist.pop(indidx),"can't determine",sep="\t",file=fo)
-            print(genotypeOfeachInd.pop(indidx))
+            cn=indnamelist.pop(indidx)
+            print(cn,"can't determine",sep="\t",file=fo)
+            print(cn,genotypeOfeachInd.pop(indidx),file=cnt)
+            
+            continue
         #test for each 4sites combination
         for pos1,pos2,pos3,pos4 in seqlibMapBy4Pos.keys():
             pos1idx,pos2idx,pos3idx,pos4idx=positionlist.index(pos1),positionlist.index(pos2),positionlist.index(pos3),positionlist.index(pos4)
@@ -158,5 +169,5 @@ if __name__ == '__main__':
         else:
             print(indnamelist[indidx],"非滩羊\tverylowconfidence",sep="\t",file=fo)
     print(indnamelist,len(indnamelist))
-    toBeTestindf.close();fo.close()
+    toBeTestindf.close();fo.close();cnt.close()
 #             print(pos1,pos2,pos3,pos4)

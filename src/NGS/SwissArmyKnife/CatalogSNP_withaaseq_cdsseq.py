@@ -296,7 +296,7 @@ if __name__ == '__main__':
                             if re.search(r'[^a-zA-Z]', altbase) != None or len(altbase)>1 or len(refbase)>1:  # contain ',' ie. multiple alle
                                 continue  # go to the next snp
                             for feature, elemStart, elemEnd, frame in geneGroup[gene_idx][4:]:
-                                
+#                                 print(snppos , elemEnd , snppos , geneGroup[gene_idx],cdsidx + 1,gene_idx)
                                 cdsidx += 1
                                 if snppos <= elemEnd and snppos >= elemStart:
                                     if feature == 'CDS' or feature == 'stop_codon' :

@@ -726,6 +726,7 @@ def getGtfMap(gtfFileName, elementTypes=["CDS", "stop_codon"]):
     chrtranscrpitididxMap[chromNo] = {transcript_id:0}
     for gtfline in gtfFileHandler:
         gtfColList = re.split(r'\s+', gtfline)
+        if gtfColList[2].strip()=="gene":continue
         transcript_id = re.search(r'\"(.*)\";', gtfColList[transcript_id_idx].strip()).group(1)
         chromNo = gtfColList[0].strip()
         if gtfColList[2].strip()=="transcript":
