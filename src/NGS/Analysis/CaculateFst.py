@@ -5,7 +5,7 @@ from itertools import combinations
 import numpy,pickle,re,sys,copy
 from optparse import OptionParser
 import src.NGS.BasicUtil.DBManager as dbm
-import time
+import time,config
 SLEEP_FOR_NEXT_TRY=10
 
 '''
@@ -418,11 +418,11 @@ class Fst():
         return copy.deepcopy(FstMapByChrom)         
 
 if __name__ == '__main__':
-    dbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname)
+    dbtools = dbm.DBTools(config.ip, config.username, config.password, config.genomeinfodbname)
 
     if fsttype=='R' or fsttype=='r':
         fst=Fst(vcffileslist,dbtools,depthfilenames)
-        fst.setMode(fsttype,options.outjoin_innerjoin, outputpath,windowWidth,slideSize,chromtable,minlength,tempdpip=Util.ip,tempdbusername=Util.username,tempdbpw=Util.password,tempdpname=Util.ghostdbname)
+        fst.setMode(fsttype,options.outjoin_innerjoin, outputpath,windowWidth,slideSize,chromtable,minlength,tempdpip=config.ip,tempdbusername=config.username,tempdbpw=config.password,tempdpname=config.ghostdbname)
         fst.executeCaculate()
         
         

@@ -8,7 +8,7 @@ import itertools
 from os.path import sys
 import re, os, math, time
 
-import numpy
+import numpy,config
 
 from NGS.BasicUtil import Caculators, Util
 import NGS.BasicUtil.DerivedalleleProcessor as DAP
@@ -327,7 +327,7 @@ class MakeMhtGraph(object):
         scriptfile=open("stripts.R",'w')
         print(outputnamewithpath,file=scriptfile)
         print(positive_winfiles,negtive_winfiles)
-        randomstr=Util.random_str()
+        randomstr=config.random_str()
         NoOfcurchrom={}
         for winfile,threshold,outbedfilename in positive_winfiles+negtive_winfiles+outfileNameWIN_Alist:
             NoOfcurchrom[winfile]=0

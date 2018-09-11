@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 import re,sys
 from optparse import OptionParser
-from NGS.BasicUtil import Util, VCFutil
+from NGS.BasicUtil import  VCFutil
 '''
 Created on 2015-4-22
 

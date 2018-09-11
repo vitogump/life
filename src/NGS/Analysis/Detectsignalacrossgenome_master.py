@@ -9,7 +9,7 @@ import os
 import re, numpy, fractions, copy
 import time
 
-from NGS.BasicUtil import *
+import config
 import src.NGS.BasicUtil.DBManager as dbm
 
 
@@ -50,7 +50,7 @@ elif options.bedlikefile==None and options.chromlistfilename!=[]:
 else:
     print("confilct")
     exit(-1)
-pathtoPython=(Util.pathtoPython+" ")
+pathtoPython=(config.pathtoPython+" ")
 def runSlave_makecorrelationfile(a):
     chromlistfilename=a[0];topleveltablename=a[1];targetpopvcffile_config=a[2];refpopvcffile_config=a[3];numberofindvdoftargetpop_todividintobin=a[4];outfileprewithpath=a[5]
     command=pathtoPython+options.pathtoslave_config+" -c "+chromlistfilename+" -t "+topleveltablename

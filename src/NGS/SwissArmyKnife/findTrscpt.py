@@ -1,9 +1,10 @@
 from optparse import OptionParser
-import os,numpy
+import os,numpy,config
 import re, sys, time,math
 
 from NGS.BasicUtil import *
 import src.NGS.BasicUtil.DBManager as dbm
+
 
 
 SLEEP_FOR_NEXT_TRY=3
@@ -118,10 +119,10 @@ outfileNameWINwithGENE=path+re.search(r"[^/]*$",winFileName7Field).group(0)+".wi
 
     
 if __name__ == '__main__':
-    genomedbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname) 
-    winGenome = Util.WinInGenome(Util.ghostdbname, winFileName7Field)
+    genomedbtools = dbm.DBTools(config.ip, config.username, config.password, config.genomeinfodbname) 
+    winGenome = geneUtil.WinInGenome(config.ghostdbname, winFileName7Field)
     time.sleep(SLEEP_FOR_NEXT_TRY)
-    winGenome.appendGeneName(Util.TranscriptGenetable, genomedbtools, winWidth, slideSize, outfileNameWINwithGENE,upextend,downextend,(total_outliers,morethan_lessthan))
+    winGenome.appendGeneName(config.TranscriptGenetable, genomedbtools, winWidth, slideSize, outfileNameWINwithGENE,upextend,downextend,(total_outliers,morethan_lessthan))
     selectWinNos="threshold method"
     if percentage!=None:
         totalWin = winGenome.windbtools.operateDB("select", "select count(*) from " + winGenome.wintablewithoutNA)[0][0]
@@ -233,9 +234,9 @@ if __name__ == '__main__':
     for chrom in selectedRegion:
         for region in selectedRegion[chrom]:
             if total_outliers>0:
-                final_table[region]=winGenome.collectTrscptInWin(genomedbtools,Util.TranscriptGenetable,region,upextend,downextend,True)
+                final_table[region]=winGenome.collectTrscptInWin(genomedbtools,config.TranscriptGenetable,region,upextend,downextend,True)
             else:
-                final_table[region]=winGenome.collectTrscptInWin(genomedbtools,Util.TranscriptGenetable,region,upextend,downextend)
+                final_table[region]=winGenome.collectTrscptInWin(genomedbtools,config.TranscriptGenetable,region,upextend,downextend)
 #process top outlier values
 
     for chrom in winGenome.chromOrder:
