@@ -5,7 +5,7 @@ Created on 2015-11-13
 '''
 import copy
 from optparse import OptionParser
-import os
+import os,config
 import pickle
 import re
 
@@ -29,11 +29,11 @@ parser.add_option("-E", "--elementfold", dest="elementfold",action="append",narg
 
 
 (options, args) = parser.parse_args()
-dbvariantstools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.vcfdbname)
+dbvariantstools = dbm.DBTools(config.ip, config.username, config.password, config.vcfdbname)
 pathtoblastn="/pub/tool/blast_set/ncbi-blast-2.2.29+/bin/blastn "
 reffa=options.reffa
 reffahander=open(reffa,"r")
-dbchromtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname)
+dbchromtools = dbm.DBTools(config.ip, config.username, config.password, config.genomeinfodbname)
 try:
     refidxByChr = pickle.load(open(reffa+ ".myfasteridx", 'rb'))
 except IOError:
@@ -57,7 +57,7 @@ if __name__ == '__main__':
             elementfold=elementfold[:-1]
         allseqtobed=geneUtil.make_getElemBed(elementfold, targetseqnamesubstr, pathtoblastn, reffa)
         elementfoldbed=dict(elementfoldbed,**allseqtobed)#merge into elementfoldbed
-    gtfMap,utrMap,allgeneSetMap = Util.getGtfMap(options.gtffile[0])
+    gtfMap,utrMap,allgeneSetMap = geneUtil.getGtfMap(options.gtffile[0])
     upextend=int(options.gtffile[1]);downextend=int(options.gtffile[2])
     if options.catalogVariantfold.endswith("/") or options.catalogVariantfold.endswith("\\"):
         catalogVariantfold=options.catalogVariantfold[:-1]

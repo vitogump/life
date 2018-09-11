@@ -6,9 +6,9 @@ Created on 2014-12-13
 import copy
 from optparse import OptionParser
 import pickle
-import re
+import re,config
 from NGS.BasicUtil import VCFutil
-from src.NGS.BasicUtil import Util
+from src.NGS.BasicUtil import Util,geneUtil
 import NGS.BasicUtil.DBManager as dbm
 
 # testfile
@@ -38,7 +38,7 @@ reffahandler=open(reffa,"r")
 
 minlength = options.minlength
 chromtable = options.chromtablename#Util.pekingduckchromtable#
-dbchromtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname)
+dbchromtools = dbm.DBTools(config.ip, config.username, config.password, config.genomeinfodbname)
 if options.vcffilename!=None:
     variantstablename = re.search(r"[^/]*$",options.vcffilename).group(0)
     vcfobj=VCFutil.VCF_Data(options.vcffilename)
@@ -47,11 +47,11 @@ if options.vcffilename!=None:
     pos_idx=0;ref_idx=1;alt_idx=2
 else:
     variantstablename=options.variantstable.strip()
-    dbvariantstools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.vcfdbname)
+    dbvariantstools = dbm.DBTools(config.ip, config.username, config.password, config.vcfdbname)
     pos_idx=1;ref_idx=3;alt_idx=4
     titlelist = [a[0].strip() for a in dbvariantstools.operateDB("select", "select column_name  from information_schema.columns where table_schema='" + "ninglabvariantdata" + "' and table_name='" + variantstablename + "'")]
 
-gtfMap,utrMap,allgeneSetMap = Util.getGtfMap(options.gtffile)
+gtfMap,utrMap,allgeneSetMap = config.getGtfMap(options.gtffile)
 bedfileNames = options.bedfiles
 
 outputpath = options.outputpath.strip()
@@ -145,7 +145,7 @@ if __name__ == '__main__':
                 snps = dbvariantstools.operateDB("select", "select * from " + variantstablename + " where chrID='" + currentchrID + "' and snp_pos>=" + str(0) + " and snp_pos<" + str(firstutrstartpos) + " order by snp_pos")
             for snp in snps:
                 print(currentchrID,*(snp[pos_idx:]+tuple(["begin"])), sep="\t", file=intergenicVF)
-            GeneGrouplist = Util.getGeneGrouplist(gtfMap[currentchrID])
+            GeneGrouplist = geneUtil.getGeneGrouplist(gtfMap[currentchrID])
             
 
             
@@ -347,7 +347,7 @@ if __name__ == '__main__':
                             codon_m = "".join(tscptSeqAllCds_mut[tscptID][i:i + 3]).lower()
                             if codon != codon_m:
                                 try:
-                                    snppos_cds, ref_base_cds, alt_base_cds = Util.getSNPrecInCDS(i, len(tscptSeqAllCds[tscptID]), codon, codon_m, cds_frame[tscptID], gene)
+                                    snppos_cds, ref_base_cds, alt_base_cds = geneUtil.getSNPrecInCDS(i, len(tscptSeqAllCds[tscptID]), codon, codon_m, cds_frame[tscptID], gene)
                                     if (currentchrID,snppos_cds,ref_base_cds, alt_base_cds) in linetoCDSMap:
                                         if len(linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)])==9:
                                             linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][5] = linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][5] + ";" + codon;linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][6] = linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][6] + ";" + CodonTable[codon];linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][7] = linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][7] + ";" + codon_m;linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][8] = linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)][8] + ";" + CodonTable[codon_m]
@@ -501,9 +501,9 @@ if __name__ == '__main__':
                         tscptSeqAllCds_mut[tscptID].reverse()
 #                             tscptSeqAllCds_mut[tscptID] = list(tscptSeqAllCds_mut_str)
 #############################      produce linetoCDSMap  ############
-                        tscptSeqAllCds_Revr_Cmplm = Util.complementary(tscptSeqAllCds[tscptID])
+                        tscptSeqAllCds_Revr_Cmplm = config.complementary(tscptSeqAllCds[tscptID])
                         tscptSeqAllCds_Revr_Cmplm.reverse()
-                        tscptSeqAllCds_mut_Revr_Cmplm = Util.complementary(tscptSeqAllCds_mut[tscptID])
+                        tscptSeqAllCds_mut_Revr_Cmplm = config.complementary(tscptSeqAllCds_mut[tscptID])
                         tscptSeqAllCds_mut[tscptID]=tscptSeqAllCds_mut_Revr_Cmplm
                         for bases_idx in range(len(tscptSeqAllCds_mut_Revr_Cmplm)):  # reverse every element of the list,ie . reverse every str of the list
                             tscptSeqAllCds_mut_Revr_Cmplm[bases_idx] = tscptSeqAllCds_mut_Revr_Cmplm[bases_idx][::-1]
@@ -516,7 +516,7 @@ if __name__ == '__main__':
                             
                             if codon != codon_m:
                                 try:
-                                    snppos_cds, ref_base_cds, alt_base_cds = Util.getSNPrecInCDS(i, len(tscptSeqAllCds[tscptID]), codon, codon_m, cds_frame[tscptID], gene)
+                                    snppos_cds, ref_base_cds, alt_base_cds = geneUtil.getSNPrecInCDS(i, len(tscptSeqAllCds[tscptID]), codon, codon_m, cds_frame[tscptID], gene)
 #                                     print((currentchrID,snppos_cds,ref_base_cds, alt_base_cds))
                                     if (currentchrID,snppos_cds,ref_base_cds, alt_base_cds) in linetoCDSMap:
                                         if len(linetoCDSMap[(currentchrID,snppos_cds,ref_base_cds, alt_base_cds)])==9:

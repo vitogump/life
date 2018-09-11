@@ -9,7 +9,7 @@ import NGS.BasicUtil.DBManager as dbm
 import NGS.BasicUtil.DerivedalleleProcessor as DAP
 # import NGS.RUtil.Make_Picture as MP
 
-import pickle
+import pickle,config
 """
     the vcf file,every sample is a pop that has the same name in depthfile's title
 """
@@ -66,7 +66,7 @@ if __name__ == '__main__':
 #     aaa=DAP.MakeDerivedAlleletable(database=dbname,ip="10.2.48.140",usrname="root",pw="1234567")
 #     ddd=MP.Dstistics_allpop(allpop)
 #     ddd.caculateDofAllpossibleCombination(database=dbname,ip="10.2.48.140",usrname="root",pw="1234567", allpopssnptable="derived_alle_ref", chromstable=chromstable, winwidth=None, minlengthOfchrom=minlengthOfchrom, filenamepre=options.prefilename)
-    dbtoolsforchrom = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname)
+    dbtoolsforchrom = dbm.DBTools(config.ip, config.username, config.password, config.genomeinfodbname)
     try:
         duckrefindex = pickle.load(open(options.reference + ".myindex", 'rb'))
         originalspeciesindex = pickle.load(open(originalspeciesref + ".myindex", 'rb'))

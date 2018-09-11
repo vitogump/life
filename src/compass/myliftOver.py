@@ -5,7 +5,7 @@ Created on 2017年10月24日
 @author: liurui
 '''
 from optparse import OptionParser
-import pickle, re, sys
+import pickle, re, sys,config
 
 from NGS.BasicUtil import Util
 from src.NGS.Service.Ancestralallele import AncestralAlleletabletools
@@ -34,7 +34,7 @@ bedoutfafile=open(options.outfilename+"regionsSEQ.fa",'w')
 snpoutfafile.close();bedoutfafile.close()
 snpoutfafile=open(options.outfilename+"SNPs_flankseq.fa",'a')
 bedoutfafile=open(options.outfilename+"regionsSEQ.fa",'a')
-ancestralalleletabletools=AncestralAlleletabletools(database=Util.vcfdbname, ip=Util.ip, usrname=Util.username, pw=Util.password,dbgenome=Util.genomeinfodbname)
+ancestralalleletabletools=AncestralAlleletabletools(database=config.vcfdbname, ip=config.ip, usrname=config.username, pw=config.password,dbgenome=config.genomeinfodbname)
 if __name__ == '__main__':
     
 

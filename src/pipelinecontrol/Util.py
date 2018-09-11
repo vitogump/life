@@ -11,7 +11,7 @@ import random
 import string
 import time
 
-import src.web.dba as dba
+
 
 
 ISOTIMEFORMAT = '%Y-%m-%d %X'
@@ -370,6 +370,7 @@ class myJobTracker():#for one dir
         self.scriptDir = scriptDir
         self.NumOfThread = int(NumOfThread)
 def runashell(a):
+    import src.web.dba as dba
     scriptDir=a[0];scriptname=a[1]
 #     scriptDir=a[0];scriptname=a[1];cmdtemplatefile=a[2]
 #     scriptcontent=open(cmdtemplatefile,'r').read()
@@ -409,6 +410,7 @@ def runashell(a):
         session.commit()
     return
 def callsh_updateDB(scriptDir,NumOfThread,logicalpurpose):
+    import src.web.dba as dba
     pool=Pool(NumOfThread)
     scriptfiles = os.listdir(path=scriptDir)
     if scriptDir[-1]=="/":

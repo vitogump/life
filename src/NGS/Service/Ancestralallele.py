@@ -5,7 +5,7 @@ Created on 2014-11-30
 '''
 import copy, time, pysam
 import os, numpy, sys, re
-import pickle, configparser
+import pickle, configparser,config
 
 from NGS.BasicUtil import Util, VCFutil
 import NGS.BasicUtil.DBManager as dbm
@@ -42,7 +42,7 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
         self.toplevelsnptablename=toplevelsnptablename
         self.dbvariantstools=dbvariantstools
         self.toplevelsnptable_titlelist=[a[0].strip() for a in self.dbvariantstools.operateDB("select", "select column_name  from information_schema.columns where table_schema='" + Util.vcfdbname + "' and table_name='" + toplevelsnptablename + "'")]
-        outgroupBAMconfigs=re.split(r";",Util.outgroupVCFBAMconfig_beijingref)
+        outgroupBAMconfigs=re.split(r";",config.outgroupVCFBAMconfig_beijingref)
         for configfile in outgroupBAMconfigs:
             fp=open(configfile,'r')
             for line in fp:
@@ -58,8 +58,8 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
                     else:
                         print(archicpop_colname+"_alt does not exist in topleveltable" )
                         if changetableauthority:
-                            self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(Util.vcfdbname, toplevelsnptablename, archicpop_colname+"_alt", "char(128)", "default null"))
-                            self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(Util.vcfdbname, toplevelsnptablename, archicpop_colname+"_dep", "char(128)", "default null"))
+                            self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(config.vcfdbname, toplevelsnptablename, archicpop_colname+"_alt", "char(128)", "default null"))
+                            self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(config.vcfdbname, toplevelsnptablename, archicpop_colname+"_dep", "char(128)", "default null"))
                         else:
                             pass
                     #always a
