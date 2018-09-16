@@ -54,27 +54,29 @@ if __name__ == '__main__':
         else:
             #add new ind in intersectionPed, remove posD in each ind of intersectionPed
             setpos=set(intersectionPoslist).intersection(set(curposlist))
-
+            print(setpos)
             for pos in reversed(intersectionPoslist):
                 if pos in setpos:# insert or pop
                     for indI in curpeddict.keys():
-                        try:
-                            intersectionPed[indI].insert(0,haploDiploDict[curpeddict[indI][curposlist.index(pos)]])
-                        except:
-                            if len(curpeddict[indI][curposlist.index(pos)])==1:
-                                intersectionPed[indI].insert(0,curpeddict[indI][curposlist.index(pos)].upper())
-                            else:
-                                intersectionPed[indI].insert(0,"N")
+                        intersectionPed[indI].insert(0,curpeddict[indI][curposlist.index(pos)])
                 else:# insert or pop
                     for indD in intersectionPed.keys():
+                        if indD in curpeddict.keys():continue
                         intersectionPed[indD].pop(intersectionPoslist.index(pos))
-                    intersectionPoslist.pop(pos)
+                    intersectionPoslist.remove(pos)
+    fml=open("formachinelearnning",'w')
+    print("name","\t".join(intersectionPoslist),file=fml)
+    for k in intersectionPed.keys():
+        if  totalAnswerMap[k]!="n" and totalAnswerMap[k]!="y":
+            print(totalAnswerMap[k]);continue
+        print("".join(intersectionPed[k][6:]),totalAnswerMap[k],file=fml)
+    fml.close()
     #    print merged  pos
     tempmapfile=open("temp.map",'w');temppedfile=open("temp.ped",'w')
-    for pos in intersectionPoslist:
-        print(pos,file=tempmapfile)
+    for p in intersectionPoslist:
+        print(p.split("_")[0],p,p.split("_")[1],p.split("_")[1],sep="\t",file=tempmapfile)
     for ind in intersectionPed.keys():
-        print(ind,ind,"0\t0\t1\t1","\t".join(intersectionPed[ind]),sep="\t",file=temppedfile)
+        print(ind,ind,"0\t0\t1\t1","\t".join([e[0]+"\t"+e[1] for e in intersectionPed[ind]]),sep="\t",file=temppedfile)
     #  random select a elem in intersectionPoslist  
     #print(totalAnswerMap)
     undistinguished=list(intersectionPed.keys())
