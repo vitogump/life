@@ -1232,193 +1232,193 @@ class Caculate_S_ObsExp_difference(Caculator):
         if S1=="NA" and S2=="NA" or noofsnp<self.minsnps:
             return noofsnp,"NA"
         return noofsnp,[S1,S2]
-class Caculate_pairFst(Caculator):
-    def __init__(self,mindepthtojudefixed,listOftargetpopvcfconfig,listOfrefpopvcffileconfig,outfileprewithpath,minsnps=10):
-        super().__init__()
-        self.minsnps=minsnps
-        self.considerfixdiffinfst=False
-        self.MethodToSeqpoplist=[]
-        self.mindepthtojudefixed=mindepthtojudefixed
-        self.N_of_targetpop=len(listOftargetpopvcfconfig)
-        self.N_of_refpop=len(listOfrefpopvcffileconfig)
-        self.outputname=outfileprewithpath
-        self.vcfnamelist=[]#target ref
-        self.listOfpopvcfRecsmapByAChr=[]
-        self.vcfnameKEY_vcfobj_pyBAMfilesVALUE={}
-        for vcfconfigfilename in listOftargetpopvcfconfig[:]+listOfrefpopvcffileconfig[:]:
-            self.listOfpopvcfRecsmapByAChr.append({})
-            vcfconfig=open(vcfconfigfilename,"r")
-            for line in vcfconfig:
-                vcffilename_obj=re.search(r"vcffilename=(.*)",line.strip())
-                if vcffilename_obj!=None:
-                    vcfname=vcffilename_obj.group(1).strip()
-                    self.vcfnamelist.append(vcfname)
-                    self.outputname+=("_"+re.split(r"\.",re.search(r"[^/]*$",vcfname).group(0))[0])[:3]
-                    self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname]=[]
-                    self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname].append(VCFutil.VCF_Data(vcfname))
-                elif line.split():
-                    self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname].append(pysam.Samfile(line.strip(),'rb'))
-            vcfconfig.close()
-            if re.search(r"indvd[^/]+",vcfname)!=None:
-                self.MethodToSeqpoplist.append("indvd")
-    
-            elif re.search(r"pool[^/]+",vcfname)!=None:
-                self.MethodToSeqpoplist.append("pool")
-    
-            else:
-                print("vcfname must with 'pool' or 'indvd'")
-                exit(-1)   
-        self.currentchrID=None
-        self.COUNT=[(0,0)]*(self.N_of_refpop*self.N_of_targetpop)
-        self.CNK=[0]*(self.N_of_refpop*self.N_of_targetpop)
-        self.CDK=[0]*(self.N_of_refpop*self.N_of_targetpop)
-        self.CfixedDerived=0
-        self.freq_xaxisKEY_yaxisVALUERelation=None
-        self.minsnps=10
-    def process(self,T):
-        """T=[pos,ref,alt,pop1,pop2,.....,popn]
-        T is in the order as self.vcfnamelist
-        """
-        if len(T[1]) != len(T[2]) or len(T[2])!=1  or len(T[2])!=1:
-            return
-#         snp=self.dbvariantstoolstojudgeancestral.operateDB("select","select * from "+self.topleveltablejudgeancestralname+" where chrID='"+self.currentchrID+"' and snp_pos='"+str(T[0])+"'")
-        for TT_idx in range(3,3+self.N_of_targetpop):
-            TT=T[TT_idx]
-            refdep_1=0;altalleledep_1=0
-            if self.MethodToSeqpoplist[TT_idx-3]=="pool":
-                if TT==None:
-                    if len(self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[self.vcfnamelist[TT_idx-3]])==1:
-                        print("skip this pos",T)
-                        continue
-                    else:
-                        sum_depth=0
-                        for samfile in self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[self.vcfnamelist[TT_idx-3]][1:]:
-                            ACGTdep=samfile.count_coverage(self.currentchrID,T[0]-1,T[0])
-                            for dep in ACGTdep:
-                                sum_depth+=dep[0]
-                        if sum_depth>self.mindepthtojudefixed:
-                            refdep_1=sum_depth;altalleledep_1=0
-                        else:
-                            continue
-                else:
-                    AD_idx_1 = (re.split(":", TT[1])).index("AD")  # gatk GT:AD:DP:GQ:PL
-            for RT_idx in range(3+self.N_of_targetpop,len(T)):
-                RT=T[RT_idx]
-                refdep_2=0;altalleledep_2=0
-                
-        ##########x-axis
-        countedAF=0;target_DAF_sum=0
-        for tpopidx in range(3,self.N_of_targetpop+3):
-            if T[tpopidx]==None:
-                if self.depthobjlist==[]:
-                    print("skip this pos",T)
-                    continue
-                else:
-                    depth_linelist=self.depthobjlist[tpopidx-3].getdepthByPos_optimized(self.currentchrID,T[0])
-                    sum_depth=0
-                    for idx in self.species_idx_list[tpopidx-3][:]:
-                        sum_depth+=int(depth_linelist[idx])
-                    if sum_depth>self.mindepthtojudefixed:
-                        AF=0
-                    else:
-                        continue
-            else:
-                if self.MethodToSeqpoplist[tpopidx-3]=="indvd":
-                    AF=float(re.search(r"AF=([\d\.e-]+)[;,]", T[tpopidx][0]).group(1))
-                    AN = float(re.search(r"AN=([\d]+)[;,]", T[tpopidx][0]).group(1))
-                    if AN<5:
-                        continue
-                elif self.MethodToSeqpoplist[tpopidx-3]=="pool":
-                    refdep = 0;altalleledep = 0
-                    AD_idx = (re.split(":", T[tpopidx][1])).index("AD")
-                    for sample in T[tpopidx][2]:
-                        if len(re.split(":", sample)) == 1:  # ./.
-                            continue
-                        AD_depth = re.split(",", re.split(":", sample)[AD_idx])
-                        try :
-                            refdep += int(AD_depth[0])
-                            altalleledep += int(AD_depth[1])
-                        except ValueError:
-                            print(sample, end="|")
-                    if (refdep==altalleledep and altalleledep==0) or altalleledep+ refdep<10:
-                        continue
-                    AF=altalleledep/(altalleledep+refdep)
-            if A_base_idx==0:
-                DAF=1-AF
-            elif A_base_idx==1:
-                DAF=AF
-            target_DAF_sum+=DAF;countedAF+=1
-        if  countedAF==0 :#or target_DAF_sum/countedAF==0:
-#             print("skip this snp,because it fiexd as ancestral or no covered in this pos in target pops",T,snp)
-            return
-        target_DAF=target_DAF_sum/countedAF
-        #########y-axis
-        countedAF=0;rer_DAF_sum=0
-        for rpopidx in range(3+self.N_of_targetpop,self.N_of_refpop+self.N_of_targetpop+3):
-            if T[rpopidx]==None:
-                if self.depthobjlist==[]:
-                    print("skip this snp",T)
-                    continue
-                else:
-                    depth_linelist=self.depthobjlist[rpopidx-3-self.N_of_targetpop].getdepthByPos_optimized(self.currentchrID,T[0])
-                    sum_depth=0
-                    for idx in self.species_idx_list[rpopidx-3-self.N_of_targetpop][:]:
-                        sum_depth+=int(depth_linelist[idx])
-                    if sum_depth>self.mindepthtojudefixed:
-                        AF=0
-                    else:
-                        continue
-            else:
-                if self.MethodToSeqpoplist[rpopidx-3-self.N_of_targetpop]=="indvd":
-                    AF=float(re.search(r"AF=([\d\.]+)[;,]", T[rpopidx][0]).group(1))
-                elif self.MethodToSeqpoplist[rpopidx-3-self.N_of_targetpop]=="pool":
-                    refdep = 0;altalleledep = 0
-                    AD_idx = (re.split(":", T[rpopidx][1])).index("AD")
-                    for sample in T[rpopidx][2]:
-                        if len(re.split(":",sample))==1:
-                            continue
-                        AD_depth = re.split(",", re.split(":", sample)[AD_idx])
-                        try :
-                            refdep += int(AD_depth[0])
-                            altalleledep += int(AD_depth[1])
-                        except ValueError:
-                            print(sample, end="|")
-                    if refdep==altalleledep and altalleledep==0:
-                        continue
-                    AF=altalleledep/(altalleledep+refdep)
-                if A_base_idx==0:
-                    DAF=1-AF
-                elif A_base_idx==1:
-                    DAF=AF
-                rer_DAF_sum+=DAF;countedAF+=1
-        if  countedAF==0 or rer_DAF_sum==0:
-#             print("skip this snp,because it  no covered in this pos in ref pops",T,snp)
-            return
-        for a,b in sorted(self.freq_xaxisKEY_yaxisVALUERelation.keys()):
-            if target_DAF>a and target_DAF<=b:
-                self.CEXP+=self.freq_xaxisKEY_yaxisVALUERelation[(a,b)]
-                break
-        self.obsseq.append(rer_DAF_sum/countedAF)
-        self.COUNT+=1
-        if rer_DAF_sum/countedAF==1:
-            self.CfixedDerived+=1
-    def getResult(self):
-        S1="NA"
-        S2="NA"
-        try:
-            S1=math.log(np.sum(self.obsseq)/self.CEXP)
-            S2=0#(np.sum(self.obsseq)-self.CEXP)/np.std(self.obsseq,ddof=1)
-        except:
-            S1="NA"
-            S2="NA"
-        noofsnp=self.COUNT
-        self.COUNT=0
-        self.CEXP=0
-        self.obsseq=[]
-        self.CfixedDerived=0
-        if S1=="NA" and S2=="NA" or noofsnp<self.minsnps:
-            return noofsnp,"NA"
-        return noofsnp,[S1,S2]
+# class Caculate_pairFst(Caculator):
+#     def __init__(self,mindepthtojudefixed,listOftargetpopvcfconfig,listOfrefpopvcffileconfig,outfileprewithpath,minsnps=10):
+#         super().__init__()
+#         self.minsnps=minsnps
+#         self.considerfixdiffinfst=False
+#         self.MethodToSeqpoplist=[]
+#         self.mindepthtojudefixed=mindepthtojudefixed
+#         self.N_of_targetpop=len(listOftargetpopvcfconfig)
+#         self.N_of_refpop=len(listOfrefpopvcffileconfig)
+#         self.outputname=outfileprewithpath
+#         self.vcfnamelist=[]#target ref
+#         self.listOfpopvcfRecsmapByAChr=[]
+#         self.vcfnameKEY_vcfobj_pyBAMfilesVALUE={}
+#         for vcfconfigfilename in listOftargetpopvcfconfig[:]+listOfrefpopvcffileconfig[:]:
+#             self.listOfpopvcfRecsmapByAChr.append({})
+#             vcfconfig=open(vcfconfigfilename,"r")
+#             for line in vcfconfig:
+#                 vcffilename_obj=re.search(r"vcffilename=(.*)",line.strip())
+#                 if vcffilename_obj!=None:
+#                     vcfname=vcffilename_obj.group(1).strip()
+#                     self.vcfnamelist.append(vcfname)
+#                     self.outputname+=("_"+re.split(r"\.",re.search(r"[^/]*$",vcfname).group(0))[0])[:3]
+#                     self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname]=[]
+#                     self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname].append(VCFutil.VCF_Data(vcfname))
+#                 elif line.split():
+#                     self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname].append(pysam.Samfile(line.strip(),'rb'))
+#             vcfconfig.close()
+#             if re.search(r"indvd[^/]+",vcfname)!=None:
+#                 self.MethodToSeqpoplist.append("indvd")
+#     
+#             elif re.search(r"pool[^/]+",vcfname)!=None:
+#                 self.MethodToSeqpoplist.append("pool")
+#     
+#             else:
+#                 print("vcfname must with 'pool' or 'indvd'")
+#                 exit(-1)   
+#         self.currentchrID=None
+#         self.COUNT=[(0,0)]*(self.N_of_refpop*self.N_of_targetpop)
+#         self.CNK=[0]*(self.N_of_refpop*self.N_of_targetpop)
+#         self.CDK=[0]*(self.N_of_refpop*self.N_of_targetpop)
+#         self.CfixedDerived=0
+#         self.freq_xaxisKEY_yaxisVALUERelation=None
+#         self.minsnps=10
+#     def process(self,T):
+#         """T=[pos,ref,alt,pop1,pop2,.....,popn]
+#         T is in the order as self.vcfnamelist
+#         """
+#         if len(T[1]) != len(T[2]) or len(T[2])!=1  or len(T[2])!=1:
+#             return
+# #         snp=self.dbvariantstoolstojudgeancestral.operateDB("select","select * from "+self.topleveltablejudgeancestralname+" where chrID='"+self.currentchrID+"' and snp_pos='"+str(T[0])+"'")
+#         for TT_idx in range(3,3+self.N_of_targetpop):
+#             TT=T[TT_idx]
+#             refdep_1=0;altalleledep_1=0
+#             if self.MethodToSeqpoplist[TT_idx-3]=="pool":
+#                 if TT==None:
+#                     if len(self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[self.vcfnamelist[TT_idx-3]])==1:
+#                         print("skip this pos",T)
+#                         continue
+#                     else:
+#                         sum_depth=0
+#                         for samfile in self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[self.vcfnamelist[TT_idx-3]][1:]:
+#                             ACGTdep=samfile.count_coverage(self.currentchrID,T[0]-1,T[0])
+#                             for dep in ACGTdep:
+#                                 sum_depth+=dep[0]
+#                         if sum_depth>self.mindepthtojudefixed:
+#                             refdep_1=sum_depth;altalleledep_1=0
+#                         else:
+#                             continue
+#                 else:
+#                     AD_idx_1 = (re.split(":", TT[1])).index("AD")  # gatk GT:AD:DP:GQ:PL
+#             for RT_idx in range(3+self.N_of_targetpop,len(T)):
+#                 RT=T[RT_idx]
+#                 refdep_2=0;altalleledep_2=0
+#                 
+#         ##########x-axis
+#         countedAF=0;target_DAF_sum=0
+#         for tpopidx in range(3,self.N_of_targetpop+3):
+#             if T[tpopidx]==None:
+#                 if self.depthobjlist==[]:
+#                     print("skip this pos",T)
+#                     continue
+#                 else:
+#                     depth_linelist=self.depthobjlist[tpopidx-3].getdepthByPos_optimized(self.currentchrID,T[0])
+#                     sum_depth=0
+#                     for idx in self.species_idx_list[tpopidx-3][:]:
+#                         sum_depth+=int(depth_linelist[idx])
+#                     if sum_depth>self.mindepthtojudefixed:
+#                         AF=0
+#                     else:
+#                         continue
+#             else:
+#                 if self.MethodToSeqpoplist[tpopidx-3]=="indvd":
+#                     AF=float(re.search(r"AF=([\d\.e-]+)[;,]", T[tpopidx][0]).group(1))
+#                     AN = float(re.search(r"AN=([\d]+)[;,]", T[tpopidx][0]).group(1))
+#                     if AN<5:
+#                         continue
+#                 elif self.MethodToSeqpoplist[tpopidx-3]=="pool":
+#                     refdep = 0;altalleledep = 0
+#                     AD_idx = (re.split(":", T[tpopidx][1])).index("AD")
+#                     for sample in T[tpopidx][2]:
+#                         if len(re.split(":", sample)) == 1:  # ./.
+#                             continue
+#                         AD_depth = re.split(",", re.split(":", sample)[AD_idx])
+#                         try :
+#                             refdep += int(AD_depth[0])
+#                             altalleledep += int(AD_depth[1])
+#                         except ValueError:
+#                             print(sample, end="|")
+#                     if (refdep==altalleledep and altalleledep==0) or altalleledep+ refdep<10:
+#                         continue
+#                     AF=altalleledep/(altalleledep+refdep)
+#             if A_base_idx==0:
+#                 DAF=1-AF
+#             elif A_base_idx==1:
+#                 DAF=AF
+#             target_DAF_sum+=DAF;countedAF+=1
+#         if  countedAF==0 :#or target_DAF_sum/countedAF==0:
+# #             print("skip this snp,because it fiexd as ancestral or no covered in this pos in target pops",T,snp)
+#             return
+#         target_DAF=target_DAF_sum/countedAF
+#         #########y-axis
+#         countedAF=0;rer_DAF_sum=0
+#         for rpopidx in range(3+self.N_of_targetpop,self.N_of_refpop+self.N_of_targetpop+3):
+#             if T[rpopidx]==None:
+#                 if self.depthobjlist==[]:
+#                     print("skip this snp",T)
+#                     continue
+#                 else:
+#                     depth_linelist=self.depthobjlist[rpopidx-3-self.N_of_targetpop].getdepthByPos_optimized(self.currentchrID,T[0])
+#                     sum_depth=0
+#                     for idx in self.species_idx_list[rpopidx-3-self.N_of_targetpop][:]:
+#                         sum_depth+=int(depth_linelist[idx])
+#                     if sum_depth>self.mindepthtojudefixed:
+#                         AF=0
+#                     else:
+#                         continue
+#             else:
+#                 if self.MethodToSeqpoplist[rpopidx-3-self.N_of_targetpop]=="indvd":
+#                     AF=float(re.search(r"AF=([\d\.]+)[;,]", T[rpopidx][0]).group(1))
+#                 elif self.MethodToSeqpoplist[rpopidx-3-self.N_of_targetpop]=="pool":
+#                     refdep = 0;altalleledep = 0
+#                     AD_idx = (re.split(":", T[rpopidx][1])).index("AD")
+#                     for sample in T[rpopidx][2]:
+#                         if len(re.split(":",sample))==1:
+#                             continue
+#                         AD_depth = re.split(",", re.split(":", sample)[AD_idx])
+#                         try :
+#                             refdep += int(AD_depth[0])
+#                             altalleledep += int(AD_depth[1])
+#                         except ValueError:
+#                             print(sample, end="|")
+#                     if refdep==altalleledep and altalleledep==0:
+#                         continue
+#                     AF=altalleledep/(altalleledep+refdep)
+#                 if A_base_idx==0:
+#                     DAF=1-AF
+#                 elif A_base_idx==1:
+#                     DAF=AF
+#                 rer_DAF_sum+=DAF;countedAF+=1
+#         if  countedAF==0 or rer_DAF_sum==0:
+# #             print("skip this snp,because it  no covered in this pos in ref pops",T,snp)
+#             return
+#         for a,b in sorted(self.freq_xaxisKEY_yaxisVALUERelation.keys()):
+#             if target_DAF>a and target_DAF<=b:
+#                 self.CEXP+=self.freq_xaxisKEY_yaxisVALUERelation[(a,b)]
+#                 break
+#         self.obsseq.append(rer_DAF_sum/countedAF)
+#         self.COUNT+=1
+#         if rer_DAF_sum/countedAF==1:
+#             self.CfixedDerived+=1
+#     def getResult(self):
+#         S1="NA"
+#         S2="NA"
+#         try:
+#             S1=math.log(np.sum(self.obsseq)/self.CEXP)
+#             S2=0#(np.sum(self.obsseq)-self.CEXP)/np.std(self.obsseq,ddof=1)
+#         except:
+#             S1="NA"
+#             S2="NA"
+#         noofsnp=self.COUNT
+#         self.COUNT=0
+#         self.CEXP=0
+#         self.obsseq=[]
+#         self.CfixedDerived=0
+#         if S1=="NA" and S2=="NA" or noofsnp<self.minsnps:
+#             return noofsnp,"NA"
+#         return noofsnp,[S1,S2]
 class Caculate_IS(Caculator):
     def __init__(self,mindepthtojudefixed,listOftargetpopvcfconfig,listOfrefpopvcffileconfig,minsnps=10):
         super().__init__()

@@ -5,7 +5,7 @@ Created on 2018年6月8日
 @author: Dr.liu
 '''
 from optparse import OptionParser
-import os,re,sys
+import os,re,copy
 
 parser = OptionParser()
 parser.add_option("-N", "--No_ofsites", dest="No_ofsites",default=18)
@@ -22,7 +22,7 @@ DIPLOTYPES = ['A', 'C', 'G', 'K',"k","m", 'M', 'N', 'S',"s","r", 'R', 'T', 'W',"
 PAIRS = ['AA', 'CC', 'GG', 'GT',"TG","CA", 'AC', 'NN', 'CG',"GC","GA",'AG', 'TT', 'AT',"TA",'TC','CT']
 diploHaploDict = dict(zip(DIPLOTYPES,PAIRS))
 haploDiploDict = dict(zip(PAIRS,DIPLOTYPES))
-tft=["非滩羊","滩羊"]
+tft=["otherbreeds","thansheep"]
 
 #lib
 seqlibMapBy4Pos={}
@@ -60,8 +60,9 @@ if __name__ == '__main__':
     toBeTestindf=open(options.indgenotype[0],'r')
     print(options.indgenotype)
     titleline=toBeTestindf.readline()
-    #read tobetest ind info
-    fs=open("sdflkj",'w')
+    #read tobetest ind geno info , tansmit into map ped
+    tempmap = open(options.indgenotype[0].split(".")[0]+".map",'w')
+    tempped=open(options.indgenotype[0].split(".")[0]+".ped",'w')
     for pos in re.split(r"\t",titleline.strip())[int(options.indgenotype[1])-1:]: positionlist.append(pos.strip())
     for indGenoType in toBeTestindf:
         linelist=re.split(r"\t",indGenoType.strip())
@@ -78,7 +79,15 @@ if __name__ == '__main__':
                 seq.append(haploDiploDict[g.strip().upper()])
         seq+=["N"]*(No_ofsites-len(seq))
         genotypeOfeachInd.append(seq)
-    print(*genotypeOfeachInd,sep="\n",file=fs);fs.close()
+    indnamelistMarkDup=copy.deepcopy(indnamelist)
+    for p in positionlist:
+        print(p.split("_")[0],p,p.split("_")[1],p.split("_")[1],sep="\t",file=tempmap)
+    tempmap.close()
+    for i in range(len(genotypeOfeachInd)):
+        if indnamelistMarkDup.count(indnamelistMarkDup[i])!=1:
+            indnamelistMarkDup[i]=indnamelistMarkDup[i]+"_dup"+str(indnamelistMarkDup.count(indnamelistMarkDup[i])-1)
+        print(indnamelistMarkDup[i],indnamelistMarkDup[i],"0\t0\t1\t1","\t".join([diploHaploDict[dg] for dg in genotypeOfeachInd[i]]),sep="\t",file=tempped)
+    tempped.close()
     print(positionlist)
     print(len(genotypeOfeachInd),len(positionlist))
     if options.identifiedresultoupdatelib!=None:
@@ -113,7 +122,7 @@ if __name__ == '__main__':
             for fourPosBase in seqlibMapBy4Pos[(pos1,pos2,pos3,pos4)]:
                 print(pos1,pos2,pos3,pos4,sep="+",end="\t",file=nlibf)
                 print(diploHaploDict[fourPosBase[0]],diploHaploDict[fourPosBase[1]],diploHaploDict[fourPosBase[2]],diploHaploDict[fourPosBase[3]],sep="_",end="\t",file=nlibf)
-                print(seqlibMapBy4Pos[(pos1,pos2,pos3,pos4)],len(seqlibMapBy4Pos[(pos1,pos2,pos3,pos4)]),fourPosBase,NumlibMapBy4Pos[(pos1,pos2,pos3,pos4)],len(NumlibMapBy4Pos[(pos1,pos2,pos3,pos4)]))
+#                 print(seqlibMapBy4Pos[(pos1,pos2,pos3,pos4)],len(seqlibMapBy4Pos[(pos1,pos2,pos3,pos4)]),fourPosBase,NumlibMapBy4Pos[(pos1,pos2,pos3,pos4)],len(NumlibMapBy4Pos[(pos1,pos2,pos3,pos4)]))
                 print(*NumlibMapBy4Pos[(pos1,pos2,pos3,pos4)][seqlibMapBy4Pos[(pos1,pos2,pos3,pos4)].index(fourPosBase)],sep="\t",file=nlibf)
         nlibf.close()
         print("writing new lib done",options.output+".lib")
@@ -126,7 +135,7 @@ if __name__ == '__main__':
         print("indidx",indidx,indnamelist[indidx],len(indnamelist))
         for pos1,pos2,pos3,pos4 in seqlibMapBy4Pos.keys():
             pos1idx,pos2idx,pos3idx,pos4idx=positionlist.index(pos1),positionlist.index(pos2),positionlist.index(pos3),positionlist.index(pos4)
-            print(genotypeOfeachInd[indidx])
+#             print(genotypeOfeachInd[indidx])
             indseq=genotypeOfeachInd[indidx][pos1idx]+genotypeOfeachInd[indidx][pos2idx]+genotypeOfeachInd[indidx][pos3idx]+genotypeOfeachInd[indidx][pos4idx]      
             if "N" in indseq.upper():
                 continue
@@ -143,7 +152,7 @@ if __name__ == '__main__':
             pos1idx,pos2idx,pos3idx,pos4idx=positionlist.index(pos1),positionlist.index(pos2),positionlist.index(pos3),positionlist.index(pos4)
             indseq=genotypeOfeachInd[indidx][pos1idx]+genotypeOfeachInd[indidx][pos2idx]+genotypeOfeachInd[indidx][pos3idx]+genotypeOfeachInd[indidx][pos4idx]
             if indseq.upper() in seqlibMapBy4Pos[(pos1,pos2,pos3,pos4)] and sum(NumlibMapBy4Pos[(pos1,pos2,pos3,pos4)][seqlibMapBy4Pos[(pos1,pos2,pos3,pos4)].index(indseq.upper())])>=10 and 0 in NumlibMapBy4Pos[(pos1,pos2,pos3,pos4)][seqlibMapBy4Pos[(pos1,pos2,pos3,pos4)].index(indseq.upper())]:
-                print(NumlibMapBy4Pos[(pos1,pos2,pos3,pos4)][seqlibMapBy4Pos[(pos1,pos2,pos3,pos4)].index(indseq.upper())])
+#                 print(NumlibMapBy4Pos[(pos1,pos2,pos3,pos4)][seqlibMapBy4Pos[(pos1,pos2,pos3,pos4)].index(indseq.upper())])
                 print(indnamelist[indidx],tft[NumlibMapBy4Pos[(pos1,pos2,pos3,pos4)][seqlibMapBy4Pos[(pos1,pos2,pos3,pos4)].index(indseq.upper())].index(0)],"highconfidence",sep="\t",file=fo)
                 indnamelist.pop(indidx);genotypeOfeachInd.pop(indidx)
                 break

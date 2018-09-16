@@ -64,6 +64,8 @@ if __name__ == '__main__':
                 i+=1;continue
             else:
                 tempvcffile.close()
+                print("Vcf2Ped function has been modified, no output")
+                exit(-1)
                 VCFutil.VCF_Data.Vcf2Ped(outputprefix+".vcf",outputprefix,software,vcfdata.VcfIndexMap)
                 print("plink",i)
                 
