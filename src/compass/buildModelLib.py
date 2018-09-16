@@ -65,11 +65,11 @@ if __name__ == '__main__':
                         intersectionPed[indD].pop(intersectionPoslist.index(pos))
                     intersectionPoslist.remove(pos)
     fml=open("formachinelearnning",'w')
-    print("name","\t".join(intersectionPoslist),file=fml)
+    print("name","\t".join(intersectionPoslist),"breed",sep="\t",file=fml)
     for k in intersectionPed.keys():
         if  totalAnswerMap[k]!="n" and totalAnswerMap[k]!="y":
-            print(totalAnswerMap[k]);continue
-        print("".join(intersectionPed[k][6:]),totalAnswerMap[k],file=fml)
+            print(k,totalAnswerMap[k]);continue
+        print(k,"\t".join(intersectionPed[k][6:],),totalAnswerMap[k],sep="\t",file=fml)
     fml.close()
     #    print merged  pos
     tempmapfile=open("temp.map",'w');temppedfile=open("temp.ped",'w')
