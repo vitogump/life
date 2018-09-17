@@ -4,18 +4,17 @@ Created on 2018年9月5日
 @author: Dr.liu
 '''
 
-import pandas as pd
-import numpy as np
-
+from sklearn import cross_validation, metrics
 from sklearn import preprocessing
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn import cross_validation, metrics
-# from sklearn.model_selection import GridSearchCV# for second part
 from sklearn.grid_search import GridSearchCV
-from sklearn.metrics import accuracy_score,make_scorer
+from sklearn.metrics import accuracy_score, make_scorer
+from sklearn.model_selection import train_test_split
+import numpy as np
+import pandas as pd
 
 
+# from sklearn.model_selection import GridSearchCV# for second part
 def encode_features(df_train,df_test):
     features=["色泽","根蒂","敲声","纹理","脐部","触感"]
     df_combined=pd.concat([df_train[features], df_test[features]])
@@ -40,19 +39,19 @@ def simplify_interval_info(df):
     
     return df
 if __name__ == '__main__':
-    train=pd.read_csv("D:\\mechinelearn\\train_modified.csv")
-    target='Disbursed'#Disbursed的值就是二元分类的输出
-    IDcol='ID'
-#     print(train['Disbursed'].value_counts())
-    x_columns=[x for x in train.columns if x not in [target,IDcol]]
-    X=train[x_columns]
-    y=train['Disbursed']
-    print(y)
-    rf0=RandomForestClassifier(oob_score=True,random_state=10)
-    rf0.fit(X,y)
-    print(rf0.oob_score_)
-    
-    exit()
+#     train=pd.read_csv("D:\\mechinelearn\\train_modified.csv")
+#     target='Disbursed'#Disbursed的值就是二元分类的输出
+#     IDcol='ID'
+# #     print(train['Disbursed'].value_counts())
+#     x_columns=[x for x in train.columns if x not in [target,IDcol]]
+#     X=train[x_columns]
+#     y=train['Disbursed']
+#     print(y)
+#     rf0=RandomForestClassifier(oob_score=True,random_state=10)
+#     rf0.fit(X,y)
+#     print(rf0.oob_score_)
+#     
+#     exit()
 #second part 
     train_data=pd.read_csv("D:\\mechinelearn\\watermelon.csv")
     test_data=pd.read_csv("D:\\mechinelearn\\watermelon.csv")
@@ -81,7 +80,11 @@ if __name__ == '__main__':
     acc_scorer=make_scorer(accuracy_score)
     clf = RandomForestClassifier()
     #Run the grid search
+    print("y_train")
+    print(y_train)
     grid_obj=GridSearchCV(clf,parameters,scoring=acc_scorer)
+
+    
     grid_obj=grid_obj.fit(X_train,y_train)
     #set the clf to the best combination of parameters
     clf=grid_obj.best_estimator_
