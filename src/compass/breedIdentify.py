@@ -86,7 +86,7 @@ if __name__ == '__main__':
     for i in range(len(genotypeOfeachInd)):
         if indnamelistMarkDup.count(indnamelistMarkDup[i])!=1:
             indnamelistMarkDup[i]=indnamelistMarkDup[i]+"_dup"+str(indnamelistMarkDup.count(indnamelistMarkDup[i])-1)
-        print(indnamelistMarkDup[i],indnamelistMarkDup[i],"0\t0\t1\t1","\t".join([diploHaploDict[dg] for dg in genotypeOfeachInd[i]]),sep="\t",file=tempped)
+        print(indnamelistMarkDup[i],indnamelistMarkDup[i],"0\t0\t1\t1","\t".join([diploHaploDict[dg.upper()] for dg in genotypeOfeachInd[i]]),sep="\t",file=tempped)
     tempped.close()
     print(positionlist)
     print(len(genotypeOfeachInd),len(positionlist))
@@ -169,14 +169,14 @@ if __name__ == '__main__':
             if indseq.upper() in seqlibMapBy4Pos[(pos1,pos2,pos3,pos4)] :
                 print(NumlibMapBy4Pos[(pos1,pos2,pos3,pos4)][seqlibMapBy4Pos[(pos1,pos2,pos3,pos4)].index(indseq.upper())])
                 if NumlibMapBy4Pos[(pos1,pos2,pos3,pos4)][seqlibMapBy4Pos[(pos1,pos2,pos3,pos4)].index(indseq.upper())][0]>NumlibMapBy4Pos[(pos1,pos2,pos3,pos4)][seqlibMapBy4Pos[(pos1,pos2,pos3,pos4)].index(indseq.upper())][1]:
-                    print(indnamelist[indidx],"滩羊","lowconfidence",sep="\t",file=fo)
+                    print(indnamelist[indidx],"thansheep","lowconfidence",sep="\t",file=fo)
                 else:
-                    print(indnamelist[indidx],"非滩羊","lowconfidence",sep="\t",file=fo)
+                    print(indnamelist[indidx],"otherbreeds","lowconfidence",sep="\t",file=fo)
 #                 print((pos1,pos2,pos3,pos4),NumlibMapBy4Pos[(pos1,pos2,pos3,pos4)][seqlibMapBy4Pos[(pos1,pos2,pos3,pos4)].index(indseq.upper())],indidx)
                 indnamelist.pop(indidx);genotypeOfeachInd.pop(indidx)
                 break
         else:
-            print(indnamelist[indidx],"非滩羊\tverylowconfidence",sep="\t",file=fo)
+            print(indnamelist[indidx],"otherbreeds\tverylowconfidence",sep="\t",file=fo)
     print(indnamelist,len(indnamelist))
     toBeTestindf.close();fo.close();cnt.close()
 #             print(pos1,pos2,pos3,pos4)
