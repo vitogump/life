@@ -16,11 +16,13 @@ DIPLOTYPES = ['A', 'C', 'G', 'K',"k","m", 'M', 'N', 'S',"s","r", 'R', 'T', 'W',"
 PAIRS = ['AA', 'CC', 'GG', 'GT',"TG","CA", 'AC', 'NN', 'CG',"GC","GA",'AG', 'TT', 'AT',"TA",'TC','CT']
 diploHaploDict = dict(zip(DIPLOTYPES,PAIRS))
 haploDiploDict = dict(zip(PAIRS,DIPLOTYPES))
-
+y1n2 = dict(zip(["y","n"],[1,2]))
 if __name__ == '__main__':
     totalPositionlist=[];intersectionPoslist=[];intersectionPed={};totalAnswerMap={}
+    
     for mappedPair,answerfile in options.TsetGeno:
         print(mappedPair)
+        namelisttoRemoveConfict=set()
         curposlist=[];curpeddict={};curanswermap={}
         mapf=open(mappedPair+".map","r");pedf=open(mappedPair+".ped","r")
         answerF=open(answerfile,'r')
@@ -34,19 +36,27 @@ if __name__ == '__main__':
             pedlist=re.split(r"\t",indgeno.strip())
 
             indname=pedlist[1].strip()+mappedPair if pedlist[1].strip() in intersectionPed.keys() else pedlist[1].strip()
+            curpeddict[indname]=pedlist[6:]
+            intersectionPed[indname]=[]            
             if indname not in curanswermap.keys():
                 if indname.find("_dup")!=-1:
                     totalAnswerMap[indname]=curanswermap[indname[:indname.find("_dup")]]
+                    if "".join(curpeddict[indname][6:])!="".join(indgeno[6:]):
+                        namelisttoRemoveConfict.add(indname);namelisttoRemoveConfict.add(indname[:indname.find("_dup")])
+                        print("inconsistent")
                 elif mappedPair in indname:
                     totalAnswerMap[indname]=curanswermap[indname[:indname.find(mappedPair)]]
             else:
                 totalAnswerMap[indname]=  curanswermap[indname]
-            curpeddict[indname]=pedlist[6:]
-            intersectionPed[indname]=[]
+
         
             
 
         #uniq samples
+        for indname in namelisttoRemoveConfict:
+            if indname in curpeddict.keys():
+                curpeddict.pop(indname)
+                intersectionPed.pop(indname)
         pass
         #intersection
         if intersectionPoslist==[]:
@@ -79,11 +89,23 @@ if __name__ == '__main__':
         GenoMapBypos[p]=[]
         print(p.split("_")[0],p,p.split("_")[1],p.split("_")[1],sep="\t",file=tempmapfile)
     for ind in intersectionPed.keys():
+        if  totalAnswerMap[ind]!="n" and totalAnswerMap[ind]!="y":
+            print(ind,totalAnswerMap[ind]);continue        
         for gidx in range(len(intersectionPed[ind])):
+
             GenoMapBypos[intersectionPoslist[gidx]].append(haploDiploDict[intersectionPed[ind][gidx]].upper())
-        print(ind,ind,"0\t0\t1\t1","\t".join([e[0]+"\t"+e[1] for e in intersectionPed[ind]]),sep="\t",file=temppedfile)
+        print(ind,ind,"0\t0\t1",y1n2[totalAnswerMap[ind]],"\t".join(intersectionPed[ind]),sep="\t",file=temppedfile)
     #  random select a elem in intersectionPoslist  
     #print(totalAnswerMap)
+    def calcuateAccur(pred,mearchin):
+        fff=pd.read_csv(mearchin,sep="\t")
+        turelist=fff["breed"].tolist()
+        idlist=""
+        p=open(pred,'r')
+        for line in p:
+            if re.split(r"\t",line)[1]=="thansheep":
+                pass
+    
     def bestAccur(genolistOfApos,turelist):
 #     for pos in GenoMapBypos.keys():
         glistOfApos=genolistOfApos.tolist()
@@ -115,8 +137,8 @@ if __name__ == '__main__':
     undistinguished=list(intersectionPed.keys())
     fourposcombin = itertools.combinations(AccurLaccordingPos[-8:],4)
     print(len(AccurLaccordingPos[-8:]),AccurLaccordingPos[-8:])
-    print(len(list(fourposcombin)))
     for pos1,pos2,pos3,pos4 in fourposcombin:
+        print(pos1,pos2,pos3,pos4);continue
         for i in range(len(fff["breed"])):
             print(fff.loc[i,[pos1[1],pos2[1],pos3[1],pos4[1]]],fff.loc[i,["breed"]])
 
