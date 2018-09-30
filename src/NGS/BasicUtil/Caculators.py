@@ -53,13 +53,13 @@ class Caculator_addpriority():
             self.classedrecs.append(T)
             self.contained.append(len(self.classedrecs)-1)
             return
-            
-        if T[self.rcmidx]=="not_recommended"  :#or T[-1]=="not_recommended"
+
+        if (T[self.rcmidx]=="not_recommended" and  T[self.tidx].strip()!="1") or T[self.rcmidx]=="not_possible":#or T[-1]=="not_recommended"
             self.notrecommand.append(T)
         else:
 #             print("should not be here",T)
             self.classedrecs.append(T)
-            if T[self.tidx].strip()=="2" and T[self.rcmidx]=="recommended":#"1"
+            if T[self.tidx].strip()=="1": #and T[self.rcmidx]=="recommended":#"1"
                 self.contained.append(len(self.classedrecs)-1)
             elif "A/T" in T[2] or "C/G" in T[2]:
                 if T[self.rcmidx]=="recommended":#keep the recommended first
@@ -72,21 +72,24 @@ class Caculator_addpriority():
                 else:
                     self.restNonATCT[T[self.tidx].strip()].append(len(self.classedrecs)-1)
     def getResult(self):
-        print(self.count)
-        print(self.restATCT,self.restNonATCT,self.contained,len(self.classedrecs))
+#         print(self.count)
+#         print(self.restATCT,self.restNonATCT,self.contained,len(self.classedrecs))
 
         if len(self.contained)!=0:
             for recidx in reversed(self.contained):
                 e=self.classedrecs.pop(recidx)
-                print(*e[1:],"2",sep="\t",file=self.pf)
-            for e in self.classedrecs:
-                if e[self.rcmidx]=="recommended":
-                    print(*e[1:],"8",sep="\t",file=self.pf)
-                else:
-                    print(*e[1:],"9",sep="\t",file=self.pf)
+                if "unaln" not in e[1]:e[self.addVIPidx+1]="VIP"
+                if "unaln" in e[1] and e[self.rcmidx]=="not_recommended":
+                    print(*e[1:],"9",sep="\t",file=self.pf);continue
+                print(*e[1:],"1",sep="\t",file=self.pf)
+#             for e in self.classedrecs:
+#                 if e[self.rcmidx]=="recommended":
+#                     print(*e[1:],"8",sep="\t",file=self.pf)
+#                 else:
+#                     print(*e[1:],"9",sep="\t",file=self.pf)
         else:
             for k in ["1","2","3","4","5","6","7"]:#["2","3","4","5"]
-                if self.restNonATCT[k]!=[] and self.classedrecs[self.restNonATCT[k][0]][self.rcmidx]=="recommended":
+                if self.restNonATCT[k]!=[] and self.classedrecs[self.restNonATCT[k][0]][self.rcmidx]=="recommended":#
                     e=self.classedrecs.pop(self.restNonATCT[k][0])
                     print(*e[1:],k,sep="\t",file=self.pf)#self.mmm[k]
                     break
@@ -103,11 +106,11 @@ class Caculator_addpriority():
                             e=self.classedrecs.pop(self.restATCT[k][0])
                             print(*e[1:],k,sep="\t",file=self.pf)#self.mmm[k]
                             break
-            for e in self.classedrecs:
-                if e[self.rcmidx]=="recommended":
-                    print(*e[1:],"8",sep="\t",file=self.pf)
-                else:
-                    print(*e[1:],"9",sep="\t",file=self.pf)
+        for e in self.classedrecs:
+            if e[self.rcmidx]=="recommended":
+                print(*e[1:],"8",sep="\t",file=self.pf)
+            else:
+                print(*e[1:],"9",sep="\t",file=self.pf)
         for ne in self.notrecommand:
             print(*ne[1:],"9",sep="\t",file=self.pf)
         self.contained=[]
