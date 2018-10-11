@@ -1,5 +1,4 @@
 ChrNo	Region_start	Region_end	NoofWin	Extram zvalue	MinNoSNP	MaxNoSNP	Transcipt	Overlap code	GeneID
-chrNo	Region_start	Region_end	NoofWin	extramzvalue	minNoSNP	maxNoSNP	transcpt	overlapcode	geneID
 KB742386.1	50000	70000	1	-6.16795111744	23	23	miR-4441_hsa-miR-4441,miR-5045_gpy-miR-5045,ENSAPLT00000008063	1,1,2	miRNA,miRNA,SASH1
 KB742387.1	70000	90000	1	-4.18594476881	42	42	miR-882_mmu-miR-882,miR-214-3p_hsa-miR-214-3p,ENSAPLT00000010063	1,1,3	miRNA,miRNA,ELOVL7
 KB742396.1	30000	50000	1	-5.09059268656	25	25	novel_mir_582,novel_mir_1220,ENSAPLT00000012447	1,1,7	miRNA,miRNA,<3659+UGCG

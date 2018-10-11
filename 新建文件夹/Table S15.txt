@@ -1,3 +1,4 @@
+GO_Accession	GO_term_name	P-value	Number	Size	gene_transcript_ID	gene_symbol
 GO:0042517	positive regulation of tyrosine phosphorylation of Stat3 protein	6.29E-05	4	12	ENSAPLT00000013725, ENSAPLT00000012265, ENSAPLT00000011401, ENSAPLT00000012487	ISL1, IL31RA, CRLF1, IL6ST
 GO:0032925	regulation of activin receptor signaling pathway	0.000381864	2	2	ENSAPLT00000003284, ENSAPLT00000001256	FGF10, SMAD7
 GO:0051482	positive regulation of cytosolic calcium ion concentration involved in phospholipase C-activating G-protein coupled signaling pathway	0.000386558	3	8	ENSAPLT00000013225, ENSAPLT00000003400, ENSAPLT00000010445	EDN1, RXFP3, LPAR1
