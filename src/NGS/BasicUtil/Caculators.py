@@ -21,7 +21,62 @@ class Caculator():
         pass
     def getResult(self):
         pass
-
+class Caculator_selectsitesForillumina():
+    def __init__(self,of,tilingorderidx,best_recommendation,T,VIPidx):
+        #every Caculator which need two or more vcf have the follow two variable
+        self.vcfnamelist=[]
+        self.vcfnameKEY_vcfobj_pyBAMfilesVALUE={}
+        self.contained=[]
+        self.VIPidx=VIPidx
+        self.m={"FORWARD":"Plus","REVERSE":"Minus"}
+        self.greaterTsort={"1":[],"2":[],"3":[],"4":[],"5":[],"6":[],"7":[]}# insertSort
+        self.source_version=tilingorderidx+1#first element is position info
+        self.rcmidx=best_recommendation+1#score
+        self.classedrecs=[]
+        self.lowthanT=[]#lower than threshold
+        self.Tvalue=T
+        self.pf=of
+        self.count=0
+    def process(self, T):
+        self.count+=1
+        self.classedrecs.append(T)
+        if T[self.VIPidx]=="VIP":
+            self.contained.append(len(self.classedrecs)-1)
+        if float(T[self.rcmidx])<self.Tvalue:
+            #only make sure first value is the bigest
+            if self.lowthanT!=[] and float(T[self.rcmidx])>float(self.classedrecs[self.lowthanT[0]][self.rcmidx]):
+                self.lowthanT.insert(0,len(self.classedrecs)-1)
+            else:
+                self.lowthanT.append(len(self.classedrecs)-1)
+        else:
+            if self.greaterTsort[T[self.source_version]]!=[] and float(T[self.rcmidx])>float(self.classedrecs[self.greaterTsort[T[self.source_version]][0]][self.rcmidx]):
+                self.greaterTsort[T[self.source_version]].insert(0,len(self.classedrecs)-1)
+            else:
+                self.greaterTsort[T[self.source_version]].append(len(self.classedrecs)-1)
+    def getResult(self):
+#         print(self.count)
+#         print(self.restATCT,self.restNonATCT,self.contained,len(self.classedrecs))
+        
+        if len(self.contained)!=0:
+            for recidx in reversed(self.contained):
+                e=self.classedrecs.pop(recidx)
+                print(e[1],"SNP",e[2],e[4],e[5],e[3],e[6],e[7],e[8],self.m[e[8].upper()],"Soybean","FALSE",sep=",",file=self.pf)
+        else:
+            for k in ["1","2","3","4","5","6","7"]:#["2","3","4","5"]
+                if self.greaterTsort[k]!=[] :#
+                    e=self.classedrecs.pop(self.greaterTsort[k][0])
+                    print(e[1],"SNP",e[2],e[4],e[5],e[3],e[6],e[7],e[8],self.m[e[8].upper()],"Soybean","FALSE",sep=",",file=self.pf)
+                    break
+            else:
+                if self.lowthanT!=[]:
+                    e=self.classedrecs.pop(self.lowthanT[0])
+                    print(e[1],"SNP",e[2],e[4],e[5],e[3],e[6],e[7],e[8],self.m[e[8].upper()],"Soybean","FALSE",sep=",",file=self.pf)
+        self.contained=[]
+        self.greaterTsort={"1":[],"2":[],"3":[],"4":[],"5":[],"6":[],"7":[]}# insertSort
+        self.pf.flush()
+        self.classedrecs=[]
+        self.lowthanT=[]#lower than threshold
+        return 1,2
 class Caculator_addpriority():
     def __init__(self,of,tilingorderidx=2,best_recommendation=32,rmdupmap={},mustin=set()):
         #every Caculator which need two or more vcf have the follow two variable

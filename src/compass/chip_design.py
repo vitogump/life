@@ -150,82 +150,122 @@ if __name__ == '__main__':
         remdupf.close();f.close();dupf.close()
         exit()
     ###add priority to scored file
-    if len(sys.argv)!=3:
-        print("python chip_design.py scoredfile winsize")
+    if len(sys.argv)!=5:
+        print("python chip_design.py scoredfile winsize I/A thresholdfor_I")
     print("add prority accord tiling_order and win; i.e repriority")
-    
-    musctincludes=set()
-    """this code is for xiaomi chip, there 417 sites that customer request to include in this chip
-    mustincludef=open("lkjltail603uniq417",'r');
-    for line in mustincludef:
-        mustinl=re.split(r"\t",line.strip())
-        musctincludes.add(mustinl[1])
-    mustincludef.close()
-    """
-    
-    
-    dupseqmap={}
-#     dupf=open("fillgapMergeOldmarker.txtdup",'r');
-    """{seq1:[highestpriority,id1,id2,id3],seq2:[highestpriority,id1,id2],seq3:[highestpriority,id1,id2],,}"""
-    os.system("sed -n '1,1p' " +sys.argv[1]+" > titlelinetemp")
-#     os.system("sed -n '2,$p' " +sys.argv[1]+"|sort -t$'\t'  -k5,5n -k6,6n - |cat titlelinetemp -  >"+sys.argv[1]+".sorted");sys.argv[1]=sys.argv[1]+".sorted"
-    
-    print(sys.argv[1])
-    f=open(sys.argv[1],'r');title=re.split(r"\t",f.readline().strip())
-    tidx=title.index("tiling_order");curchr=title[4];print("curchr:",curchr,"tilingorder idx:",tidx)
-    
-    """ this code is for xiaomi specified to remove duplicate sites, has been instead by first code segment "len(sys.argv)==2:" 
-    
-    
-    for drec in dupf:
-        drecl=re.split(r"\t",drec.strip())
-        seql=re.split(r"\[.+\]",drecl[2].strip())
+    print("thresholdfor_I argv[4] is for I only, but should give any value for A ")
+    if sys.argv[3].strip().upper()=="A":
+        musctincludes=set()
+        """this code is for xiaomi chip, there 417 sites that customer request to include in this chip
+        mustincludef=open("lkjltail603uniq417",'r');
+        for line in mustincludef:
+            mustinl=re.split(r"\t",line.strip())
+            musctincludes.add(mustinl[1])
+        mustincludef.close()
+        """
         
-        seqmerge=seql[0]+seql[1]
-        if seqmerge in dupseqmap:
-            dupseqmap[seqmerge].append(drecl[1])
-            dupseqmap[seqmerge][0]=max(dupseqmap[seql[0]+seql[1]][0],int(drecl[3]))
-        else:
-            dupseqmap[seqmerge]=[int(drecl[3]),drecl[1]]
-    """    
-    
-#     print(dupseqmap);exit()
-    win = Util.Window()
-    ofo=open(sys.argv[1]+sys.argv[2],'w')
-    print(*title,"priority",sep="\t",file=ofo)
-    addprortycaculator = Caculators.Caculator_addpriority(of=ofo,tilingorderidx=tidx,best_recommendation=title.index("best_recommendation"),rmdupmap=dupseqmap,mustin=musctincludes)
-    addprortycaculator.addVIPidx=title.index("importance")
-    recs=[];count=0;tcount=0
-    for line in f:
-        tcount+=1
-        recl=re.split(r"\t",line.strip())
         
-        if curchr==recl[4]:
-            currentchrLen=int(recl[5])
-#             print("collect rec in a win")
-            recs.append([int(recl[5])]+recl)
-        elif curchr!="cust_chr":
-#             print(recl,"sliding win",len(recs),currentchrLen)
+        dupseqmap={}
+    #     dupf=open("fillgapMergeOldmarker.txtdup",'r');
+        """{seq1:[highestpriority,id1,id2,id3],seq2:[highestpriority,id1,id2],seq3:[highestpriority,id1,id2],,}"""
+        os.system("sed -n '1,1p' " +sys.argv[1]+" > titlelinetemp")
+    #     os.system("sed -n '2,$p' " +sys.argv[1]+"|sort -t$'\t'  -k5,5n -k6,6n - |cat titlelinetemp -  >"+sys.argv[1]+".sorted");sys.argv[1]=sys.argv[1]+".sorted"
+        
+        print(sys.argv[1])
+        f=open(sys.argv[1],'r');title=re.split(r"\t",f.readline().strip())
+        tidx=title.index("tiling_order");curchr=title[4];print("curchr:",curchr,"tilingorder idx:",tidx)
+        
+        """ this code is for xiaomi specified to remove duplicate sites, has been instead by first code segment "len(sys.argv)==2:" 
+        
+        
+        for drec in dupf:
+            drecl=re.split(r"\t",drec.strip())
+            seql=re.split(r"\[.+\]",drecl[2].strip())
             
-            count+=len(recs)
-            if count!=tcount-1:
-                print(line,count,tcount);exit()
+            seqmerge=seql[0]+seql[1]
+            if seqmerge in dupseqmap:
+                dupseqmap[seqmerge].append(drecl[1])
+                dupseqmap[seqmerge][0]=max(dupseqmap[seql[0]+seql[1]][0],int(drecl[3]))
+            else:
+                dupseqmap[seqmerge]=[int(drecl[3]),drecl[1]]
+        """    
+        
+    #     print(dupseqmap);exit()
+        win = Util.Window()
+        ofo=open(sys.argv[1]+sys.argv[2],'w')
+        print(*title,"priority",sep="\t",file=ofo)
+        addprortycaculator = Caculators.Caculator_addpriority(of=ofo,tilingorderidx=tidx,best_recommendation=title.index("best_recommendation"),rmdupmap=dupseqmap,mustin=musctincludes)
+        addprortycaculator.addVIPidx=title.index("importance")
+        recs=[];count=0;tcount=0
+        for line in f:
+            tcount+=1
+            recl=re.split(r"\t",line.strip())
+            
+            if curchr==recl[4]:
+                currentchrLen=int(recl[5])
+    #             print("collect rec in a win")
+                recs.append([int(recl[5])]+recl)
+            elif curchr!="cust_chr":
+    #             print(recl,"sliding win",len(recs),currentchrLen)
+                
+                count+=len(recs)
+                if count!=tcount-1:
+                    print(line,count,tcount);exit(-1)
+                win.slidWindowOverlap(recs, currentchrLen, int(sys.argv[2]), int(sys.argv[2]), addprortycaculator)
+    #             print("win",count)
+                recs=[[int(recl[5])]+recl];curchr=recl[4]
+                currentchrLen=int(recl[5])
+            else:#first line
+    #             print(recl)
+                recs=[[int(recl[5])]+recl];curchr=recl[4];currentchrLen=int(recl[5])
+        else:
             win.slidWindowOverlap(recs, currentchrLen, int(sys.argv[2]), int(sys.argv[2]), addprortycaculator)
-#             print("win",count)
-            recs=[[int(recl[5])]+recl];curchr=recl[4]
-            currentchrLen=int(recl[5])
-        else:#first line
-#             print(recl)
-            recs=[[int(recl[5])]+recl];curchr=recl[4];currentchrLen=int(recl[5])
-    else:
-        win.slidWindowOverlap(recs, currentchrLen, int(sys.argv[2]), int(sys.argv[2]), addprortycaculator)
-    ofo.close()
-    f.close();addprortycaculator.temp.close()
-    #NF==? print $1~$(NF-1),"",$NF need to be variable for some col no best_strand rec , fuck affy
-    os.system("""awk 'BEGIN{FS="\t";OFS="\t"}{if(NF==41){print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40,"",$41}else{print $0}}' KPS_Rice_scored.txt.sorted6200 > KPS_Rice_scored.txt.sorted6200.miodifylastcol""")
-#     os.system("""awk 'BEGIN{FS="\t"}{if($34!=8 && $34!=9){print $0}}' Axiom_KPSmilet_redo_scored.txt.sorted3700withtitle.miodifylastcol|awk 'BEGIN{FS="\t"}{if($32=="neutral"){print $0}}' > Axiom_KPSmilet_redo_scored.txt.sorted3700withtitle.miodifylastcol1_7netural""")
-#     os.system("""awk 'BEGIN{FS="\t"}{if($34==8){print $0}}' Axiom_KPSmilet_redo_scored.txt.sorted3700withtitle.miodifylastcol|cat - Axiom_KPSmilet_redo_scored.txt.sorted3700withtitle.miodifylastcol1_7netural|sort -t$'\t'  -k5,5 -k6,6n > Axiom_KPSmilet_redo_scored.txt.sorted3700.sorted8M1_7netural""")
-#     
+        ofo.close()
+        f.close();addprortycaculator.temp.close()
+        #NF==? print $1~$(NF-1),"",$NF need to be variable for some col no best_strand rec , fuck affy
+        os.system("""awk 'BEGIN{FS="\t";OFS="\t"}{if(NF==41){print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40,"",$41}else{print $0}}' KPS_Rice_scored.txt.sorted6200 > KPS_Rice_scored.txt.sorted6200.miodifylastcol""")
+    #     os.system("""awk 'BEGIN{FS="\t"}{if($34!=8 && $34!=9){print $0}}' Axiom_KPSmilet_redo_scored.txt.sorted3700withtitle.miodifylastcol|awk 'BEGIN{FS="\t"}{if($32=="neutral"){print $0}}' > Axiom_KPSmilet_redo_scored.txt.sorted3700withtitle.miodifylastcol1_7netural""")
+    #     os.system("""awk 'BEGIN{FS="\t"}{if($34==8){print $0}}' Axiom_KPSmilet_redo_scored.txt.sorted3700withtitle.miodifylastcol|cat - Axiom_KPSmilet_redo_scored.txt.sorted3700withtitle.miodifylastcol1_7netural|sort -t$'\t'  -k5,5 -k6,6n > Axiom_KPSmilet_redo_scored.txt.sorted3700.sorted8M1_7netural""")
+    elif sys.argv[3].strip().upper()=="I":
+        #sort
+        os.system("sed -n '1,16p' " +sys.argv[1]+" > titlelinetemp")
+#         os.system("sed -n '17,$p' " +sys.argv[1]+"|sort -t$','  -k4,4n -k5,5n - |cat titlelinetemp -  >"+sys.argv[1]+".sorted");
+        sys.argv[1]=sys.argv[1]+".sorted"
+
+        win = Util.Window()
+        ofo=open(sys.argv[1]+sys.argv[2],'w')
+        f=open(sys.argv[1],'r')
+        
+        recs=[];count=0;tcount=0
+        curchr=None
+        for line in f:
+            tcount+=1
+            recl=re.split(r",",line.strip())
+            if recl[3]!="Chromosome" and curchr is None:
+                print(recl)
+                continue
+            elif curchr is None:
+                curchr=recl[3];title=recl#"Chromosome"
+                tidx=title.index("Source_Version");print("curchr:",curchr,"tilingorder idx:",tidx);best_recommendation=title.index("Final_Score")
+                addprortycaculator = Caculators.Caculator_selectsitesForillumina(of=ofo,tilingorderidx=tidx,best_recommendation=best_recommendation,T=float(sys.argv[4]),VIPidx=title.index("Source"))
+                continue
+            if curchr==recl[3]:
+                currentchrLen=int(recl[4])
+                recs.append([int(recl[4])]+recl)
+            elif curchr!="Chromosome":
+                if curchr=="0":
+                    for e in recs:
+                        print(e[1],"SNP",e[2],e[4],e[5],e[3],e[6],e[7],e[8],addprortycaculator.m[e[8].upper()],"Soybean","FALSE",sep=",",file=ofo)
+                else:
+                    win.slidWindowOverlap(recs, currentchrLen, int(sys.argv[2]), int(sys.argv[2]), addprortycaculator)
+                recs=[[int(recl[4])]+recl];curchr=recl[3]
+                currentchrLen=int(recl[4])
+            else:#first line
+                recs=[[int(recl[4])]+recl];curchr=recl[3];currentchrLen=int(recl[4])
+        else:
+            win.slidWindowOverlap(recs, currentchrLen, int(sys.argv[2]), int(sys.argv[2]), addprortycaculator)
+
+        #slide window
     exit()        
     ###other firt function
     if len(sys.argv)<4:
