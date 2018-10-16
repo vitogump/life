@@ -146,7 +146,7 @@ def alinmultPopSnpPos(vcfMaplist,jointmode="i"):
     return copy.deepcopy(multipleVcfMap)
 def alinmultPopSnpPos_diffrefalt(vcfMaplist,jointmode="i"):
     """input:
-    two or more map fomart like this [chrNo:[(pos,REF,ALT,INFO,FORMAT,sample,...),(pos,REF,ALT,INFO,FORMAT,sample,...),,,,,],{chrNo:[]},,,,,,]
+    two or more map fomart like this [chrNo:[(pos,REF,ALT,INFO,FORMAT,sample,...),(pos,REF,ALT,INFO,FORMAT,sample,...),,,,,],chrNo:[],,,,,,]
     output:
     one map like this {chrNo:[(pos,(REF,ALT,INFO,FORMAT,sample,...),(REF,ALT,INFO,FORMAT,sample,...)),(,,,(),()),,,,,],chrNo:[],,,}
                                             from pop1                        from pop2
