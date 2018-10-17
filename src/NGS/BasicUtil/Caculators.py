@@ -62,13 +62,20 @@ class Caculator_selectsitesForillumina():
                 e=self.classedrecs.pop(recidx)
                 print(e[1],"SNP",e[2],e[4],e[5],e[3],e[6],e[7],e[8],self.m[e[8].upper()],"Soybean","FALSE",sep=",",file=self.pf)
         else:
-            for k in ["1","2","3","4","5","6","7"]:#["2","3","4","5"]
+            for k in ["1","2","3"]:#,"4","5","6","7"]:#["2","3","4","5"]
                 if self.greaterTsort[k]!=[] :#
                     e=self.classedrecs.pop(self.greaterTsort[k][0])
                     print(e[1],"SNP",e[2],e[4],e[5],e[3],e[6],e[7],e[8],self.m[e[8].upper()],"Soybean","FALSE",sep=",",file=self.pf)
                     break
             else:
-                if self.lowthanT!=[]:
+                e_value=0#score of the site
+                for k in ["4","5","6"]:
+                    if self.greaterTsort[k]!=[] and float(self.classedrecs[self.greaterTsort[k][0]][self.rcmidx])>e_value:
+                        eidx=self.greaterTsort[k][0];e_value=float(self.classedrecs[self.greaterTsort[k][0]][self.rcmidx])
+                if e_value!=0:#found the max socre in 4 5 6
+                    e=self.classedrecs.pop(eidx)
+                    print(e[1],"SNP",e[2],e[4],e[5],e[3],e[6],e[7],e[8],self.m[e[8].upper()],"Soybean","FALSE",sep=",",file=self.pf)
+                elif self.lowthanT!=[]:# all score are less than self.Tvalue
                     e=self.classedrecs.pop(self.lowthanT[0])
                     print(e[1],"SNP",e[2],e[4],e[5],e[3],e[6],e[7],e[8],self.m[e[8].upper()],"Soybean","FALSE",sep=",",file=self.pf)
         self.contained=[]

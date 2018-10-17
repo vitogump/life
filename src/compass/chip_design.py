@@ -241,8 +241,8 @@ if __name__ == '__main__':
         for line in f:
             tcount+=1
             recl=re.split(r",",line.strip())
+#             print(recl)
             if recl[3]!="Chromosome" and curchr is None:
-                print(recl)
                 continue
             elif curchr is None:
                 curchr=recl[3];title=recl#"Chromosome"
@@ -255,7 +255,7 @@ if __name__ == '__main__':
             elif curchr!="Chromosome":
                 if curchr=="0":
                     for e in recs:
-                        print(e[1],"SNP",e[2],e[4],e[5],e[3],e[6],e[7],e[8],addprortycaculator.m[e[8].upper()],"Soybean","FALSE",sep=",",file=ofo)
+                        if e[title.index("Source")+1]=="VIP" or( int(e[tidx+1])<=3 and float(e[best_recommendation+1])>0.6): print(e[1],"SNP",e[2],e[4],e[5],e[3],e[6],e[7],e[8],addprortycaculator.m[e[8].upper()],"Soybean","FALSE",sep=",",file=ofo)
                 else:
                     win.slidWindowOverlap(recs, currentchrLen, int(sys.argv[2]), int(sys.argv[2]), addprortycaculator)
                 recs=[[int(recl[4])]+recl];curchr=recl[3]
