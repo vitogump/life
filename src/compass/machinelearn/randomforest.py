@@ -56,11 +56,19 @@ if __name__ == '__main__':
     train_data=pd.read_csv("D:\\mechinelearn\\watermelon.csv")
     test_data=pd.read_csv("D:\\mechinelearn\\watermelon.csv")
     features=["色泽","根蒂","敲声","纹理","脐部","触感"]
-    
+    print(train_data,)
+    print("==============")
+    print(test_data)    
     train_data, test_data = encode_features(train_data, test_data)
+    print(train_data,)
+    print("==============")
+    print(test_data)
     train_data = simplify_interval_info(train_data)
     test_data = simplify_interval_info(test_data)
-
+    print(train_data,)
+    print("==============")
+    print(test_data)
+    
     
     
     
@@ -72,30 +80,40 @@ if __name__ == '__main__':
     print(X_all)
     print("====y_all=====")
     print(y_all)
-    num_test=0.8
+    num_test=0.2
+    
     X_train,X_test,y_train,y_test=train_test_split(X_all, y_all, test_size=num_test, random_state=3)
+    print("X_train:")
+    print(X_train,y_train)
+    print("X_test")
+    print(X_test,y_test)
     #Choose some parameter combinations to try
     parameters={'n_estimators':[5,6,7],'criterion':['entropy','gini']}
     #type of scoring used to compare parameter combinations
     acc_scorer=make_scorer(accuracy_score)
+    print("acc_scorer:",acc_scorer,sep="\n")
+    
     clf = RandomForestClassifier()
     #Run the grid search
-    print("y_train")
-    print(y_train)
     grid_obj=GridSearchCV(clf,parameters,scoring=acc_scorer)
 
     
     grid_obj=grid_obj.fit(X_train,y_train)
+    print(grid_obj)
     #set the clf to the best combination of parameters
     clf=grid_obj.best_estimator_
+    print(clf)
     clf=clf.fit(X_train,y_train)
+    print(clf)
+    
     print("X_test\n",X_test)
     test_predictions=clf.predict(X_test)
     print("test_predictions\n",test_predictions)
+    print("y_test",y_test)
     print("测试集准确率:  %s " % accuracy_score(y_test, test_predictions))
     
     print(test_data)
-    print(y_test)
+    print(y_test);exit()
     
-    predictions = clf.predict(test_data.drop(['好瓜'], axis=1))
+    predictions = clf.predict(test_data)
     print("最终准确率:  %s " % accuracy_score(y_result, predictions))

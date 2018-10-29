@@ -118,10 +118,11 @@ if __name__ == '__main__':
     infile1map={}
     if len(sys.argv)==2:
         print("print duprecs")
+        seqidx=1
         f=open(sys.argv[1],'r');f.readline();ofo=open(sys.argv[1]+"dup",'w')
         for line in f:
             recl=re.split(r"\t",line.strip())
-            seql=re.split(r"\[.+\]",recl[2].strip())#############
+            seql=re.split(r"\[.+\]",recl[seqidx].strip())#############
             if seql[0]+seql[1] in infile1map:
                 print(*recl,sep="\t",file=ofo)
                 print(*infile1map[seql[0]+seql[1]],sep="\t",file=ofo)
@@ -130,7 +131,7 @@ if __name__ == '__main__':
         f.close();ofo.close()
         print(recl[2].strip(),seql[0]+seql[1])
         exit()
-    
+    ##################################################################################################################################
     dupmap={};dupids={}
     if len(sys.argv)==3 and os.path.exists(sys.argv[2]):
         print("remove dup,input command: python recswithdup duprecs")
@@ -149,7 +150,72 @@ if __name__ == '__main__':
                 print(*recl,sep="\t",file=remdupf)
         remdupf.close();f.close();dupf.close()
         exit()
-    ###add priority to scored file
+    if len(sys.argv)==4 and os.path.exists(sys.argv[1]) and os.path.exists(sys.argv[2]) and os.path.exists(sys.argv[3]):
+        allscoredf=open(sys.argv[2],'r')
+        lowscoref=open(sys.argv[3],'r')
+        lowscores={}
+        for line in lowscoref:
+            chrNo=re.split(r",",line.strip())[0].split("_")[0];pos=re.split(r",",line.strip())[0].split("_")[-1]
+            try:
+                lowscores[chrNo].append(pos)
+            except:
+                lowscores[chrNo]=[pos]
+        lowscoref.close()
+        idf=open(sys.argv[1],'r')        
+        for line in idf:
+            if re.search(r"^Locus_Name",line)!=None:
+                print(line,"titlepassed")
+                break
+        IDlist=[]
+        for line in idf:
+            IDlist.append(re.split(r",",line.strip())[0])
+        idf.close()
+        fw=open("asdfaf",'w')
+        for line in allscoredf:
+            if re.search(r"^Locus_Name",line)!=None:
+                print(line,"titlepassed")
+                break
+        cchr="";scorelist=[];poslist=[]
+        for line in allscoredf:
+            recl=re.split(r",",line.strip())
+            if recl[0].split("_")[0]==cchr:
+                poslist.append(recl[0].split("_")[-1])
+                scorelist.append(float(recl[9]))
+            else:
+                if cchr in lowscores.keys():
+                    lowscores[cchr].sort()
+                    for pos in lowscores[cchr]:#for every sites need to sub
+                        print(cchr+"_"+pos)
+                        print(cchr+"_"+pos,end="\t",file=fw)
+                        idx=poslist.index(pos);i=1
+                        while idx!=0 or i!=-1:
+                            idx+=i
+                            if len(poslist)!=idx:
+                                if cchr+"_"+poslist[idx] not in IDlist and float(scorelist[idx]) >0.6:
+                                    print(cchr+"_"+poslist[idx],file=fw);IDlist.append(cchr+"_"+poslist[idx]);break#sub find
+                            else:
+                                idx=poslist.index(pos);i=-1
+                else:
+                    print(cchr,"sdfasdf")
+                print("",file=fw)
+                scorelist=[];cchr=recl[0].split("_")[0];poslist=[]
+        else:
+            if cchr in lowscores.keys():
+                lowscores[cchr].sort()
+                for pos in lowscores[cchr]:#for every sites need to sub
+                    print(cchr+"_"+pos)
+                    print(cchr+"_"+pos,end="\t",file=fw)
+                    idx=poslist.index(pos);i=1
+                    while idx!=0 or i!=-1:
+                        idx+=i
+                        if len(poslist)!=idx:
+                            if cchr+"_"+poslist[idx] not in IDlist and float(scorelist[idx]) >0.6:
+                                print(cchr+"_"+poslist[idx],file=fw);IDlist.append(cchr+"_"+poslist[idx]);break#sub find
+                        else:
+                            idx=poslist.index(pos);i=-1                      
+        fw.close()                        
+    exit()                            
+###add priority to scored file################################################################################################################################
     if len(sys.argv)!=5:
         print("python chip_design.py scoredfile winsize I/A thresholdfor_I")
     print("add prority accord tiling_order and win; i.e repriority")
@@ -248,6 +314,7 @@ if __name__ == '__main__':
                 curchr=recl[3];title=recl#"Chromosome"
                 tidx=title.index("Source_Version");print("curchr:",curchr,"tilingorder idx:",tidx);best_recommendation=title.index("Final_Score")
                 addprortycaculator = Caculators.Caculator_selectsitesForillumina(of=ofo,tilingorderidx=tidx,best_recommendation=best_recommendation,T=float(sys.argv[4]),VIPidx=title.index("Source"))
+                addprortycaculator.spf=open(sys.argv[1]+sys.argv[2]+".originscored",'w')
                 continue
             if curchr==recl[3]:
                 currentchrLen=int(recl[4])
@@ -255,7 +322,9 @@ if __name__ == '__main__':
             elif curchr!="Chromosome":
                 if curchr=="0":
                     for e in recs:
-                        if e[title.index("Source")+1]=="VIP" or( int(e[tidx+1])<=3 and float(e[best_recommendation+1])>0.6): print(e[1],"SNP",e[2],e[4],e[5],e[3],e[6],e[7],e[8],addprortycaculator.m[e[8].upper()],"Soybean","FALSE",sep=",",file=ofo)
+                        if e[title.index("Source")+1]=="VIP" or( int(e[tidx+1])<=3 and float(e[best_recommendation+1])>0.6): 
+                            print(*e[1:],sep="\t",file=addprortycaculator.spf)
+                            print(e[1],"SNP",e[2],e[4],e[5],e[3],e[6],e[7],e[8],addprortycaculator.m[e[8].upper()],"Soybean","FALSE",sep=",",file=ofo)
                 else:
                     win.slidWindowOverlap(recs, currentchrLen, int(sys.argv[2]), int(sys.argv[2]), addprortycaculator)
                 recs=[[int(recl[4])]+recl];curchr=recl[3]
@@ -267,7 +336,7 @@ if __name__ == '__main__':
 
         #slide window
     exit()        
-    ###other firt function
+    ###other firt function##############################################
     if len(sys.argv)<4:
         print("python chip_design.py chrchangemapfile blastout.pos out.pos")
         exit(-1)

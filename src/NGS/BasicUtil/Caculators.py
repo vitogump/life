@@ -27,7 +27,7 @@ class Caculator_selectsitesForillumina():
         self.vcfnamelist=[]
         self.vcfnameKEY_vcfobj_pyBAMfilesVALUE={}
         self.contained=[]
-        self.VIPidx=VIPidx
+        self.VIPidx=VIPidx+1
         self.m={"FORWARD":"Plus","REVERSE":"Minus"}
         self.greaterTsort={"1":[],"2":[],"3":[],"4":[],"5":[],"6":[],"7":[]}# insertSort
         self.source_version=tilingorderidx+1#first element is position info
@@ -36,11 +36,13 @@ class Caculator_selectsitesForillumina():
         self.lowthanT=[]#lower than threshold
         self.Tvalue=T
         self.pf=of
+        self.spf=None
         self.count=0
     def process(self, T):
         self.count+=1
         self.classedrecs.append(T)
         if T[self.VIPidx]=="VIP":
+            print(T,file=open("vipppp",'a'))
             self.contained.append(len(self.classedrecs)-1)
         if float(T[self.rcmidx])<self.Tvalue:
             #only make sure first value is the bigest
@@ -60,11 +62,13 @@ class Caculator_selectsitesForillumina():
         if len(self.contained)!=0:
             for recidx in reversed(self.contained):
                 e=self.classedrecs.pop(recidx)
+                print(*e[1:],sep="\t",file=self.spf)
                 print(e[1],"SNP",e[2],e[4],e[5],e[3],e[6],e[7],e[8],self.m[e[8].upper()],"Soybean","FALSE",sep=",",file=self.pf)
         else:
             for k in ["1","2","3"]:#,"4","5","6","7"]:#["2","3","4","5"]
                 if self.greaterTsort[k]!=[] :#
                     e=self.classedrecs.pop(self.greaterTsort[k][0])
+                    print(*e[1:],sep="\t",file=self.spf)
                     print(e[1],"SNP",e[2],e[4],e[5],e[3],e[6],e[7],e[8],self.m[e[8].upper()],"Soybean","FALSE",sep=",",file=self.pf)
                     break
             else:
@@ -74,9 +78,11 @@ class Caculator_selectsitesForillumina():
                         eidx=self.greaterTsort[k][0];e_value=float(self.classedrecs[self.greaterTsort[k][0]][self.rcmidx])
                 if e_value!=0:#found the max socre in 4 5 6
                     e=self.classedrecs.pop(eidx)
+                    print(*e[1:],sep="\t",file=self.spf)
                     print(e[1],"SNP",e[2],e[4],e[5],e[3],e[6],e[7],e[8],self.m[e[8].upper()],"Soybean","FALSE",sep=",",file=self.pf)
                 elif self.lowthanT!=[]:# all score are less than self.Tvalue
                     e=self.classedrecs.pop(self.lowthanT[0])
+                    print(*e[1:],sep="\t",file=self.spf)
                     print(e[1],"SNP",e[2],e[4],e[5],e[3],e[6],e[7],e[8],self.m[e[8].upper()],"Soybean","FALSE",sep=",",file=self.pf)
         self.contained=[]
         self.greaterTsort={"1":[],"2":[],"3":[],"4":[],"5":[],"6":[],"7":[]}# insertSort
