@@ -97,8 +97,8 @@ class Caculator_addpriority():
         self.vcfnameKEY_vcfobj_pyBAMfilesVALUE={}
         self.contained=[]
         self.mmm={"2":"2","3":"3","4":"4","5":"1"}
-        self.restNonATCT={"1":[],"2":[],"3":[],"4":[],"5":[],"6":[],"7":[]}#{"2":[],"3":[],"4":[],"5":[]}
-        self.restATCT={"1":[],"2":[],"3":[],"4":[],"5":[],"6":[],"7":[]}#{"2":[],"3":[],"4":[],"5":[]}
+        self.restNonATCT={"1":[],"2":[],"3":[],"4":[],"5":[],"6":[],"7":[],"10":[]}#{"2":[],"3":[],"4":[],"5":[]}# "10":[] for records ignoring to add in chips
+        self.restATCT={"1":[],"2":[],"3":[],"4":[],"5":[],"6":[],"7":[],"10":[]}#{"2":[],"3":[],"4":[],"5":[]}
         self.tidx=tilingorderidx+1#first element is position info
         self.rcmidx=best_recommendation+1
         self.rmdupmap=rmdupmap
@@ -168,7 +168,6 @@ class Caculator_addpriority():
                         print(*e[1:],k,sep="\t",file=self.pf)#self.mmm[k]
                         break
                 else:
-                    print("test",file=open("test.txt","a"))
                     for k in ["1","2","3","4","5","6","7"]:
                         if self.restATCT[k]!=[] :
                             e=self.classedrecs.pop(self.restATCT[k][0])
@@ -182,8 +181,8 @@ class Caculator_addpriority():
         for ne in self.notrecommand:
             print(*ne[1:],"9",sep="\t",file=self.pf)
         self.contained=[]
-        self.restNonATCT={"1":[],"2":[],"3":[],"4":[],"5":[],"6":[],"7":[]}#{"2":[],"3":[],"4":[],"5":[]}
-        self.restATCT={"1":[],"2":[],"3":[],"4":[],"5":[],"6":[],"7":[]}#{"2":[],"3":[],"4":[],"5":[]}
+        self.restNonATCT={"1":[],"2":[],"3":[],"4":[],"5":[],"6":[],"7":[],"10":[]}#{"2":[],"3":[],"4":[],"5":[]}
+        self.restATCT={"1":[],"2":[],"3":[],"4":[],"5":[],"6":[],"7":[],"10":[]}#{"2":[],"3":[],"4":[],"5":[]}
         self.pf.flush()
         self.classedrecs=[]
         self.notrecommand=[]

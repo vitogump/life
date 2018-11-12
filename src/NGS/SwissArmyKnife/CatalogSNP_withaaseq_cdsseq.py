@@ -51,7 +51,7 @@ else:
     pos_idx=1;ref_idx=3;alt_idx=4
     titlelist = [a[0].strip() for a in dbvariantstools.operateDB("select", "select column_name  from information_schema.columns where table_schema='" + "ninglabvariantdata" + "' and table_name='" + variantstablename + "'")]
 
-gtfMap,utrMap,allgeneSetMap = config.getGtfMap(options.gtffile)
+gtfMap,utrMap,allgeneSetMap = geneUtil.getGtfMap(options.gtffile)
 bedfileNames = options.bedfiles
 
 outputpath = options.outputpath.strip()
@@ -501,9 +501,9 @@ if __name__ == '__main__':
                         tscptSeqAllCds_mut[tscptID].reverse()
 #                             tscptSeqAllCds_mut[tscptID] = list(tscptSeqAllCds_mut_str)
 #############################      produce linetoCDSMap  ############
-                        tscptSeqAllCds_Revr_Cmplm = config.complementary(tscptSeqAllCds[tscptID])
+                        tscptSeqAllCds_Revr_Cmplm = geneUtil.complementary(tscptSeqAllCds[tscptID])
                         tscptSeqAllCds_Revr_Cmplm.reverse()
-                        tscptSeqAllCds_mut_Revr_Cmplm = config.complementary(tscptSeqAllCds_mut[tscptID])
+                        tscptSeqAllCds_mut_Revr_Cmplm = geneUtil.complementary(tscptSeqAllCds_mut[tscptID])
                         tscptSeqAllCds_mut[tscptID]=tscptSeqAllCds_mut_Revr_Cmplm
                         for bases_idx in range(len(tscptSeqAllCds_mut_Revr_Cmplm)):  # reverse every element of the list,ie . reverse every str of the list
                             tscptSeqAllCds_mut_Revr_Cmplm[bases_idx] = tscptSeqAllCds_mut_Revr_Cmplm[bases_idx][::-1]
