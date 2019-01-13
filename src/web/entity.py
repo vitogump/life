@@ -14,34 +14,28 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql.schema import Sequence
 from sqlalchemy.sql.sqltypes import Integer, String, Text, Date, DateTime
-
+import config
 import datetime,configparser,os
 
 currentpath=os.path.realpath(__file__)
-if 'Windows' in platform.system():
-    currentpath[:currentpath.find("life\\src")]+"life\\com\\config.properties"
-    cfparser = configparser.ConfigParser()
-    cfparser.read(currentpath[:currentpath.find("life\\src")]+"life\\com\\config.properties")
-else:
-    currentpath[:currentpath.find("life/src")]+"life/com/config.properties"
-    cfparser = configparser.ConfigParser()
-    cfparser.read(currentpath[:currentpath.find("life/src")]+"life/com/config.properties")    
+   
 
-ip=cfparser.get("mysqldatabase","ip")
-print(currentpath,ip)#currentpath[:currentpath.find("life/src")]+"life/com/config.properties")
-username=cfparser.get("mysqldatabase","username")
-password=cfparser.get("mysqldatabase","password")
-webdbname=cfparser.get("mysqldatabase","webdbname")
-genomeinfodbname=cfparser.get("mysqldatabase","genomeinfodbname")
-pekingduckchromtable=cfparser.get("mysqldatabase","pekingduckchromtable")
-ghostdbname=cfparser.get("mysqldatabase","ghostdbname")
-vcfdbname=cfparser.get("mysqldatabase","vcfdbname")
-TranscriptGenetable=cfparser.get("mysqldatabase","TranscriptGenetable")
-D2Bduckchromtable=cfparser.get("mysqldatabase","D2Bduckchromtable")
-KB743256_1=cfparser.get("mysqldatabase","KB743256_1")
-outgroupVCFBAMconfig_beijingref=cfparser.get("mysqldatabase","outgroupVCFBAMconfig_beijingref")
-pathtoPython=cfparser.get("mysqldatabase", "pathtoPython")
-beijingreffa=cfparser.get("mysqldatabase","beijingreffa")
+ip=config.ip
+scriptdir=config.scriptdir
+print("entity",currentpath,ip)#currentpath[:currentpath.find("life/src")]+"life/com/config.properties")
+username=config.username
+password=config.password
+webdbname=config.webdbname
+genomeinfodbname=config.genomeinfodbname
+pekingduckchromtable=config.pekingduckchromtable
+ghostdbname=config.ghostdbname
+vcfdbname=config.vcfdbname
+TranscriptGenetable=config.TranscriptGenetable
+D2Bduckchromtable=config.D2Bduckchromtable
+KB743256_1=config.KB743256_1
+outgroupVCFBAMconfig_beijingref=config.outgroupVCFBAMconfig_beijingref
+pathtoPython=config.pathtoPython
+beijingreffa=config.beijingreffa
 db_config = {
     'host': ip,
     'user': username,

@@ -14,6 +14,7 @@ from src.web import entity
 from src.web.dba import addJobs2jobstate
 
 SLEEP_FOR_NEXT_TRY=5
+scriptdir=entity.scriptdir 
 def jobminitor(currentUstr):
 #     
     session=aaa.getWebSession()

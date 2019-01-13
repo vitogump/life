@@ -5,17 +5,23 @@ Created on 2013-9-2
 @author: liurui
 '''
 import sys,inspect,os,configparser,random,string
-
+import platform
 if not hasattr(sys.modules[__name__], '__file__'):
     __file__ = inspect.getfile(inspect.currentframe())
     
 currentpath=os.path.realpath(__file__)
-currentpath[:currentpath.find("life/src")]+"life/com/config.properties"
-cfparser = configparser.ConfigParser()
-cfparser.read(currentpath[:currentpath.find("life/src")]+"life/com/config.properties")
+if 'Windows' in platform.system():
+    currentpath[:currentpath.find("life\\src")]+"life\\com\\config.properties"
+    cfparser = configparser.ConfigParser()
+    cfparser.read(currentpath[:currentpath.find("life\\src")]+"life\\com\\config.properties")
+else:
+    currentpath[:currentpath.find("life/src")]+"life/com/config.properties"
+    cfparser = configparser.ConfigParser()
+    cfparser.read(currentpath[:currentpath.find("life/src")]+"life/com/config.properties") 
 
 ip=cfparser.get("mysqldatabase","ip")
-print(currentpath,ip)#currentpath[:currentpath.find("life/src")]+"life/com/config.properties")
+scriptdir=cfparser.get("mysqldatabase","scriptdir")
+print("load in config",currentpath,ip)#currentpath[:currentpath.find("life/src")]+"life/com/config.properties")
 username=cfparser.get("mysqldatabase","username")
 password=cfparser.get("mysqldatabase","password")
 webdbname=cfparser.get("mysqldatabase","webdbname")
