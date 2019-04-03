@@ -66,6 +66,8 @@ def scriptproduce(datadepth,collectiondepth,scriptspath,inputdatapath,softwareco
     parametersStr,N=re.subn(r"\$\$\$\$",inputstr,parametersStr)
     if not os.path.exists(scriptspath):
         os.makedirs(scriptspath)
+    print(scriptspath)
+    exit(-1)
     outputStr=outputList[1]+" ${output="+outputList[0]+"|suffix="+outputList[2]+"}"
     print(datadepth,collectiondepth,scriptspath,inputdatapath,softwareconfig)
     cmdline=softwareconfig+" "+parametersStr+" "+outputStr

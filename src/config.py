@@ -1,4 +1,6 @@
 # -*- coding: UTF-8 -*-
+CSRF_ENABLED=True
+SECRET_KEY='you-will-never-guess'
 '''
 Created on 2013-9-2
 
