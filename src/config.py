@@ -20,10 +20,9 @@ else:
     currentpath[:currentpath.find("life/src")]+"life/com/config.properties"
     cfparser = configparser.ConfigParser()
     cfparser.read(currentpath[:currentpath.find("life/src")]+"life/com/config.properties") 
-
 ip=cfparser.get("mysqldatabase","ip")
 scriptdir=cfparser.get("mysqldatabase","scriptdir")
-print("load in config",currentpath,ip)#currentpath[:currentpath.find("life/src")]+"life/com/config.properties")
+print("loading config",currentpath,ip)#currentpath[:currentpath.find("life/src")]+"life/com/config.properties")
 username=cfparser.get("mysqldatabase","username")
 password=cfparser.get("mysqldatabase","password")
 webdbname=cfparser.get("mysqldatabase","webdbname")

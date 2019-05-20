@@ -14,7 +14,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql.schema import Sequence
 from sqlalchemy.sql.sqltypes import Integer, String, Text, Date, DateTime
-import config
+from src import config
 import datetime,configparser,os
 
 currentpath=os.path.realpath(__file__)
