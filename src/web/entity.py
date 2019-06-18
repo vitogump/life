@@ -22,7 +22,7 @@ currentpath=os.path.realpath(__file__)
 
 ip=config.ip
 scriptdir=config.scriptdir
-print("entity",currentpath,ip)#currentpath[:currentpath.find("life/src")]+"life/com/config.properties")
+print("entity",currentpath,ip,config.webdbname)#currentpath[:currentpath.find("life/src")]+"life/com/config.properties")
 username=config.username
 password=config.password
 webdbname=config.webdbname
@@ -40,7 +40,7 @@ db_config = {
     'host': ip,
     'user': username,
     'passwd': password,
-    'db':'ninglabweb',
+    'db': webdbname,
     'charset':'utf8'
 }
 
