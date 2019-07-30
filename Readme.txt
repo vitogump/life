@@ -1,2 +1,3 @@
-该目录下通过 赵老师的服务器的GIT管理
+mergetocompass branch is the latest version
+璇ョ洰褰曚笅鏇剧粡閫氳繃 璧佃�佸笀鐨勬湇鍔″櫒鐨凣IT绠＄悊
 bioinfo@10.2.48.149:liurui/GitRepositories/life
