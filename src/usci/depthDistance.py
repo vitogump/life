@@ -9,6 +9,7 @@ from optparse import OptionParser
 import os,re
 import pandas as pd
 import numpy as np
+from scipy.interpolate import UnivariateSpline as spline
 
 parser = OptionParser()
 parser.add_option("-d", "--flexDir", dest="flexDir", help="")
@@ -18,13 +19,12 @@ parser.add_option("-o", "--output", dest="output")
 
 (options, args) = parser.parse_args()
 flexDir=options.flexDir
-flexfilelist=[]
+flexfilelist=[];flexdatalist=[]
 f=open(options.selectbinfiles,'r')
 selectedidx=[int(e.strip()) for e in f.readlines()];f.close()
 
 def tryint(s):
     try:
-        print(int(s))
         return int(s)
     except ValueError:
         return s
@@ -42,7 +42,8 @@ def cosine_distance(matrix1,matrix2):
     
     cosine_distance = np.divide(matrix1_matrix2, np.dot(matrix1_norm, matrix2_norm.transpose()))
     return cosine_distance
-mds=[]
+
+mds=[["0" for i in range(75)] for j in range(75)]
 of=open(options.output,"w")
 if __name__ == '__main__':
     #read file
@@ -54,29 +55,43 @@ if __name__ == '__main__':
             flexfilelist.append(path)
     flexfilelist.sort(key=str2int)
     print("\n".join(flexfilelist))
-
-    for flex_idx1 in range(len(flexfilelist)):
-        flex_data1=pd.read_table(flexfilelist[flex_idx1],sep="\s+",header=None,usecols=[0,5,6],names=["chr","depth","GC"],dtype={"chr":int,"depth":int,"GC":float})
+    for flexfile in flexfilelist:
+        fpd=pd.read_table(flexfile,sep="\s+",header=None,usecols=[0,5,6],names=["chr","depth","GC"],dtype={"chr":int,"depth":int,"GC":float})
         
-#         print("\n",flexfilelist[flex_idx1],np.mean(d1["depth"]))
-        mds.append([])
-        for flex_idx2 in range(flex_idx1+1,len(flexfilelist)):
-            flex_data2=pd.read_table(flexfilelist[flex_idx2],sep="\s+",header=None,usecols=[0,5,6],names=["chr","depth","GC"],dtype={"chr":int,"depth":int,"GC":float})
-            
-            print(flex_idx1,flex_idx2,end="\t")
     #select bins
-            d1=flex_data1.iloc[selectedidx];d1=d1[d1.chr<23]
-            d2=flex_data2.iloc[selectedidx];d2=d2[d2.chr<23]
-            d1["depth_scale"]=[e/np.mean(d1["depth"]) for e in d1["depth"]]
-            d2["depth_scale"]=[e/np.mean(d2["depth"]) for e in d2["depth"]]
+        fpd=fpd.iloc[selectedidx]
+        fpd23=fpd[fpd.chr<23]
+        
+    #depth_scale
+        meandepth=np.mean(fpd23.loc[:,"depth"])
+        fpd23.loc[:,"depth_scale"]=[e/meandepth for e in fpd23.loc[:,"depth"]]# this step with warning, however I don't know why
     #correct the depth by GC 
+        fpd23orderd=fpd23.loc[:,"GC"].sort_values()
+        result=spline(fpd23orderd.loc[:,"depth"])
+        
+        flexdatalist.append(fpd23)
+    for flex_idx1 in range(len(flexdatalist)):
+        flex_data1=flexdatalist[flex_idx1]
+#         print("\n",flexfilelist[flex_idx1],np.mean(d1["depth"]))
+        for flex_idx2 in range(flex_idx1+1,len(flexdatalist)):
+            flex_data2=flexdatalist[flex_idx2]
+            print(flex_idx1,flex_idx2,end="\t")
+
             
     #calculate distance & file distance array
-            a=d1["depth_scale"].as_matrix();b=d2["depth_scale"].as_matrix()
+            a=flex_data1.loc[:,"depth_scale"].values;b=flex_data2.loc[:,"depth_scale"].values
             dist=np.dot(a,b)/(np.linalg.norm(a)*np.linalg.norm(b))
-            mds[-1].append(str(dist))
-    print(mds)
+            mds[flex_idx2][flex_idx1]=mds[flex_idx1][flex_idx2]=str(dist)
+            
+#     print("\nmds",mds)
+    
+    print("",end="\t",file=of)
+    for fname in flexfilelist:
+        print(re.search(r"[^/]*$",fname).group(0),end="\t",file=of)
+    print("",file=of)
+    n_i=0
     for distlist in mds:
-        print("\t".join(distlist),file=of)
+        print(re.search(r"[^/]*$",flexfilelist[n_i]).group(0),"\t".join(distlist),sep="\t",file=of)
+        n_i+=1
     of.close()
     #
