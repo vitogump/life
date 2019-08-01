@@ -67,8 +67,10 @@ if __name__ == '__main__':
         fpd23.loc[:,"depth_scale"]=[e/meandepth for e in fpd23.loc[:,"depth"]]# this step with warning, however I don't know why
     #correct the depth by GC 
         fpd23orderd=fpd23.loc[:,"GC"].sort_values()
-        result=spline(fpd23orderd.loc[:,"depth"])
-        
+        GCord_idx=list(fpd23orderd.index)
+        result=spline(fpd23.loc[:,"depth"].index.values,fpd23orderd["depth"])
+        result(fpd23.loc[:,"depth"].index.values)
+        print(type(result))
         flexdatalist.append(fpd23)
     for flex_idx1 in range(len(flexdatalist)):
         flex_data1=flexdatalist[flex_idx1]
