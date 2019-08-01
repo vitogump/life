@@ -59,19 +59,29 @@ if __name__ == '__main__':
         fpd=pd.read_table(flexfile,sep="\s+",header=None,usecols=[0,5,6],names=["chr","depth","GC"],dtype={"chr":int,"depth":int,"GC":float})
         
     #select bins
+#         fpdfiltered=fpd
         fpd=fpd.iloc[selectedidx]
-        fpd23=fpd[fpd.chr<23]
+        fpdfiltered=fpd[fpd.chr<23].reset_index(drop=True)
+        
         
     #depth_scale
-        meandepth=np.mean(fpd23.loc[:,"depth"])
-        fpd23.loc[:,"depth_scale"]=[e/meandepth for e in fpd23.loc[:,"depth"]]# this step with warning, however I don't know why
+        meandepth=np.mean(fpdfiltered.loc[:,"depth"])
+        fpdfiltered.loc[:,"depth_scale"]=[e/meandepth for e in fpdfiltered.loc[:,"depth"]]# this step with warning, however I don't know why
     #correct the depth by GC 
-        fpd23orderd=fpd23.loc[:,"GC"].sort_values()
-        GCord_idx=list(fpd23orderd.index)
-        result=spline(fpd23.loc[:,"depth"].index.values,fpd23orderd["depth"])
-        result(fpd23.loc[:,"depth"].index.values)
-        print(type(result))
-        flexdatalist.append(fpd23)
+        GCord_idx=list(fpdfiltered.loc[:,"GC"].sort_values().index)
+        reGCord_idx=np.argsort(GCord_idx)
+        print(*fpdfiltered["depth_scale"].reindex(GCord_idx).values,sep="\n",file=open("temp_orddepth_scale",'w'))
+        print(*GCord_idx,file=open("GCord",'w'))
+        print(*reGCord_idx,sep="\n",file=open("temp_reord",'w'))
+        print("start spline")
+        result=spline(fpdfiltered.loc[:,"depth_scale"].index.values,fpdfiltered["depth_scale"].reindex(GCord_idx).values)
+        print("finish spline",fpdfiltered.index.values.max())
+#         xint=np.linspace(fpdfiltered.index.values.min(),fpdfiltered.index.values.max(),1000)
+        print(*result(fpdfiltered.index.values),sep="\n",file=open("temp_spline.txt","w"))
+        fpdfiltered["depth_correct"]=fpdfiltered["depth_scale"].values-result(fpdfiltered.index.values)[reGCord_idx]
+        
+        flexdatalist.append(fpdfiltered)
+
     for flex_idx1 in range(len(flexdatalist)):
         flex_data1=flexdatalist[flex_idx1]
 #         print("\n",flexfilelist[flex_idx1],np.mean(d1["depth"]))
@@ -83,7 +93,7 @@ if __name__ == '__main__':
     #calculate distance & file distance array
             a=flex_data1.loc[:,"depth_scale"].values;b=flex_data2.loc[:,"depth_scale"].values
             dist=np.dot(a,b)/(np.linalg.norm(a)*np.linalg.norm(b))
-            mds[flex_idx2][flex_idx1]=mds[flex_idx1][flex_idx2]=str(dist)
+            mds[flex_idx2][flex_idx1]=mds[flex_idx1][flex_idx2]=str(1-dist)
             
 #     print("\nmds",mds)
     
