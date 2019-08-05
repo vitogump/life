@@ -45,8 +45,8 @@ def cosine_distance(matrix1,matrix2):
     cosine_distance = np.divide(matrix1_matrix2, np.dot(matrix1_norm, matrix2_norm.transpose()))
     return cosine_distance
 
-mds_scale=[["0" for i in range(75)] for j in range(75)]
-mds_correct=[["0" for i in range(75)] for j in range(75)]
+
+
 
 ofs=open(options.outputpre+str(options.distype)+"scaledDepth","w")
 ofc=open(options.outputpre+str(options.distype)+"GCcorrectedDepth","w")
@@ -56,9 +56,14 @@ if __name__ == '__main__':
         path = flexDir + os.sep + elem
         if ( os.path.isdir(path)):
             print(path,"is not the file")
-        else:
+        elif re.match(r"[\w\W]*flex[^/]+unique.nodup.txt$",path)!=None:
             flexfilelist.append(path)
     flexfilelist.sort(key=str2int)
+    
+    #init result array
+    mds_scale=[["0" for i in range(len(flexfilelist))] for j in range(len(flexfilelist))]
+    mds_correct=[["0" for i in range(len(flexfilelist))] for j in range(len(flexfilelist))]
+    
     print("\n".join(flexfilelist))
     for flexfile in flexfilelist:
         fpd=pd.read_table(flexfile,sep="\s+",header=None,usecols=[0,5,6],names=["chr","depth","GC"],dtype={"chr":int,"depth":int,"GC":float})
