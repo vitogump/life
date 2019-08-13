@@ -58,7 +58,8 @@ def configsoftware():
         print("configsoftware here",request.form)
         print("hidden value",form.tag1part1.data,form.tag2part1.data)
 #         return form.tag1part1.data+form.tag1part2.data+form.tag2part1.data+form.tag2part2.data+form.datadepth.data+form.projectpath.data+"<br />"+form.outputpath.data+form.outputperfix.data+"<br />"+"<br />".join(form.filteredforders.data)
-        ppl=re.split(r'[/\\]',form.projectpath.data.strip('/'));scriptdir=Service.scriptdir;print(scriptdir,ppl)
+        ppl=re.split(r'[\\]',form.projectpath.data.strip('/'));scriptdir=Service.scriptdir;print(scriptdir,ppl)
+        
         for e in ppl:
             orde=0
             for c in e:

@@ -48,7 +48,7 @@ db_config = {
     'host': ip,
     'user': username,
     'passwd': password,
-    'db':'ninglabweb',
+    'db':webdbname,
     'charset':'utf8'
 }
 
@@ -102,11 +102,11 @@ print("this line meaning this py module arc execute when import ")
 # 
 # for i in l:
 #     print(i.title,i.catalogue_id)
-#c1=entity.Catalogue("mRNA/miRNA表达分析")
-#c2=entity.Catalogue("自然选择和人工选择")
-#c3=entity.Catalogue("基因印迹和表观遗传")
-#c4=entity.Catalogue("基因定位(GWAS,Linkage, NGS等)")
-#c5=entity.Catalogue("GBS相关")
+#c1=entity.Catalogue("mRNA/miRNA琛ㄨ揪鍒嗘瀽")
+#c2=entity.Catalogue("鑷劧閫夋嫨鍜屼汉宸ラ�夋嫨")
+#c3=entity.Catalogue("鍩哄洜鍗拌抗鍜岃〃瑙傞仐浼�")
+#c4=entity.Catalogue("鍩哄洜瀹氫綅(GWAS,Linkage, NGS绛�)")
+#c5=entity.Catalogue("GBS鐩稿叧")
 #session.add(c1)
 #session.add(c2)
 #session.add(c3)
