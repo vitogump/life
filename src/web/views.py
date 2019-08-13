@@ -55,16 +55,20 @@ def testmyform():
 def configsoftware():
     form=ParaForm()
     if form.validate_on_submit():
-        print("configsoftware here",request.form)
+        print("configsoftware here",type(request.form),request.form)
         print("hidden value",form.tag1part1.data,form.tag2part1.data)
+        if "Checkbox1" in request.form:
+            print("request.form Checkbox1")
 #         return form.tag1part1.data+form.tag1part2.data+form.tag2part1.data+form.tag2part2.data+form.datadepth.data+form.projectpath.data+"<br />"+form.outputpath.data+form.outputperfix.data+"<br />"+"<br />".join(form.filteredforders.data)
         ppl=re.split(r'[\\]',form.projectpath.data.strip('/'));scriptdir=Service.scriptdir;print(scriptdir,ppl)
-        
+        print("ppl",ppl)
         for e in ppl:
             orde=0
             for c in e:
                 orde+=ord(c)
-            scriptdir+=chr(int(orde/len(e)))+"/"
+            print(orde/len(e))
+            scriptdir+="/"
+#             scriptdir+=chr(int(orde/len(e)))+"/"
         scriptdir+=time.strftime('%Y%m%d', time.localtime()).replace(":","")
         inputList=[];tagList=[]
         for inputpart1,inputpart2 in [(form.input1part1.data,form.input1part2.data),(form.input2part1.data,form.input2part2.data)]:
@@ -74,8 +78,8 @@ def configsoftware():
             if tagpart1.strip()!="":
                 tagList.append(tagpart1+"${tag}"+tagpart2)
         outputlist=[form.outputpath.data]+re.split(r"\s+",form.outputperfix.data)#,form.outputperfix2.data]
-        tagtofolder=form.tagtoFolderlevel.data if form.tagtoFolderlevel.data.isdigit() else 0
-        selectfolderlevel=form.filteredforderlevel.data if form.filteredforderlevel.data.isdigit() else "0"
+        tagtofolder=form.tagtoFolderlevel.data if ("Checkbox1" in form) else 0
+        selectfolderlevel=form.filteredforderlevel.data if ("Checkbox1" in form) else "0"
         scriptsstorediruniq=Service.scriptproduce(form.datadepth.data,form.collectiondepth.data,scriptdir,form.projectpath.data,form.software.data,form.commandParameters.data,inputList,outputlist,lenOfdirtotag=tagtofolder,taglist=tagList,selecteddepth=selectfolderlevel,selecteddirs=list(form.filteredforders.data))
         try:
             t=int(form.NumOfThreads.data)

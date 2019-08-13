@@ -62,20 +62,24 @@ def scriptproduce(datadepth,collectiondepth,scriptspath,inputdatapath,softwareco
     
     inputstr=(" "+" ".join(taglist)+" ") if int(lenOfdirtotag)!=0 else ""
     inputstr+=" ".join(inputList)
-    
-    parametersStr,N=re.subn(r"\$\$\$\$",inputstr,parametersStr)
+
     if not os.path.exists(scriptspath):
         os.makedirs(scriptspath)
-    print(scriptspath)
 #     exit(-1)
     outputStr=outputList[1]+" ${output="+outputList[0]+"|suffix="+outputList[2]+"}"
     print(datadepth,collectiondepth,scriptspath,inputdatapath,softwareconfig)
-    cmdline=softwareconfig+" "+parametersStr+" "+outputStr
-    print(cmdline)
+    print(inputstr,parametersStr)
+    parametersStr,N=re.subn(r"\$\$\$\$",inputstr,parametersStr)
+    print("after",parametersStr,N)   
+    if N!=0:
+        cmdline=softwareconfig+" "+parametersStr+" "+outputStr
+    else:
+        cmdline=softwareconfig+" "+inputstr+" "+parametersStr+" "+outputStr
     ranUniscriptspath=random_uniqScriptDir(scriptspath)
     os.makedirs(ranUniscriptspath)    
     operatorwithdata=OperatorWithData_webservice(inputdatapath,cmdline,ranUniscriptspath,taglen=lenOfdirtotag)
     operatorwithdata.cmdtemplatefilename=re.split(r'\s+',softwareconfig.strip())[0]+"Get"+outputList[2]
+    print("scriptproduce cmdline",operatorwithdata.cmdtemplatefilename)
     if int(selecteddepth)==0:
         selecteddirs=[]
     upTodownTravelDir(inputdatapath,operatorwithdata,int(datadepth),int(selecteddepth),collection_depth=int(collectiondepth),interceptdirs=selecteddirs,rootDirnotchange=operatorwithdata.inputdatapath,Interceptor_depth_notchange=int(selecteddepth))

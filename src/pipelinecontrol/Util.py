@@ -19,7 +19,7 @@ def upTodownTravelDir(rootDir, OperatorWithData, datadepth=9999, Interceptor_dep
     """
        first time if  Interceptor_depth is 0, interceptdirs should be [].
     """
-    
+    print(Interceptor_depth,collection_depth)
     if Interceptor_depth==0 or collection_depth==0:
         if Interceptor_depth==0:
             if interceptdirs!=[] and re.search(r"" + rootDirnotchange + "(/.*?){" + str(Interceptor_depth_notchange-1) + "}[/]([^/]+)", rootDir)==None:
@@ -92,12 +92,13 @@ class OperatorWithData_webservice(OperatorWithData):
 
     def process(self, curpath, datadepth, curdepth,interceptertuple):
         Interceptor_depth,interceptdirs,Interceptor_depth_notchange=interceptertuple
-        print("mode1 process")
+        
         scriptinputdata="scriptinputdata="
         scriptoutputdata="scriptoutputdata="
         interceptdepth=curdepth
         newcmdline = self.cmdline
         subtargets = re.findall(r"\${.*?}", newcmdline)
+        print("OperatorWithData_webservice process",subtargets)
         targetdatasuffix = []
         for target in subtargets[:]:
             c = re.search(r'\${(.*?)}', target).group(1)
@@ -141,10 +142,13 @@ class OperatorWithData_webservice(OperatorWithData):
                 scriptoutputdata+=(outputpath + pathToOutputdata_createdir + updirname + "myNtosub." + outsuffix+";")
                 newcmdline = re.sub(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}", outputpath + pathToOutputdata_createdir + updirname + "myNtosub." + outsuffix, newcmdline)
         targetdata_count=0
+        print("targetdatasuffix",targetdatasuffix)
         for i in range(0, len(targetdatasuffix)):
             lists =os.walk(curpath)
             for rootStr,dirs,files in lists:
+                print(rootStr,dirs,files)
                 if Interceptor_depth_notchange>curdepth and interceptdirs!=[] and len(re.split(r"/",rootStr))>=len(re.split(r"/",self.inputdatapath))+Interceptor_depth_notchange :#Interceptor_depth_notchange>curdepth condition is for the name issue
+                    print(targetdatasuffix[i])
                     print("reach the intercept depth in process func , after reach the collection depth and check it")
                     if re.search(r"" + self.inputdatapath + "(/.*?){" + str(Interceptor_depth_notchange-1) + "}[/]([^/]+)", rootStr)==None:
                         print(rootStr,"is not the path a")
@@ -155,22 +159,33 @@ class OperatorWithData_webservice(OperatorWithData):
                     updirname=re.search(r".*/([^/]+)$", curpath).group(1)+"".join(interceptdirs)
                 if len(re.split(r"/",rootStr))==len(re.split(r"/",self.inputdatapath))+datadepth:# reach the depth that datafiles in it
                     print("reach the depth that datafiles in it",rootStr+"/",files,targetdatasuffix)
-                    for datafilename in files:
-                        if re.search(r".*?" + targetdatasuffix[i]+"$", datafilename) != None:
-                            targetdata_count+=1
-                            scriptinputdata+=(rootStr + "/"+datafilename+";")
-                            option_suffix_obj = re.search(r"([-\w\d]*[=\s]*)\${(\s*" + targetdatasuffix[i] + "\s*)}", newcmdline)  # for example "INPUT=${.bam} -i ${.sam}"  may be this patter should be change as the 4th,6th line behind dose 
-                            print("option_suffix_obj",option_suffix_obj.group(0),"make new cmdline:",newcmdline)
-                            optionstr = option_suffix_obj.group(1)
-                            suffixstr = option_suffix_obj.group(2)
-                            newcmdline=re.sub(r"(-{1,2}[\w\d]*\s+|[\w\d]+=\s*|\s+)\${\s*" + targetdatasuffix[i] + "\s*}", optionstr  + rootStr + "/" + datafilename.strip() + " " + option_suffix_obj.group(0), newcmdline)                
-        print(newcmdline)
+                    print(targetdatasuffix[i])
+                    if targetdatasuffix[i]=="/":
+#                         for dirname in dirs:
+                        option_suffix_obj = re.search(r"([-\w\d]*[=\s]*)\${(\s*" + targetdatasuffix[i] + "\s*)}", newcmdline)
+                        optionstr = option_suffix_obj.group(1)
+                        suffixstr = option_suffix_obj.group(2)
+                        newcmdline=re.sub(r"(-{1,2}[\w\d]*\s+|[\w\d]+=\s*|\s+)\${\s*" + targetdatasuffix[i] + "\s*}", optionstr  + rootStr  + " " + option_suffix_obj.group(0), newcmdline)
+                        print("/ is input",newcmdline)
+                            
+                    else:
+                        for datafilename in files:
+                            if re.search(r".*?" + targetdatasuffix[i]+"$", datafilename) != None:
+                                targetdata_count+=1
+                                scriptinputdata+=(rootStr + "/"+datafilename+";")
+                                option_suffix_obj = re.search(r"([-\w\d]*[=\s]*)\${(\s*" + targetdatasuffix[i] + "\s*)}", newcmdline)  # for example "INPUT=${.bam} -i ${.sam}"  may be this patter should be change as the 4th,6th line behind dose 
+                                print("option_suffix_obj",option_suffix_obj.group(0),"make new cmdline:",newcmdline)
+                                optionstr = option_suffix_obj.group(1)
+                                suffixstr = option_suffix_obj.group(2)
+                                newcmdline=re.sub(r"(-{1,2}[\w\d]*\s+|[\w\d]+=\s*|\s+)\${\s*" + targetdatasuffix[i] + "\s*}", optionstr  + rootStr + "/" + datafilename.strip() + " " + option_suffix_obj.group(0), newcmdline)                
+        
         newcmdline = re.sub(r"(-{1,2}[\w\d]*\s+|[\w\d]+=\s*|\s+)\${.*?}", " ", newcmdline)
+        print("after remove input output",newcmdline)
                     # sub was acted from the first to the rear most
         print("pathToOutputdata_createdir", pathToOutputdata_createdir)
         print("targetdatasuffix",targetdatasuffix)
         #exclude wrong command
-        if (len(targetdatasuffix)!=0 and targetdata_count!=len(targetdatasuffix)-no_of_tags and self.datadepthequalcollectdepth) or (not self.datadepthequalcollectdepth and targetdata_count==0):# i am not sure does (not self.datadepthequalcollectdepth and targetdata_count==0) necessary
+        if (len(targetdatasuffix)!=0 and ("/" not in targetdatasuffix) and targetdata_count!=len(targetdatasuffix)-no_of_tags and self.datadepthequalcollectdepth) or (not self.datadepthequalcollectdepth and targetdata_count==0):# i am not sure does (not self.datadepthequalcollectdepth and targetdata_count==0) necessary
             print(targetdata_count,len(targetdatasuffix),no_of_tags)
             print("targetdata_count!=len(targetdatasuffix)")
             return newcmdline
@@ -253,6 +268,7 @@ class OperatorWithData_mode1(OperatorWithData):
         for i in range(0, len(targetdatasuffix)):
             lists =os.walk(curpath)
             for rootStr,dirs,files in lists:
+                print(rootStr,dirs,files)
                 if Interceptor_depth_notchange>curdepth and interceptdirs!=[] and len(re.split(r"/",rootStr))>=len(re.split(r"/",self.inputdatapath))+Interceptor_depth_notchange :#Interceptor_depth_notchange>curdepth condition is for the name issue
                     print("reach the intercept depth in process func , after reach the collection depth and check it")
                     if re.search(r"" + self.inputdatapath + "(/.*?){" + str(Interceptor_depth_notchange-1) + "}[/]([^/]+)", rootStr)==None:
