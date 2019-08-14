@@ -5,7 +5,7 @@ Created on 2019年8月12日
 '''
 from optparse import OptionParser
 
-import pysam, numpy
+import pysam, numpy,copy
 
 parser = OptionParser()
 parser.add_option("-b", "--bamfile", dest="bamfile",help="write report to FILE")
@@ -22,12 +22,26 @@ minvalue = float(options.interval[0])
 maxvalue = float(options.interval[1])
 breaks = int(options.interval[2])
 dincrease = (maxvalue - minvalue) / breaks
-delta_DerAftotal={}
+bin_GCstratified_template={}#use this as template 
+bin_GCstratified_mean={}# recod sum value
+bin_GCstratified_sum={
+(30.0,34.0): 4249574,
+(34.0,38.0): 4917351,
+(38.0,42.0): 4738324,
+(42.0,46.0): 3974121,
+(46.0,50.0): 3214421,
+(50.0,54.0): 2718319,
+(54.0,58.0): 2300071,
+(58.0,62.0): 1574971,
+(62.0,66.0): 802171,
+(66.0,70.0): 336057}
 while minvalue<=maxvalue - dincrease :
     print(minvalue,minvalue + dincrease)
-    delta_DerAftotal[(minvalue,minvalue + dincrease)]=0
+    bin_GCstratified_template[(minvalue,minvalue + dincrease)]=0
+    bin_GCstratified_mean[(minvalue,minvalue + dincrease)]=0
 #     delta_DerAf[(minvalue,minvalue + dincrease)]={"BinP1andP2":[],"BinP1orP2":[],"BBAA":[],"BABA":[],"ABBA":[]}
     minvalue += dincrease
+bins_GCstratified=[]
 def Compute_GC(seq):
     GC=0
     total=0
@@ -38,21 +52,31 @@ def Compute_GC(seq):
             GC=GC+1
     return float(GC)/total*100
 if __name__ == '__main__':
-    bamfile=pysam.Samfile(options.bamfile.strip(),'rb')
-    print(bamfile.references)
-#     bamfile=pysam.AlignmentFile(options.bamfile.strip(),'rb')
-    for chrom in bamfile.references:
-        print(chrom)
-        for read  in bamfile.fetch(chrom):
-            rseq=read.query_sequence
-            GCcontent=Compute_GC(rseq)
-            for a,b in sorted(delta_DerAftotal.keys()):
-                if GCcontent >a and GCcontent<=b:
-                    delta_DerAftotal[(a,b)]+=1
-                    break
-        print(delta_DerAftotal)
-        
-    for a,b in sorted(delta_DerAftotal.keys()):
-        print(a,b,delta_DerAftotal[a,b],sep="\t",file=outfile)
+#     bamfile=pysam.Samfile(options.bamfile.strip(),'rb')
+    bamfile=pysam.AlignmentFile(options.bamfile.strip(),'rb')
+    print(len(bamfile.header['SQ']),len(bamfile.references))
+    
+    for chrom in bamfile.header['SQ']:
+        print(chrom,chrom['SN'])
+        for str_bp in range(0,chrom['LN'],100000):
+            print(str_bp,str_bp+100000)
+            bin_GCstratified_colect=copy.deepcopy(bin_GCstratified_template)
+            for read  in bamfile.fetch(chrom['SN'],str_bp,str_bp+100000):
+                rseq=read.query_sequence
+                GCcontent=Compute_GC(rseq)
+                for a,b in sorted(bin_GCstratified_colect.keys()):
+                    if GCcontent >a and GCcontent<=b:
+                        bin_GCstratified_colect[(a,b)]+=1
+                        bin_GCstratified_mean[(a,b)]+=1
+                        break
+            bins_GCstratified.append(bin_GCstratified_colect)
+    print(len(bins_GCstratified))
+    
+    
+    for a,b in sorted(bin_GCstratified_mean.keys()):
+        bin_GCstratified_mean[a,b]=bin_GCstratified_sum[a,b]/len(bins_GCstratified)#overwrite the bin_GCstratified_mean which is actrually a overlaped sum
+    for bin_GCstratified_colect in bins_GCstratified:
+        for a,b in sorted(bin_GCstratified_colect.keys()):    
+            print(a,b,bin_GCstratified_sum[a,b],sep="\t",file=outfile)
     bamfile.close();outfile.close()
         
