@@ -7,6 +7,8 @@ Created on 2019��7��30��
 
 from optparse import OptionParser
 import os,re
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
 import pandas as pd
 import numpy as np
 from scipy.interpolate import UnivariateSpline as spline
@@ -91,7 +93,27 @@ if __name__ == '__main__':
         fpdfiltered["depth_correct"]=fpdfiltered["depth_scale"].values-result(fpdfiltered.index.values)[reGCord_idx]
         
         flexdatalist.append(fpdfiltered)
-
+    y=[];xs=[];xc=[]
+    if options.distype.lower()=="pca":
+        for flex_idx1 in range(len(flexfilelist)):
+            flex_name1=flexfilelist[flex_idx1]
+            xs.append(flexdatalist[flex_idx1].loc[:,"depth_scale"].values)
+            xc.append(flexdatalist[flex_idx1].loc[:,"depth_correct"].values)
+            if "0.0_" in flex_name1:
+                y.append(0)
+            elif "0.005" in flex_name1:
+                y.append(1)
+            elif "0.01" in flex_name1:
+                y.append(2)
+        pca=PCA(n_components=2)
+        reduced_xs=pca.fit_transform(xs)
+        for pc1,pc2 in reduced_xs:
+            print(pc1,pc2,sep="\t",file=ofs)
+        reduced_xc=pca.fit_transform(xc)
+        for pc1,pc2 in reduced_xc:
+            print(pc1,pc2,sep="\t",file=ofc)
+        ofs.close()
+        exit()
     for flex_idx1 in range(len(flexdatalist)):
         flex_data1=flexdatalist[flex_idx1]
 #         print("\n",flexfilelist[flex_idx1],np.mean(d1["depth"]))
@@ -114,6 +136,7 @@ if __name__ == '__main__':
                 dist1=1/np.sqrt(2)*np.linalg.norm(np.sqrt(a1)-np.sqrt(b1))
                 dist2=1/np.sqrt(2)*np.linalg.norm(np.sqrt(a2)-np.sqrt(b2))
                 print(a1,b1,dist1,a2,b2,dist2)
+
             mds_scale[flex_idx2][flex_idx1]=mds_scale[flex_idx1][flex_idx2]=str(dist1)
             mds_correct[flex_idx2][flex_idx1]=mds_correct[flex_idx1][flex_idx2]=str(dist2)
 #     print("\nmds",mds)

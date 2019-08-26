@@ -63,6 +63,8 @@ if __name__ == '__main__':
     
     for chrom in bamfile.header['SQ']:
         print(chrom,chrom['SN'])
+#         if chrom['SN']=="chr2":
+#             break
         for str_bp in range(0,chrom['LN'],100000):# for every genomebin
             bin_GCstratified_colect=copy.deepcopy(bin_GCstratified_template)
             for GCbin_index in range(len(bins_arr)):
@@ -92,11 +94,11 @@ if __name__ == '__main__':
     for GCbin_index in range(len(bins_arr)):
         exception[GCbin_index]=numpy.mean(bins_arr[GCbin_index])
         std1[GCbin_index]=numpy.std(bins_arr[GCbin_index],ddof=1)
-
+    print(exception,std1)
     for a,b in sorted(bin_GCstratified_mean.keys()):
         bin_GCstratified_mean[a,b]=bin_GCstratified_sum[a,b]/len(bins_GCstratified)#overwrite the bin_GCstratified_mean which is actually a overlapped sum
     #bin_GCstratified_mean ≈ exception
-    print("bin","<",file=Zoutfile);print("bin","<",file=scaledoutfile)
+    print("binstr\tbinend","<",end="\t",file=Zoutfile);print("binstr\tbinend","<",end="\t",file=scaledoutfile)
     for a,b in sorted(bin_GCstratified_colect.keys()):
         print(str(a)+"-"+str(b),end="\t",file=Zoutfile)
         print(str(a)+"-"+str(b),end="\t",file=scaledoutfile)
@@ -108,8 +110,8 @@ if __name__ == '__main__':
         for GCidx in range(len(bins_arr)):
             
             try:
-                print(bins_arr[GCidx][idx]/exception[GCidx],end="\t",file=scaledoutfile)
-                print((bins_arr[GCidx][idx]-exception[GCidx])/std1,end="\t",file=Zoutfile)
+                print(bins_arr[GCidx][idx]/exception[GCidx],end="\t",file=scaledoutfile)# use bin_GCstratified_mean maybe better
+                print((bins_arr[GCidx][idx]-exception[GCidx])/std1[GCidx],end="\t",file=Zoutfile)
             except:
                 print("NA",end="\t",file=scaledoutfile)
                 print("NA",end="\t",file=Zoutfile)
