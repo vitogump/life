@@ -58,7 +58,7 @@ def random_uniqScriptDir(scriptspath,randomlength=8):
                 ranUniscriptspath=(scriptspath.rstrip("/")+"/"+''.join(a[:randomlength]))
                 break
     return ranUniscriptspath
-def scriptproduce(datadepth,collectiondepth,scriptspath,inputdatapath,softwareconfig,parametersStr,inputList,outputList,lenOfdirtotag=0,taglist=[],selecteddepth=0,selecteddirs=[]):#selecteddepth=0 means check collectiondepth only
+def scriptproduce(datadepth,collectiondepth,scriptspath,inputdataroot,softwareconfig,parametersStr,inputList,outputList,bathchOfInPath,lenOfdirtotag=0,taglist=[],selecteddepth=0,selecteddirs=[]):#selecteddepth=0 means check collectiondepth only
     
     inputstr=(" "+" ".join(taglist)+" ") if int(lenOfdirtotag)!=0 else ""
     inputstr+=" ".join(inputList)
@@ -67,7 +67,7 @@ def scriptproduce(datadepth,collectiondepth,scriptspath,inputdatapath,softwareco
         os.makedirs(scriptspath)
 #     exit(-1)
     outputStr=outputList[1]+" ${output="+outputList[0]+"|suffix="+outputList[2]+"}"
-    print(datadepth,collectiondepth,scriptspath,inputdatapath,softwareconfig)
+    print(datadepth,collectiondepth,scriptspath,inputdataroot,softwareconfig)
     print(inputstr,parametersStr)
     parametersStr,N=re.subn(r"\$\$\$\$",inputstr,parametersStr)
     print("after",parametersStr,N)   
@@ -77,10 +77,15 @@ def scriptproduce(datadepth,collectiondepth,scriptspath,inputdatapath,softwareco
         cmdline=softwareconfig+" "+inputstr+" "+parametersStr+" "+outputStr
     ranUniscriptspath=random_uniqScriptDir(scriptspath)
     os.makedirs(ranUniscriptspath)    
-    operatorwithdata=OperatorWithData_webservice(inputdatapath,cmdline,ranUniscriptspath,taglen=lenOfdirtotag)
+    operatorwithdata=OperatorWithData_webservice(inputdataroot,cmdline,ranUniscriptspath,taglen=lenOfdirtotag)
     operatorwithdata.cmdtemplatefilename=re.split(r'\s+',softwareconfig.strip())[0]+"Get"+outputList[2]
     print("scriptproduce cmdline",operatorwithdata.cmdtemplatefilename)
     if int(selecteddepth)==0:
         selecteddirs=[]
-    upTodownTravelDir(inputdatapath,operatorwithdata,int(datadepth),int(selecteddepth),collection_depth=int(collectiondepth),interceptdirs=selecteddirs,rootDirnotchange=operatorwithdata.inputdatapath,Interceptor_depth_notchange=int(selecteddepth))
+    if inputdataroot.strip("")=="":
+        for inputpath in bathchOfInPath:
+#             newcmdline=operatorwithdata.process(inputpath.strip(), int(datadepth), int(collectiondepth),(int(collectiondepth),selecteddirs,int(selecteddepth)))
+            newcmdline=operatorwithdata.process(inputpath.strip(), 0, 0,(int(collectiondepth),selecteddirs,int(selecteddepth)))
+    else:
+        upTodownTravelDir(inputdataroot,operatorwithdata,int(datadepth),int(selecteddepth),collection_depth=int(collectiondepth),interceptdirs=selecteddirs,rootDirnotchange=operatorwithdata.inputdatapath,Interceptor_depth_notchange=int(selecteddepth))
     return ranUniscriptspath

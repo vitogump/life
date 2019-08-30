@@ -107,11 +107,19 @@ if __name__ == '__main__':
                 y.append(2)
         pca=PCA(n_components=2)
         reduced_xs=pca.fit_transform(xs)
+#         red_x,red_y=[],[]
+        i=0
         for pc1,pc2 in reduced_xs:
-            print(pc1,pc2,sep="\t",file=ofs)
+#             if y[i]==0:
+#                 red_x.append()
+#                 red_y.append()
+            print(pc1,pc2,y[i],sep="\t",file=ofs)
+            i+=1
         reduced_xc=pca.fit_transform(xc)
+        i=0
         for pc1,pc2 in reduced_xc:
-            print(pc1,pc2,sep="\t",file=ofc)
+            print(pc1,pc2,y[i],sep="\t",file=ofc)
+            i+=1
         ofs.close()
         exit()
     for flex_idx1 in range(len(flexdatalist)):
