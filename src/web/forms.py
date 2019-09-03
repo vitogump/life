@@ -106,8 +106,8 @@ class HiddenFolderTagForm(Form):
     firstpart=HiddenField(id="firstPart")
     secondpart=HiddenField(id="secondPart")
 class ParaForm(FlaskForm):
-    projectpath=StringField("请输入项目根路径：",validators=[Required(message="根目录不能为空")],default="/home/liurui/originaldata")
-    datadepth=StringField("数据所在在层级：",validators=[Required()],default="2")
+    projectpath=StringField("请输入项目根路径：",default="/home/liurui/originaldata")
+    datadepth=StringField("数据所在在层级：",default="2")
     batchofinputpath = TextAreaField('一批待处理数据路径',default="""/USCIRL/project/Fastq/lims/A00268/180614_A00268_L4_0092_BH5FY5DSXX/fastq/Project_RTCS/CS00GL18AW0002-1-56_H5FY5DSXX_L4_CS00GL18AW0002-1-56_20180614_P
 /USCIRL/project/Fastq/lims/A00262/180621_A00262_L2_0122_BH5FW3DSXX/fastq/Project_RTCS/CS00GL18AW0003-1-55_H5FW3DSXX_L2_CS00GL18AW0003-1-55_20180621_P
 """)

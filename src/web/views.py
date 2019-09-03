@@ -57,17 +57,23 @@ def configsoftware():
     if form.validate_on_submit():
         print("configsoftware here",type(request.form),request.form)
         print("hidden value",form.tag1part1.data,form.tag2part1.data)
+        scriptdir=Service.scriptdir
         if "Checkbox1" in request.form:
+            tagtofolder=form.tagtoFolderlevel.data
+            selectfolderlevel=form.filteredforderlevel.data
             print("request.form Checkbox1")
+        else:
+            tagtofolder=0;selectfolderlevel="0"
 #         return form.tag1part1.data+form.tag1part2.data+form.tag2part1.data+form.tag2part2.data+form.datadepth.data+form.projectpath.data+"<br />"+form.outputpath.data+form.outputperfix.data+"<br />"+"<br />".join(form.filteredforders.data)
-        ppl=re.split(r'[\\]',form.projectpath.data.strip('/'));scriptdir=Service.scriptdir;print(scriptdir,ppl)
-        print("ppl",ppl)
-        for e in ppl:
-            orde=0
-            for c in e:
-                orde+=ord(c)
-            print(orde/len(e))
-            scriptdir+="/"
+        if form.projectpath.data.strip('/').strip()!="":
+            ppl=re.split(r'[\\]',form.projectpath.data.strip('/'))
+            print("ppl",ppl)
+            for e in ppl:
+                orde=0
+                for c in e:
+                    orde+=ord(c)
+                print(orde/len(e))
+                scriptdir+="/"
 #             scriptdir+=chr(int(orde/len(e)))+"/"
         scriptdir+=time.strftime('%Y%m%d', time.localtime()).replace(":","")
         inputList=[];tagList=[]
@@ -78,9 +84,8 @@ def configsoftware():
             if tagpart1.strip()!="":
                 tagList.append(tagpart1+"${tag}"+tagpart2)
         outputlist=[form.outputpath.data]+re.split(r"\s+",form.outputperfix.data)#,form.outputperfix2.data]
-        tagtofolder=form.tagtoFolderlevel.data if ("Checkbox1" in form) else 0
-        selectfolderlevel=form.filteredforderlevel.data if ("Checkbox1" in form) else "0"
-        scriptsstorediruniq=Service.scriptproduce(form.datadepth.data,form.collectiondepth.data,scriptdir,form.projectpath.data,form.software.data,form.commandParameters.data,inputList,outputlist,lenOfdirtotag=tagtofolder,taglist=tagList,selecteddepth=selectfolderlevel,selecteddirs=list(form.filteredforders.data))
+        print(type(form.batchofinputpath.data),);batchofInList=re.split(r"\s+",form.batchofinputpath.data)
+        scriptsstorediruniq=Service.scriptproduce(form.datadepth.data,form.collectiondepth.data,scriptdir,form.projectpath.data,form.software.data,form.commandParameters.data,inputList,outputlist,batchofInList,lenOfdirtotag=tagtofolder,taglist=tagList,selecteddepth=selectfolderlevel,selecteddirs=list(form.filteredforders.data))
         try:
             t=int(form.NumOfThreads.data)
         except:

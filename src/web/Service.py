@@ -6,7 +6,7 @@ Created on 2014-11-17
 import time,datetime
 import re,string,os,random,markdown2
 import src.web.dba as mydba
-from src.pipelinecontrol.Util import OperatorWithData_webservice, upTodownTravelDir
+from src.pipelinecontrol.Util import OperatorWithData_webservice, upTodownTravelDir,longestCommonPrefix
 from sqlalchemy.orm import session
 from tabulate import tabulate
 import src.web.dba as aaa
@@ -77,15 +77,22 @@ def scriptproduce(datadepth,collectiondepth,scriptspath,inputdataroot,softwareco
         cmdline=softwareconfig+" "+inputstr+" "+parametersStr+" "+outputStr
     ranUniscriptspath=random_uniqScriptDir(scriptspath)
     os.makedirs(ranUniscriptspath)    
-    operatorwithdata=OperatorWithData_webservice(inputdataroot,cmdline,ranUniscriptspath,taglen=lenOfdirtotag)
-    operatorwithdata.cmdtemplatefilename=re.split(r'\s+',softwareconfig.strip())[0]+"Get"+outputList[2]
-    print("scriptproduce cmdline",operatorwithdata.cmdtemplatefilename)
+
     if int(selecteddepth)==0:
         selecteddirs=[]
     if inputdataroot.strip("")=="":
+        compath=longestCommonPrefix(bathchOfInPath); compath=compath.rstrip(re.split(r""+os.sep,compath)[-1])
         for inputpath in bathchOfInPath:
+            operatorwithdata=OperatorWithData_webservice(inputpath,cmdline,ranUniscriptspath,taglen=lenOfdirtotag)
+            operatorwithdata.cmdtemplatefilename=re.split(r'\s+',softwareconfig.strip())[0]+"Get"+outputList[2]
 #             newcmdline=operatorwithdata.process(inputpath.strip(), int(datadepth), int(collectiondepth),(int(collectiondepth),selecteddirs,int(selecteddepth)))
+            creatDir=inputpath.strip().lstrip(compath);
+            if creatDir.rfind("/")!=-1: updir=creatDir[creatDir.rfind("/")+1:];creatDir=creatDir.replace("/","").strip()
+            operatorwithdata.taglen=0
             newcmdline=operatorwithdata.process(inputpath.strip(), 0, 0,(int(collectiondepth),selecteddirs,int(selecteddepth)))
     else:
+        operatorwithdata=OperatorWithData_webservice(inputdataroot,cmdline,ranUniscriptspath,taglen=lenOfdirtotag)
+        operatorwithdata.cmdtemplatefilename=re.split(r'\s+',softwareconfig.strip())[0]+"Get"+outputList[2]
+        print("scriptproduce cmdline",operatorwithdata.cmdtemplatefilename)
         upTodownTravelDir(inputdataroot,operatorwithdata,int(datadepth),int(selecteddepth),collection_depth=int(collectiondepth),interceptdirs=selecteddirs,rootDirnotchange=operatorwithdata.inputdatapath,Interceptor_depth_notchange=int(selecteddepth))
     return ranUniscriptspath

@@ -11,8 +11,55 @@ import random
 import string
 import time
 
+# def find_longest_prefix(str_list):
+#     '''
+#     求解字符串集的最长公共前缀
+#     '''
+#     str_list.sort(lambda x,y:cmp(len(x),len(y)))
+#     shortest_str=str_list[0]
+#     print(str_list)
+#     max_prefix=len(shortest_str)
+#     flag=0
+#     for i in range(max_prefix):
+#         for one_str in str_list:
+#             if one_str[i]!=shortest_str[i]:
+#                 return shortest_str[:i]
+#                 break
+#     return shortest_str
 
+def longestCommonPrefix(strs):
+    """
+    :type strs: List[str]
+    :rtype: str
+    """
+    result = ""
+    if len(strs) == 0:
+        return ""
+    #只有一个字符集
+    if len(strs) == 1:
+        return strs[0]
+    min_length = len(strs[0])
+    #判断字符集里是否存在空字符并判断字符集中最短字符串长度
+    if strs[0] == "":
+        return ""
+    for str in strs[1:]:
+        if len(str) < min_length:
+            min_length = len(str)
+        if str == "":
+            return ""
 
+    #匹配最短公共子序列
+    for i in range(min_length):
+        target = strs[0][i]
+        for j in range(1,len(strs)):
+            if strs[j][i] != target:
+                if result:
+                    return result
+                else:
+                    return ""
+        else:
+            result += target
+    return result
 
 ISOTIMEFORMAT = '%Y-%m-%d %X'
 def upTodownTravelDir(rootDir, OperatorWithData, datadepth=9999, Interceptor_depth=0,curdepth=0,collection_depth=0,interceptdirs=[],rootDirnotchange="",Interceptor_depth_notchange=0):
@@ -146,7 +193,7 @@ class OperatorWithData_webservice(OperatorWithData):
         for i in range(0, len(targetdatasuffix)):
             lists =os.walk(curpath)
             for rootStr,dirs,files in lists:
-                print(rootStr,dirs,files)
+#                 print(rootStr,dirs,files)
                 if Interceptor_depth_notchange>curdepth and interceptdirs!=[] and len(re.split(r"/",rootStr))>=len(re.split(r"/",self.inputdatapath))+Interceptor_depth_notchange :#Interceptor_depth_notchange>curdepth condition is for the name issue
                     print(targetdatasuffix[i])
                     print("reach the intercept depth in process func , after reach the collection depth and check it")
