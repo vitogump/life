@@ -41,11 +41,14 @@ input[type="text"][class="taginput3n"]{
 </style>
 <script src="../static/jquery-2.1.4.js"></script>
 <script>
+
 var sT=$("T");
-var nT=document.createElement("<input id='MyTextfield' value='/USCIRL/project/RD/CTBCTG/liurui' type='text' />");
+var nT=document.createElement("input");
+nT.id='MyTextfield'
+nT.value='/USCIRL/project/RD/CTBCTG/liurui'
 sT.onchange=function(){
     for(var i=0;i<sT.length;i++){
-        if(sT[i].value!="b"){
+        if(sT[i].selected){
             //alert(sT[i].value);
             if(sT[i].value=="a"){
                 if($("MyTextfield")){$("N").removeChild($("MyTextfield"));}
@@ -53,15 +56,6 @@ sT.onchange=function(){
             if(sT[i].value=="b" || sT[i].value=="c"){
                 if($("MyTextfield")){}else{$("N").appendChild(nT);}
             }
-        }
-    }
-}
-
-function $(_Id){return document.getElementById(_Id);};
-function Test(){
-    for(var i=0;i<sT.length;i++){
-        if(sT[i].selected){
-            alert(sT[i].value);
         }
     }
 }
@@ -197,6 +191,13 @@ function setText(obj)
 {{form.batchofinputpath.label}}</br>{{form.batchofinputpath(rows='8',cols='240')}}
 <P style="font-family:times;color:red"><b>控制输入部分结束</b></p>
     {{ wtf.form_field(form.software, id="software") }}
+adsfafd<select name="sdfsf" id="T">
+<option value="a" selected="selected">AAA</option>
+<option value="b">BBB</option>
+<option value="c">CCC</option>
+</select>
+<div id="N"></div>
+
 
 	{{form.commandParameters.label}}</br>{{form.commandParameters(rows='8',cols='65')}}
 

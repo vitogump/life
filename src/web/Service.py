@@ -61,12 +61,12 @@ def random_uniqScriptDir(scriptspath,randomlength=8):
 def scriptproduce(datadepth,collectiondepth,scriptspath,inputdataroot,softwareconfig,parametersStr,inputList,outputList,bathchOfInPath,lenOfdirtotag=0,taglist=[],selecteddepth=0,selecteddirs=[]):#selecteddepth=0 means check collectiondepth only
     
     inputstr=(" "+" ".join(taglist)+" ") if int(lenOfdirtotag)!=0 else ""
-    inputstr+=" ".join(inputList)
+    inputstr+=" ".join([pairIn[0]+" ${"+pairIn[1]+"}" for pairIn in inputList])
 
     if not os.path.exists(scriptspath):
         os.makedirs(scriptspath)
 #     exit(-1)
-    if len(outputList)>1 and outputList[1]!="":
+    if len(outputList)>2 and outputList[1]!="":
         outputStr=outputList[1]+" ${output="+outputList[0]+"|suffix="+outputList[2]+"}"
     else:
         outputStr=" "+outputList[0]
@@ -75,9 +75,9 @@ def scriptproduce(datadepth,collectiondepth,scriptspath,inputdataroot,softwareco
     parametersStr,N=re.subn(r"\$\$\$\$",inputstr,parametersStr)
     print("after",parametersStr,N)   
     if N!=0:
-        cmdline=softwareconfig+" "+parametersStr+" "+outputStr
+        cmdline=softwareconfig+"   "+parametersStr+" "+outputStr
     else:
-        cmdline=softwareconfig+" "+inputstr+" "+parametersStr+" "+outputStr
+        cmdline=softwareconfig+"   "+inputstr+" "+parametersStr+" "+outputStr
     ranUniscriptspath=random_uniqScriptDir(scriptspath)
     os.makedirs(ranUniscriptspath)    
 
@@ -86,7 +86,7 @@ def scriptproduce(datadepth,collectiondepth,scriptspath,inputdataroot,softwareco
     if inputdataroot.strip("")=="":
         compath=longestCommonPrefix(bathchOfInPath); compath=compath.rstrip(re.split(r""+os.sep,compath)[-1])
         for inputpath in bathchOfInPath:
-            operatorwithdata=OperatorWithData_webservice(inputpath,cmdline,ranUniscriptspath,taglen=lenOfdirtotag)
+            operatorwithdata=OperatorWithData_webservice(inputpath,inputList,cmdline,ranUniscriptspath,taglen=lenOfdirtotag)
             print("softwareconfig0",re.split(r'\s+',softwareconfig.strip())[0],outputList)
             operatorwithdata.cmdtemplatefilename=(re.split(r'\s+',softwareconfig.strip())[0]+"Get"+outputList[2]) if len(outputList)>2 and outputList[2]!="" else re.split(r'\s+',softwareconfig.strip())[0]
 #             newcmdline=operatorwithdata.process(inputpath.strip(), int(datadepth), int(collectiondepth),(int(collectiondepth),selecteddirs,int(selecteddepth)))
@@ -95,7 +95,7 @@ def scriptproduce(datadepth,collectiondepth,scriptspath,inputdataroot,softwareco
             operatorwithdata.taglen=0
             newcmdline=operatorwithdata.process(inputpath.strip(), 0, 0,(int(collectiondepth),selecteddirs,int(selecteddepth)))
     else:
-        operatorwithdata=OperatorWithData_webservice(inputdataroot,cmdline,ranUniscriptspath,taglen=lenOfdirtotag)
+        operatorwithdata=OperatorWithData_webservice(inputdataroot,inputList,cmdline,ranUniscriptspath,taglen=lenOfdirtotag)
         operatorwithdata.cmdtemplatefilename=re.split(r'\s+',softwareconfig.strip())[0]+"Get"+outputList[2]
         print("scriptproduce cmdline",operatorwithdata.cmdtemplatefilename)
         upTodownTravelDir(inputdataroot,operatorwithdata,int(datadepth),int(selecteddepth),collection_depth=int(collectiondepth),interceptdirs=selecteddirs,rootDirnotchange=operatorwithdata.inputdatapath,Interceptor_depth_notchange=int(selecteddepth))

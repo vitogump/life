@@ -120,7 +120,7 @@ class OperatorWithData_loadintodatabase(OperatorWithData):
         return "OperatorWithData_loadintodatabase return"
 
 class OperatorWithData_webservice(OperatorWithData):
-    def __init__(self, inputdatapath,cmdline, scriptsstoredir,taglen=1):
+    def __init__(self, inputdatapath,inputList,cmdline, scriptsstoredir,taglen=1):
         super().__init__(scriptsstoredir)
         self.taglen=int(taglen)
         self.cmdtemplatefilename="step"#=re.search(r"[^/]*$",cmdtemplatefile).group(0)
@@ -134,7 +134,7 @@ class OperatorWithData_webservice(OperatorWithData):
 #             self.cmdline,no_of_Dtags=re.subn(r"\${Dtag}",self.Dtag,self.cmdline)
         print(self.inputdatapath,self.cmdline,sep="\n")
         self.outputlist=re.findall(r"\${output=\s*([^\s^\|]*)\|suffix=(.*?)}",self.cmdline)
-
+        self.inputList=inputList
 #         self.interceptdirs=interceptdirs
 
     def process(self, curpath, datadepth, curdepth,interceptertuple):
@@ -146,20 +146,13 @@ class OperatorWithData_webservice(OperatorWithData):
         newcmdline = self.cmdline
         subtargets = re.findall(r"\${.*?}", newcmdline)
         print("OperatorWithData_webservice process",subtargets)
-        targetdatasuffix = []
-        for target in subtargets[:]:
-            c = re.search(r'\${(.*?)}', target).group(1)
-            if re.search(r"output=.*", c) != None:
-                print(target, subtargets)
-                subtargets.remove(target)
-                continue
-            targetdatasuffix.append(c)
+        targetdatasuffix=[e[1] for e in self.inputList]
         tagname=""
         for i in range(self.taglen):
             tagname="/"+re.search(r".*/([^/]+)"+tagname+"$", curpath).group(1)+tagname
         tagname=re.sub(r"/","_",tagname[1:])
         updirname = re.search(r".*/([^/]+)$", curpath).group(1)
-        print(newcmdline)
+        print("newcmdline2",newcmdline)
         newcmdline,no_of_tags=re.subn(r"\${tag}",tagname,newcmdline)
 
 
@@ -188,14 +181,15 @@ class OperatorWithData_webservice(OperatorWithData):
             else:
                 scriptoutputdata+=(outputpath + pathToOutputdata_createdir + updirname + "myNtosub." + outsuffix+";")
                 newcmdline = re.sub(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}", outputpath + pathToOutputdata_createdir + updirname + "myNtosub." + outsuffix, newcmdline)
+            print("newcmdline1",newcmdline)
         targetdata_count=0
-        print("targetdatasuffix",targetdatasuffix)
-        for i in range(0, len(targetdatasuffix)):
+        print("targetdatasuffix",self.inputList)
+        for i in range(0, len(self.inputList)):
             lists =os.walk(curpath)
             for rootStr,dirs,files in lists:
 #                 print(rootStr,dirs,files)
                 if Interceptor_depth_notchange>curdepth and interceptdirs!=[] and len(re.split(r"/",rootStr))>=len(re.split(r"/",self.inputdatapath))+Interceptor_depth_notchange :#Interceptor_depth_notchange>curdepth condition is for the name issue
-                    print(targetdatasuffix[i])
+                    print(self.inputList[i][1])
                     print("reach the intercept depth in process func , after reach the collection depth and check it")
                     if re.search(r"" + self.inputdatapath + "(/.*?){" + str(Interceptor_depth_notchange-1) + "}[/]([^/]+)", rootStr)==None:
                         print(rootStr,"is not the path a")
@@ -205,32 +199,28 @@ class OperatorWithData_webservice(OperatorWithData):
                         continue
                     updirname=re.search(r".*/([^/]+)$", curpath).group(1)+"".join(interceptdirs)
                 if len(re.split(r"/",rootStr))==len(re.split(r"/",self.inputdatapath))+datadepth:# reach the depth that datafiles in it
-                    print("reach the depth that datafiles in it",rootStr+"/",files,targetdatasuffix)
-                    print(targetdatasuffix[i])
-                    if targetdatasuffix[i]=="/":
+                    print("reach the depth that datafiles in it",rootStr+"/",files,self.inputList)
+                    print(self.inputList[i])
+                    if self.inputList[i][1]=="/":
 #                         for dirname in dirs:
-                        option_suffix_obj = re.search(r"([-\w\d]*[=\s]*)\${(\s*" + targetdatasuffix[i] + "\s*)}", newcmdline)
-                        optionstr = option_suffix_obj.group(1)
-                        suffixstr = option_suffix_obj.group(2)
-                        newcmdline=re.sub(r"(-{1,2}[\w\d]*\s+|[\w\d]+=\s*|\s+)\${\s*" + targetdatasuffix[i] + "\s*}", optionstr  + rootStr  + " " + option_suffix_obj.group(0), newcmdline)
+                        option_suffix_obj = re.search(r"("+self.inputList[i][0]+")\s*\${(\s*" + self.inputList[i][1] + "\s*)}", newcmdline)
+                        newcmdline=re.sub(r"("+self.inputList[i][0]+"|\s+)\${\s*" + self.inputList[i][1] + "\s*}", " "+self.inputList[i][0]  + rootStr  + " " + option_suffix_obj.group(0), newcmdline)
                         print("/ is input",newcmdline)
                             
                     else:
                         for datafilename in files:
-                            if re.search(r".*?" + targetdatasuffix[i]+"$", datafilename) != None:
+                            print(".*?" + self.inputList[i][1]+"$",datafilename)
+                            if re.search(r".*?" + self.inputList[i][1]+"$", datafilename) != None:
                                 targetdata_count+=1
                                 scriptinputdata+=(rootStr + "/"+datafilename+";")
-                                option_suffix_obj = re.search(r"([-\w\d]*[=\s]*)\${(\s*" + targetdatasuffix[i] + "\s*)}", newcmdline)  # for example "INPUT=${.bam} -i ${.sam}"  may be this patter should be change as the 4th,6th line behind dose 
+                                option_suffix_obj = re.search(r"("+self.inputList[i][0]+")\${(\s*" + self.inputList[i][1] + "\s*)}", newcmdline)  # for example "INPUT=${.bam} -i ${.sam}"  may be this patter should be change as the 4th,6th line behind dose 
                                 print("option_suffix_obj",option_suffix_obj.group(0),"make new cmdline:",newcmdline)
-                                optionstr = option_suffix_obj.group(1)
-                                suffixstr = option_suffix_obj.group(2)
-                                newcmdline=re.sub(r"(-{1,2}[\w\d]*\s+|[\w\d]+=\s*|\s+)\${\s*" + targetdatasuffix[i] + "\s*}", optionstr  + rootStr + "/" + datafilename.strip() + " " + option_suffix_obj.group(0), newcmdline)                
-        
+                                newcmdline=re.sub(r"("+self.inputList[i][0]+"|\s+)\${\s*" + self.inputList[i][1] + "\s*}", " "+self.inputList[i][0]  + rootStr + "/" + datafilename.strip() + " " + option_suffix_obj.group(0), newcmdline)                
+        print("before remove input output",newcmdline)
         newcmdline = re.sub(r"(-{1,2}[\w\d]*\s+|[\w\d]+=\s*|\s+)\${.*?}", " ", newcmdline)
         print("after remove input output",newcmdline)
                     # sub was acted from the first to the rear most
         print("pathToOutputdata_createdir", pathToOutputdata_createdir)
-        print("targetdatasuffix",targetdatasuffix)
         #exclude wrong command
         if (len(targetdatasuffix)!=0 and ("/" not in targetdatasuffix) and targetdata_count!=len(targetdatasuffix)-no_of_tags and self.datadepthequalcollectdepth) or (not self.datadepthequalcollectdepth and targetdata_count==0):# i am not sure does (not self.datadepthequalcollectdepth and targetdata_count==0) necessary
             print(targetdata_count,len(targetdatasuffix),no_of_tags)
@@ -331,7 +321,7 @@ class OperatorWithData_mode1(OperatorWithData):
                         if re.search(r".*?" + targetdatasuffix[i]+"$", datafilename) != None:
                             targetdata_count+=1
                             scriptinputdata+=(rootStr + "/"+datafilename+";")
-                            option_suffix_obj = re.search(r"([-\w\d]*[=\s]*)\${(\s*" + targetdatasuffix[i] + "\s*)}", newcmdline)  # for example "INPUT=${.bam} -i ${.sam}"
+                            option_suffix_obj = re.search(r"("++")([-\w\d]*[=\s]*)\${(\s*" + targetdatasuffix[i] + "\s*)}", newcmdline)  # for example "INPUT=${.bam} -i ${.sam}"
                             print("option_suffix_obj",option_suffix_obj.group(0),"make new cmdline:",newcmdline)
                             optionstr = option_suffix_obj.group(1)
                             suffixstr = option_suffix_obj.group(2)

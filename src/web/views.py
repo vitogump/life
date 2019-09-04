@@ -77,9 +77,9 @@ def configsoftware():
 #             scriptdir+=chr(int(orde/len(e)))+"/"
         scriptdir+=time.strftime('%Y%m%d', time.localtime()).replace(":","")
         inputList=[];tagList=[]
-        for inputpart1,inputpart2 in [(form.input1part1.data,form.input1part2.data),(form.input2part1.data,form.input2part2.data)]:
+        for inputpart1,inputpart2 in [(form.input1part1.data,form.input1part2.data),(form.input2part1.data,form.input2part2.data)]:# this code need to be modified !
             if  inputpart2.strip()!="":
-                inputList.append(inputpart1+" ${"+inputpart2+"}")
+                inputList.append((inputpart1,inputpart2))
         for tagpart1,tagpart2 in [(form.tag1part1.data,form.tag1part2.data),(form.tag2part1.data,form.tag2part2.data)]:
             if tagpart1.strip()!="":
                 tagList.append(tagpart1+"${tag}"+tagpart2)
