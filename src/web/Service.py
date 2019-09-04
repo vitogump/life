@@ -66,7 +66,10 @@ def scriptproduce(datadepth,collectiondepth,scriptspath,inputdataroot,softwareco
     if not os.path.exists(scriptspath):
         os.makedirs(scriptspath)
 #     exit(-1)
-    outputStr=outputList[1]+" ${output="+outputList[0]+"|suffix="+outputList[2]+"}"
+    if len(outputList)>1 and outputList[1]!="":
+        outputStr=outputList[1]+" ${output="+outputList[0]+"|suffix="+outputList[2]+"}"
+    else:
+        outputStr=" "+outputList[0]
     print(datadepth,collectiondepth,scriptspath,inputdataroot,softwareconfig)
     print(inputstr,parametersStr)
     parametersStr,N=re.subn(r"\$\$\$\$",inputstr,parametersStr)
@@ -84,7 +87,8 @@ def scriptproduce(datadepth,collectiondepth,scriptspath,inputdataroot,softwareco
         compath=longestCommonPrefix(bathchOfInPath); compath=compath.rstrip(re.split(r""+os.sep,compath)[-1])
         for inputpath in bathchOfInPath:
             operatorwithdata=OperatorWithData_webservice(inputpath,cmdline,ranUniscriptspath,taglen=lenOfdirtotag)
-            operatorwithdata.cmdtemplatefilename=re.split(r'\s+',softwareconfig.strip())[0]+"Get"+outputList[2]
+            print("softwareconfig0",re.split(r'\s+',softwareconfig.strip())[0],outputList)
+            operatorwithdata.cmdtemplatefilename=(re.split(r'\s+',softwareconfig.strip())[0]+"Get"+outputList[2]) if len(outputList)>2 and outputList[2]!="" else re.split(r'\s+',softwareconfig.strip())[0]
 #             newcmdline=operatorwithdata.process(inputpath.strip(), int(datadepth), int(collectiondepth),(int(collectiondepth),selecteddirs,int(selecteddepth)))
             creatDir=inputpath.strip().lstrip(compath);
             if creatDir.rfind("/")!=-1: updir=creatDir[creatDir.rfind("/")+1:];creatDir=creatDir.replace("/","").strip()

@@ -1,87 +1,106 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!DOCTYPE html>
+<html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=gb2312" />
-<title>é‡æµ‹åº</title>
-<style type="text/css">
-
-.STYLE1 {
-	font-family: "åæ–‡è¡Œæ¥·";
-	font-size: 36px;
-}
-
-</style>
-<script type="text/JavaScript">
-<!--
-function MM_jumpMenu(targ,selObj,restore){ //v3.0
-  eval(targ+".location='"+selObj.options[selObj.selectedIndex].value+"'");
-  if (restore) selObj.selectedIndex=0;
-}
-//-->
-</script>
+<meta charset="utf-8">
+<title></title>
+<script src="http://code.jquery.com/jquery-latest.js"></script>
 </head>
-
+<style type="text/css">
+.select{width:80px;}
+</style>
 <body>
-<div align="center" class="STYLE1">é¡¹ç›®é€‰æ‹©</div><br/><br/>
-<form action="" method="post" enctype="multipart/form-data" name="form1" id="form1">
-  <table width="500" border="1" align="center">
-    <tr>
-      <td width="150" height="20"><div align="right">è¯·è¾“å…¥é¡¹ç›®è·¯å¾„ï¼š</div></td>
-      <td width="325"><label>
+<script type="text/javascript">
+function show(){
+var v=document.getElementById("STATUS").value;
+var i=document.getElementById("idNum");
+var s=document.getElementById("school");
+var y=document.getElementById("year");
+var t=document.getElementById("type");
 
-        <div align="left">
-          <input type="text"  width="250" name="textfield" />
-        </div>
-      </label></td>
-    </tr>
-    <tr>
-      <td><div align="right">è¯·è¾“å…¥æ‰€åœ¨å±‚çº§ï¼š</div></td>
-      <td><label>
+if(v==0){
+i.style.display="";
+}else{
+i.style.display="none";
+}
 
-        <div align="left">
-          <input type="text" width="250" name="textfield2" />
-        </div>
-      </label></td>
-    </tr>
-    <tr>
-      <td><div align="right">é€‰æ‹©è½¯ä»¶ï¼š</div></td>
-      <td><label>
+if(v==1){
+s.style.display="";
+}else{
+s.style.display="none";
+}
 
-        <div align="left">
-            <select name="select">
-              <option>è½¯ä»¶1</option>
-              <option>è½¯ä»¶2</option>
-              <option>è½¯ä»¶3</option>
-              <option>4</option>
-              <option>5</option>
-              <option>6</option>
+if(v==2){
+y.style.display="";
+}else{
+y.style.display="none";
+}
 
-            </select>
-        </div>
-      </label></td>
-    </tr>
-    <tr>
-      <td><div align="right">123ï¼š</div></td>
-      <td><label>
-
-        <div align="left">
-          <input type="text" name="textfield3" />
-        </div>
-      </label></td>
-    </tr>
+if(v==3){
+t.style.display="";
+}else{
+t.style.display="none";
+}
+}
+</script>
 
 
-    <tr>
-      <td colspan="2"><label>
 
-        <div align="center">
-          <input type="button" name="Submit" value="æäº¤" />
-          <input type="reset" name="Submit2" value="é‡ç½®" />
-        </div>
-      </label></td>
-    </tr>
-  </table>
-</form>
-<p>&nbsp;</p>
+
+
+
+
+
+
+<form action="SelectServlet" method="post">
+
+? ? <table>
+? ? <tr height="22">
+<td align=right >·ÖÀà²éÑ¯£º</td>
+<td align=left >
+<select name="STATUS" id="STATUS" style="width:80" ¦Ïnchange="show()">
+<option value="0">°´Åú×¼Âë²éÑ¯</option>
+<option value="1" >°´Ñ§Ğ£²éÑ¯</option>
+<option value="2">°´Åú×¼Äê·İ²éÑ¯</option>
+<option value="3">°´ÏîÄ¿Àà±ğ²éÑ¯</option>
+? ?</select>
+</td>
+<td>
+<div style="display: none;" id="idNum">
+<input type="text" name="idNum" size="20" placeholder="ÇëÊäÈëÍêÕûµÄÅú×¼Âë">
+</div>
+</td>
+
+<td>
+<div style="display: none;" id="school">
+<select name="school" >
+<option value="ºşÄÏÖĞÒ½Ò©´óÑ§">ºşÄÏÖĞÒ½Ò©´óÑ§</option>
+<option value="Ìì½òÖĞÒ½Ò©´óÑ§" >Ìì½òÖĞÒ½Ò©´óÑ§</option>
+<option value="±±¾©ÖĞÒ½Ò©´óÑ§">±±¾©ÖĞÒ½Ò©´óÑ§</option>
+<option value="¸£½¨ÖĞÒ½Ò©´óÑ§">¸£½¨ÖĞÒ½Ò©´óÑ§</option>
+<option value="ºş±±ÖĞÒ½Ò©´óÑ§">ºş±±ÖĞÒ½Ò©´óÑ§</option>
+
+</select>
+</div>
+</td>
+<td>
+<div style="display: none;" id="year">
+<input type="text" name="year" size="20" placeholder="ÇëÔÚ1986µ½2017ÄêÖ®¼ä²éÑ¯">
+</div>
+</td>
+
+<td>
+<div style="display: none;" id="type">
+<select name="type" >
+<option value="ÃæÉÏÏîÄ¿">ÃæÉÏÏîÄ¿</option>
+<option value="ÇàÄê¿ÆÑ§»ù½ğÏîÄ¿" >ÇàÄê¿ÆÑ§»ù½ğÏîÄ¿</option>
+<option value="µØÇø¿ÆÑ§»ù½ğÏîÄ¿">µØÇø¿ÆÑ§»ù½ğÏîÄ¿</option>
+<option value="×¨Ïî»ù½ğÏîÄ¿">×¨Ïî»ù½ğÏîÄ¿</option>
+</select>
+</div>
+</td>
+<td><input type="submit" value="Ìá½»"></td>
+</tr>
+? ? </table>
+? ? </form>
 </body>
 </html>

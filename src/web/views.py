@@ -84,7 +84,7 @@ def configsoftware():
             if tagpart1.strip()!="":
                 tagList.append(tagpart1+"${tag}"+tagpart2)
         outputlist=[form.outputpath.data]+re.split(r"\s+",form.outputperfix.data)#,form.outputperfix2.data]
-        print(type(form.batchofinputpath.data),);batchofInList=re.split(r"\s+",form.batchofinputpath.data)
+        batchofInList=re.split(r"\s+",form.batchofinputpath.data.strip());print(type(form.batchofinputpath.data),batchofInList)
         scriptsstorediruniq=Service.scriptproduce(form.datadepth.data,form.collectiondepth.data,scriptdir,form.projectpath.data,form.software.data,form.commandParameters.data,inputList,outputlist,batchofInList,lenOfdirtotag=tagtofolder,taglist=tagList,selecteddepth=selectfolderlevel,selecteddirs=list(form.filteredforders.data))
         try:
             t=int(form.NumOfThreads.data)

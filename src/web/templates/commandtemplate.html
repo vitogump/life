@@ -19,7 +19,7 @@ input[type="text"][class="taginput2n"]{
     line-height: 1.5em;
     color:green;
     text-align:left;
-    width:136px;
+    width:183px;
     border-left:0px;
     border-right:0px;
     margin:0 0 0 -7px;
@@ -28,19 +28,43 @@ input[type="text"][class="taginput2n"]{
 input[type="text"][class="taginput1n"]{
     line-height: 1.5em;
     border-right:0px;
-    width:65px;
+    width:72px;
     outline:none;
 }
 input[type="text"][class="taginput3n"]{
     line-height: 1.5em;
     border-left: 0px;
-    width:65px;
+    width:72px;
     margin:0 0 0 -7px;
     outline:none;
 }
 </style>
 <script src="../static/jquery-2.1.4.js"></script>
 <script>
+var sT=$("T");
+var nT=document.createElement("<input id='MyTextfield' value='/USCIRL/project/RD/CTBCTG/liurui' type='text' />");
+sT.onchange=function(){
+    for(var i=0;i<sT.length;i++){
+        if(sT[i].value!="b"){
+            //alert(sT[i].value);
+            if(sT[i].value=="a"){
+                if($("MyTextfield")){$("N").removeChild($("MyTextfield"));}
+            }
+            if(sT[i].value=="b" || sT[i].value=="c"){
+                if($("MyTextfield")){}else{$("N").appendChild(nT);}
+            }
+        }
+    }
+}
+
+function $(_Id){return document.getElementById(_Id);};
+function Test(){
+    for(var i=0;i<sT.length;i++){
+        if(sT[i].selected){
+            alert(sT[i].value);
+        }
+    }
+}
 function change(v){
 	if(v == 1){
 		document.getElementById("test").innerHTML = " <table><tr><td>-1INPUT：<input type='text' name='zx' /></td></tr>	</table><table><tr><td>-2INPUT：<input type='text' name='zx' /></td></tr></table>"
@@ -186,10 +210,10 @@ function setText(obj)
 <!--<p id="ppp" contenteditable = "true">sddfd<input type="text" value="此处将被替换为目录名的字段" disabled=true>dddf</p>-->
 <br/>
 <input type="text" class="taginput1n" id="taginput1" value="--rg 'ID:"/>
-<input type="text" class="taginput2n"  value="+该字段替换为目录名+" disabled/>
+<input type="text" class="taginput2n"  value="+该字段替换为数据上级目录名+" disabled/>
 <input type="text" class="taginput3n" id="taginput2" value="'"/><br/>
 <input type="text" class="taginput1n" id="taginput3" value="--rg 'SM:"/>
-<input type="text" class="taginput2n"  value="+该字段替换为目录名+" disabled/>
+<input type="text" class="taginput2n"  value="+该字段替换为数据上级目录名+" disabled/>
 <input type="text" class="taginput3n" id="taginput4" value="'"/>
 {#% {{ wtf.form_field(form.iomode, id="iomode") }} %#}
 <p style="font-family:times;color:red"><b>控制软件及参数部分结束</b></p>
