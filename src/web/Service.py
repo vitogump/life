@@ -3,7 +3,7 @@ Created on 2014-11-17
 
 @author: liurui
 '''
-import time,datetime
+import time,datetime,sys
 import re,string,os,random,markdown2
 import src.web.dba as mydba
 from src.pipelinecontrol.Util import OperatorWithData_webservice, upTodownTravelDir,longestCommonPrefix
@@ -70,6 +70,7 @@ def scriptproduce(datadepth,collectiondepth,scriptspath,inputdataroot,softwareco
         outputStr=outputList[1]+" ${output="+outputList[0]+"|suffix="+outputList[2]+"}"
     else:
         outputStr=" "+outputList[0]
+    if len(outputList[0])>1 and not os.path.exists(outputList[0]): os.makedirs(outputList[0])
     print(datadepth,collectiondepth,scriptspath,inputdataroot,softwareconfig)
     print(inputstr,parametersStr)
     parametersStr,N=re.subn(r"\$\$\$\$",inputstr,parametersStr)
@@ -79,6 +80,7 @@ def scriptproduce(datadepth,collectiondepth,scriptspath,inputdataroot,softwareco
     else:
         cmdline=softwareconfig+"   "+inputstr+" "+parametersStr+" "+outputStr
     ranUniscriptspath=random_uniqScriptDir(scriptspath)
+    print(ranUniscriptspath)
     os.makedirs(ranUniscriptspath)    
 
     if int(selecteddepth)==0:
@@ -88,15 +90,16 @@ def scriptproduce(datadepth,collectiondepth,scriptspath,inputdataroot,softwareco
         for inputpath in bathchOfInPath:
             operatorwithdata=OperatorWithData_webservice(inputpath,inputList,cmdline,ranUniscriptspath,taglen=lenOfdirtotag)
             print("softwareconfig0",re.split(r'\s+',softwareconfig.strip())[0],outputList)
-            operatorwithdata.cmdtemplatefilename=(re.split(r'\s+',softwareconfig.strip())[0]+"Get"+outputList[2]) if len(outputList)>2 and outputList[2]!="" else re.split(r'\s+',softwareconfig.strip())[0]
+            operatorwithdata.cmdtemplatefilename=(re.split(r'\s+|'+os.sep,softwareconfig.strip())[-1]+"Get"+outputList[2]) if len(outputList)>2 and outputList[2]!="" else re.split(r'\s+',softwareconfig.strip())[0]
 #             newcmdline=operatorwithdata.process(inputpath.strip(), int(datadepth), int(collectiondepth),(int(collectiondepth),selecteddirs,int(selecteddepth)))
             creatDir=inputpath.strip().lstrip(compath);
             if creatDir.rfind("/")!=-1: updir=creatDir[creatDir.rfind("/")+1:];creatDir=creatDir.replace("/","").strip()
             operatorwithdata.taglen=0
             newcmdline=operatorwithdata.process(inputpath.strip(), 0, 0,(int(collectiondepth),selecteddirs,int(selecteddepth)))
     else:
-        operatorwithdata=OperatorWithData_webservice(inputdataroot,inputList,cmdline,ranUniscriptspath,taglen=lenOfdirtotag)
-        operatorwithdata.cmdtemplatefilename=re.split(r'\s+',softwareconfig.strip())[0]+"Get"+outputList[2]
+        operatorwithdata=OperatorWithData_webservice(inputdataroot,inputList,cmdline,ranUniscriptspath,taglen=lenOfdirtotag) 
+        operatorwithdata.cmdtemplatefilename=re.split(r'\s+|'+os.sep,softwareconfig.strip())[-1]+"Get"+outputList[2] if len(outputList)>2 and outputList[2]!="" else re.split(r'\s+',softwareconfig.strip())[0]
         print("scriptproduce cmdline",operatorwithdata.cmdtemplatefilename)
         upTodownTravelDir(inputdataroot,operatorwithdata,int(datadepth),int(selecteddepth),collection_depth=int(collectiondepth),interceptdirs=selecteddirs,rootDirnotchange=operatorwithdata.inputdatapath,Interceptor_depth_notchange=int(selecteddepth))
+    sys.stdout.flush()
     return ranUniscriptspath

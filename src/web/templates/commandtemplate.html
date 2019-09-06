@@ -75,11 +75,11 @@ function change(v){
 
 $(function() {
 	//$('form').bind('submit', function() { $('#foldertag').val($('#ppp').text()) });
-	$('form').bind('submit', function() { $('#foldertag1').val($('#taginput1').val());$('#foldertag3').val($('#taginput3').val())});
-	$('form').bind('submit', function() { $('#foldertag2').val($("input[id='taginput2']").val());$('#foldertag4').val($("input[id='taginput4']").val())});
+	$('form').submit(function() { $('#foldertag1').val($('#taginput1').val());$('#foldertag3').val($('#taginput3').val())});
+	$('form').submit(function() { $('#foldertag2').val($("input[id='taginput2']").val());$('#foldertag4').val($("input[id='taginput4']").val())});
 
-	$('form').bind('submit', function() { $('#pinput1').val($('#inputoptsufix1').val());$('#pinput3').val($('#inputoptsufix3').val())});
-	$('form').bind('submit', function() { $('#pinput2').val($("input[id='inputoptsufix2']").val());$('#pinput4').val($("input[id='inputoptsufix4']").val())});
+	$('form').submit(function() { $('#pinput1').val($('#inputoptsufix1').val());$('#pinput3').val($('#inputoptsufix3').val())});
+	$('form').submit(function() { $('#pinput2').val($("input[id='inputoptsufix2']").val());$('#pinput4').val($("input[id='inputoptsufix4']").val())});
     $("div[data-toggle=fieldset]").each(function() {
         var $this = $(this);
 
@@ -171,7 +171,7 @@ function setText(obj)
 <input type="text" class="taginput3n" id="inputoptsufix4" value="2.fq.gz"/>
 	</div>
 <input type="hidden" name="xxxx">
-{{wtf.form_field(form.tagtoFolderlevel,id="tagtxtName" )}}<br /><br />
+
 
 是否需要筛选数据：<input name="Checkbox1" type="checkbox" onclick="setText(this)"/><br />
 {{wtf.form_field(form.filteredforderlevel,id="txtName" )}}<br />
@@ -217,6 +217,7 @@ adsfafd<select name="sdfsf" id="T">
 <input type="text" class="taginput2n"  value="+该字段替换为数据上级目录名+" disabled/>
 <input type="text" class="taginput3n" id="taginput4" value="'"/>
 {#% {{ wtf.form_field(form.iomode, id="iomode") }} %#}
+{{wtf.form_field(form.tagtoFolderlevel,id="tagtxtName" )}}<br /><br />
 <p style="font-family:times;color:red"><b>控制软件及参数部分结束</b></p>
 <br/>
 {{form.outputpath.label}}&nbsp&nbsp&nbsp<!--<input type="text">--> {{form.outputpath}}<br />

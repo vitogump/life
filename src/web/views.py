@@ -58,12 +58,12 @@ def configsoftware():
         print("configsoftware here",type(request.form),request.form)
         print("hidden value",form.tag1part1.data,form.tag2part1.data)
         scriptdir=Service.scriptdir
+        tagtofolder=int(form.tagtoFolderlevel.data)
         if "Checkbox1" in request.form:
-            tagtofolder=form.tagtoFolderlevel.data
             selectfolderlevel=form.filteredforderlevel.data
             print("request.form Checkbox1")
         else:
-            tagtofolder=0;selectfolderlevel="0"
+            selectfolderlevel="0"
 #         return form.tag1part1.data+form.tag1part2.data+form.tag2part1.data+form.tag2part2.data+form.datadepth.data+form.projectpath.data+"<br />"+form.outputpath.data+form.outputperfix.data+"<br />"+"<br />".join(form.filteredforders.data)
         if form.projectpath.data.strip('/').strip()!="":
             ppl=re.split(r'[\\]',form.projectpath.data.strip('/'))
@@ -75,7 +75,7 @@ def configsoftware():
                 print(orde/len(e))
                 scriptdir+="/"
 #             scriptdir+=chr(int(orde/len(e)))+"/"
-        scriptdir+=time.strftime('%Y%m%d', time.localtime()).replace(":","")
+        scriptdir=scriptdir.rstrip()+"/"+time.strftime('%Y%m%d', time.localtime()).replace(":","")
         inputList=[];tagList=[]
         for inputpart1,inputpart2 in [(form.input1part1.data,form.input1part2.data),(form.input2part1.data,form.input2part2.data)]:# this code need to be modified !
             if  inputpart2.strip()!="":
@@ -83,9 +83,9 @@ def configsoftware():
         for tagpart1,tagpart2 in [(form.tag1part1.data,form.tag1part2.data),(form.tag2part1.data,form.tag2part2.data)]:
             if tagpart1.strip()!="":
                 tagList.append(tagpart1+"${tag}"+tagpart2)
-        outputlist=[form.outputpath.data]+re.split(r"\s+",form.outputperfix.data)#,form.outputperfix2.data]
+        outputlist=[form.outputpath.data.rstrip(os.sep)]+re.split(r"\s+",form.outputperfix.data)#,form.outputperfix2.data]
         batchofInList=re.split(r"\s+",form.batchofinputpath.data.strip());print(type(form.batchofinputpath.data),batchofInList)
-        scriptsstorediruniq=Service.scriptproduce(form.datadepth.data,form.collectiondepth.data,scriptdir,form.projectpath.data,form.software.data,form.commandParameters.data,inputList,outputlist,batchofInList,lenOfdirtotag=tagtofolder,taglist=tagList,selecteddepth=selectfolderlevel,selecteddirs=list(form.filteredforders.data))
+        scriptsstorediruniq=Service.scriptproduce(form.datadepth.data,form.collectiondepth.data,scriptdir,form.projectpath.data.rstrip(os.sep),form.software.data,form.commandParameters.data,inputList,outputlist,batchofInList,lenOfdirtotag=tagtofolder,taglist=tagList,selecteddepth=selectfolderlevel,selecteddirs=list(form.filteredforders.data))
         try:
             t=int(form.NumOfThreads.data)
         except:
@@ -93,6 +93,8 @@ def configsoftware():
         tt=t if t>1 else 1
 #         os.system("cd "+scriptsstorediruniq)
         os.system("chmod +x "+scriptsstorediruniq+"/*.sh")
+        print(scriptsstorediruniq,"exit")
+        if form.software.data.strip()=="rm": exit(-1)
         os.system("nohup "+Service.aaa.pathtoPython+" ../pipelinecontrol/JobTracker.py -d "+scriptsstorediruniq+" -t "+str(tt)+" -p purposeofthiscommand &")
         currentUstr=scriptsstorediruniq.replace(scriptdir,"")
 #         Service.jobminitor(currentUstr)#should store in session

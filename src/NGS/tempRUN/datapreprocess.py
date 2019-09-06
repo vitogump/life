@@ -10,16 +10,16 @@ import os,re
 parser = OptionParser()
 parser.add_option("-d", "--rootdir", dest="rootdir",help="data files directly under this dir ")
 parser.add_option("-r", "--rmoriginalfile", dest="rmoriginalfile",action="store_true",default=False)
-parser.add_option("-s", "--suffix", dest="suffix",action="append",default=["1.fq.gz","2.fq.gz"],help="suffix for a folder to package")
-parser.add_option("-o", "--outdir", dest="outdir",default=None,help="outpath,default is the same fold as -f assigned ")
+parser.add_option("-s", "--suffix", dest="suffix",action="append",default=[],help='suffix for a folder to package,["1.fq.gz","2.fq.gz"]')
+parser.add_option("-o", "--outdir", dest="outdir",default=None,help="outpath,default is the same fold as -d assigned ")
 (options, args) = parser.parse_args()
 
 # cf=open(options.rootdir,'r')
 
 filepath=options.rootdir.strip()
-print(filepath)
-exit()
+
 files=os.listdir(filepath)
+print(filepath,files,options.suffix)
 folderMap={}#{"AS10_":[AS10_1.fq.gz,AS10_1.fq.gz]}
 # os.system("cp "+os.path.join(filepath,"md5*.txt")+" "+os.path.join(filepath,"md5*.txt.copy"))
 if options.outdir==None:
@@ -40,3 +40,5 @@ if __name__ == '__main__':
                     if not os.path.exists(data_d):
                         os.makedirs(data_d)
                     os.system("cp "+fi_d+" "+data_d)
+                    if options.rmoriginalfile:
+                        os.system("rm "+fi_d)

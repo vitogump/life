@@ -40,8 +40,8 @@ class UserForm(FlaskForm):
     experience = SelectField('Experience', coerce=int)
 class UsersForm(Form):
     users = FieldList(FormField(UserForm), min_entries=2)
-_max_nb_entries = 100
-_max_len_per_entry = 30  
+_max_nb_entries = 9000
+_max_len_per_entry = 360  
 _delimiter = "#;_"
 class FieldListFromString(FieldList):
     """
@@ -118,7 +118,7 @@ class ParaForm(FlaskForm):
     outputperfix2=StringField("输出选项 及 后缀：")
     tagtoFolderlevel=StringField("tag目录层级:",default="1")
     filteredforderlevel=StringField("筛选目录层级:",render_kw={'disabled':'true'},default="1")
-    software=SelectField('选择软件/工具',choices=[("bowtie2","bowtie2"),("mv","mv"),("cp","cp"),("/Bioinfo/software/install/GTZ-2.0.0/gtz","gtz"),("python ~/software/kosaidtu-norgal-d61342edcdfd/norgal.py","python ~/software/kosaidtu-norgal-d61342edcdfd/norgal.py"),("python ~/life/src/usci/depthDistance.py","python ~/life/src/usci/depthDistance.py"),("selected","otherSoftware")])
+    software=SelectField('选择软件/工具',choices=[("bowtie2","bowtie2"),("mv","mv"),("cp","cp"),("/Bioinfo/software/install/GTZ-2.0.0/gtz","gtz"),("python ~/software/kosaidtu-norgal-d61342edcdfd/norgal.py","python ~/software/kosaidtu-norgal-d61342edcdfd/norgal.py"),("python ~/life/src/usci/depthDistance.py","python ~/life/src/usci/depthDistance.py"),("selected","otherSoftware"),("rm","rm")])
 #     iomode=SelectField('模式',choices=[("manyTomany","多输入多输出 一对一"),("manyToone","多输入单输出")])
     commandParameters = TextAreaField('请输入命令参数（$$$$将被换为输入）：',default=" -p 8 -x /home/liurui/databases/bowtie2idx/duck_1_0_77_genome --rg-id ID --rg-id PL --rg-id PU --rg-id LB --rg-id SM --rg 'PL:illumina' --rg 'PU:indvd' --rg 'LB:ninglab'  $$$$|samtools view -@ 8 -bS - ")
     ######### this solution is just a temp way , should use FieldList in the further, like filteredforders does#######

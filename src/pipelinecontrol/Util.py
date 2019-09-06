@@ -7,7 +7,6 @@ Created on 2014-11-8
 import copy
 from multiprocessing.dummy import Pool
 import os, re
-import random
 import string
 import time
 
@@ -151,8 +150,8 @@ class OperatorWithData_webservice(OperatorWithData):
         for i in range(self.taglen):
             tagname="/"+re.search(r".*/([^/]+)"+tagname+"$", curpath).group(1)+tagname
         tagname=re.sub(r"/","_",tagname[1:])
-        updirname = re.search(r".*/([^/]+)$", curpath).group(1)
-        print("newcmdline2",newcmdline)
+        updirname = re.search(r".*/([^/]+)$", curpath.rstrip("/")).group(1)
+        print("'newcmdline2,updirname:'",newcmdline,updirname)
         newcmdline,no_of_tags=re.subn(r"\${tag}",tagname,newcmdline)
 
 
@@ -213,9 +212,9 @@ class OperatorWithData_webservice(OperatorWithData):
                             if re.search(r".*?" + self.inputList[i][1]+"$", datafilename) != None:
                                 targetdata_count+=1
                                 scriptinputdata+=(rootStr + "/"+datafilename+";")
-                                option_suffix_obj = re.search(r"("+self.inputList[i][0]+")\${(\s*" + self.inputList[i][1] + "\s*)}", newcmdline)  # for example "INPUT=${.bam} -i ${.sam}"  may be this patter should be change as the 4th,6th line behind dose 
+                                option_suffix_obj = re.search(r"("+self.inputList[i][0]+")\s*\${(\s*" + self.inputList[i][1] + "\s*)}", newcmdline)  # for example "INPUT=${.bam} -i ${.sam}"  may be this patter should be change as the 4th,6th line behind dose 
                                 print("option_suffix_obj",option_suffix_obj.group(0),"make new cmdline:",newcmdline)
-                                newcmdline=re.sub(r"("+self.inputList[i][0]+"|\s+)\${\s*" + self.inputList[i][1] + "\s*}", " "+self.inputList[i][0]  + rootStr + "/" + datafilename.strip() + " " + option_suffix_obj.group(0), newcmdline)                
+                                newcmdline=re.sub(r"("+self.inputList[i][0]+")\s+\${\s*" + self.inputList[i][1] + "\s*}", " "+self.inputList[i][0]+" "  + rootStr + "/" + datafilename.strip() + " " + option_suffix_obj.group(0), newcmdline)                
         print("before remove input output",newcmdline)
         newcmdline = re.sub(r"(-{1,2}[\w\d]*\s+|[\w\d]+=\s*|\s+)\${.*?}", " ", newcmdline)
         print("after remove input output",newcmdline)
@@ -224,15 +223,11 @@ class OperatorWithData_webservice(OperatorWithData):
         #exclude wrong command
         if (len(targetdatasuffix)!=0 and ("/" not in targetdatasuffix) and targetdata_count!=len(targetdatasuffix)-no_of_tags and self.datadepthequalcollectdepth) or (not self.datadepthequalcollectdepth and targetdata_count==0):# i am not sure does (not self.datadepthequalcollectdepth and targetdata_count==0) necessary
             print(targetdata_count,len(targetdatasuffix),no_of_tags)
-            print("targetdata_count!=len(targetdatasuffix)")
-            return newcmdline
+            print("targetdata_count!=len(targetdatasuffix). if datadepth is not deeper than collectdepth, you should check you data files' existence and correct named in the right place")
+#             return newcmdline
         newcmdline=re.sub(r"myNtosub.",str(targetdata_count)+".",newcmdline)
-#         print(self.scriptcontext + newcmdline, file=open(self.scriptsstoredir + self.cmdtemplatefilename + "." + updirname + "Script.sh", "w"))
-#         try:
-#             print(scriptinputdata[0:-1]+"\n"+scriptoutputdata[0:-1]+"\n" + newcmdline, file=open(self.scriptsstoredir + self.cmdtemplatefilename + "." + updirname + "Script.sh", "a"))
-#         except FileNotFoundError:
 
-        print(self.inputdatapath+"\n"+scriptinputdata[0:-1]+"\n"+scriptoutputdata[0:-1]+"\n" + newcmdline, file=open(self.scriptsstoredir+"/" + self.cmdtemplatefilename + "." + pathToOutputdata_createdir.replace("/", "_") + "Script.sh", "w"))
+        print(self.inputdatapath+"\n"+scriptinputdata[0:-1]+"\n"+scriptoutputdata[0:-1]+"\n" + newcmdline, file=open(self.scriptsstoredir+"/" + self.cmdtemplatefilename.rstrip("/") + "." + pathToOutputdata_createdir.replace("/", "_")+updirname + "Script.sh", "w"))
         return newcmdline
 class OperatorWithData_mode1(OperatorWithData):
     def __init__(self, cmdtemplatefile, scriptsstoredir,taglen=1,Dtag=None):
