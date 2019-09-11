@@ -90,7 +90,7 @@ def scriptproduce(datadepth,collectiondepth,scriptspath,inputdataroot,softwareco
         for inputpath in bathchOfInPath:
             operatorwithdata=OperatorWithData_webservice(inputpath,inputList,cmdline,ranUniscriptspath,taglen=lenOfdirtotag)
             print("softwareconfig0",re.split(r'\s+',softwareconfig.strip())[0],outputList)
-            operatorwithdata.cmdtemplatefilename=(re.split(r'\s+|'+os.sep,softwareconfig.strip())[-1]+"Get"+outputList[2]) if len(outputList)>2 and outputList[2]!="" else re.split(r'\s+',softwareconfig.strip())[0]
+            operatorwithdata.cmdtemplatefilename=(re.split(r'\s+|'+os.sep,re.sub("\s+","_",softwareconfig.strip()))[-1]+"Get"+outputList[2]) if len(outputList)>2 and outputList[2]!="" else re.split(r'\s+',softwareconfig.strip())[0]
 #             newcmdline=operatorwithdata.process(inputpath.strip(), int(datadepth), int(collectiondepth),(int(collectiondepth),selecteddirs,int(selecteddepth)))
             creatDir=inputpath.strip().lstrip(compath);
             if creatDir.rfind("/")!=-1: updir=creatDir[creatDir.rfind("/")+1:];creatDir=creatDir.replace("/","").strip()
@@ -98,7 +98,7 @@ def scriptproduce(datadepth,collectiondepth,scriptspath,inputdataroot,softwareco
             newcmdline=operatorwithdata.process(inputpath.strip(), 0, 0,(int(collectiondepth),selecteddirs,int(selecteddepth)))
     else:
         operatorwithdata=OperatorWithData_webservice(inputdataroot,inputList,cmdline,ranUniscriptspath,taglen=lenOfdirtotag) 
-        operatorwithdata.cmdtemplatefilename=re.split(r'\s+|'+os.sep,softwareconfig.strip())[-1]+"GET"+outputList[2] if len(outputList)>2 and outputList[2]!="" else re.split(r'\s+',softwareconfig.strip())[0]
+        operatorwithdata.cmdtemplatefilename=re.split(r'\s+|'+os.sep,re.sub("\s+","_",softwareconfig.strip()))[-1]+"GET"+outputList[2] if len(outputList)>2 and outputList[2]!="" else re.split(r'\s+',softwareconfig.strip())[0]
         print("scriptproduce cmdline",operatorwithdata.cmdtemplatefilename)
         upTodownTravelDir(inputdataroot,operatorwithdata,int(datadepth),int(selecteddepth),collection_depth=int(collectiondepth),interceptdirs=selecteddirs,rootDirnotchange=operatorwithdata.inputdatapath,Interceptor_depth_notchange=int(selecteddepth))
     sys.stdout.flush();sys.stderr.flush()

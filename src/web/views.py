@@ -79,7 +79,10 @@ def configsoftware():
         inputList=[];tagList=[]
         for inputpart1,inputpart2 in [(form.input1part1.data,form.input1part2.data),(form.input2part1.data,form.input2part2.data)]:# this code need to be modified !
             if  inputpart2.strip()!="":
-                inputList.append((inputpart1,inputpart2))
+                if inputpart1.endswith("="):
+                    inputList.append((inputpart1.strip(),inputpart2))
+                else:
+                    inputList.append((inputpart1+" ",inputpart2))
         for tagpart1,tagpart2 in [(form.tag1part1.data,form.tag1part2.data),(form.tag2part1.data,form.tag2part2.data)]:
             if tagpart1.strip()!="":
                 tagList.append(tagpart1+"${tag}"+tagpart2)
@@ -94,9 +97,9 @@ def configsoftware():
         tt=t if t>1 else 1
 #         os.system("cd "+scriptsstorediruniq)
         os.system("chmod +x "+scriptsstorediruniq+"/*.sh")
-        print(scriptsstorediruniq,"exit")
+        qsubMorNot=" " if not form.mem.data.strip() else (" -m "+form.mem.data)
         if softwareconfig.strip()=="rm" or softwareconfig.strip()=="mv": exit(-1)
-        os.system("nohup "+Service.aaa.pathtoPython+" ../pipelinecontrol/JobTracker.py -d "+scriptsstorediruniq+" -t "+str(tt)+" -m "+form.mem.data+" -p "+ re.sub(r"\s+","_",form.messagecomment.data.strip())+" &")
+        os.system("nohup "+Service.aaa.pathtoPython+" ../pipelinecontrol/JobTracker.py -d "+scriptsstorediruniq+" -t "+str(tt)+qsubMorNot+" -p "+ re.sub(r"\s+","_",form.messagecomment.data.strip())+" &")
         currentUstr=scriptsstorediruniq.replace(scriptdir,"")
 #         Service.jobminitor(currentUstr)#should store in session
         return redirect("/jobmoinitor"+currentUstr)

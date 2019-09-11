@@ -214,7 +214,7 @@ class OperatorWithData_webservice(OperatorWithData):
                                 scriptinputdata+=(rootStr + "/"+datafilename+";")
                                 option_suffix_obj = re.search(r"("+self.inputList[i][0]+")\s*\${(\s*" + self.inputList[i][1] + "\s*)}", newcmdline)  # for example "INPUT=${.bam} -i ${.sam}"  may be this patter should be change as the 4th,6th line behind dose 
                                 print("option_suffix_obj",option_suffix_obj.group(0),"make new cmdline:",newcmdline)
-                                newcmdline=re.sub(r"("+self.inputList[i][0]+")\s+\${\s*" + self.inputList[i][1] + "\s*}", " "+self.inputList[i][0]+" "  + rootStr + "/" + datafilename.strip() + " " + option_suffix_obj.group(0), newcmdline)                
+                                newcmdline=re.sub(r"("+self.inputList[i][0]+")\s+\${\s*" + self.inputList[i][1] + "\s*}", " "+self.inputList[i][0]  + rootStr + "/" + datafilename.strip() + " " + option_suffix_obj.group(0), newcmdline)                
         print("before remove input output",newcmdline)
         newcmdline = re.sub(r"(-{1,2}[\w\d]*\s+|[\w\d]+=\s*|\s+)\${.*?}", " ", newcmdline)
         print("after remove input output",newcmdline)
