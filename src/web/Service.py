@@ -98,8 +98,8 @@ def scriptproduce(datadepth,collectiondepth,scriptspath,inputdataroot,softwareco
             newcmdline=operatorwithdata.process(inputpath.strip(), 0, 0,(int(collectiondepth),selecteddirs,int(selecteddepth)))
     else:
         operatorwithdata=OperatorWithData_webservice(inputdataroot,inputList,cmdline,ranUniscriptspath,taglen=lenOfdirtotag) 
-        operatorwithdata.cmdtemplatefilename=re.split(r'\s+|'+os.sep,softwareconfig.strip())[-1]+"Get"+outputList[2] if len(outputList)>2 and outputList[2]!="" else re.split(r'\s+',softwareconfig.strip())[0]
+        operatorwithdata.cmdtemplatefilename=re.split(r'\s+|'+os.sep,softwareconfig.strip())[-1]+"GET"+outputList[2] if len(outputList)>2 and outputList[2]!="" else re.split(r'\s+',softwareconfig.strip())[0]
         print("scriptproduce cmdline",operatorwithdata.cmdtemplatefilename)
         upTodownTravelDir(inputdataroot,operatorwithdata,int(datadepth),int(selecteddepth),collection_depth=int(collectiondepth),interceptdirs=selecteddirs,rootDirnotchange=operatorwithdata.inputdatapath,Interceptor_depth_notchange=int(selecteddepth))
-    sys.stdout.flush()
+    sys.stdout.flush();sys.stderr.flush()
     return ranUniscriptspath

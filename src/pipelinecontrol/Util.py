@@ -419,7 +419,7 @@ class myJobTracker():#for one dir
         self.NumOfThread = int(NumOfThread)
 def runashell(a):
     import src.web.dba as dba
-    scriptDir=a[0];scriptname=a[1]
+    scriptDir=a[0];scriptname=a[1];memofQsub=a[2]
 #     scriptDir=a[0];scriptname=a[1];cmdtemplatefile=a[2]
 #     scriptcontent=open(cmdtemplatefile,'r').read()
 #     cmdline=re.search(r"(.*(\n)*)cmdline=\s*(.*)",scriptcontent).group(3)
@@ -442,7 +442,11 @@ def runashell(a):
     session.execute("update jobs_recoder set startdate='"+time.strftime(ISOTIMEFORMAT, time.localtime()) +"' where scriptname='"+scriptname+"' and foldername='"+scriptDir+"'")
     session.commit()
     scriptout=re.sub(r".sh$",".out",scriptname)
-    a=os.system(scriptDir+"/"+scriptname+">>"+scriptDir+"/"+scriptout+" 2>&1")
+    if memofQsub!=None and memofQsub!="":
+        print("qsub -wd "+scriptDir+" -l vf="+memofQsub.strip()+" "+  scriptDir+"/"+scriptname)
+        a=os.system("qsub -wd "+scriptDir+" -l vf="+memofQsub.strip()+" "+  scriptDir+"/"+scriptname)
+    else:
+        a=os.system(scriptDir+"/"+scriptname+">>"+scriptDir+"/"+scriptout+" 2>&1")
 #         logfile=open(self.scriptDir+"/"+scriptout,'r')
 #         logtext=logfile.read()
 #         logfile.close()
@@ -457,7 +461,7 @@ def runashell(a):
         session.execute("update jobs_recoder set finishdate='"+time.strftime(ISOTIMEFORMAT, time.localtime()) +"' where scriptname='"+scriptname+"' and foldername='"+scriptDir+"'")
         session.commit()
     return
-def callsh_updateDB(scriptDir,NumOfThread,logicalpurpose):
+def callsh_updateDB(scriptDir,NumOfThread,logicalpurpose,memofQsub):
     import src.web.dba as dba
     pool=Pool(NumOfThread)
     scriptfiles = os.listdir(path=scriptDir)
@@ -470,7 +474,7 @@ def callsh_updateDB(scriptDir,NumOfThread,logicalpurpose):
             print("skip",filename)
             scriptfiles.remove(filename)
             continue
-        inputscriptfiles.append((scriptDir,filename))
+        inputscriptfiles.append((scriptDir,filename,memofQsub))
     dba.addJobs2jobs_recoder(scriptfiles,scriptDir,logicalpurpose)
     a = os.system("chmod +x " + scriptDir + "/*.sh")
     if a!=0:

@@ -56,9 +56,9 @@ def configsoftware():
     form=ParaForm()
     if form.validate_on_submit():
         print("configsoftware here",type(request.form),request.form)
-        print("hidden value",form.tag1part1.data,form.tag2part1.data)
+        print("hidden value",form.tag1part1.data,form.tag2part1.data,"software:",request.form['software1'],type(request.form['software1']))
         scriptdir=Service.scriptdir
-        tagtofolder=int(form.tagtoFolderlevel.data)
+        tagtofolder=int(form.tagtoFolderlevel.data) if form.tagtoFolderlevel.data else 0
         if "Checkbox1" in request.form:
             selectfolderlevel=form.filteredforderlevel.data
             print("request.form Checkbox1")
@@ -85,7 +85,8 @@ def configsoftware():
                 tagList.append(tagpart1+"${tag}"+tagpart2)
         outputlist=[form.outputpath.data.rstrip(os.sep)]+re.split(r"\s+",form.outputperfix.data)#,form.outputperfix2.data]
         batchofInList=re.split(r"\s+",form.batchofinputpath.data.strip());print(type(form.batchofinputpath.data),batchofInList)
-        scriptsstorediruniq=Service.scriptproduce(form.datadepth.data,form.collectiondepth.data,scriptdir,form.projectpath.data.rstrip(os.sep),form.software.data,form.commandParameters.data,inputList,outputlist,batchofInList,lenOfdirtotag=tagtofolder,taglist=tagList,selecteddepth=selectfolderlevel,selecteddirs=list(form.filteredforders.data))
+        softwareconfig= request.form['MyLinuxCommand'] if request.form['software1'] =="othercommand" else request.form['software1']
+        scriptsstorediruniq=Service.scriptproduce(form.datadepth.data,form.collectiondepth.data,scriptdir,form.projectpath.data.rstrip(os.sep),softwareconfig,form.commandParameters.data,inputList,outputlist,batchofInList,lenOfdirtotag=tagtofolder,taglist=tagList,selecteddepth=selectfolderlevel,selecteddirs=list(form.filteredforders.data))
         try:
             t=int(form.NumOfThreads.data)
         except:
@@ -94,8 +95,8 @@ def configsoftware():
 #         os.system("cd "+scriptsstorediruniq)
         os.system("chmod +x "+scriptsstorediruniq+"/*.sh")
         print(scriptsstorediruniq,"exit")
-        if form.software.data.strip()=="rm": exit(-1)
-        os.system("nohup "+Service.aaa.pathtoPython+" ../pipelinecontrol/JobTracker.py -d "+scriptsstorediruniq+" -t "+str(tt)+" -p purposeofthiscommand &")
+        if softwareconfig.strip()=="rm" or softwareconfig.strip()=="mv": exit(-1)
+        os.system("nohup "+Service.aaa.pathtoPython+" ../pipelinecontrol/JobTracker.py -d "+scriptsstorediruniq+" -t "+str(tt)+" -m "+form.mem.data+" -p "+ re.sub(r"\s+","_",form.messagecomment.data.strip())+" &")
         currentUstr=scriptsstorediruniq.replace(scriptdir,"")
 #         Service.jobminitor(currentUstr)#should store in session
         return redirect("/jobmoinitor"+currentUstr)

@@ -42,23 +42,24 @@ input[type="text"][class="taginput3n"]{
 <script src="../static/jquery-2.1.4.js"></script>
 <script>
 
-var sT=$("T");
-var nT=document.createElement("input");
-nT.id='MyTextfield'
-nT.value='/USCIRL/project/RD/CTBCTG/liurui'
-sT.onchange=function(){
-    for(var i=0;i<sT.length;i++){
-        if(sT[i].selected){
-            //alert(sT[i].value);
-            if(sT[i].value=="a"){
-                if($("MyTextfield")){$("N").removeChild($("MyTextfield"));}
-            }
-            if(sT[i].value=="b" || sT[i].value=="c"){
-                if($("MyTextfield")){}else{$("N").appendChild(nT);}
-            }
-        }
-    }
-}
+
+	/*软件选择*/
+	function soft_change()
+	{
+		var sT=$("#software1");
+		for(var i=0;i<sT.length;i++){
+					if(sT.val()=="othercommand"){
+						  var mytext = $("<input id='MyLinuxCommand' name='MyLinuxCommand' type='text' size='70'/>");
+						  mytext.attr("value","/USCIRL/project/RD/CTBCTG/liurui");
+						  $('#N').append(mytext);
+
+					}else{
+					   if($("#MyLinuxCommand")){
+						 $("#N").empty();
+					   }
+					}
+				}
+		}
 function change(v){
 	if(v == 1){
 		document.getElementById("test").innerHTML = " <table><tr><td>-1INPUT：<input type='text' name='zx' /></td></tr>	</table><table><tr><td>-2INPUT：<input type='text' name='zx' /></td></tr></table>"
@@ -74,7 +75,6 @@ function change(v){
 }
 
 $(function() {
-	//$('form').bind('submit', function() { $('#foldertag').val($('#ppp').text()) });
 	$('form').submit(function() { $('#foldertag1').val($('#taginput1').val());$('#foldertag3').val($('#taginput3').val())});
 	$('form').submit(function() { $('#foldertag2').val($("input[id='taginput2']").val());$('#foldertag4').val($("input[id='taginput4']").val())});
 
@@ -115,16 +115,6 @@ $(function() {
     });
 });
 
-function add1(){
-	input1 = document.createElement('input');
-	input1.setAttribute('type', 'text');
-
-	var btn1 = document.getElementById("org");
-	var n = document.getElementById("org").value;
-	n=n+1
-	input1.setAttribute('id', n);
-	btn1.insertBefore(input1,btn1.childNodes[0]);
-}
 
 function setText(obj)
 {
@@ -190,25 +180,30 @@ function setText(obj)
 </div>
 {{form.batchofinputpath.label}}</br>{{form.batchofinputpath(rows='8',cols='240')}}
 <P style="font-family:times;color:red"><b>控制输入部分结束</b></p>
-    {{ wtf.form_field(form.software, id="software") }}
-adsfafd<select name="sdfsf" id="T">
-<option value="a" selected="selected">AAA</option>
-<option value="b">BBB</option>
-<option value="c">CCC</option>
-</select>
-<div id="N"></div>
+{#%     {{ wtf.form_field(form.software, id="software" ) }} %#}
+<div class="form-group "><label class="control-label" for="software1">选择软件/工具</label>
 
+          <select class="form-control" id="software1" name="software1" onchange="soft_change(this)">
+			   <option value="cp">cp</option>
+			   <option value="bowtie2">bowtie2</option>
+			   <option value="bismark">bismark</option>
+			   <option value="/Bioinfo/software/install/GTZ-2.0.0/gtz">gtz</option>
+			   <option value="python ~/software/kosaidtu-norgal-d61342edcdfd/norgal.py">python ~/software/kosaidtu-norgal-d61342edcdfd/norgal.py</option>
+			   <option value="python ~/life/src/usci/depthDistance.py">python ~/life/src/usci/depthDistance.py</option>
+			   <option value="othercommand">othercommand</option>
+			   <option value="mv">mv</option>
+			   <option value="rm">rm</option>
+		   </select>
+  </div>
+<div id="N"></div>
 
 	{{form.commandParameters.label}}</br>{{form.commandParameters(rows='8',cols='65')}}
 
-<!--<input id="txtName1" type="text" disabled=true/>&nbsp;&nbsp;
-	{{form.foldername}}&nbsp;&nbsp;
-	<input type="button" onclick="add1();"  value="添加" /> <br /><br />
-</div>-->
 
 
 
-<!--<p id="ppp" contenteditable = "true">sddfd<input type="text" value="此处将被替换为目录名的字段" disabled=true>dddf</p>-->
+
+
 <br/>
 <input type="text" class="taginput1n" id="taginput1" value="--rg 'ID:"/>
 <input type="text" class="taginput2n"  value="+该字段替换为数据上级目录名+" disabled/>
@@ -218,12 +213,14 @@ adsfafd<select name="sdfsf" id="T">
 <input type="text" class="taginput3n" id="taginput4" value="'"/>
 {#% {{ wtf.form_field(form.iomode, id="iomode") }} %#}
 {{wtf.form_field(form.tagtoFolderlevel,id="tagtxtName" )}}<br /><br />
+{{form.mem.label}}<!--<input type="text">--> {{form.mem}} &nbsp&nbsp
 <p style="font-family:times;color:red"><b>控制软件及参数部分结束</b></p>
 <br/>
 {{form.outputpath.label}}&nbsp&nbsp&nbsp<!--<input type="text">--> {{form.outputpath}}<br />
 {{form.outputperfix.label}}<!--<input type="text">--> {{form.outputperfix}} &nbsp&nbsp	<br />
 {{form.outputperfix2.label}}<!--<input type="text">--> {{form.outputperfix2}} &nbsp&nbsp	<br />
 <p style="font-family:times;color:red"><b>控制输出部分结束，下面提示非法输入或覆盖风险，最后控制任务自动投放量</b></p>
+{{form.messagecomment.label}}</br>{{form.messagecomment(rows='3',cols='65')}}
 <!--<input type="submit" value="提交" ><br /><br />-->
 {{ wtf.form_field(form.tag1part1, id="foldertag1") }}{{ wtf.form_field(form.tag1part2, id="foldertag2") }}
 {{ wtf.form_field(form.tag2part1, id="foldertag3") }}{{ wtf.form_field(form.tag2part2, id="foldertag4") }}
