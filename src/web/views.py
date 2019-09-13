@@ -76,7 +76,7 @@ def configsoftware():
                 scriptdir+="/"
 #             scriptdir+=chr(int(orde/len(e)))+"/"
         scriptdir=scriptdir.rstrip()+"/"+time.strftime('%Y%m%d', time.localtime()).replace(":","")
-        inputList=[];tagList=[]
+        inputList=[];tagList=[];outputlist=[form.outputpath.data.rstrip(os.sep)]
         for inputpart1,inputpart2 in [(form.input1part1.data,form.input1part2.data),(form.input2part1.data,form.input2part2.data)]:# this code need to be modified !
             if  inputpart2.strip()!="":
                 if inputpart1.endswith("="):
@@ -84,9 +84,11 @@ def configsoftware():
                 else:
                     inputList.append((inputpart1+" ",inputpart2))
         for tagpart1,tagpart2 in [(form.tag1part1.data,form.tag1part2.data),(form.tag2part1.data,form.tag2part2.data)]:
-            if tagpart1.strip()!="":
+            if tagpart1.strip()!="" and form.tagtoFolderlevel.data.strip()!="":
                 tagList.append(tagpart1+"${tag}"+tagpart2)
-        outputlist=[form.outputpath.data.rstrip(os.sep)]+re.split(r"\s+",form.outputperfix.data)#,form.outputperfix2.data]
+        for outputpart1 in [form.outputperfix.data,form.outputperfix2.data]:
+            if outputpart1.strip()!="":
+                outputlist.append(re.split(r"\s+",outputpart1))#,form.outputperfix2.data]
         batchofInList=re.split(r"\s+",form.batchofinputpath.data.strip());print(type(form.batchofinputpath.data),batchofInList)
         softwareconfig= request.form['MyLinuxCommand'] if request.form['software1'] =="othercommand" else request.form['software1']
         scriptsstorediruniq=Service.scriptproduce(form.datadepth.data,form.collectiondepth.data,scriptdir,form.projectpath.data.rstrip(os.sep),softwareconfig,form.commandParameters.data,inputList,outputlist,batchofInList,lenOfdirtotag=tagtofolder,taglist=tagList,selecteddepth=selectfolderlevel,selecteddirs=list(form.filteredforders.data))
