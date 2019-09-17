@@ -26,7 +26,7 @@ def jobminitor(currentUstr):
             time.sleep(SLEEP_FOR_NEXT_TRY)
             l = session.query(entity.Jobs_recoder).all()
             break
-        l=session.query(entity.Jobs_recoder).filter(entity.Jobs_recoder.foldername.like("%"+currentUstr+"%")).all()
+        l=session.query(entity.Jobs_recoder).filter(entity.Jobs_recoder.foldername.like("%"+currentUstr[:-9]+"/"+currentUstr[-8:]+"%")).all()
         
     header=["*scriptname*","*scriptfolder*","*outputdata*","*starttime*","*finishtime*"," *state*","*outputinfo*"]
     mylist=[]
@@ -47,15 +47,15 @@ def jobminitor(currentUstr):
 
     
     return html
-def random_uniqScriptDir(scriptspath,randomlength=8):
+def random_uniqScriptDir(scriptspath,MSG,randomlength=8):
     a = list(string.ascii_letters)
     random.shuffle(a)
-    ranUniscriptspath=(scriptspath.rstrip("/")+"/"+''.join(a[:randomlength]))
+    ranUniscriptspath=(scriptspath.rstrip("/")+"/"+MSG+"/"+''.join(a[:randomlength]))
     if  os.path.exists(ranUniscriptspath):
         while True:
             random.shuffle(a)
             if  ''.join(a[:randomlength]) not in os.listdir(scriptspath): 
-                ranUniscriptspath=(scriptspath.rstrip("/")+"/"+''.join(a[:randomlength]))
+                ranUniscriptspath=(scriptspath.rstrip("/")+"/"+MSG+"/"+''.join(a[:randomlength]))
                 break
     return ranUniscriptspath
 def scriptproduce(datadepth,collectiondepth,scriptspath,inputdataroot,softwareconfig,parametersStr,inputList,outputList,bathchOfInPath,lenOfdirtotag=0,taglist=[],selecteddepth=0,selecteddirs=[]):#selecteddepth=0 means check collectiondepth only
@@ -63,8 +63,8 @@ def scriptproduce(datadepth,collectiondepth,scriptspath,inputdataroot,softwareco
     inputstr=(" "+" ".join(taglist)+" ") if int(lenOfdirtotag)!=0 else ""
     inputstr+=" ".join([pairIn[0]+" ${"+pairIn[1]+"}" for pairIn in inputList])
 
-    if not os.path.exists(scriptspath):
-        os.makedirs(scriptspath)
+    if not os.path.exists(scriptspath[0]):
+        os.makedirs(scriptspath[0])
 #     exit(-1)
     if len(outputList)>1:
         outputStr= "  ".join([pairOut[0]+" ${output="+outputList[0]+"|suffix="+pairOut[1]+"}" for pairOut in outputList[1:]])#['', 'bam'] ["-o",'bam'] further of this func may need to adjust ,in the html page should like input not just one text seperate options and suffix
@@ -75,13 +75,13 @@ def scriptproduce(datadepth,collectiondepth,scriptspath,inputdataroot,softwareco
     if len(outputList[0])>1 and not os.path.exists(outputList[0]): os.makedirs(outputList[0])
     print(datadepth,collectiondepth,scriptspath,inputdataroot,softwareconfig)
     print(inputstr,parametersStr)
-    parametersStr,N=re.subn(r"\$\$\$\$",inputstr,parametersStr)
-    print("after",parametersStr,N)   
-    if N!=0:
-        cmdline=softwareconfig+"   "+parametersStr+" "+outputStr
-    else:
-        cmdline=softwareconfig+"   "+inputstr+" "+parametersStr+" "+outputStr
-    ranUniscriptspath=random_uniqScriptDir(scriptspath)
+    parametersStr,Ni=re.subn(r"\$\$\$\$",inputstr,parametersStr)
+    
+    parametersStr= inputstr+" "+parametersStr if Ni==0 else parametersStr
+    parametersStr,No = re.subn(r"\&\&\&\&",outputStr,parametersStr)
+    cmdline=softwareconfig+"   "+parametersStr+" " if No!=0 else softwareconfig+"   "+parametersStr+" "+outputStr
+    print("after Ni,No",parametersStr,Ni,No)
+    ranUniscriptspath=random_uniqScriptDir(scriptspath[0],scriptspath[1])
     print(ranUniscriptspath)
     os.makedirs(ranUniscriptspath)    
 

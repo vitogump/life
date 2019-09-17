@@ -86,12 +86,13 @@ def configsoftware():
         for tagpart1,tagpart2 in [(form.tag1part1.data,form.tag1part2.data),(form.tag2part1.data,form.tag2part2.data)]:
             if tagpart1.strip()!="" and form.tagtoFolderlevel.data.strip()!="":
                 tagList.append(tagpart1+"${tag}"+tagpart2)
-        for outputpart1 in [form.outputperfix.data,form.outputperfix2.data]:
+        for outputpart1 in list(form.outOptSuffixs.data):
             if outputpart1.strip()!="":
                 outputlist.append(re.split(r"\s+",outputpart1))#,form.outputperfix2.data]
         batchofInList=re.split(r"\s+",form.batchofinputpath.data.strip());print(type(form.batchofinputpath.data),batchofInList)
         softwareconfig= request.form['MyLinuxCommand'] if request.form['software1'] =="othercommand" else request.form['software1']
-        scriptsstorediruniq=Service.scriptproduce(form.datadepth.data,form.collectiondepth.data,scriptdir,form.projectpath.data.rstrip(os.sep),softwareconfig,form.commandParameters.data,inputList,outputlist,batchofInList,lenOfdirtotag=tagtofolder,taglist=tagList,selecteddepth=selectfolderlevel,selecteddirs=list(form.filteredforders.data))
+        msg=re.sub(r"[\s\W]+","_",form.messagecomment.data.strip())
+        scriptsstorediruniq=Service.scriptproduce(form.datadepth.data,form.collectiondepth.data,(scriptdir,msg),form.projectpath.data.rstrip(os.sep),softwareconfig,form.commandParameters.data,inputList,outputlist,batchofInList,lenOfdirtotag=tagtofolder,taglist=tagList,selecteddepth=selectfolderlevel,selecteddirs=list(form.filteredforders.data))
         try:
             t=int(form.NumOfThreads.data)
         except:
@@ -101,10 +102,11 @@ def configsoftware():
         os.system("chmod +x "+scriptsstorediruniq+"/*.sh")
         qsubMorNot=" " if not form.mem.data.strip() else (" -m "+form.mem.data)
         if softwareconfig.strip()=="rm" or softwareconfig.strip()=="mv": exit(-1)
-        os.system("nohup "+Service.aaa.pathtoPython+" ../pipelinecontrol/JobTracker.py -d "+scriptsstorediruniq+" -t "+str(tt)+qsubMorNot+" -p "+ re.sub(r"\s+","_",form.messagecomment.data.strip())+" &")
-        currentUstr=scriptsstorediruniq.replace(scriptdir,"")
+        os.system("nohup "+Service.aaa.pathtoPython+" ../pipelinecontrol/JobTracker.py -d "+scriptsstorediruniq+" -t "+str(tt)+qsubMorNot+" -p "+ msg+" &")
+        currentUstr=scriptsstorediruniq.replace(scriptdir,"").strip("/").replace(os.sep,"_")
+        print("currentUstr",currentUstr,"return url:","/jobmoinitor/"+currentUstr)
 #         Service.jobminitor(currentUstr)#should store in session
-        return redirect("/jobmoinitor"+currentUstr)
+        return redirect("/jobmoinitor/"+currentUstr)
 #         Service.callsh_updateDB(scriptsstorediruniq,NumOfThread=tt,"purposeofthiscommand")
 
 #         return form.tag1part1.data+form.tag1part2.data+form.tag2part1.data+form.tag2part2.data+scriptdir+form.datadepth.data+form.projectpath.data+"<br />"+form.outputpath.data+form.outputperfix.data+"<br />"+"<br />".join(form.filteredforders.data)

@@ -198,12 +198,6 @@ function setText(obj)
 <div id="N"></div>
 
 	{{form.commandParameters.label}}</br>{{form.commandParameters(rows='8',cols='65')}}
-
-
-
-
-
-
 <br/>
 <input type="text" class="taginput1n" id="taginput1" value="--rg 'ID:"/>
 <input type="text" class="taginput2n"  value="+该字段替换为数据上级目录名+" disabled/>
@@ -217,8 +211,20 @@ function setText(obj)
 <p style="font-family:times;color:red"><b>控制软件及参数部分结束</b></p>
 <br/>
 {{form.outputpath.label}}&nbsp&nbsp&nbsp<!--<input type="text">--> {{form.outputpath}}<br />
-{{form.outputperfix.label}}<!--<input type="text">--> {{form.outputperfix}} &nbsp&nbsp	<br />
-{{form.outputperfix2.label}}<!--<input type="text">--> {{form.outputperfix2}} &nbsp&nbsp	<br />
+
+<div data-toggle="fieldset" id="outOptSuffixs-fieldset" >
+<button type="button" data-toggle="fieldset-add-row" data-target="#outOptSuffixs-fieldset" >"添加"</button>
+	<ul id="outOptSuffixs">
+	<label >输出选项及文件后缀:</label><br/>
+		{% for outOptSuffix in form.outOptSuffixs %}
+		<li data-toggle="fieldset-entry" >
+
+			<input id="outOptSuffixs-{{ loop.index0 }}" name="outOptSuffixs-{{ loop.index0 }}" type="text" value="{{ outOptSuffix.data }}">
+			<button type="button" data-toggle="fieldset-remove-row" id="outOptSuffixs-{{loop.index0}}-remove">-</button>
+		</li>
+		{% endfor %}
+	</ul>
+</div>
 <p style="font-family:times;color:red"><b>控制输出部分结束，下面提示非法输入或覆盖风险，最后控制任务自动投放量</b></p>
 {{form.messagecomment.label}}</br>{{form.messagecomment(rows='3',cols='65')}}
 <!--<input type="submit" value="提交" ><br /><br />-->
