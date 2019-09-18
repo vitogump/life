@@ -97,7 +97,7 @@ def scriptproduce(datadepth,collectiondepth,scriptspath,inputdataroot,softwareco
             creatDir=inputpath.strip().lstrip(compath);
             if creatDir.rfind("/")!=-1: updir=creatDir[creatDir.rfind("/")+1:];creatDir=creatDir.replace("/","").strip()
             operatorwithdata.taglen=0
-            newcmdline=operatorwithdata.process(inputpath.strip(), 0, 0,(int(collectiondepth),selecteddirs,int(selecteddepth)))
+            newcmdline=operatorwithdata.process(inputpath.strip(), 0, 0,(None,selecteddirs,int(selecteddepth)))
     else:
         operatorwithdata=OperatorWithData_webservice(inputdataroot,inputList,cmdline,ranUniscriptspath,taglen=lenOfdirtotag) 
         operatorwithdata.cmdtemplatefilename=re.split(r'\s+|'+os.sep,re.sub("\s+","_",softwareconfig.strip()))[-1]+"GET"+osufix 
