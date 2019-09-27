@@ -15,14 +15,16 @@ from scipy.interpolate import UnivariateSpline as spline
 from scipy.spatial.distance import pdist
 
 parser = OptionParser()
-parser.add_option("-d", "--flexDir", dest="flexDir", help="")
+parser.add_option("-d", "--flexDir", dest="flexDir", help="conflict with flexfilelist")
+parser.add_option("-f", "--flexfilelist", dest="flexfilelist", help="conflict with flexDir")
 parser.add_option("-t", "--distype", dest="distype",default=None, help="")
 parser.add_option("-s", "--selectbinfiles", dest="selectbinfiles")
 
 parser.add_option("-o", "--outputprefix", dest="outputpre")
 
 (options, args) = parser.parse_args()
-flexDir=options.flexDir
+
+    
 flexfilelist=[];flexdatalist=[]
 f=open(options.selectbinfiles,'r')
 selectedidx=[int(e.strip()) for e in f.readlines()];f.close()
@@ -54,14 +56,23 @@ ofs=open(options.outputpre+str(options.distype)+"scaledDepth","w")
 ofc=open(options.outputpre+str(options.distype)+"GCcorrectedDepth","w")
 if __name__ == '__main__':
     #read file
-    for elem in os.listdir(path=flexDir):
-        path = flexDir + os.sep + elem
-        if ( os.path.isdir(path)):
-            print(path,"is not the file")
-        elif re.match(r"[\w\W]*flex[^/]+unique.nodup.txt$",path)!=None:
-            flexfilelist.append(path)
-    flexfilelist.sort(key=str2int)
-    
+    if options.flexfilelist and not options.flexDir:
+        fhandler=open(options.flexfilelist,'r')
+        for flexfilename in fhandler:
+            flexfilelist.append(flexfilename.strip())
+        fhandler.close()
+    elif options.flexDir and not options.flexfilelist:
+        flexDir=options.flexDir
+        for elem in os.listdir(path=flexDir):
+            path = flexDir + os.sep + elem
+            if ( os.path.isdir(path)):
+                print(path,"is not the file")
+            elif re.match(r"[\w\W]*flex[^/]+unique.nodup.txt$",path)!=None:
+                flexfilelist.append(path)
+        flexfilelist.sort(key=str2int)
+    else:
+        print("conflict")
+        exit(-1)
     #init result array
     mds_scale=[["0" for i in range(len(flexfilelist))] for j in range(len(flexfilelist))]
     mds_correct=[["0" for i in range(len(flexfilelist))] for j in range(len(flexfilelist))]
@@ -105,6 +116,8 @@ if __name__ == '__main__':
                 y.append(1)
             elif "0.01" in flex_name1:
                 y.append(2)
+            else:
+                y.append(-1)
         pca=PCA(n_components=2)
         reduced_xs=pca.fit_transform(xs)
 #         red_x,red_y=[],[]
@@ -122,6 +135,7 @@ if __name__ == '__main__':
             i+=1
         ofs.close()
         exit()
+    mindist=9999999999;mindistsample1=None;mindistsample2=None
     for flex_idx1 in range(len(flexdatalist)):
         flex_data1=flexdatalist[flex_idx1]
 #         print("\n",flexfilelist[flex_idx1],np.mean(d1["depth"]))
@@ -144,7 +158,7 @@ if __name__ == '__main__':
                 dist1=1/np.sqrt(2)*np.linalg.norm(np.sqrt(a1)-np.sqrt(b1))
                 dist2=1/np.sqrt(2)*np.linalg.norm(np.sqrt(a2)-np.sqrt(b2))
                 print(a1,b1,dist1,a2,b2,dist2)
-
+            if (flex_idx1<=27 and flex_idx2>27 and dist1<mindist): mindist,mindistsample1,mindistsample2=dist1,flex_idx2,flex_idx1
             mds_scale[flex_idx2][flex_idx1]=mds_scale[flex_idx1][flex_idx2]=str(dist1)
             mds_correct[flex_idx2][flex_idx1]=mds_correct[flex_idx1][flex_idx2]=str(dist2)
 #     print("\nmds",mds)
@@ -167,4 +181,5 @@ if __name__ == '__main__':
         print(re.search(r"[^/]*$",flexfilelist[n_i]).group(0),"\t".join(distlist),sep="\t",file=ofc)
         n_i+=1
     ofc.close()
+    print(mindist,mindistsample1,mindistsample2)
     #

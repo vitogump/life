@@ -12,13 +12,13 @@ parser.add_option("-d", "--rootdir", dest="rootdir",help="data files directly un
 parser.add_option("-r", "--rmoriginalfile", dest="rmoriginalfile",action="store_true",default=False)
 parser.add_option("-s", "--suffix", dest="suffix",action="append",default=[],help='suffix for a folder to package,["1.fq.gz","2.fq.gz"]')
 parser.add_option("-o", "--outdir", dest="outdir",default=None,help="outpath,default is the same fold as -d assigned ")
-parser.add_option("-l", "--prefixlen", dest="prefixlen",default=None,help="int ,e.g 12 ")
+parser.add_option("-l", "--prefixlen", dest="prefixlen",default=None,help="int ,e.g 12 then create dir '123456789abc' for each set of files (with suffix assigned by -s) has the this prefix name, else compare all the filename to suffix ")
 (options, args) = parser.parse_args()
 
 # cf=open(options.rootdir,'r')
 
 filepath=options.rootdir.strip()
-prefixlen=int(options.prefixlen)
+prefixlen=int(options.prefixlen) if options.prefixlen else None
 files=os.listdir(filepath)
 print(filepath,files,options.suffix)
 folderMap={}#{"AS10_":[AS10_1.fq.gz,AS10_1.fq.gz]}
@@ -35,7 +35,7 @@ if __name__ == '__main__':
             pass
         else:
             for s in options.suffix:
-                if re.search(r"."+s+"$",fi)!=None:
+                if re.search(r"."+s+"\d*$",fi)!=None:
                     l_pre=len(fi)-len(s) if prefixlen==None else prefixlen
                     data_d=os.path.join(outputdir,fi[:l_pre]).strip("_").strip("-")
                     if not os.path.exists(data_d):
@@ -43,5 +43,6 @@ if __name__ == '__main__':
 #                     os.system("cp "+fi_d+" "+data_d)
                     if options.rmoriginalfile:
                         os.system("mv "+fi_d+" "+data_d)
+#                         os.system("mv "+fi_d+" "+data_d+"/"+fi[:fi.rfind(s)]+"_"+re.search(r"."+s+"(\d+)$",fi).group(1)+"_"+s)
                     else:
                         os.system("cp "+fi_d+" "+data_d)
