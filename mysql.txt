@@ -1,3 +1,34 @@
+
+CREATE TABLE `mspsgjlksy10pop_toplevel_pekingduckref` (                
+`chrID` char(128) NOT NULL DEFAULT '',                               
+`snp_pos` bigint(20) NOT NULL DEFAULT '0',                           
+`snpID` char(128) NOT NULL,                                          
+`ref_base` varchar(1000) DEFAULT NULL,                               
+`alt_base` varchar(1000) DEFAULT NULL,                               
+`context` varchar(3) DEFAULT NULL,                                   
+`wegeon__pool_withindel_vcf_alt` char(128) DEFAULT NULL,             
+`wegeon__pool_withindel_vcf_dep` char(128) DEFAULT NULL,             
+`fanya1_pool_withindel_vcf_alt` char(128) DEFAULT NULL,              
+`fanya1_pool_withindel_vcf_dep` char(128) DEFAULT NULL,              
+`barheadedgoose_pool_withindel_vcf_alt` char(128) DEFAULT NULL,      
+`barheadedgoose_pool_withindel_vcf_dep` char(128) DEFAULT NULL,      
+`taihudomesticgoose_pool_withindel_vcf_alt` char(128) DEFAULT NULL,  
+`taihudomesticgoose_pool_withindel_vcf_dep` char(128) DEFAULT NULL,  
+PRIMARY KEY (`chrID`,`snp_pos`)                                      
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+
+Thit table can be initially create by such command:
+CREATE TABLE `mspsgjlksy10pop_toplevel_pekingduckref` (                
+`chrID` char(128) NOT NULL DEFAULT '',                               
+`snp_pos` bigint(20) NOT NULL DEFAULT '0',                           
+`snpID` char(128) NOT NULL,                                          
+`ref_base` varchar(1000) DEFAULT NULL,                               
+`alt_base` varchar(1000) DEFAULT NULL,                               
+`context` varchar(3) DEFAULT NULL, PRIMARY KEY (`chrID`,`snp_pos`)                                      
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+The other information(sites and out group population information) could be filled automatically when this table is used.
+
+-------------------------------------------old-------------------------------------------------------------------
 CREATE TABLE `snp_toplevel_pekingduckref` (             
                     `chrID` char(128) NOT NULL DEFAULT '',      
                     `snp_pos` bigint(20) NOT NULL DEFAULT '0',  

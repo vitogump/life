@@ -112,6 +112,7 @@ def GOenrichment(gotablefile,outpre,genelist=None,trscptlist=None,UniProtlist=No
         print(goID,*oneGO2manyID[goID],sep="\t",file=testGOONETOMANY)
     testGOONETOMANY.close()
     k=len(sampledIDlist)
+    
     for goassecesion in sorted(oneGO2manyID.keys()):
         x=0
         containingtrscript=[]
@@ -129,13 +130,33 @@ def GOenrichment(gotablefile,outpre,genelist=None,trscptlist=None,UniProtlist=No
         pvalue=stats.hypergeom.sf(x-1,m_n,m,k)
 
         outlist.append((goassecesion,goTermMap[goassecesion][0],goTermMap[goassecesion][1],pvalue,"FDR",x,len(oneGO2manyID[goassecesion]),containingtrscript,genetermlist))
-    outlist.sort(key=lambda listRec:listRec[3])
+    outlist.sort(key=lambda listRec:listRec[3]);NoOftestingBP=0
     for e in outlist:
+        if e[3]<1 and e[2]=="biological_process":
+            NoOftestingBP+=1
         print(*e,sep="\t",file=enrichfile)
     enrichfile.close()
     os.system("""awk 'BEGIN{FS="\t"}$3~/biological_process/{print $0}' """+GOenrichment_fileName+">"+GOenrichment_fileName+"_biological_process")
 #     os.system("""awk 'BEGIN{FS="\t"}$3~/cellular_component/{print $0}' """+GOenrichment_fileName+">"+GOenrichment_fileName+"_cellular_component")
 #     os.system("""awk 'BEGIN{FS="\t"}$3~/molecular_function/{print $0}' """+GOenrichment_fileName+">"+GOenrichment_fileName+"_molecular_function")
+    #multiple test control of FDR for p<0.05
+    GObpwithP=[]
+    enrichGObpf=open(GOenrichment_fileName+"_biological_process",'r')
+    GObpwithP=enrichGObpf.readlines()
+    i=1;print(NoOftestingBP)
+    for testTerm in GObpwithP:
+        tTliest=re.split(r'\t',testTerm.strip())
+        FDRv=(i/NoOftestingBP)*0.05
+        if float(tTliest[3]) <= FDRv:
+            GObpwithP[i-1]=GObpwithP[i-1].replace('\tFDR\t',"\t"+str(FDRv)+"\tTRUE\t")
+        else:
+            GObpwithP[i-1]=GObpwithP[i-1].replace('\tFDR\t',"\t"+str(FDRv)+"\tFALSE\t")
+        i+=1
+    enrichGObpf.close()
+    OUTagainGObp=open(GOenrichment_fileName+"_biological_process",'w')
+    for testTerm in GObpwithP:
+        print(testTerm.strip(),file=OUTagainGObp)
+    OUTagainGObp.close()
     annf.close()
     gotablefile.close()
 def collectSNP_locatInRegion(MultipleVcfMap,chrom,startpos,endpos):

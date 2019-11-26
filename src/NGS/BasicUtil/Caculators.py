@@ -1132,7 +1132,7 @@ class Caculate_S_ObsExp_difference(Caculator):
         self.currentchrID=None
         self.COUNT=0
         self.obsseq=[]
-        self.CEXP=0
+        self.CEXP=[]
         self.CfixedDerived=0
         self.freq_xaxisKEY_yaxisVALUERelation=None
         self.minsnps=10
@@ -1267,9 +1267,10 @@ class Caculate_S_ObsExp_difference(Caculator):
             return
         for a,b in sorted(self.freq_xaxisKEY_yaxisVALUERelation.keys()):
             if target_DAF>a and target_DAF<=b:
-                self.CEXP+=self.freq_xaxisKEY_yaxisVALUERelation[(a,b)]
+                self.CEXP。append(self.freq_xaxisKEY_yaxisVALUERelation[(a,b)])
+                self.obsseq.append(rer_DAF_sum/countedAF)
                 break
-        self.obsseq.append(rer_DAF_sum/countedAF)
+        
         self.COUNT+=1
         if rer_DAF_sum/countedAF==1:
             self.CfixedDerived+=1
@@ -1284,22 +1285,25 @@ class Caculate_S_ObsExp_difference(Caculator):
                 print(snpT[0:3],"process",len(self.alignedSNP_absentinfo[self.currentchrID]),self.CEXP,self.COUNT)
                 self.process(snpT)
             print("length of snpT",len(self.alignedSNP_absentinfo[self.currentchrID]))      
-        S1="NA"
+        S1=0
         S2="NA"
+        for i in len(self.obsseq):
+            try:
+                S1+=abs(math.log(self.obsseq[i]/self.CEXP[i]))
+            except:
+                S1+=0
         try:
-            S1=math.log(np.sum(self.obsseq)/self.CEXP)
-            S2=0#(np.sum(self.obsseq)-self.CEXP)/np.std(self.obsseq,ddof=1)
+            S2=math.log(np.sum(self.obsseq)/self.CEXP)#(np.sum(self.obsseq)-self.CEXP)/np.std(self.obsseq,ddof=1)
         except:
-            S1="NA"
             S2="NA"
         noofsnp=self.COUNT
         self.COUNT=0
-        self.CEXP=0
+        self.CEXP=[]
         self.obsseq=[]
         self.CfixedDerived=0
 
                 
-        if S1=="NA" and S2=="NA" or noofsnp<self.minsnps:
+        if S1==0 and S2=="NA" or noofsnp<self.minsnps:
             return noofsnp,"NA"
         return noofsnp,[S1,S2]
 # class Caculate_pairFst(Caculator):
