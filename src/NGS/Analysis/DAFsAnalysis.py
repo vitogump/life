@@ -194,14 +194,14 @@ if __name__ == '__main__':
                 else:
                     wigeondepthlist1=re.split(r",",snp[0][13])
                     fanyadepthlist=re.split(r",",snp[0][9])
-                    if len(wigeondepthlist1)==2 and len(fanyadepthlist)==2 and (int(wigeondepthlist1[0]) + int(wigeondepthlist1[1])>=mindeptojudgefix_forancestral or int(fanyadepthlist[0]) + int(fanyadepthlist[1])>=mindeptojudgefix_forancestral) and ((wigeondepthlist1[0].strip()=="0" and fanyadepthlist[0].strip()=="0") or (wigeondepthlist1[1].strip()=="0" and fanyadepthlist[1].strip()=="0") ):
+                    if len(fanyadepthlist)==2 and (int(wigeondepthlist1[0]) + int(wigeondepthlist1[1])>=mindeptojudgefix_forancestral or int(fanyadepthlist[0]) + int(fanyadepthlist[1])>=mindeptojudgefix_forancestral) and ((wigeondepthlist1[0].strip()=="0" and fanyadepthlist[0].strip()=="0") or (wigeondepthlist1[1].strip()=="0" and fanyadepthlist[1].strip()=="0") ):
                         if wigeondepthlist1[0].strip()=="0" and fanyadepthlist[0].strip()=="0":
                             A_base_idx=1
                         elif wigeondepthlist1[1].strip()=="0" and fanyadepthlist[1].strip()=="0":
                             A_base_idx=0
                         else:
                             print("never get here")
-                    elif (len(fanyadepthlist)==2  and int(fanyadepthlist[0]) + int(fanyadepthlist[1])>=mindeptojudgefix_forancestral and (fanyadepthlist[0].strip()=="0" or fanyadepthlist[1].strip()=="0" )):#   or (snp[0][7]=="no covered" and len(depthlist2)==2 and int(depthlist2[0]) + int(depthlist2[1])>=mindeptojudgefix and (depthlist2[1].strip()=="0" or depthlist2[0].strip()=="0")):
+                    elif (int(fanyadepthlist[0]) + int(fanyadepthlist[1])>=mindeptojudgefix_forancestral and (fanyadepthlist[0].strip()=="0" or fanyadepthlist[1].strip()=="0" )):#   or (snp[0][7]=="no covered" and len(depthlist2)==2 and int(depthlist2[0]) + int(depthlist2[1])>=mindeptojudgefix and (depthlist2[1].strip()=="0" or depthlist2[0].strip()=="0")):
                         if  fanyadepthlist[0].strip()=="0":
                             A_base_idx=1
                         elif fanyadepthlist[1].strip()=="0":

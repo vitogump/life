@@ -185,14 +185,14 @@ if __name__ == '__main__':
 #                 wigeondepthlist1=re.split(r",",snp[0][13])
 #                 fanyadepthlist=re.split(r",",snp[0][9])
 #                first is taihu goose;second is fanya
-                if len(firstoutgroupdepthlist)==2 and len(secondoutgroupdepthlist)==2 and (int(firstoutgroupdepthlist[0]) + int(firstoutgroupdepthlist[1])>=minoutgroupdepth or int(secondoutgroupdepthlist[0]) + int(secondoutgroupdepthlist[1])>=minoutgroupdepth) and ((firstoutgroupdepthlist[0].strip()=="0" and secondoutgroupdepthlist[0].strip()=="0") or (firstoutgroupdepthlist[1].strip()=="0" and secondoutgroupdepthlist[1].strip()=="0") ):
+                if len(secondoutgroupdepthlist)==2 and (int(firstoutgroupdepthlist[0]) + int(firstoutgroupdepthlist[1])>=minoutgroupdepth or int(secondoutgroupdepthlist[0]) + int(secondoutgroupdepthlist[1])>=minoutgroupdepth) and ((firstoutgroupdepthlist[0].strip()=="0" and secondoutgroupdepthlist[0].strip()=="0") or (firstoutgroupdepthlist[1].strip()=="0" and secondoutgroupdepthlist[1].strip()=="0") ):
                     if firstoutgroupdepthlist[0].strip()=="0" and secondoutgroupdepthlist[0].strip()=="0":
                         A_base_idx=1;continuesearch=2
                     elif firstoutgroupdepthlist[1].strip()=="0" and secondoutgroupdepthlist[1].strip()=="0":
                         A_base_idx=0;continuesearch=2
                     else:
                         print("never get here")
-                elif (len(secondoutgroupdepthlist)==2  and int(secondoutgroupdepthlist[0]) + int(secondoutgroupdepthlist[1])>=minoutgroupdepth and (secondoutgroupdepthlist[0].strip()=="0" or secondoutgroupdepthlist[1].strip()=="0" )):# fanya  or (snp[0][7]=="no covered" and len(depthlist2)==2 and int(depthlist2[0]) + int(depthlist2[1])>=mindeptojudgefix and (depthlist2[1].strip()=="0" or depthlist2[0].strip()=="0")):
+                elif (int(secondoutgroupdepthlist[0]) + int(secondoutgroupdepthlist[1])>=minoutgroupdepth and (secondoutgroupdepthlist[0].strip()=="0" or secondoutgroupdepthlist[1].strip()=="0" )):# fanya  or (snp[0][7]=="no covered" and len(depthlist2)==2 and int(depthlist2[0]) + int(depthlist2[1])>=mindeptojudgefix and (depthlist2[1].strip()=="0" or depthlist2[0].strip()=="0")):
                     if  secondoutgroupdepthlist[0].strip()=="0":
                         A_base_idx=1;continuesearch=2
                     elif secondoutgroupdepthlist[1].strip()=="0":

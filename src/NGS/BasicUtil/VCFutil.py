@@ -294,7 +294,7 @@ class VCF_Data():
         #from startpos to collected recs    
         vcfFile.seek(filepos)
         linescontent=vcfFile.read(self.VcfIndexMap[chrom][1]-filepos)
-        print("need check encoding is utf-8")
+        print("need to check is the vcffile's encoding by utf-8")
 #         encoding=chardet.detect(linescontent)
 #         print(chardet.detect(linescontent))
 #         if encoding["encoding"]!='utf-8':

@@ -7,7 +7,7 @@ import copy, time, pysam
 import os, numpy, sys, re
 import pickle, configparser,config
 
-from NGS.BasicUtil import Util, VCFutil
+from NGS.BasicUtil import geneUtil,Util, VCFutil
 import NGS.BasicUtil.DBManager as dbm
 import web.dba as dba
 
@@ -41,7 +41,7 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
         self.currentchrLen=None
         self.toplevelsnptablename=toplevelsnptablename
         self.dbvariantstools=dbvariantstools
-        self.toplevelsnptable_titlelist=[a[0].strip() for a in self.dbvariantstools.operateDB("select", "select column_name  from information_schema.columns where table_schema='" + Util.vcfdbname + "' and table_name='" + toplevelsnptablename + "'")]
+        self.toplevelsnptable_titlelist=[a[0].strip() for a in self.dbvariantstools.operateDB("select", "select column_name  from information_schema.columns where table_schema='" + config.vcfdbname + "' and table_name='" + toplevelsnptablename + "'")]
         outgroupBAMconfigs=re.split(r";",config.outgroupVCFBAMconfig_beijingref)
         for configfile in outgroupBAMconfigs:
             fp=open(configfile,'r')
@@ -177,10 +177,7 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
                             ACGTdep=samfile.count_coverage(chrom,snp_pos-1,snp_pos)
                             for dep in ACGTdep:
                                 sum_depth+=dep[0]
-                        if sum_depth<4:
-                            popsdata_dep="no covered"
-                        else:
-                            popsdata_dep=str(sum_depth) + ",0"
+                        popsdata_dep=str(sum_depth) + ",0"
                     #continnue sql_statement
                     """state: updatesql_date=[],insertsql_date=[chrom,snp_pos,".",snp[1],snp[2]]
                     updatesql_statement= update toplevelsnptablename set processed_vcfname1_alt=%s,processed_vcfname1_dep=%s,
@@ -271,8 +268,8 @@ class AncestralAlleletabletools():
         self.dbgenome=dbm.DBTools(ip, usrname, pw, dbgenome)
 #         self.forchenli=open("chenliidentifysheep",'w')
         #dbtmp means never use the table in the software,you can delete the table anytime without check dependency
-        self.dbtmp=dbm.DBTools(ip, usrname, pw, Util.ghostdbname)
-        self.dbtmpname=Util.ghostdbname#
+        self.dbtmp=dbm.DBTools(ip, usrname, pw, config.ghostdbname)
+        self.dbtmpname=config.ghostdbname#
         self.session=dba.getVarSession()
         self.dbvariant_name=database
         self.dbgenomename=dbgenome
@@ -414,46 +411,9 @@ class AncestralAlleletabletools():
                 exit(-1)
 
             print(">" + currentsnpID + "\n" + snpflankseq, end='\n', file=outfile)
-    def getflankseqs(self, chrom,chromlen, startpostocollecteSNP, endpostocollectSNP, idxedreffilehandler,ancestralgenomenameaddtotable, refindex, flanklen,outfile, tablename="derived_alle_ref"):
-#         testfile=open("testsnpfile.txt",'a')
-#         self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, tablename, "context", "char(3)", "default null"))
-        #add a temp function code block to process the snp before startpos of collecteSNP
-        tempsnps=self.dbvariant.operateDB("select","select * from " + tablename + " where chrID='" + chrom + "' and snp_pos>= 2 and snp_pos<=" + str(startpostocollecteSNP))
-        RefSeqMaptemp = Util.getRefSeqBypos_faster(idxedreffilehandler, refindex, chrom, 1, startpostocollecteSNP+1,chromlen)
-        for snp in tempsnps:
-            self.dbvariant.operateDB("update","update "+tablename+" set context='"+''.join(RefSeqMaptemp[chrom][snp[1]-1:snp[1]+2])+"' where chrID='"+ chrom + "' and snp_pos= "+str(snp[1]))
-            l=copy.deepcopy(RefSeqMaptemp[chrom][snp[1]-1:])
-            l[1]="N"
-            print(">"+chrom+"_"+str(snp[1])+"\n"+"".join(l), file=outfile)
-            
-        #temp function code block end
-        snps = self.dbvariant.operateDB("select", "select * from " + tablename + " where chrID='" + chrom + "' and snp_pos>= " + str(startpostocollecteSNP) + " and snp_pos<=" + str(endpostocollectSNP))
-        RefSeqMap = Util.getRefSeqBypos_faster(idxedreffilehandler, refindex, chrom, startpostocollecteSNP-flanklen, endpostocollectSNP+flanklen,chromlen)
-        
-        for snp in snps:
-            currentsnpPos = snp[1]
-            if len(snp[3]) != 1 :
-        #                        print(snp[4])
-                continue# skip indel
-            currentsnpID=chrom+"_"+str(snp[1])
-            if currentsnpPos + flanklen <= RefSeqMap[chrom][0] + len(RefSeqMap[chrom]) - 1 and currentsnpPos - flanklen > RefSeqMap[chrom][0] :
-                snpflankseq = ''.join(RefSeqMap[chrom][(currentsnpPos - flanklen - RefSeqMap[chrom][0]):(currentsnpPos + flanklen - RefSeqMap[chrom][0] + 1)])
-                self.dbvariant.operateDB("update","update "+tablename+" set context='"+snpflankseq[flanklen-1:flanklen+2]+"' where chrID='"+ chrom + "' and snp_pos= "+str(currentsnpPos))
-                snpflankseq=snpflankseq[0:flanklen]+'N'+snpflankseq[flanklen+1:]
-            elif currentsnpPos <= RefSeqMap[chrom][0] + len(RefSeqMap[chrom]) - 1 and currentsnpPos - flanklen > RefSeqMap[chrom][0]:
-                snpflankseq = ''.join(RefSeqMap[chrom][(currentsnpPos - flanklen - RefSeqMap[chrom][0]):(currentsnpPos - RefSeqMap[chrom][0] + 1)])
-#                 print(currentsnpID,snpflankseq[flanklen],file=testfile)
-                self.dbvariant.operateDB("update","update "+tablename+" set context='"+snpflankseq[flanklen-1:flanklen+1]+"N' where chrID='"+ chrom + "' and snp_pos= "+str(currentsnpPos))
-                snpflankseq=snpflankseq[0:flanklen]+'N'
-            elif currentsnpPos - flanklen <= RefSeqMap[chrom][0]:
-                snpflankseq = ''.join(RefSeqMap[chrom][(currentsnpPos - RefSeqMap[chrom][0]):(currentsnpPos + flanklen - RefSeqMap[chrom][0] + 1)])
-#                 print(currentsnpID,snpflankseq[0],file=testfile)
-                self.dbvariant.operateDB("update","update "+tablename+" set context='N"+snpflankseq[0:2]+"' where chrID='"+ chrom + "' and snp_pos= "+str(currentsnpPos))
-                snpflankseq = 'N'+snpflankseq[1:flanklen+1]
+
                 
-            else:
-                print("what's wrong with the func getflankseqs ?")
-                exit(-1)
+
 #            if currentsnpPos + 25 <= RefSeqMap[lastchromNo][0] + len(RefSeqMap[lastchromNo]) - 1 and currentsnpPos - 25 > RefSeqMap[lastchromNo][0] :
 #            snpflankseq = ''.join(RefSeqMap[chrom][(currentsnpPos - 25 - RefSeqMap[chrom][0]):(currentsnpPos + 25 - RefSeqMap[chrom][0] + 1)])
 #            print(currentsnpID, snpflankseq[25], file=testfile)
@@ -591,7 +551,7 @@ class AncestralAlleletabletools():
         if revcom:
             tempStr=RefSeqMap[chrom][1:]
             tempStr.reverse()
-            RefSeqMap[chrom][1:]=Util.complementary(tempStr)
+            RefSeqMap[chrom][1:]=geneUtil.complementary(tempStr)
             revcom=False
             
         lastbasesAccur[RefSeqMap[chrom][snpindex + 1]] = [(chrom, sstartpos, sendpos)]
@@ -616,7 +576,7 @@ class AncestralAlleletabletools():
                 if revcom:
                     tempStr=RefSeqMap[chrom][1:]
                     tempStr.reverse()
-                    RefSeqMap[chrom][1:]=Util.complementary(tempStr)
+                    RefSeqMap[chrom][1:]=geneUtil.complementary(tempStr)
                     revcom=False            
                 print(lastsnpID,RefSeqMap[chrom][snpindex + 1],str(snp_loc_s),"".join(RefSeqMap[chrom][1:]),file=ancestrysnpflank)
                 if RefSeqMap[chrom][snpindex + 1] in lastbasesAccur:
@@ -647,7 +607,7 @@ class AncestralAlleletabletools():
                 if revcom:
                     tempStr=RefSeqMap[chrom][1:]
                     tempStr.reverse()
-                    RefSeqMap[chrom][1:]=Util.complementary(tempStr)
+                    RefSeqMap[chrom][1:]=geneUtil.complementary(tempStr)
                     revcom=False            
                 print(hitlist[0],RefSeqMap[chrom][snpindex + 1],str(snp_loc_s),"".join(RefSeqMap[chrom][1:]),file=ancestrysnpflank)
     #            dbvariant.operateDB("update", "update " + finaltable + " set chicken='" + RefSeqMap[chrom][snpindex + 1] + "' where snpID='" + hitlist[0] + "'")
@@ -657,44 +617,92 @@ class AncestralAlleletabletools():
                 lastbasesAccur[RefSeqMap[chrom][snpindex + 1]] = [(chrom, sstartpos, sendpos)]
         print("finish")
         ancestryreffile.close()
-    def fillAncestral(self,archicpopVcfFile,chromlist,toplevelsnptablename="ducksnp_toplevel"):
+    def getflankseqs(self, chrom,chromlen, startpostocollecteSNP, endpostocollectSNP, idxedreffilehandler,ancestralgenomenameaddtotable, refindex, flanklen,outfile, tablename="derived_alle_ref"):
+#         testfile=open("testsnpfile.txt",'a')
+#         self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, tablename, "context", "char(3)", "default null"))
+        #add a temp function code block to process the snp before startpos of collecteSNP
+        tempsnps=self.dbvariant.operateDB("select","select * from " + tablename + " where chrID='" + chrom + "' and snp_pos>= 2 and snp_pos<=" + str(startpostocollecteSNP))
+        RefSeqMaptemp = Util.getRefSeqBypos_faster(idxedreffilehandler, refindex, chrom, 1, startpostocollecteSNP+1,chromlen)
+        for snp in tempsnps:
+            self.dbvariant.operateDB("update","update "+tablename+" set context='"+''.join(RefSeqMaptemp[chrom][snp[1]-1:snp[1]+2])+"' where chrID='"+ chrom + "' and snp_pos= "+str(snp[1]))
+            l=copy.deepcopy(RefSeqMaptemp[chrom][snp[1]-1:])
+            l[1]="N"
+            print(">"+chrom+"_"+str(snp[1])+"\n"+"".join(l), file=outfile)
+            
+        #temp function code block end
+        snps = self.dbvariant.operateDB("select", "select * from " + tablename + " where chrID='" + chrom + "' and snp_pos>= " + str(startpostocollecteSNP) + " and snp_pos<=" + str(endpostocollectSNP))
+        RefSeqMap = Util.getRefSeqBypos_faster(idxedreffilehandler, refindex, chrom, startpostocollecteSNP-flanklen, endpostocollectSNP+flanklen,chromlen)
+        
+        for snp in snps:
+            currentsnpPos = snp[1]
+            if len(snp[3]) != 1 :
+        #                        print(snp[4])
+                continue# skip indel
+            currentsnpID=chrom+"_"+str(snp[1])
+            if currentsnpPos + flanklen <= RefSeqMap[chrom][0] + len(RefSeqMap[chrom]) - 1 and currentsnpPos - flanklen > RefSeqMap[chrom][0] :
+                snpflankseq = ''.join(RefSeqMap[chrom][(currentsnpPos - flanklen - RefSeqMap[chrom][0]):(currentsnpPos + flanklen - RefSeqMap[chrom][0] + 1)])
+                self.dbvariant.operateDB("update","update "+tablename+" set context='"+snpflankseq[flanklen-1:flanklen+2]+"' where chrID='"+ chrom + "' and snp_pos= "+str(currentsnpPos))
+                snpflankseq=snpflankseq[0:flanklen]+'N'+snpflankseq[flanklen+1:]
+            elif currentsnpPos <= RefSeqMap[chrom][0] + len(RefSeqMap[chrom]) - 1 and currentsnpPos - flanklen > RefSeqMap[chrom][0]:
+                snpflankseq = ''.join(RefSeqMap[chrom][(currentsnpPos - flanklen - RefSeqMap[chrom][0]):(currentsnpPos - RefSeqMap[chrom][0] + 1)])
+#                 print(currentsnpID,snpflankseq[flanklen],file=testfile)
+                self.dbvariant.operateDB("update","update "+tablename+" set context='"+snpflankseq[flanklen-1:flanklen+1]+"N' where chrID='"+ chrom + "' and snp_pos= "+str(currentsnpPos))
+                snpflankseq=snpflankseq[0:flanklen]+'N'
+            elif currentsnpPos - flanklen <= RefSeqMap[chrom][0]:
+                snpflankseq = ''.join(RefSeqMap[chrom][(currentsnpPos - RefSeqMap[chrom][0]):(currentsnpPos + flanklen - RefSeqMap[chrom][0] + 1)])
+#                 print(currentsnpID,snpflankseq[0],file=testfile)
+                self.dbvariant.operateDB("update","update "+tablename+" set context='N"+snpflankseq[0:2]+"' where chrID='"+ chrom + "' and snp_pos= "+str(currentsnpPos))
+                snpflankseq = 'N'+snpflankseq[1:flanklen+1]
+    def fillAncestral_context(self,archicpopVcfFile,chrom_lenlist,idxedreffilehandler,refindex,outfile,flanklen=3,toplevelsnptablename="ducksnp_toplevel"):
         """
-        abandon the snps which exist in archicpopVcfFile but absence in all others pop snp sets 
+        abandon the snps which exist in archicpopVcfFile but absence in all others pop snp sets （i.e toplevelSNPtable）
         """
         
+        if archicpopVcfFile!=None:
+            for vcffilename in archicpopVcfFile.keys():#only one
+    #             archicpop = VCFutil.VCF_Data(archicpopVcfFile)
+                archicpop=archicpopVcfFile[vcffilename][0]
+                archicpop_colname=re.search(r'[^/]*$',vcffilename).group(0)
+                archicpop_colname=re.sub(r"[^\w^\d]","_",archicpop_colname)            
+                print(archicpop_colname+"_alt",archicpop_colname+"_dep")
+                self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, toplevelsnptablename, archicpop_colname+"_alt", "char(128)", "default null"))
+                self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, toplevelsnptablename, archicpop_colname+"_dep", "char(128)", "default null"))  
+                print("callproc", "mysql_sp_add_column","done",time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
 
-        for vcffilename in archicpopVcfFile.keys():
-#             archicpop = VCFutil.VCF_Data(archicpopVcfFile)
-            archicpop=archicpopVcfFile[vcffilename][0]
-            archicpop_colname=re.search(r'[^/]*$',vcffilename).group(0)
-            archicpop_colname=re.sub(r"[^\w^\d]","_",archicpop_colname)            
-            print(archicpop_colname+"_alt",archicpop_colname+"_dep")
-            self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, toplevelsnptablename, archicpop_colname+"_alt", "char(128)", "default null"))
-            self.dbvariant.operateDB("callproc", "mysql_sp_add_column", data=(self.dbvariant_name, toplevelsnptablename, archicpop_colname+"_dep", "char(128)", "default null"))  
-            print("callproc", "mysql_sp_add_column","done",time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
-#             depthfile = Util.GATK_depthfile(depthFile, depthFile + ".index")
-#             print("Util.GATK_depthfile done",time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
-#             species_idx_list=[]
-#     #         species_idx = depthfile.title.index("Depth_for_" + archicpopNameindepthFile)
-#             for i in range(0,len(depthfile.title)):
-#                 if re.search(r""+archicpopNameindepthFile,depthfile.title[i])!=None:
-#                     species_idx_list.append(i)        
-#     后面程序需要调一下，考虑一下indvd 的 AF DP仿照Caculators里面的东西
-    #         totalChroms = self.dbgenome.operateDB("select","select count(*) from "+chromtable)[0][0]
-    #         for i in range(0,totalChroms,20):
-    #             currentsql="select * from " + chromtable+" order by chrlength desc limit "+str(i)+",20"
-    #             result=self.dbgenome.operateDB("select",currentsql)
-            lastposofdepthfilefp=0
-            for currentchrID in chromlist:
-                print(currentchrID+":",end="")
-            
-                archicpopSeqOfAChr={}
-                archicpopSeqOfAChr[currentchrID]=archicpop.getVcfListByChrom(currentchrID)
-                allsnpsInAchr=self.dbvariant.operateDB("select","select snp_pos,alt_base from "+toplevelsnptablename+" where chrID='"+currentchrID+"'")
-                updatesql_statments=[]
-                for snp in allsnpsInAchr:
+        for currentchrID,chromlen in chrom_lenlist:
+            startpostocollecteSNP=2;endpostocollectSNP=chromlen;archicpopSeqOfAChr={}
+            outgroupState=contextState=""# any space in it " " is wrong
+            print(currentchrID+":",end="")
+            if archicpopVcfFile!=None:archicpopSeqOfAChr[currentchrID]=archicpop.getVcfListByChrom(currentchrID)
+#             allsnpsInAchr=self.dbvariant.operateDB("select","select snp_pos,alt_base from "+toplevelsnptablename+" where chrID='"+currentchrID+"'")
+            snps = self.dbvariant.operateDB("select", "select snp_pos,ref_base,alt_base from " + toplevelsnptablename + " where chrID='" + currentchrID + "' and snp_pos>= " + str(startpostocollecteSNP) + " and snp_pos<=" + str(endpostocollectSNP))
+            if idxedreffilehandler!=None and refindex:RefSeqMap = Util.getRefSeqBypos_faster(idxedreffilehandler, refindex, currentchrID, startpostocollecteSNP-flanklen, endpostocollectSNP+flanklen,chromlen)
+            for snp in snps:
+                currentsnpPos = snp[0];ALT=snp[2]
+                if len(snp[1]) != 1 :
+            #                        print(snp[4])
+                    continue# skip indel       
+                if  idxedreffilehandler!=None and refindex: #deal with ancestral   
+                    currentsnpID=currentchrID+"_"+str(snp[0])+":"+snp[1]
+                    if currentsnpPos + flanklen <= RefSeqMap[currentchrID][0] + len(RefSeqMap[currentchrID]) - 1 and currentsnpPos - flanklen > RefSeqMap[currentchrID][0] :
+                        snpflankseq = ''.join(RefSeqMap[currentchrID][(currentsnpPos - flanklen - RefSeqMap[currentchrID][0]):(currentsnpPos + flanklen - RefSeqMap[currentchrID][0] + 1)])
+                        contextState="  context='"+snpflankseq[flanklen-1:flanklen+2]+"' ,"# where chrID='"+ currentchrID + "' and snp_pos= "+str(currentsnpPos))
+                        snpflankseq=snpflankseq[0:flanklen]+'N'+snpflankseq[flanklen+1:]
+                    elif currentsnpPos <= RefSeqMap[currentchrID][0] + len(RefSeqMap[currentchrID]) - 1 and currentsnpPos - flanklen > RefSeqMap[currentchrID][0]:
+                        snpflankseq = ''.join(RefSeqMap[currentchrID][(currentsnpPos - flanklen - RefSeqMap[currentchrID][0]):(currentsnpPos - RefSeqMap[currentchrID][0] + 1)])
+        #                 print(currentsnpID,snpflankseq[flanklen],file=testfile)
+                        contextState="  context='"+snpflankseq[flanklen-1:flanklen+1]+"N' ,"# where chrID='"+ currentchrID + "' and snp_pos= "+str(currentsnpPos))
+                        snpflankseq=snpflankseq[0:flanklen]+'N'
+                    elif currentsnpPos - flanklen <= RefSeqMap[currentchrID][0]:
+                        snpflankseq = ''.join(RefSeqMap[currentchrID][(currentsnpPos - RefSeqMap[currentchrID][0]):(currentsnpPos + flanklen - RefSeqMap[currentchrID][0] + 1)])
+        #                 print(currentsnpID,snpflankseq[0],file=testfile)
+                        contextState=" context='N"+snpflankseq[0:2]+"' ,"# where chrID='"+ currentchrID + "' and snp_pos= "+str(currentsnpPos))
+                        snpflankseq = 'N'+snpflankseq[1:flanklen+1]
+    
+                    print(">" + currentsnpID + "\n" + snpflankseq, end='\n', file=outfile)
+                if   archicpopVcfFile!=None:#deal with context
                     snp_pos=int(snp[0])
-                    ALT=snp[1]
+                    ALT=snp[2]
                     low=0
                     high=len(archicpopSeqOfAChr[currentchrID])-1
                     while low <=high:
@@ -730,20 +738,12 @@ class AncestralAlleletabletools():
                             ACGTdep=samfile.count_coverage(currentchrID,snp_pos-1,snp_pos)
                         for dep in ACGTdep:
                             sum_depth+=dep[0]
-                        if sum_depth<4:
-                            popsdata_alt=ALT
-                            popsdata_dep="no covered"
-                        else:
-                            popsdata_alt=ALT
-                            popsdata_dep=str(sum_depth) + ",0"
 
-                    updatesql_statments.append("update " + toplevelsnptablename + " set "+archicpop_colname+"_alt = '" + popsdata_alt+"',"+archicpop_colname+"_dep= '"+popsdata_dep+"' where chrID="+"'"+currentchrID+"' and snp_pos="+str(snp[0]))
-                
-                if  updatesql_statments:
-                    print("updatesql_statments",len(updatesql_statments))
-                    for update_statments in updatesql_statments:
-                        self.session.execute(update_statments)
-                        self.session.commit()
+                        popsdata_alt=ALT
+                        popsdata_dep=str(sum_depth) + ",0"
+                    outgroupState=archicpop_colname+"_alt = '" + popsdata_alt+"',"+archicpop_colname+"_dep= '"+popsdata_dep+"' ,"                              
+                self.dbvariant.operateDB("update","update " + toplevelsnptablename +" set  " +(outgroupState+contextState).strip(",")+" where chrID="+"'"+currentchrID+"' and snp_pos="+str(snp[0]))
+
 #                     self.dbvariant.operateDB("update", *updatesql_statments)
     def leftjoinSelectedTables(self,chromlist,outtable_file_Name,depthfilenames,vcftables=[],toplevelsnptable="ducksnp_toplevel",drop=False):
         depthobjmap={};lastposofdepthfilefp={}#
