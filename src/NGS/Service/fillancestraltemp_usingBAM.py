@@ -75,8 +75,9 @@ if __name__ == '__main__':
         
         
     ancestralalleletabletools.fillAncestral_context(archicpopVcfFile=vcfnameKEY_vcfobj_pyBAMfilesVALUE,chrom_lenlist=chrom_lenlist,idxedreffilehandler=duckrefhandler, refindex=duckrefindex,outfile=outfile, flanklen=flanklen,toplevelsnptablename=toplevelsnptablename)
-    outfile.close()
-    duckrefhandler.close()
+    if options.ref:
+        outfile.close()
+        duckrefhandler.close()
     chromlistfile.close()
 
 #         if options.depthfile!=None:

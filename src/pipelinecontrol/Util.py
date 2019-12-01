@@ -4,7 +4,7 @@ Created on 2014-11-8
 
 @author: liurui
 '''
-import copy
+import copy,chardet
 from multiprocessing.dummy import Pool
 import os, re
 import string
@@ -65,33 +65,36 @@ def upTodownTravelDir(rootDir, OperatorWithData, datadepth=9999, Interceptor_dep
     """
        first time if  Interceptor_depth is 0, interceptdirs should be [].
     """
+    rootDir=rootDir.encode().decode('utf-8');rootDirnotchange=rootDirnotchange.encode().decode("utf-8")
+    print(rootDirnotchange,chardet.detect(str.encode(rootDirnotchange)))
     print(Interceptor_depth,collection_depth)
     if Interceptor_depth==0 or collection_depth==0:
         if Interceptor_depth==0:
-            if interceptdirs!=[] and re.search(r"" + rootDirnotchange + "(/.*?){" + str(Interceptor_depth_notchange-1) + "}[/]([^/]+)", rootDir)==None:
-                print(rootDir,interceptdirs,"is not the path a")
-                return
-            elif interceptdirs!=[] and  re.search(r"" + rootDirnotchange + "(/.*?){" + str(Interceptor_depth_notchange-1) + "}[/]([^/]+)", rootDir).group(2) not in interceptdirs:
-                print(rootDir,interceptdirs,"is not the path b")
-                return            
+            searchobj=re.search(r"" + rootDirnotchange + "(/.*?){" + str(Interceptor_depth_notchange-1) + "}[/]([^/]+)", rootDir)
+            if interceptdirs!=[] and (searchobj !=None and( searchobj.group(2) not in interceptdirs)) or searchobj==None:
+                print(type(rootDir),type(interceptdirs[0]),len(rootDirnotchange),len(interceptdirs[0]),interceptdirs[0] in rootDir,rootDirnotchange,Interceptor_depth_notchange)
+                print(rootDir,interceptdirs,"is not in the selected folder")
+                return 
         else:
             Interceptor_depth-=1
         if collection_depth == 0:
+            print("collecting...")
             newcmdline=OperatorWithData.process(rootDir, datadepth, curdepth,(Interceptor_depth,interceptdirs,Interceptor_depth_notchange))
             return
         else:
             collection_depth-=1
     else:
         collection_depth-=1;Interceptor_depth-=1
-    print("recursion",rootDir,Interceptor_depth,">=0",collection_depth,">=0")
+    print("recursion",rootDir,Interceptor_depth,">=0",collection_depth,">=0",os.listdir(path=rootDir.strip()))
     
     for elem in os.listdir(path=rootDir):
-        path = rootDir + "/" + elem
+        path = os.path.join(rootDir.strip(),elem.strip())
         if (not os.path.isdir(path)):
-            print(path,"is not the file")
+            print(path,"is not the folder")
         else:
             upTodownTravelDir(path, OperatorWithData, datadepth, Interceptor_depth, curdepth+1,collection_depth,interceptdirs,rootDirnotchange,Interceptor_depth_notchange)
-
+    else:
+        print(rootDir,"recursion over os.listdir(path=rootDir)",os.listdir(path=rootDir))
     
 class OperatorWithData():
     def __init__(self, scriptsstoredir="F:/work/pipelinecontrol/scripts"):
@@ -127,7 +130,7 @@ class OperatorWithData_webservice(OperatorWithData):
 #         self.Dtag=Dtag
 #         self.scriptcontext=re.search(r"([\s\S]*(\n)*)cmdline=.*",scriptcontent).group(1)
         self.datadepthequalcollectdepth=True
-        self.inputdatapath=inputdatapath.rstrip("/")#re.search(r"(\n)*inputdatafilesrootpath=\s*(.*)",self.scriptcontext).group(2).rstrip("/")
+        self.inputdatapath=inputdatapath.rstrip("/").encode().decode("utf-8").strip()#re.search(r"(\n)*inputdatafilesrootpath=\s*(.*)",self.scriptcontext).group(2).rstrip("/")
         self.cmdline=cmdline#re.search(r"(.*(\n)*)cmdline=\s*(.*)",scriptcontent).group(3)
 #         if self.Dtag!=None and re.search(r"\${Dtag}",self.cmdline)!=None:
 #             self.cmdline,no_of_Dtags=re.subn(r"\${Dtag}",self.Dtag,self.cmdline)

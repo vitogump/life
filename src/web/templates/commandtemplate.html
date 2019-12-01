@@ -206,8 +206,8 @@ function setText(obj)
 <input type="text" class="taginput2n"  value="+该字段替换为数据上级目录名+" disabled/>
 <input type="text" class="taginput3n" id="taginput4" value="'"/>
 {#% {{ wtf.form_field(form.iomode, id="iomode") }} %#}
-{{wtf.form_field(form.tagtoFolderlevel,id="tagtxtName" )}}<br /><br />
-{{form.mem.label}}<!--<input type="text">--> {{form.mem}} &nbsp&nbsp
+{{wtf.form_field(form.tagtoFolderlevel,id="tagtxtName" )}}<p>paste the No. of folder name from the bottom</p><br /><br />
+{{form.mem.label}}<!--<input type="text">--> {{form.mem}} &nbsp&nbsp<b>empty to use shell in terminal</b>
 <p style="font-family:times;color:red"><b>控制软件及参数部分结束</b></p>
 <br/>
 {{form.outputpath.label}}&nbsp&nbsp&nbsp<!--<input type="text">--> {{form.outputpath}}<br />

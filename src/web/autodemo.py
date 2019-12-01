@@ -16,4 +16,4 @@ def get_host_ip():
         s.close()
     return ip
 if __name__ == '__main__':
-    web.run(host="0.0.0.0",port=8086,debug=False)
+    web.run(host="0.0.0.0",port=9090,debug=False)

@@ -61,13 +61,13 @@ def configsoftware():
         tagtofolder=int(form.tagtoFolderlevel.data) if form.tagtoFolderlevel.data else 0
         if "Checkbox1" in request.form:
             selectfolderlevel=form.filteredforderlevel.data
-            print("request.form Checkbox1")
+            print("request.form Checkbox1 seletecfolderlevel",selectfolderlevel)
         else:
             selectfolderlevel="0"
 #         return form.tag1part1.data+form.tag1part2.data+form.tag2part1.data+form.tag2part2.data+form.datadepth.data+form.projectpath.data+"<br />"+form.outputpath.data+form.outputperfix.data+"<br />"+"<br />".join(form.filteredforders.data)
         if form.projectpath.data.strip('/').strip()!="":
             ppl=re.split(r'[\\]',form.projectpath.data.strip('/'))
-            print("ppl",ppl)
+            print("type form.projectpath.data",type(form.projectpath.data),"ppl",ppl)
             for e in ppl:
                 orde=0
                 for c in e:
@@ -106,6 +106,7 @@ def configsoftware():
         currentUstr=scriptsstorediruniq.replace(scriptdir,"").strip("/").replace(os.sep,"_")
         print("currentUstr",currentUstr,"return url:","/jobmoinitor/"+currentUstr)
 #         Service.jobminitor(currentUstr)#should store in session
+
         return redirect("/jobmoinitor/"+currentUstr)
 #         Service.callsh_updateDB(scriptsstorediruniq,NumOfThread=tt,"purposeofthiscommand")
 
