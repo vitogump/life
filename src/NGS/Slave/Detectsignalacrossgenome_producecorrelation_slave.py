@@ -19,6 +19,8 @@ parser.add_option("-c","--chromlistfilename",dest="chromlistfilename")
 parser.add_option("-n","--numberofindvdoftargetpop_todividintobin",dest="numberofindvdoftargetpop_todividintobin",default="o",help="conflit with correlationfile")
 parser.add_option("-o","--outfileprewithpath",dest="outfileprewithpath")
 (options, args) = parser.parse_args()
+
+seqerrorrate=0.008;outgidx=7;outg2idx=9
 def make_freq_xaxisKEY_yaxisseqVALUERelation(a):
     chromlistfilename=a[0];topleveltablename=a[1];targetpopvcffile_withdepthconfig=a[2];refpopvcffile_withdepthconfig=a[3];numberofindvdoftargetpop_todividintobin=int(a[4])
     mindepthtojudefixed=20
@@ -97,10 +99,10 @@ def make_freq_xaxisKEY_yaxisseqVALUERelation(a):
                 print(currentchrID,curpos,"snp not find in db,skip")
                 continue
             else:#judge the ancenstrall allele
-                fanyadepthlist=re.split(r",",snp[0][9])
-                if len(fanyadepthlist)==2 and int(fanyadepthlist[1]) >=mindepthtojudefixed and fanyadepthlist[0].strip()=="0":
+                fanyadepthlist=re.split(r",",snp[0][outgidx]);taihudepthlist=re.split(r",",snp[0][outg2idx])
+                if fanyadepthlist and taihudepthlist and (fanyadepthlist[0].strip()=="0" and int(fanyadepthlist[1]) >=mindepthtojudefixed and int(taihudepthlist[0])<int(taihudepthlist[1])*seqerrorrate or (taihudepthlist[0].strip()=="0" and int(taihudepthlist[1])>=mindepthtojudefixed and int(fanyadepthlist[0])<int(fanyadepthlist[1])*seqerrorrate) ):
                     A_base_idx=1
-                elif len(fanyadepthlist)==2 and int(fanyadepthlist[0])>=mindepthtojudefixed and fanyadepthlist[1].strip()=="0":
+                elif fanyadepthlist and taihudepthlist and( fanyadepthlist[1].strip()=="0" and int(fanyadepthlist[0])>=mindepthtojudefixed and int(taihudepthlist[1])<int(taihudepthlist[0])*seqerrorrate or (taihudepthlist[1].strip()=="0" and int(taihudepthlist[0])>=mindepthtojudefixed and int(fanyadepthlist[1])<int(fanyadepthlist[0])*seqerrorrate)):
                     A_base_idx=0
                 else:
                     print("skip snp",snp[0][1],snp[0][7:])

@@ -6,6 +6,7 @@ from multiprocessing.dummy import Pool
 import pickle
 import src.NGS.BasicUtil.DBManager as dbm
 import config
+from config import vcfdbname
 
 '''
 Created on 2013-6-30
@@ -16,6 +17,7 @@ ip=config.ip
 username=config.username
 password=config.password
 webdbname=config.webdbname
+vcfdbname=config.vcfdbname
 def alinmultPopSnpPos(vcfMaplist,jointmode="i"):
     """input:
     two or more map fomart like this [chrNo:[(pos,REF,ALT,INFO,FORMAT,sample,...),(pos,REF,ALT,INFO,FORMAT,sample,...),,,,,],{chrNo:[]},,,,,,]

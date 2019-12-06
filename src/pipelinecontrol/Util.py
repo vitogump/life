@@ -65,14 +65,13 @@ def upTodownTravelDir(rootDir, OperatorWithData, datadepth=9999, Interceptor_dep
     """
        first time if  Interceptor_depth is 0, interceptdirs should be [].
     """
-    rootDir=rootDir.encode().decode('utf-8');rootDirnotchange=rootDirnotchange.encode().decode("utf-8")
-    print(rootDirnotchange,chardet.detect(str.encode(rootDirnotchange)))
+    rootDir=rootDir.encode().decode('utf-8').strip();rootDirnotchange=rootDirnotchange.encode().decode("utf-8")
+    print(rootDir,rootDirnotchange,chardet.detect(str.encode(rootDirnotchange)))
     print(Interceptor_depth,collection_depth)
     if Interceptor_depth==0 or collection_depth==0:
         if Interceptor_depth==0:
             searchobj=re.search(r"" + rootDirnotchange + "(/.*?){" + str(Interceptor_depth_notchange-1) + "}[/]([^/]+)", rootDir)
-            if interceptdirs!=[] and (searchobj !=None and( searchobj.group(2) not in interceptdirs)) or searchobj==None:
-                print(type(rootDir),type(interceptdirs[0]),len(rootDirnotchange),len(interceptdirs[0]),interceptdirs[0] in rootDir,rootDirnotchange,Interceptor_depth_notchange)
+            if interceptdirs!=[] and ((searchobj !=None and( searchobj.group(2) not in interceptdirs)) or searchobj==None):
                 print(rootDir,interceptdirs,"is not in the selected folder")
                 return 
         else:
@@ -88,7 +87,7 @@ def upTodownTravelDir(rootDir, OperatorWithData, datadepth=9999, Interceptor_dep
     print("recursion",rootDir,Interceptor_depth,">=0",collection_depth,">=0",os.listdir(path=rootDir.strip()))
     
     for elem in os.listdir(path=rootDir):
-        path = os.path.join(rootDir.strip(),elem.strip())
+        path = os.path.join(rootDir.strip(),elem.strip());print(rootDir,path)
         if (not os.path.isdir(path)):
             print(path,"is not the folder")
         else:
@@ -167,8 +166,8 @@ class OperatorWithData_webservice(OperatorWithData):
                 if not os.path.exists(outputtuple[0] + pathToOutputdata_createdir):
                     os.makedirs(outputtuple[0] + pathToOutputdata_createdir)
         else:
-            print(curdepth, datadepth, "OperatorWithData_mode1 error")
-            exit(-1)
+            print("what's wrong with your parameter? does the collect level lower than intercept level?",curdepth, datadepth, "OperatorWithData_mode1 error")
+            return -1
         for outputtuple in self.outputlist:
             outputpath=re.search(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}",newcmdline).group(1)
             outsuffix=re.search(r"\${output=\s*("+outputtuple[0]+")\|suffix=("+outputtuple[1]+")}",newcmdline).group(2)

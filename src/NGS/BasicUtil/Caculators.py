@@ -11,7 +11,8 @@ import re, copy, math,  time, pysam
 import numpy as np
 from NGS.BasicUtil import VCFutil
 
-
+seqerrorrate=0.008
+outgidx=7;outg2idx=9
 class Caculator():
     def __init__(self):
         #every Caculator which need two or more vcf have the follow two variable
@@ -1147,17 +1148,17 @@ class Caculate_S_ObsExp_difference(Caculator):
         if len(T[1]) != len(T[2]) or len(T[2])!=1  or len(T[2])!=1:
             return
         snp=self.dbvariantstoolstojudgeancestral.operateDB("select","select * from "+self.topleveltablejudgeancestralname+" where chrID='"+self.currentchrID+"' and snp_pos='"+str(T[0])+"'")
-        if not snp or snp[0][9]==None or snp[0][5]==None:#needed info of SNPs are absent, snp[0][9] and snp[0][5] are dependent on the fellow code segment
+        if not snp or snp[0][outgidx]==None or snp[0][5]==None:#needed info of SNPs are absent, snp[0][9] and snp[0][5] are dependent on the fellow code segment
 #             print(self.currentchrID,T,"snp not find,skip")
 #             print("append in to alignedSNP_absentinfo",snp,T)
             self.alignedSNP_absentinfo[self.currentchrID].append(T)
             return
         else:
             A_base_idx=100
-            fanyadepthlist=re.split(r",",snp[0][9])
-            if len(fanyadepthlist)==2 and int(fanyadepthlist[1]) >=self.mindepthtojudefixed and fanyadepthlist[0].strip()=="0":
+            fanyadepthlist=re.split(r",",snp[0][outgidx]);taihudepthlist=re.split(r",",snp[0][outg2idx])
+            if fanyadepthlist and taihudepthlist and (fanyadepthlist[0].strip()=="0" and int(fanyadepthlist[1]) >=self.mindepthtojudefixed and int(taihudepthlist[0])<int(taihudepthlist[1])*seqerrorrate or (taihudepthlist[0].strip()=="0" and int(taihudepthlist[1])>=self.mindepthtojudefixed and int(fanyadepthlist[0])<fanyadepthlist[1]*seqerrorrate) ):
                 A_base_idx=1
-            elif len(fanyadepthlist)==2 and int(fanyadepthlist[0])>=self.mindepthtojudefixed and fanyadepthlist[1].strip()=="0":
+            elif fanyadepthlist and taihudepthlist and( fanyadepthlist[1].strip()=="0" and int(fanyadepthlist[0])>=self.mindepthtojudefixed and int(taihudepthlist[1])<int(taihudepthlist[0])*seqerrorrate or (taihudepthlist[1].strip()=="0" and int(taihudepthlist[0])>=self.mindepthtojudefixed and int(fanyadepthlist[1])<fanyadepthlist[0]*seqerrorrate)):
                 A_base_idx=0
             else:
 #                 print("skip snp",snp[0][1],snp[0][7],snp[0][9],snp[0][11],snp[0][13])
@@ -1267,7 +1268,7 @@ class Caculate_S_ObsExp_difference(Caculator):
             return
         for a,b in sorted(self.freq_xaxisKEY_yaxisVALUERelation.keys()):
             if target_DAF>a and target_DAF<=b:
-                self.CEXP。append(self.freq_xaxisKEY_yaxisVALUERelation[(a,b)])
+                self.CEXP.append(self.freq_xaxisKEY_yaxisVALUERelation[(a,b)])
                 self.obsseq.append(rer_DAF_sum/countedAF)
                 break
         

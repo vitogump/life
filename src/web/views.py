@@ -101,9 +101,10 @@ def configsoftware():
 #         os.system("cd "+scriptsstorediruniq)
         os.system("chmod +x "+scriptsstorediruniq+"/*.sh")
         qsubMorNot=" " if not form.mem.data.strip() else (" -m "+form.mem.data)
-        if softwareconfig.strip()=="rm" or softwareconfig.strip()=="mv": exit(-1)
-        os.system("nohup "+Service.aaa.pathtoPython+" ../pipelinecontrol/JobTracker.py -d "+scriptsstorediruniq+" -t "+str(tt)+qsubMorNot+" -p "+ msg+" &")
         currentUstr=scriptsstorediruniq.replace(scriptdir,"").strip("/").replace(os.sep,"_")
+        if softwareconfig.strip()=="rm" or softwareconfig.strip()=="mv": return ('mv rm  command not execute,please manually execute; redirect("/jobmoinitor/"+currentUstr)'+currentUstr)
+        os.system("nohup "+Service.aaa.pathtoPython+" ../pipelinecontrol/JobTracker.py -d "+scriptsstorediruniq+" -t "+str(tt)+qsubMorNot+" -p "+ msg+" &")
+        
         print("currentUstr",currentUstr,"return url:","/jobmoinitor/"+currentUstr)
 #         Service.jobminitor(currentUstr)#should store in session
 

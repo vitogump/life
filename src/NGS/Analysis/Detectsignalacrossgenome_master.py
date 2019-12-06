@@ -18,16 +18,16 @@ mindeptojudgefix=20
 parser = OptionParser()
 # parser.add_option("-c", "--chromtable", dest="chromtable",# action="callback",type="string",callback=useoptionvalue_previous2,
 #                   help="write report to FILE")
-parser.add_option("-T","--targetpopvcffile_withdepth",dest="targetpopvcffile_withdepth",action="append",help="regard as P1")
+parser.add_option("-T","--targetpopvcffile_withdepth",dest="targetpopvcffile_withdepth",action="append",help="regard as P1;early or FST use as T")
 parser.add_option("-U", "--P2popvcfconfig", dest="P2popvcfconfig", action="append", help="treat as P2")
 parser.add_option("-V", "--P3popvcfconfig", dest="P3popvcfconfig", action="append", help="treat as P3")
-parser.add_option("-R","--refpopvcffile_withdepth",dest="refpopvcffile_withdepth",action="append",help="regard as O")
+parser.add_option("-R","--refpopvcffile_withdepth",dest="refpopvcffile_withdepth",action="append",help="regard as O; early or FST use as R")
 parser.add_option("-t","--topleveltablejudgeancestral",dest="topleveltablejudgeancestral",help="assigned only if -p early")
 parser.add_option("-w","--winwidth",dest="winwidth",help="default infile1_infile2")#
 parser.add_option("-s","--slideSize",dest="slideSize",help="default infile2_infile1")#
 parser.add_option("-c","--chromlistfilename",dest="chromlistfilename",action="append",default=[])
 parser.add_option("-b","--bedlikefile",dest="bedlikefile",help="filename no_to_split",nargs=2,default=None)
-parser.add_option("-n","--numberofindvdoftargetpop_todividintobin",dest="numberofindvdoftargetpop_todividintobin",default="o",help="conflit with correlationfile")
+parser.add_option("-n","--numberofindvdoftargetpop_todividintobin",dest="numberofindvdoftargetpop_todividintobin",default="o",help="conflit with correlationfile; for early only")
 parser.add_option("-o","--outfileprewithpath",dest="outfileprewithpath")
 parser.add_option("-C","--correlationfile",dest="correlationfile",default=None,help="conflit with numberofindvdoftargetpop_todividintobin")
 parser.add_option("-p","--typeOfcalculate",dest="typeOfcalculate",help="early,pairfst,pbs,lsbl,is")
@@ -59,6 +59,7 @@ def runSlave_makecorrelationfile(a):
     for vcfconfig in refpopvcffile_config[:]:
         command+=(" -R "+vcfconfig)
     chrlistfilewithoutpath=re.search(r"[^/]*$",chromlistfilename).group(0)
+    print(command+" -n "+numberofindvdoftargetpop_todividintobin+" -o "+outfileprewithpath+" >>"+outfileprewithpath+chrlistfilewithoutpath+".runSlave_makecorrelationfile.out 2>&1")
     b=os.system(command+" -n "+numberofindvdoftargetpop_todividintobin+" -o "+outfileprewithpath+" >>"+outfileprewithpath+chrlistfilewithoutpath+".runSlave_makecorrelationfile.out 2>&1")
 def runSlave_slidewin(a):
     typeOfcalculate=a[1];targetpopvcffile_config=a[2];refpopvcffile_config=a[3];winwidth=a[4];slideSize=a[5];outfileprewithpath=a[6];masterpid=a[7]
