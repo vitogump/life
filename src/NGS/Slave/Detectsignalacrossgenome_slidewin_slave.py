@@ -4,9 +4,9 @@ Created on 2015-8-21
 @author: liurui
 '''
 from optparse import OptionParser
-import re, numpy, fractions, copy, os, pysam
+import re, numpy, fractions, copy, os, pysam,config
 from NGS.Service import Ancestralallele
-from src.NGS.BasicUtil import *
+from NGS.BasicUtil import *
 import NGS.BasicUtil.DBManager as dbm
 
 
@@ -47,7 +47,7 @@ if __name__ == '__main__':
             chromlistOrBedRegionList.append((reclist[0].strip(), (int(reclist[1]), int(reclist[2]))))
         chrlistfilewithoutpath = re.search(r"[^/]*$", options.bedlikefile).group(0)
     else:
-        print("options.chromlistfilename and options.chromlistfilename conflict")
+        print("options.chromlistfilename and options.bedlikefile conflict")
 #     genomedbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname)
     print(chromlistOrBedRegionList)
     if options.typeOfcalculate == "early":
@@ -56,8 +56,8 @@ if __name__ == '__main__':
         else:
             aaaaaaa = options.bedlikefile
         flankseqfafilename = aaaaaaa + str(os.getpid()) + "snpflankseq.fa"
-        dbvariantstools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.vcfdbname)
-        dynamicIU_toptable_obj = Ancestralallele.dynamicInsertUpdateAncestralContext(dbvariantstools, Util.beijingreffa, options.topleveltablejudgeancestral)
+        dbvariantstools = dbm.DBTools(config.ip, config.username, config.password, config.vcfdbname)
+        dynamicIU_toptable_obj = Ancestralallele.dynamicInsertUpdateAncestralContext(dbvariantstools, config.beijingreffa, options.topleveltablejudgeancestral)
         obsexpcaculator = Caculators.Caculate_S_ObsExp_difference(mindeptojudgefix, options.targetpopvcfconfig, options.refpopvcffileconfig, dbvariantstools, options.topleveltablejudgeancestral, options.outfileprewithpath)
         obsexpcaculator.dynamicIU_toptable_obj = dynamicIU_toptable_obj
         obsexpcaculator.flankseqfafile = open(flankseqfafilename, "w")
@@ -120,8 +120,8 @@ if __name__ == '__main__':
     aaaa.close()
     win = Util.Window()
     obsexpsignalmapbychrom = {}
-    genomedbtools = dbm.DBTools(Util.ip, Util.username, Util.password, Util.genomeinfodbname) 
-    mysqlchromtable = Util.pekingduckchromtable
+    if options.bedlikefile != None :genomedbtools = dbm.DBTools(config.ip, config.username, config.password, config.genomeinfodbname);mysqlchromtable = config.pekingduckchromtable
+    
     for currentchrID, currentchrLenOrRegion in chromlistOrBedRegionList:
         if isinstance(currentchrLenOrRegion, tuple):
             currentchrLen = int(genomedbtools.operateDB("select", "select * from " + mysqlchromtable + " where chrID='" + currentchrID + "' ")[0][1])
@@ -188,7 +188,7 @@ if __name__ == '__main__':
                     if obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][3] == "NA":
                         print(currentchrID + "\t" + str(i) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][0]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][1]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][2]) + "\t" + "NA" + "\t" + "NA", file=outfile)
                     else:
-    #                     zS=(obsexpsignalmapbychrom[currentchrID][i][3][0]-exception)/std1
+                        print("winvalue is the correct value,zvalue is the not very appropriate value I used before")
                         print(currentchrID + "\t" + str(i) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][0]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][1]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][2]) + "\t" + '%.15f' % (obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][3][0]) + "\t" + '%.12f' % (obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][3][1]), file=outfile)
                 elif options.typeOfcalculate == "pairfst" or options.typeOfcalculate == "dxy":
                     if obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][3] == "NA":

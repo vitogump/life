@@ -1148,7 +1148,7 @@ class Caculate_S_ObsExp_difference(Caculator):
         if len(T[1]) != len(T[2]) or len(T[2])!=1  or len(T[2])!=1:
             return
         snp=self.dbvariantstoolstojudgeancestral.operateDB("select","select * from "+self.topleveltablejudgeancestralname+" where chrID='"+self.currentchrID+"' and snp_pos='"+str(T[0])+"'")
-        if not snp or snp[0][outgidx]==None or snp[0][5]==None:#needed info of SNPs are absent, snp[0][9] and snp[0][5] are dependent on the fellow code segment
+        if not snp or  snp[0][outgidx]==None or snp[0][outg2idx]==None or snp[0][5]==None:#needed info of SNPs are absent, snp[0][9] and snp[0][5] are dependent on the fellow code segment
 #             print(self.currentchrID,T,"snp not find,skip")
 #             print("append in to alignedSNP_absentinfo",snp,T)
             self.alignedSNP_absentinfo[self.currentchrID].append(T)
@@ -1156,9 +1156,9 @@ class Caculate_S_ObsExp_difference(Caculator):
         else:
             A_base_idx=100
             fanyadepthlist=re.split(r",",snp[0][outgidx]);taihudepthlist=re.split(r",",snp[0][outg2idx])
-            if fanyadepthlist and taihudepthlist and (fanyadepthlist[0].strip()=="0" and int(fanyadepthlist[1]) >=self.mindepthtojudefixed and int(taihudepthlist[0])<int(taihudepthlist[1])*seqerrorrate or (taihudepthlist[0].strip()=="0" and int(taihudepthlist[1])>=self.mindepthtojudefixed and int(fanyadepthlist[0])<fanyadepthlist[1]*seqerrorrate) ):
+            if fanyadepthlist and taihudepthlist and (fanyadepthlist[0].strip()=="0" and int(fanyadepthlist[1]) >=self.mindepthtojudefixed and int(taihudepthlist[0])<int(taihudepthlist[1])*seqerrorrate or (taihudepthlist[0].strip()=="0" and int(taihudepthlist[1])>=self.mindepthtojudefixed and int(fanyadepthlist[0])<int(fanyadepthlist[1])*seqerrorrate) ):
                 A_base_idx=1
-            elif fanyadepthlist and taihudepthlist and( fanyadepthlist[1].strip()=="0" and int(fanyadepthlist[0])>=self.mindepthtojudefixed and int(taihudepthlist[1])<int(taihudepthlist[0])*seqerrorrate or (taihudepthlist[1].strip()=="0" and int(taihudepthlist[0])>=self.mindepthtojudefixed and int(fanyadepthlist[1])<fanyadepthlist[0]*seqerrorrate)):
+            elif fanyadepthlist and taihudepthlist and( fanyadepthlist[1].strip()=="0" and int(fanyadepthlist[0])>=self.mindepthtojudefixed and int(taihudepthlist[1])<int(taihudepthlist[0])*seqerrorrate or (taihudepthlist[1].strip()=="0" and int(taihudepthlist[0])>=self.mindepthtojudefixed and int(fanyadepthlist[1])<int(fanyadepthlist[0])*seqerrorrate)):
                 A_base_idx=0
             else:
 #                 print("skip snp",snp[0][1],snp[0][7],snp[0][9],snp[0][11],snp[0][13])
@@ -1280,15 +1280,17 @@ class Caculate_S_ObsExp_difference(Caculator):
         if self.alignedSNP_absentinfo[self.currentchrID]!=[]:
             self.dynamicIU_toptable_obj.insertorUpdatetopleveltable(self.alignedSNP_absentinfo,self.flankseqfafile,50)
             No_Of_snpT=len(self.alignedSNP_absentinfo[self.currentchrID])
+            print("before process",self.CEXP)
             for whatever in range(No_Of_snpT):
                 snpT=self.alignedSNP_absentinfo[self.currentchrID].pop(0)
 #                     print(snpT,len(self.alignedSNP_absentinfo[chrom]))
-                print(snpT[0:3],"process",len(self.alignedSNP_absentinfo[self.currentchrID]),self.CEXP,self.COUNT)
+                print(snpT[0:3],"process",len(self.alignedSNP_absentinfo[self.currentchrID]),self.COUNT)
                 self.process(snpT)
-            print("length of snpT",len(self.alignedSNP_absentinfo[self.currentchrID]))      
+            print("length of snpT",len(self.alignedSNP_absentinfo[self.currentchrID]))  
+            print("processed",self.CEXP)    
         S1=0
         S2="NA"
-        for i in len(self.obsseq):
+        for i in range(len(self.obsseq)):
             try:
                 S1+=abs(math.log(self.obsseq[i]/self.CEXP[i]))
             except:
@@ -1302,8 +1304,8 @@ class Caculate_S_ObsExp_difference(Caculator):
         self.CEXP=[]
         self.obsseq=[]
         self.CfixedDerived=0
-
-                
+        """S1 is the corrected value, S2 is the not very appropriate value I used before 
+        """       
         if S1==0 and S2=="NA" or noofsnp<self.minsnps:
             return noofsnp,"NA"
         return noofsnp,[S1,S2]

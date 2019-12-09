@@ -132,7 +132,7 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
                     if chrom in  self.mapofSNPrecsForeachVCFpop_mapBYchrom:
                         pass
                     else:
-                        self.getRECsforCHR(chrom)
+                        self.getRECsforCHR(chrom,self.currentchrLen)
                     SNPrec_of_one_chrom_invcf=self.mapofSNPrecsForeachVCFpop_mapBYchrom[chrom][vcfname]
                     """state: updatesql_statement= update toplevelsnptablename set processed_vcfname1_alt=%s,processed_vcfname1_dep=%s,
                             insertsql_statement=insert into toplevelsnptablename (chrID,snp_pos,snpID,ref_base,alt_base,context,processed_vcfname_m_alt,processed_vcfname_m_dep,

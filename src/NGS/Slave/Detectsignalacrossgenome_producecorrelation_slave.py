@@ -6,7 +6,7 @@ Created on 2015-8-21
 import fractions, re, os, copy,pysam
 from optparse import OptionParser
 from os.path import sys
-
+import config
 from NGS.BasicUtil import Util, VCFutil
 import NGS.BasicUtil.DBManager as dbm
 
@@ -95,8 +95,8 @@ def make_freq_xaxisKEY_yaxisseqVALUERelation(a):
                 continue
             curpos=int(snp_aligned[0])
             snp=dbvariantstools.operateDB("select","select * from "+topleveltablename+" where chrID='"+currentchrID+"' and snp_pos="+str(curpos)+"")
-            if not snp or snp==0:
-                print(currentchrID,curpos,"snp not find in db,skip")
+            if not snp or snp==0 or snp[0][outgidx]==None or snp[0][outg2idx]==None or snp[0][5]==None:
+                print(currentchrID,curpos,"no db")
                 continue
             else:#judge the ancenstrall allele
                 fanyadepthlist=re.split(r",",snp[0][outgidx]);taihudepthlist=re.split(r",",snp[0][outg2idx])
@@ -105,7 +105,7 @@ def make_freq_xaxisKEY_yaxisseqVALUERelation(a):
                 elif fanyadepthlist and taihudepthlist and( fanyadepthlist[1].strip()=="0" and int(fanyadepthlist[0])>=mindepthtojudefixed and int(taihudepthlist[1])<int(taihudepthlist[0])*seqerrorrate or (taihudepthlist[1].strip()=="0" and int(taihudepthlist[0])>=mindepthtojudefixed and int(fanyadepthlist[1])<int(fanyadepthlist[0])*seqerrorrate)):
                     A_base_idx=0
                 else:
-                    print("skip snp",snp[0][1],snp[0][7:])
+                    print("UNKNOWN ANCESTRALL",snp[0][1],snp[0][7:])
                     continue
             ancestrallcontext=snp[0][5].strip()[0].upper()+snp[0][3+A_base_idx].strip().upper()+snp[0][5].strip()[2].upper()
             if "CG" in ancestrallcontext or "GC" in ancestrallcontext:
@@ -219,7 +219,7 @@ if __name__ == '__main__':
     parameterstuples=(options.chromlistfilename,options.topleveltablejudgeancestral,options.targetpopvcfconfig,options.refpopvcffileconfig,options.numberofindvdoftargetpop_todividintobin)
     print(parameterstuples,options.outfileprewithpath)
     freq_xaxisKEY_yaxisVALUE_seq_list=make_freq_xaxisKEY_yaxisseqVALUERelation(parameterstuples)
-    outfilename=options.outfileprewithpath+"_part_"+str(os.getpid())+Util.random_str()
+    outfilename=options.outfileprewithpath+"_part_"+str(os.getpid())+config.random_str()
     outfile=open(outfilename,'w')
     filenamelistfile=open(filenamelistfilename,'a')
     for a,b in sorted(freq_xaxisKEY_yaxisVALUE_seq_list.keys()):
