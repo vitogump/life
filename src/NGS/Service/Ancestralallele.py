@@ -248,7 +248,7 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
                     insertsql_statement_list.append(insertsql_statement)
                     insertsql_data_list.append(tuple(insertsql_date))
 #                     self.dbvariantstools.operateDB("",insertsql_statement,data=tuple(insertsql_date))
-            if insertsql_statement_list !=[]:
+            if insertsql_statement_list !=[] and updatesql_statement_list ==[]:
 #                 print(insertsql_statement_list)
                 self.dbvariantstools.operateDB("insert",*insertsql_statement_list,data=insertsql_data_list)
 #                 snp=self.dbvariantstools.operateDB("select","select * from "+self.toplevelsnptablename+" where chrID='"+insertsql_data_list[0][0]+"' and snp_pos='"+str(insertsql_data_list[0][1])+"'")
@@ -256,6 +256,8 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
             elif updatesql_statement_list !=[] and len(updatesql_date_list)==len(updatesql_statement_list):
                 print(updatesql_statement_list,updatesql_date_list)
                 self.dbvariantstools.operateDB("update",*updatesql_statement_list,data=updatesql_date_list)
+            else:
+                print("insert and update unfinished code",updatesql_statement_list,"\n",updatesql_date_list)
                 
 #             print("insertsql_data_list",insertsql_data_list)
 #             print("updatesql_date_list",updatesql_date_list)
