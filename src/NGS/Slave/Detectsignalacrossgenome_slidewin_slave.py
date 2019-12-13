@@ -185,7 +185,7 @@ if __name__ == '__main__':
         if (currentchrID, currentchrLenOrRegion) in obsexpsignalmapbychrom:
             for i in range(len(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)])):
                 if options.typeOfcalculate == "early" or options.typeOfcalculate=="D":
-                    if obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][3] == "NA":
+                    if "NA" in obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][3]:
                         print(currentchrID + "\t" + str(i) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][0]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][1]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][2]) + "\t" + "NA" + "\t" + "NA", file=outfile)
                     else:
                         print("winvalue is the correct value,zvalue is the not very appropriate value I used before")

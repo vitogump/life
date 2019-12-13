@@ -241,6 +241,7 @@ if __name__ == '__main__':
     sf.close()
     sf=open(options.outfileprewithpath+".slidwin_filelist"+str(masterpid),"w")
     for n in sorted(orderlist.keys()):
+        orderlist[n].sort(key=lambda fpart:re.split(r"_",fpart)[-2])
         for slidwinfilename in orderlist[n]:
             print(slidwinfilename.strip(),file=sf)
     sf.close()

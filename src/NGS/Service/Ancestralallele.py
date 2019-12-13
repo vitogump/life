@@ -98,7 +98,7 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
                 snp_pos=snp[0]
                 snp_recINtopleveltable=self.dbvariantstools.operateDB("select","select * from "+self.toplevelsnptablename+" where chrID='"+chrom+"' and snp_pos="+str(snp_pos))
                 if not snp_recINtopleveltable or snp_recINtopleveltable==0:#empty
-                    insertsql_statement="insert into "+self.toplevelsnptablename + " (chrID,snp_pos,snpID,ref_base,alt_base,context,"
+                    insertsql_statement="insert ignore into "+self.toplevelsnptablename + " (chrID,snp_pos,snpID,ref_base,alt_base,context,"
                     insertsql_date=[chrom,snp_pos,".",snp[1],snp[2]]
                     updatesql_statement=None
                 else:

@@ -1296,7 +1296,7 @@ class Caculate_S_ObsExp_difference(Caculator):
             except:
                 S1+=0
         try:
-            S2=math.log(np.sum(self.obsseq)/self.CEXP)#(np.sum(self.obsseq)-self.CEXP)/np.std(self.obsseq,ddof=1)
+            S2=math.log(np.sum(self.obsseq)/np.sum(self.CEXP))#(np.sum(self.obsseq)-self.CEXP)/np.std(self.obsseq,ddof=1)
         except:
             S2="NA"
         noofsnp=self.COUNT
@@ -1307,8 +1307,8 @@ class Caculate_S_ObsExp_difference(Caculator):
         """S1 is the corrected value, S2 is the not very appropriate value I used before 
         """       
         if S1==0 and S2=="NA" or noofsnp<self.minsnps:
-            return noofsnp,"NA"
-        return noofsnp,[S1,S2]
+            return noofsnp,["NA","NA"]
+        return noofsnp,[S1/noofsnp,S2]
 # class Caculate_pairFst(Caculator):
 #     def __init__(self,mindepthtojudefixed,listOftargetpopvcfconfig,listOfrefpopvcffileconfig,outfileprewithpath,minsnps=10):
 #         super().__init__()
