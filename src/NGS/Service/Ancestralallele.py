@@ -257,7 +257,7 @@ class dynamicInsertUpdateAncestralContext():#here use the fast edition
                 print(updatesql_statement_list,updatesql_date_list)
                 self.dbvariantstools.operateDB("update",*updatesql_statement_list,data=updatesql_date_list)
             else:
-                print("insert and update unfinished code",updatesql_statement_list,"\n",updatesql_date_list)
+                print("BOTH insertsql_statement_list updatesql_statement_list is not empty",updatesql_statement_list,"\n",updatesql_date_list,"ADD SQLTOOLS.operateDB here")
                 
 #             print("insertsql_data_list",insertsql_data_list)
 #             print("updatesql_date_list",updatesql_date_list)
