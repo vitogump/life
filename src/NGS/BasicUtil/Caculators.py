@@ -1286,7 +1286,7 @@ class Caculate_S_ObsExp_difference(Caculator):
 #                     print(snpT,len(self.alignedSNP_absentinfo[chrom]))
                 print(snpT[0:3],"process",len(self.alignedSNP_absentinfo[self.currentchrID]),self.COUNT)
                 self.process(snpT)
-            print("length of snpT",len(self.alignedSNP_absentinfo[self.currentchrID]))  
+            if len(self.alignedSNP_absentinfo[self.currentchrID])!=0:print("length of snpT",len(self.alignedSNP_absentinfo[self.currentchrID]));self.alignedSNP_absentinfo[self.currentchrID]=[]
             print("processed",self.CEXP)    
         S1=0
         S2="NA"
