@@ -185,23 +185,24 @@ if __name__ == '__main__':
         if (currentchrID, currentchrLenOrRegion) in obsexpsignalmapbychrom:
             for i in range(len(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)])):
                 if options.typeOfcalculate == "early" or options.typeOfcalculate=="D":
-                    if "NA" in obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][3]:
-                        print(currentchrID + "\t" + str(i) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][0]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][1]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][2]) + "\t" + "NA" + "\t" + "NA", file=outfile)
-                    else:
-                        print("winvalue is the correct value,zvalue is the not very appropriate value I used before")
+                    try:
+                        print(currentchrID,"winvalue is the correct value,zvalue is the not very appropriate value I used before",obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i],type(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][3][0]),type(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][3][1]))
                         print(currentchrID + "\t" + str(i) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][0]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][1]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][2]) + "\t" + '%.15f' % (obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][3][0]) + "\t" + '%.12f' % (obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][3][1]), file=outfile)
-                elif options.typeOfcalculate == "pairfst" or options.typeOfcalculate == "dxy":
-                    if obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][3] == "NA":
+                    except :
                         print(currentchrID + "\t" + str(i) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][0]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][1]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][2]) + "\t" + "NA" + "\t" + "NA", file=outfile)
-                    else:
+                elif options.typeOfcalculate == "pairfst" or options.typeOfcalculate == "dxy":
+                    try :
                         print(currentchrID + "\t" + str(i) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][0]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][1]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][2]) + "\t" + '%.15f' % (obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][3]) + '\t%.15f' % (obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][3]) , file=outfile)
+                    except:
+                        print(currentchrID + "\t" + str(i) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][0]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][1]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][2]) + "\t" + "NA" + "\t" + "NA", file=outfile)
                 elif options.typeOfcalculate == "is":
                     print(currentchrID + "\t" + str(i) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][0]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][1]), *obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][3], sep="\t", file=outfile)  # + "\t"+str()
                 elif options.typeOfcalculate == "hp":
-                    if obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][3] == "NA":
-                        print(currentchrID + "\t" + str(i) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][0]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][1]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][2]) + "\t" + 'NA' + "\t0" , file=outfile)
-                    else:
+                    try:
                         print(currentchrID + "\t" + str(i) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][0]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][1]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][2]) + "\t" + '%.15f' % (obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][3]) + "\t0" , file=outfile)
+                    
+                    except:
+                        print(currentchrID + "\t" + str(i) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][0]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][1]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][2]) + "\t" + 'NA' + "\t0" , file=outfile)
     outfile.close()
     
     if options.topleveltablejudgeancestral != None:
