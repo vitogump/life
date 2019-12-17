@@ -1280,14 +1280,14 @@ class Caculate_S_ObsExp_difference(Caculator):
         if self.alignedSNP_absentinfo[self.currentchrID]!=[]:
             self.dynamicIU_toptable_obj.insertorUpdatetopleveltable(self.alignedSNP_absentinfo,self.flankseqfafile,50)
             No_Of_snpT=len(self.alignedSNP_absentinfo[self.currentchrID])
-            print("before process",self.CEXP)
+            print("self.CEXP SNP sites before process",len(self.CEXP))
             for whatever in range(No_Of_snpT):
                 snpT=self.alignedSNP_absentinfo[self.currentchrID].pop(0)
 #                     print(snpT,len(self.alignedSNP_absentinfo[chrom]))
                 print(snpT[0:3],"process",len(self.alignedSNP_absentinfo[self.currentchrID]),self.COUNT)
                 self.process(snpT)
             if len(self.alignedSNP_absentinfo[self.currentchrID])!=0:print("length of snpT",len(self.alignedSNP_absentinfo[self.currentchrID]));self.alignedSNP_absentinfo[self.currentchrID]=[]
-            print("processed",self.CEXP)    
+            print("self.CEXP SNP sites processed",len(self.CEXP))    
         S1=0
         S2="NA"
         for i in range(len(self.obsseq)):
