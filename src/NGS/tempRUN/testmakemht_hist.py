@@ -24,10 +24,10 @@ parser.add_option("-p","--positive",dest="multiple_positive_winfiles",action="ap
 parser.add_option("-n","--negtive",dest="multiple_negtive_winfiles",action="append",nargs=3,default=[],help="at bottom")#
 parser.add_option("-a","--allvalue",dest="multiple_allvalue_winfiles",action="append",nargs=3,default=[],help="at bottom")#
 
-parser.add_option("-A","--anchorfile",dest="anchorfile",default=None,help="winvalue or zvalue")
+parser.add_option("-A","--anchorfile",dest="anchorfile",default=None,help="used to Z-transform in auto and sex separately, conflict with -S and affect parameter definition of -p/-n")
 parser.add_option("-g", "--gotablefile", dest="gotablefile", help="gotable title with :Ensembl Gene ID    Ensembl Transcript ID    GO Term Accession    GO Term Evidence Code    GO domain    GO Term Name    GO Term Definition,order and upper/lower case is arbitrarily")
-parser.add_option("-M", "--mapfile", dest="mapfile",default=None, help="optional")
-parser.add_option("-x", "--threshold_percentage", dest="threshold_percentage",help="t / p", metavar="FILE")
+parser.add_option("-M", "--mapfile", dest="mapfile",default=None, help="optional used when 'changed' file does not exist")
+# parser.add_option("-x", "--threshold_percentage", dest="threshold_percentage",help="t / p", metavar="FILE")
 parser.add_option("-e", "--distalextend", dest="distalextend",default="180000",help="t / p", metavar="FILE")
 parser.add_option("-f", "--trscptfound", dest="trscptfound",action="store_true",default=False, help="outfileprename")
 parser.add_option("-S", "--splitintopart", dest="splitintopart",default=1, help="split winfile into part")

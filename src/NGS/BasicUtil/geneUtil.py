@@ -417,7 +417,7 @@ class WinInGenome():
     def loadWinDataIntoDB(self, dbname, winFileName8Field,Nocol="7", tableNamewithoutNA=None):
         chromOrder = []
         
-        tempdbtools = dbm.DBTools(config.ip, config.username, config.password, config.dbname)
+        tempdbtools = dbm.DBTools(config.ip, config.username, config.password, dbname)
         if tableNamewithoutNA == None:
             tableNamewithoutNA = config.random_str()
 #             return chromOrder, tempdbtools, tableNamewithoutNA, tableNametextValueForappendGeneName 
@@ -674,13 +674,13 @@ def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,win
             selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintablewithoutNA + wherestatmentmt)
             
         elif morethan_lessthan=="l" or morethan_lessthan=="L":
-#             print("select", "select * from " + winGenome.wintablewithoutNA + " where "+winType+"!= 'NA' and "+winType+"<=" + threshold)
+            print("select * from " + winGenome.wintablewithoutNA + wherestatmentlt)
             selectedWins = winGenome.windbtools.operateDB("select", "select * from " + winGenome.wintablewithoutNA + wherestatmentlt)
         selectWinNos=len(selectedWins)
     selectedWins.sort(key=lambda listRec:float(listRec[5]))
     if selectWinNos==0:
         outfile.close()
-        print("selectWinNos==0")
+        print("selectWinNos==0；exit(0)")
         exit(0)
     print(outbedfilename+".bed.selectgene",selectWinNos,"~=",len(selectedWins),selectedWins[0],selectedWins[-1])
     selectedWinMap={}

@@ -175,13 +175,13 @@ class MakeMhtGraph(object):
         namewithoutpath=re.search(r"[^/]*$", inputfileName).group(0)
         r("setwd('" + dir + "')")
         r('.libPaths("/home/liurui/software/Rpackages")')
-        r("library(Cairo)")
+#         r("library(Cairo)")
         r('x=read.table("' + namewithoutpath + '",header=T)')
         print(dir,namewithoutpath)
         if ylim!=None and xlim!=None:
             print("=========================================================================================================================================")
             for columnname in columnnames:
-                r("CairoPNG('" + namewithoutpath + "histon_"+columnname+"_" + dataType + ".png',width=1600,height=800)")
+#                 r("CairoPNG('" + namewithoutpath + "histon_"+columnname+"_" + dataType + ".png',width=1600,height=800)")
                 r("hist(x$"+columnname+",breaks=500,ylim=c(0,6000),xlim=c(0,60),main='"+ namewithoutpath +"',ylab='No.bins',xlab='SNPs per Kb')")
                 sd=r("sd(x$"+columnname+",na.rm=TRUE)")
                 mean=r("mean(x$"+columnname+",na.rm=TRUE)")
@@ -190,7 +190,7 @@ class MakeMhtGraph(object):
         else:
             print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
             for columnname in columnnames:
-                r("CairoPNG('" + namewithoutpath + "histon_"+columnname+"_" + dataType + ".png',width=1600,height=800)")
+#                 r("CairoPNG('" + namewithoutpath + "histon_"+columnname+"_" + dataType + ".png',width=1600,height=800)")
                 try:
                     r("hist(x$"+columnname+",breaks=1000,main='" + namewithoutpath + "')")
                     sd=r("sd(x$"+columnname+",na.rm=TRUE)")
@@ -218,9 +218,9 @@ class MakeMhtGraph(object):
         r("setwd('" + dir + "')")
         r('.libPaths("/home/liurui/software/Rpackages")')
         r("library(gap)")
-        r("library(Cairo)")
+#         r("library(Cairo)")
 #         r('CairoPNG("'+outname+'.png",width='+str(((len(positive_winfiles)+len(negtive_winfiles))*221.5+35)*2)+',height='+str((len(positive_winfiles)+len(negtive_winfiles))*221.5+35)+')')
-        r('CairoPNG("'+outname+'.png",width=1800,height=800)')
+#         r('CairoPNG("'+outname+'.png",width=1800,height=800)')
 #         r('CairoPDF("'+outname+'.pdf"')
         for i in range(0,len(positive_winfiles)):
             threshold_title_list=re.split(r"_",positive_winfiles[i][1].strip())
@@ -316,7 +316,7 @@ class MakeMhtGraph(object):
             print('abline(h='+str(threshold_title_list[0])+')',file=scriptfile)
         r('axis(1)')
         r('dev.off()')
-        print(r('Cairo.capabilities()'))
+#         print(r('Cairo.capabilities()'))
         scriptfile.close()
         intersectionSet=intersectionlistMap[list(intersectionlistMap.keys())[0]]
         for k in intersectionlistMap.keys():
