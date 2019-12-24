@@ -91,7 +91,7 @@ def make_freq_xaxisKEY_yaxisseqVALUERelation(a):
         target_ref_SNPs=Util.alinmultPopSnpPos(listofpopvcfmapOfAChr, "o")
         for snp_aligned in target_ref_SNPs[currentchrID]:
             if len(snp_aligned[1])!=1 or len(snp_aligned[2])!=1:
-                print("multple allele",snp_aligned)
+#                 print("multple allele",snp_aligned)
                 continue
             curpos=int(snp_aligned[0])
             snp=dbvariantstools.operateDB("select","select * from "+topleveltablename+" where chrID='"+currentchrID+"' and snp_pos="+str(curpos)+"")
@@ -105,11 +105,11 @@ def make_freq_xaxisKEY_yaxisseqVALUERelation(a):
                 elif fanyadepthlist and taihudepthlist and( fanyadepthlist[1].strip()=="0" and int(fanyadepthlist[0])>=mindepthtojudefixed and int(taihudepthlist[1])<int(taihudepthlist[0])*seqerrorrate or (taihudepthlist[1].strip()=="0" and int(taihudepthlist[0])>=mindepthtojudefixed and int(fanyadepthlist[1])<int(fanyadepthlist[0])*seqerrorrate)):
                     A_base_idx=0
                 else:
-                    print("UNKNOWN ANCESTRALL",snp[0][1],snp[0][7:])
+#                     print("UNKNOWN ANCESTRALL",snp[0][1],snp[0][7:])
                     continue
             ancestrallcontext=snp[0][5].strip()[0].upper()+snp[0][3+A_base_idx].strip().upper()+snp[0][5].strip()[2].upper()
             if "CG" in ancestrallcontext or "GC" in ancestrallcontext:
-                print("skip CG site",ancestrallcontext)
+#                 print("skip CG site",ancestrallcontext)
                 continue
             ##########x-axis
             countedAF=0;target_DAF_sum=0#;noofnocoveredsample=0
@@ -153,8 +153,8 @@ def make_freq_xaxisKEY_yaxisseqVALUERelation(a):
                 elif A_base_idx==1:
                     DAF=AF
                 target_DAF_sum+=DAF;countedAF+=1
-            if countedAF==0 :#or target_DAF_sum==0:
-                print("skip this snp,because it fiexd as ancestral or no covered in this pos in target pops",snp_aligned,snp)
+            if countedAF==0 or target_DAF_sum==0:#:
+#                 print("skip this snp,because it fiexd as ancestral or no covered in this pos in target pops",snp_aligned,snp)
                 continue
             target_DAF=target_DAF_sum/countedAF
             ###############y-axis
@@ -200,8 +200,8 @@ def make_freq_xaxisKEY_yaxisseqVALUERelation(a):
                 elif A_base_idx==1:
                     DAF=AF
                 rer_DAF_sum+=DAF;countedAF+=1
-            if countedAF==0 or rer_DAF_sum==0:
-                print("skip this snp,because it  no covered in this pos in ref pops",snp_aligned,snp)
+            if countedAF==0 :#or rer_DAF_sum==0
+#                 print("skip this snp,because it  no covered in this pos in ref pops",snp_aligned,snp)
                 continue
             ######collect according bins
             for a,b in sorted(freq_xaxisKEY_yaxisVALUE_seq_list.keys()):

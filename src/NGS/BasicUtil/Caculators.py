@@ -371,6 +371,131 @@ class Caculate_popDiv(Caculator):
         self.numArray=[]
         self.array=[]
         return Nsites, dxy
+class Caculate_popPI(Caculator):
+    def __init__(self,considerINDEL,tvcfconfig,outputname):
+        super().__init__()
+        self.outputname=outputname
+        self.considerINDEL=considerINDEL
+        self.indnamesOfEachPop=[]
+        self.MethodToSeqpoplist=[]
+        self.listOfpopvcfRecsmapByAChr=[]
+        for vcfconfigf in [tvcfconfig[0]]:
+            vcfconfig=open(vcfconfigf,"r")
+            self.listOfpopvcfRecsmapByAChr.append({})
+            for line in vcfconfig:
+                vcffilename_obj=re.search(r"vcffilename=(.*)",line.strip())
+                if vcffilename_obj!=None:
+                    vcfname=vcffilename_obj.group(1).strip()
+                    self.vcfnamelist.append(vcfname)
+                    self.outputname+=("_"+re.split(r"\.",re.search(r"[^/]*$",vcfname).group(0))[0])[:3]
+                    self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname]=[]
+                    self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname].append(VCFutil.VCF_Data(vcfname))
+                    self.indnamesOfEachPop.append(self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname][0].VcfIndexMap["title"][9:])
+                elif line.split():
+                    self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[vcfname].append(pysam.Samfile(line.strip(),'rb'))
+            vcfconfig.close()
+            if re.search(r"indvd[^/]+",vcfname)!=None:
+                self.MethodToSeqpoplist.append("indvd")
+    
+            elif re.search(r"pool[^/]+",vcfname)!=None:
+                self.MethodToSeqpoplist.append("pool")
+    
+            else:
+                print("vcfname must with 'pool' or 'indvd'")
+                exit(-1)    
+            
+        self.minAN=40;self.minAC=2
+        self.GQthreshold=30
+        self.DPindthreshold=6
+        print(self.indnamesOfEachPop)
+        self.N=len(self.indnamesOfEachPop[0])#+len(self.indnamesOfEachPop[1])
+        self.popIndices=[[]]
+        for ind_idx in range(len(self.indnamesOfEachPop[0])):
+            self.popIndices[0].append(2*ind_idx)
+            self.popIndices[0].append(2*ind_idx+1)
+#         for ind_idx in range(len(self.indnamesOfEachPop[0]),len(self.indnamesOfEachPop[0])+len(self.indnamesOfEachPop[1])):
+#             self.popIndices[1].append(2*ind_idx)
+#             self.popIndices[1].append(2*ind_idx+1)
+        print(self.popIndices)
+        #below variable should be changed every win
+        self.positions=[]
+        self.seqs=[[] for e in range(self.N)]# pop1_inds pop2_inds
+        self.numArray=[]
+        self.array=[]
+    def process(self,T):
+        """T is like (pos,REF,ALT,(INFO,FORMAT,sampleslist),(INFO,FORMAT,sampleslist)) should have only two pop
+        """
+        if self.considerINDEL == "no" and (len(T[1]) != 1 or len(T[2]) != 1):
+            return
+        site=[]#should have 
+        AN=AC=0
+        for popidx in range(3,5):
+            if T[popidx]==None:
+                # check depth ,if passed treat as fix as ref
+                if len(self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[self.vcfnamelist[popidx-3]])==1:
+#                     print("skip this pos",T)
+                    return
+                else:
+#                     depth_linelist=self.depthobjlist[tpopidx-3].getdepthByPos_optimized(self.currentchrID,T[0])
+                    sum_depth=0
+                    for samfile in self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[self.vcfnamelist[popidx-3]][1:]:
+                        ACGTdep=samfile.count_coverage(self.currentchrID,T[0]-1,T[0])
+                        for dep in ACGTdep:
+                            sum_depth+=dep[0]
+
+                    if sum_depth>self.DPindthreshold*len(self.indnamesOfEachPop[popidx-3])*1.2:#use 1.2 is ribitrarily, beacuse we don't have GQ to filter some ind so use more strength thread in depth
+                        site+=[T[1].upper()*2 for x in range(len(self.indnamesOfEachPop[popidx-3]))]
+                        AN+=(len(self.indnamesOfEachPop[popidx-3])*2)
+                    else:
+                        return
+            else:
+                if self.MethodToSeqpoplist[popidx-3]=="indvd":
+#                     AN += int(re.search(r"AN=(\d+)[;,]", T[popidx][0]).group(1))
+                    AC += int(re.search(r"AC=(\d+)[;,]", T[popidx][0]).group(1))
+                    GT_idx = (re.split(":", T[popidx][1])).index("GT")
+                    GQ_idx=(re.split(":", T[popidx][1])).index("GQ")
+                    DP_idx=(re.split(":", T[popidx][1])).index("DP")
+                    for ind in T[popidx][2]:
+                        if (len(re.split(":",ind))==1 or "./." in ind) or int(re.split(":", ind)[GQ_idx])<self.GQthreshold or int(re.split(":", ind)[DP_idx])<self.DPindthreshold:# ./.
+                            site.append("NN")
+                            continue
+                        GT01 = re.split("/", re.split(":", ind)[GT_idx])
+                        GT_TGT=T[int(GT01[0])+1]+T[int(GT01[1])+1]
+#                         AC +=1
+                        AN +=2
+                        site.append(GT_TGT.upper())
+#                     else:
+#                         print("pass",self.vcfnamelist[popidx-3])
+                elif self.MethodToSeqpoplist[popidx-3]=="pool":
+                    print("unfinished")
+        if AN>=self.minAN and AC>=self.minAC and AC<=(self.N*2-self.minAC):
+            for x in range(self.N):
+                self.seqs[x].append(site[x])
+            self.positions.append(T[0])
+    def getResult(self):
+        pseudoPhasedSeqs=[]
+        Nsites=len(self.positions)
+        if Nsites<20:
+            return 0,np.NaN
+        for x in range(self.N):
+            pseudoPhasedSeqs+= pseudoPhase(self.seqs[x], "pairs")
+        if pseudoPhasedSeqs is not None:
+            self.array = np.array([list(seq) for seq in pseudoPhasedSeqs])
+            self.numArray = np.array([[numSeqDict[b] for b in seq] for seq in pseudoPhasedSeqs])
+        else:
+            self.array = np.empty((0,self.N))
+            self.numArray = np.empty((0,self.N))
+        self.nanMask = ~np.isnan(self.numArray)
+        #get distMatrix
+        distMat=distMatrix(self.numArray)
+        np.fill_diagonal(distMat, np.NaN)
+        pi=np.nanmean(distMat[np.ix_(self.popIndices[0],self.popIndices[0])])
+        print(len(pseudoPhasedSeqs[random.randint(0,self.N)]),Nsites,pi)
+        self.positions=[]
+        self.seqs=[[] for e in range(self.N)]# pop1_inds pop2_inds
+        self.numArray=[]
+        self.array=[]
+        return Nsites, pi
 class Caculate_SNPsPerBIN(Caculator):
     def __init__(self, winwidth, considerINDEL="no", MethodToSeq="pool"):
         self.considerINDEL = considerINDEL.lower()
@@ -1156,9 +1281,9 @@ class Caculate_S_ObsExp_difference(Caculator):
         else:
             A_base_idx=100
             fanyadepthlist=re.split(r",",snp[0][outgidx]);taihudepthlist=re.split(r",",snp[0][outg2idx])
-            if fanyadepthlist and taihudepthlist and (fanyadepthlist[0].strip()=="0" and int(fanyadepthlist[1]) >=self.mindepthtojudefixed and int(taihudepthlist[0])<int(taihudepthlist[1])*seqerrorrate or (taihudepthlist[0].strip()=="0" and int(taihudepthlist[1])>=self.mindepthtojudefixed and int(fanyadepthlist[0])<int(fanyadepthlist[1])*seqerrorrate) ):
+            if fanyadepthlist and taihudepthlist and (fanyadepthlist[0].strip()=="0" and int(fanyadepthlist[1]) >=self.mindepthtojudefixed and int(taihudepthlist[0])<=int(taihudepthlist[1])*seqerrorrate or (taihudepthlist[0].strip()=="0" and int(taihudepthlist[1])>=self.mindepthtojudefixed and int(fanyadepthlist[0])<=int(fanyadepthlist[1])*seqerrorrate) ):
                 A_base_idx=1
-            elif fanyadepthlist and taihudepthlist and( fanyadepthlist[1].strip()=="0" and int(fanyadepthlist[0])>=self.mindepthtojudefixed and int(taihudepthlist[1])<int(taihudepthlist[0])*seqerrorrate or (taihudepthlist[1].strip()=="0" and int(taihudepthlist[0])>=self.mindepthtojudefixed and int(fanyadepthlist[1])<int(fanyadepthlist[0])*seqerrorrate)):
+            elif fanyadepthlist and taihudepthlist and( fanyadepthlist[1].strip()=="0" and int(fanyadepthlist[0])>=self.mindepthtojudefixed and int(taihudepthlist[1])<=int(taihudepthlist[0])*seqerrorrate or (taihudepthlist[1].strip()=="0" and int(taihudepthlist[0])>=self.mindepthtojudefixed and int(fanyadepthlist[1])<=int(fanyadepthlist[0])*seqerrorrate)):
                 A_base_idx=0
             else:
 #                 print("skip snp",snp[0][1],snp[0][7],snp[0][9],snp[0][11],snp[0][13])
@@ -1215,7 +1340,7 @@ class Caculate_S_ObsExp_difference(Caculator):
             elif A_base_idx==1:
                 DAF=AF
             target_DAF_sum+=DAF;countedAF+=1
-        if  countedAF==0 :#or target_DAF_sum/countedAF==0:
+        if  countedAF==0 or target_DAF_sum/countedAF==0:#:
 #             print("skip this snp,because it fiexd as ancestral or no covered in this pos in target pops",T,snp)
             return
         target_DAF=target_DAF_sum/countedAF
@@ -1263,7 +1388,7 @@ class Caculate_S_ObsExp_difference(Caculator):
                 elif A_base_idx==1:
                     DAF=AF
                 rer_DAF_sum+=DAF;countedAF+=1
-        if  countedAF==0 or rer_DAF_sum==0:
+        if  countedAF==0 :#or rer_DAF_sum==0
 #             print("skip this snp,because it  no covered in this pos in ref pops",T,snp)
             return
         for a,b in sorted(self.freq_xaxisKEY_yaxisVALUERelation.keys()):
@@ -1290,25 +1415,32 @@ class Caculate_S_ObsExp_difference(Caculator):
             print("self.CEXP SNP sites processed",len(self.CEXP))    
         S1=0
         S2="NA"
+        noofsnp=self.COUNT
         for i in range(len(self.obsseq)):
+
+            S1+=self.obsseq[i]/self.CEXP[i]
+
+        else:
             try:
-                S1+=abs(math.log(self.obsseq[i]/self.CEXP[i]))
+                S1=math.log(S1/noofsnp)
+            except ValueError:
+                S1="MAX"#may be use the smallest self.obsseq[x] to get S1
             except:
-                S1+=0
+                S1="NA"
         try:
             S2=math.log(np.sum(self.obsseq)/np.sum(self.CEXP))#(np.sum(self.obsseq)-self.CEXP)/np.std(self.obsseq,ddof=1)
         except:
             S2="NA"
-        noofsnp=self.COUNT
+        
         self.COUNT=0
         self.CEXP=[]
         self.obsseq=[]
         self.CfixedDerived=0
         """S1 is the corrected value, S2 is the not very appropriate value I used before 
         """       
-        if S1==0 and S2=="NA" or noofsnp<self.minsnps:
+        if S1=="NA"  or noofsnp<self.minsnps:
             return noofsnp,["NA","NA"]
-        return noofsnp,[S1/noofsnp,S2]
+        return noofsnp,[S1,S2]
 # class Caculate_pairFst(Caculator):
 #     def __init__(self,mindepthtojudefixed,listOftargetpopvcfconfig,listOfrefpopvcffileconfig,outfileprewithpath,minsnps=10):
 #         super().__init__()
