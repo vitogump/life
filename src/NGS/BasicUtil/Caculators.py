@@ -423,13 +423,13 @@ class Caculate_popPI(Caculator):
         self.numArray=[]
         self.array=[]
     def process(self,T):
-        """T is like (pos,REF,ALT,(INFO,FORMAT,sampleslist),(INFO,FORMAT,sampleslist)) should have only two pop
+        """T is like (pos,REF,ALT,(INFO,FORMAT,sampleslist),(INFO,FORMAT,sampleslist)) should have only NOE VCF POP
         """
         if self.considerINDEL == "no" and (len(T[1]) != 1 or len(T[2]) != 1):
             return
         site=[]#should have 
         AN=AC=0
-        for popidx in range(3,5):
+        for popidx in range(3,4):
             if T[popidx]==None:
                 # check depth ,if passed treat as fix as ref
                 if len(self.vcfnameKEY_vcfobj_pyBAMfilesVALUE[self.vcfnamelist[popidx-3]])==1:

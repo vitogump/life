@@ -221,7 +221,7 @@ if __name__ == '__main__':
             pass
         elif options.typeOfcalculate=="D":
             parameterstuples_list.append((chromlistfile,options.typeOfcalculate,options.targetpopvcffile_withdepth,options.refpopvcffile_withdepth,options.winwidth,options.slideSize,options.outfileprewithpath,masterpid,options.P2popvcfconfig,options.P3popvcfconfig))
-        elif options.typeOfcalculate.lower()=="hp":
+        elif options.typeOfcalculate.lower()=="hp" or options.typeOfcalculate.lower()=="pi":
             parameterstuples_list.append((chromlistfile,options.typeOfcalculate,options.targetpopvcffile_withdepth,[],options.winwidth,options.slideSize,options.outfileprewithpath,masterpid))
         print(len(parameterstuples_list[-1]),parameterstuples_list[-1])
     print(len(parameterstuples_list),parameterstuples_list)

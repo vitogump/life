@@ -102,8 +102,8 @@ if __name__ == '__main__':
         outputname = options.outfileprewithpath
         outfile = open(outputname + "." + options.typeOfcalculate + str(windowWidth) + "_" + str(slideSize) + str(os.getpid()) + chrlistfilewithoutpath, 'w')
         print("chrNo\twinNo\tfirstsnppos\tlastsnppos", *obsexpcaculator.vcfname_combination, sep="\t", file=outfile)
-    elif options.typeOfcalculate == "hp":
-        obsexpcaculator = Caculators.Caculate_Hp_master_slave(options.targetpopvcfconfig, options.outfileprewithpath, minsnps=0)
+    elif options.typeOfcalculate == "hp" or options.typeOfcalculate == "pi":
+        obsexpcaculator = Caculators.Caculate_Hp_master_slave(options.targetpopvcfconfig, options.outfileprewithpath, minsnps=0) if options.typeOfcalculate == "hp" else Caculators.Caculate_popPI(options.targetpopvcfconfig, options.outfileprewithpath, minsnps=0)
         plainname = re.search(r"[^/]*$", options.outfileprewithpath).group(0)
         if len(plainname) >= 250:
             outputname = options.outfileprewithpath[:-(len(plainname) - 250)]
@@ -197,7 +197,7 @@ if __name__ == '__main__':
                         print(currentchrID + "\t" + str(i) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][0]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][1]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][2]) + "\t" + "NA" + "\t" + "NA", file=outfile)
                 elif options.typeOfcalculate == "is":
                     print(currentchrID + "\t" + str(i) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][0]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][1]), *obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][3], sep="\t", file=outfile)  # + "\t"+str()
-                elif options.typeOfcalculate == "hp":
+                elif options.typeOfcalculate == "hp" or  options.typeOfcalculate == "pi":
                     try:
                         print(currentchrID + "\t" + str(i) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][0]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][1]) + "\t" + str(obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][2]) + "\t" + '%.15f' % (obsexpsignalmapbychrom[(currentchrID, currentchrLenOrRegion)][i][3]) + "\t0" , file=outfile)
                     
