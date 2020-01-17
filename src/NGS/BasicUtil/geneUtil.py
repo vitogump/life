@@ -379,35 +379,14 @@ def mapWinvaluefileToChrOfReletiveSpecie(anchorfile,winfileinName,winwidth,slide
                 signal="autosome"
             if  re.search(r"^[1234567890\.e-]+$",winMapMarked[scaffold][winNo][3])!=None:
                 winCrossGenomeMap[signal].append(float(winMapMarked[scaffold][winNo][3]))
-    autoexception=numpy.mean(winCrossGenomeMap["autosome"])
-    autostd1=numpy.std(winCrossGenomeMap["autosome"],ddof=1)
-    sexexception=numpy.mean(winCrossGenomeMap["sexchromosome"])
-    sexstd1=numpy.std(winCrossGenomeMap["sexchromosome"],ddof=1)
-    print("autoexception,autostd",autoexception,autostd1,"sexchromosome:",sexexception,sexstd1)
+#     autoexception=numpy.mean(winCrossGenomeMap["autosome"])
+#     autostd1=numpy.std(winCrossGenomeMap["autosome"],ddof=1)
+#     sexexception=numpy.mean(winCrossGenomeMap["sexchromosome"])
+#     sexstd1=numpy.std(winCrossGenomeMap["sexchromosome"],ddof=1)
     outwinfile.close()
-    if standardsexseperately:
-        markfilname=winfileinName+"marked.sexchromseperatestandard"
-        markedfile=open(winfileinName+"marked","r")
-        markedseperatelyfile=open(markfilname,'w')
-        title=markedfile.readline()
-        print(title,end="",file=markedseperatelyfile)
-        for line in markedfile:
-            linelist=re.split(r"\s+",line.strip())
-            if re.search(r"^[1234567890\.e-]+$",linelist[5])!=None:
-                if linelist[7] =="sexchromosome":
-                    zscore=(float(linelist[5])-sexexception)/sexstd1
-                elif linelist[7] =="autosome":
-                    zscore=(float(linelist[5])-autoexception)/autostd1
-                else:
-                    print("what's wrong");exit(-1)
-                print(linelist[0],linelist[1],linelist[2],linelist[3],linelist[4],linelist[5],zscore,linelist[7],sep="\t",file=markedseperatelyfile)
-            else:
-                print(line,end="",file=markedseperatelyfile)
-        markedseperatelyfile.close();markedfile.close()
-    else:
-        markfilname=winfileinName+"marked.sexchromseperatestandard"
+
     
-    return markfilname,winfileinName+"arrangemented"
+    return winfileinName+"marked",winfileinName+"arrangemented"
 class WinInGenome():           
     def __init__(self, dbname, winFileName8Field,Nocol=7, tableName=None):
         super().__init__()
@@ -434,6 +413,7 @@ class WinInGenome():
             " `winvalue` double NOT NULL,"  #########why?
             " `zvalue` double NOT NULL,"  ##########
             " `mark` varchar(30) NOT NULL DEFAULT 'unknown', "
+            " `processedvalue` double NOT NULL,"
             " PRIMARY KEY (`chrID`,`winNo`)"
             ")"
             )
@@ -447,6 +427,7 @@ class WinInGenome():
             " `winvalue` text NOT NULL,"  ##############why?
             " `zvalue` text NOT NULL,"  ###############
             " `mark` varchar(30) NOT NULL DEFAULT 'unknown', "
+            " `processedvalue` text NOT NULL,"
             " PRIMARY KEY (`chrID`,`winNo`)"
             ")"
             )        
@@ -487,7 +468,7 @@ class WinInGenome():
         return chromOrder, tempdbtools, tableNamewithoutNA, tableNametextValueForappendGeneName 
     def appendGeneName(self, TranscriptGenetable, genomedbtools, winwidth, slideSize, outfileName,upextend=0, downextend=0,findNearestGene=(5,"m")):
         outfile = open(outfileName, 'w')
-        print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnps\twinvalue\tzvalue\tmark\tgeneName\ttrscptID", file=outfile)
+        print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnps\twinvalue\tzvalue\tmark\tprocessedvalue\tgeneName\ttrscptID", file=outfile)
 
         allwins = self.windbtools.operateDB("select", "select * from " + self.wintabletextvalueallwin )
         self.windbtools.operateDB("callproc", "mysql_sp_add_column", data=(self.dbname, self.wintabletextvalueallwin, "geneName", "varchar(128)", "default null"))
@@ -609,6 +590,57 @@ class WinInGenome():
                     row[2]=(">"+str(int(row[5])-Region_end))+row[7]+row[2]
                     trscptlist.append(tuple(row)+tuple([8]))
         return trscptlist
+
+
+def ztransform(winfileName,winType,outfileName,outZColidx=8,standardsexseperately=False):#when standardsexseperately is True, mark field is the 8th (7idx) col, the in the outfile  processedvalue append to mark field would be 9th  col
+    "winfileName is with mark or without (fill unknown into mark field), mark is the 8th col (idx 7), if standardsexseperately==True, mark should have both 'autosome' and 'sexchromsome'"
+    sfm=open(winfileName,"r")
+    titlelist=re.split(r"\t",sfm.readline().strip())
+    targetColidx=titlelist.index(winType)
+    if len(titlelist)==7:
+        winCrossGenome=[];endidx=7;mark=["unknown"]
+    elif len(titlelist)>7 and standardsexseperately:#mark field exist! 
+        winCrossGenomeMap={"autosome":[],"sexchromosome":[]};endidx=8;mark=[]#{"autosome":[],"Z":[],"W":[],"X":[],"Y":[]}
+    else:
+        winCrossGenome=[];endidx=8;mark=[]
+    for line in sfm:
+        linelist=re.split(r"\s+",line.strip())
+        if re.search(r"^[1234567890\.e-]+$",linelist[5])!=None:
+            if len(titlelist)<8 or (not standardsexseperately) or linelist[7].strip()=="unknown":
+                winCrossGenome.append(float(linelist[targetColidx]))
+            elif linelist[7] =="sexchromosome":
+                winCrossGenomeMap["sexchromosome"].append(float(linelist[targetColidx]))
+            elif linelist[7] =="autosome":
+                winCrossGenomeMap["autosome"].append(float(linelist[targetColidx]))
+    if len(titlelist)>7 and standardsexseperately:#mark field exist! 
+        autoexception=numpy.mean(winCrossGenomeMap["autosome"])
+        autostd1=numpy.std(winCrossGenomeMap["autosome"],ddof=1)
+        sexexception=numpy.mean(winCrossGenomeMap["sexchromosome"])
+        sexstd1=numpy.std(winCrossGenomeMap["sexchromosome"],ddof=1)
+        print("autoexception,autostd",autoexception,autostd1,"sexchromosome:",sexexception,sexstd1)
+    else:#mark field maybe exist
+        exception =numpy.mean(winCrossGenome)
+        std0=numpy.std(winCrossGenome,ddof=0);std1=numpy.std(winCrossGenome,ddof=1);print(exception,std1)
+        
+    sfm.seek(0)
+    of=open(outfileName,'w')
+    print(*titlelist[:7],"mark\tprocessedvalue",*titlelist[8:],sep="\t",file=of)
+    print(sfm.readline())
+    for line in sfm:
+        linelist=re.split(r"\t",line.strip())
+        if re.search(r"^[1234567890\.e-]+$",linelist[targetColidx])!=None:
+            if len(titlelist)<8 or not standardsexseperately:
+                zscore=(float(linelist[targetColidx])-exception)/std1
+            elif linelist[7] =="sexchromosome":
+                zscore=(float(linelist[targetColidx])-sexexception)/sexstd1
+            elif linelist[7] =="autosome":
+                zscore=(float(linelist[targetColidx])-autoexception)/autostd1
+            print(*linelist[:endidx]+mark+[str(zscore)]+linelist[8:],sep="\t",file=of)
+        else:
+            print(*linelist[:endidx]+mark+[linelist[targetColidx]]+linelist[8:],sep="\t",file=of)
+    of.close()
+    sfm.close()
+    return len(titlelist),targetColidx
 def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,winType,morethan_lessthan,threshold_title_list=None,percentage=None,mergeNA=False,extendtodistal=0,anchorfile=None,found=False,mapfile=None):
 
     if percentage!=None and threshold_title_list!=None:
@@ -618,14 +650,13 @@ def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,win
     if anchorfile:
 #         winfile=standardseparately(anchorfile,winfile)
         winfilemark,winfilearrangement=mapWinvaluefileToChrOfReletiveSpecie(anchorfile, winfile, winwidth, slideSize, True,mapfile)
+        totalcolbefore,Tcolidx=ztransform(winfilemark,winType,winfile+"marked.sexchromseperatestandard",outZColidx=8,standardsexseperately=True)
     else:
+        totalcolbefore,Tcolidx=ztransform(winfile,winType,winfile+"marked.sexchromseperatestandard",8,False)
 #         winfile=standardseparately(anchorfile,winfile)
-        os.system("awk ' {if(NR=1){print $0"+'"\tmark"'+"}else{print $0"+'"\tunknown"'+"}}' "+winfile+">"+winfile+"marked.sexchromseperatestandard")
+#         os.system("awk ' {if(NR==1){print $0"+'"\tmark\tprocessedvalue"'+"}else{print $0"+'"\tunknown\t"$'+"}}' "+winfile+">"+winfile+"marked.sexchromseperatestandard")
     winFileName8Field = winfile+"marked.sexchromseperatestandard"
-    f=open(winFileName8Field,"r")
-    title=re.split(r"\s+",f.readline().strip())
-    f.close()
-    Nocol=title.index(winType)+1
+    Nocol=Tcolidx+1
     re.search(r"[^/]*$",winFileName8Field).group(0)
     if re.search(r'^.*/',outbedfilename)!=None:
         path=re.search(r'^.*/',outbedfilename).group(0)
@@ -649,14 +680,14 @@ def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,win
     totalWin = winGenome.windbtools.operateDB("select", "select count(*) from " + winGenome.wintablewithoutNA)[0][0]  
 #     selectWinNos = int(float(percentage) * totalWin)  
     if anchorfile:
-        wherestatmentmt=" where (mark='autosome' and "+winType+">=" + threshold_title_list[0]+") or (mark='sexchromosome' and "+winType+">=" +threshold_title_list[-1]+")"
+        wherestatmentmt=" where (mark='autosome' and processedvalue >=" + threshold_title_list[0]+") or (mark='sexchromosome' and processedvalue>=" +threshold_title_list[-1]+")"
 #         wherestatmentmp=" where 1 order by "+winType+" desc limit 0," + str(selectWinNos)
-        wherestatmentlt=" where (mark='autosome' and "+winType+"<=" + threshold_title_list[0]+") or (mark='sexchromosome' and "+winType+"<=" +threshold_title_list[-1]+")"
+        wherestatmentlt=" where (mark='autosome' and processedvalue <=" + threshold_title_list[0]+") or (mark='sexchromosome' and processedvalue<=" +threshold_title_list[-1]+")"
 #         wherestatmentlp=" where 1 order by "+winType+" asc limit 0," + str(selectWinNos)
     else:
-        wherestatmentmt= " where 1 and "+winType+">=" + threshold_title_list[0]
+        wherestatmentmt= " where 1 and processedvalue >=" + threshold_title_list[0]
 #         wherestatmentmp=" where 1 order by "+winType+" desc limit 0," + str(selectWinNos)
-        wherestatmentlt=" where "+winType+"!= 'NA' and "+winType+"<=" + threshold_title_list[0]
+        wherestatmentlt=" where processedvalue != 'NA' and processedvalue<=" + threshold_title_list[0]
 #         wherestatmentlp=" where 1 order by "+winType+" asc limit 0," + str(selectWinNos)
     winGenome.appendGeneName(config.TranscriptGenetable, genomedbtools, winwidth, slideSize, outfileNameWINwithGENE,upextend,downextend,(10,morethan_lessthan))
 #    should be rewrite in a clear statment

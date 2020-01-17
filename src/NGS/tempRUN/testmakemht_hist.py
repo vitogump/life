@@ -56,7 +56,7 @@ if __name__ == '__main__':
 #                 outfileNameWIN_Plist.append(p_inputfileName)
                 threshold_title_list=re.split(r"_",threshold_title.strip())
                 outfileNameWIN_Plist.append(((p_inputfileName+"arrangemented","none",outbedfilename)))
-                outfileNameWINwithGENE_Plist.append((geneUtil.findTrscpt(p_inputfileName, outbedfilename, int(options.upextend), int(options.downextend), int(options.winWidth), int(options.slideSize), options.winType, "m", threshold_title_list, None, options.mergeNA, int(options.distalextend),options.anchorfile,options.trscptfound,options.mapfile),threshold_title,outbedfilename))
+                outfileNameWINwithGENE_Plist.append((geneUtil.findTrscpt(p_inputfileName, outbedfilename, int(options.upextend), int(options.downextend), int(options.winWidth), int(options.slideSize), columnname, "m", threshold_title_list, None, options.mergeNA, int(options.distalextend),options.anchorfile,options.trscptfound,options.mapfile),threshold_title,outbedfilename))
 #                 makeMhtGraph.makeHistonPicture(p_inputfileName, "Fst")#,"c(0,2000)","c(0,45)"
                 makeMhtGraph.makeHistonPicture(outfileNameWINwithGENE_Plist[-1][0], "Fst")
                 print("awk 'NR!=1{print $8}' "+outbedfilename+".bed.selectedgene"+"|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq|awk'$0~/^ENS/{print $0}' >"+outbedfilename+".ENStrscptIDlist")
@@ -111,7 +111,7 @@ if __name__ == '__main__':
 
                 threshold_title_list=re.split(r"_",threshold_title.strip())
                 outfileNameWIN_Nlist.append((n_inputfileName+"arrangemented","none",outbedfilename))
-                outfileNameWINwithGENE_Nlist.append((geneUtil.findTrscpt(n_inputfileName,outbedfilename, int(options.upextend), int(options.downextend), int(options.winWidth), int(options.slideSize), options.winType, "l", threshold_title_list, None, options.mergeNA, int(options.distalextend),options.anchorfile,options.trscptfound,options.mapfile),threshold_title,outbedfilename))
+                outfileNameWINwithGENE_Nlist.append((geneUtil.findTrscpt(n_inputfileName,outbedfilename, int(options.upextend), int(options.downextend), int(options.winWidth), int(options.slideSize), columnname, "l", threshold_title_list, None, options.mergeNA, int(options.distalextend),options.anchorfile,options.trscptfound,options.mapfile),threshold_title,outbedfilename))
                 makeMhtGraph.makeHistonPicture(n_inputfileName, "Hp")#,"c(0,2000)","c(0,45)"
                 makeMhtGraph.makeHistonPicture(outfileNameWINwithGENE_Nlist[-1][0], "Hp")#,"c(0,2000)","c(0,45)"
 #                     print("awk 'NR!=1{print $8}' "+outbedfilename+""".bed.selectedgene"""+"""|sed 's/,/\\n/g' |sed  '/^$/d' |sort|uniq|grep --wFf """+options.removegenelistfile + """ - > """+outbedfilename+".trscptIDlist")
@@ -170,7 +170,7 @@ if __name__ == '__main__':
             for a_inputfileName,threshold_title,outbedfilename in options.multiple_allvalue_winfiles[:]:
                 threshold_title_list=re.split(r"_",threshold_title.strip())
                 outfileNameWIN_Nlist.append((a_inputfileName+"arrangemented","none",outbedfilename))
-                outfileNameWINwithGENE_Alist_unfinished.append((geneUtil.findTrscpt(a_inputfileName,outbedfilename, int(options.upextend), int(options.downextend), int(options.winWidth), int(options.slideSize), options.winType, "l", threshold_title_list, None, options.mergeNA, int(options.distalextend),options.anchorfile,options.trscptfound,options.mapfile),threshold_title,outbedfilename))
+                outfileNameWINwithGENE_Alist_unfinished.append((geneUtil.findTrscpt(a_inputfileName,outbedfilename, int(options.upextend), int(options.downextend), int(options.winWidth), int(options.slideSize), columnname, "l", threshold_title_list, None, options.mergeNA, int(options.distalextend),options.anchorfile,options.trscptfound,options.mapfile),threshold_title,outbedfilename))
                 
         print("outfileNameWINwithGENE_Plist",outfileNameWINwithGENE_Plist)
         print("outfileNameWINwithGENE_Nlist",outfileNameWINwithGENE_Nlist)
