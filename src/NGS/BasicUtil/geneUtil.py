@@ -594,6 +594,7 @@ class WinInGenome():
 
 def ztransform(winfileName,winType,outfileName,outZColidx=8,standardsexseperately=False):#when standardsexseperately is True, mark field is the 8th (7idx) col, the in the outfile  processedvalue append to mark field would be 9th  col
     "winfileName is with mark or without (fill unknown into mark field), mark is the 8th col (idx 7), if standardsexseperately==True, mark should have both 'autosome' and 'sexchromsome'"
+    print("ztransform",winfileName,"->",outfileName)
     sfm=open(winfileName,"r")
     titlelist=re.split(r"\t",sfm.readline().strip())
     targetColidx=titlelist.index(winType)
@@ -601,7 +602,7 @@ def ztransform(winfileName,winType,outfileName,outZColidx=8,standardsexseperatel
         winCrossGenome=[];endidx=7;mark=["unknown"]
     elif len(titlelist)>7 and standardsexseperately:#mark field exist! 
         winCrossGenomeMap={"autosome":[],"sexchromosome":[]};endidx=8;mark=[]#{"autosome":[],"Z":[],"W":[],"X":[],"Y":[]}
-    else:
+    else:#mark field exist! and standardsexseperately is False
         winCrossGenome=[];endidx=8;mark=[]
     for line in sfm:
         linelist=re.split(r"\s+",line.strip())
@@ -648,8 +649,10 @@ def findTrscpt(winfile,outbedfilename,upextend,downextend,winwidth,slideSize,win
         exit(-1)
     threshold_title_list
     if anchorfile:
-#         winfile=standardseparately(anchorfile,winfile)
-        winfilemark,winfilearrangement=mapWinvaluefileToChrOfReletiveSpecie(anchorfile, winfile, winwidth, slideSize, True,mapfile)
+        if anchorfile!="usemark" :
+            winfilemark,winfilearrangement=mapWinvaluefileToChrOfReletiveSpecie(anchorfile, winfile, winwidth, slideSize, True,mapfile)
+        else:
+            winfilemark, winfilearrangement=  winfile,"None"
         totalcolbefore,Tcolidx=ztransform(winfilemark,winType,winfile+"marked.sexchromseperatestandard",outZColidx=8,standardsexseperately=True)
     else:
         totalcolbefore,Tcolidx=ztransform(winfile,winType,winfile+"marked.sexchromseperatestandard",8,False)
