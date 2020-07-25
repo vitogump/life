@@ -3,7 +3,7 @@ Created on 2014-11-17
 
 @author: liurui
 '''
-import time,datetime,sys
+import time,datetime,sys,cv2
 import re,string,os,random,markdown2
 import src.web.dba as mydba
 from src.pipelinecontrol.Util import OperatorWithData_webservice, upTodownTravelDir,longestCommonPrefix
@@ -58,6 +58,38 @@ def random_uniqScriptDir(scriptspath,MSG,randomlength=8):
                 ranUniscriptspath=(scriptspath.rstrip("/")+"/"+MSG+"/"+''.join(a[:randomlength]))
                 break
     return ranUniscriptspath
+def getrecords():
+    print()
+def genp():
+    img=cv2.imread("lizerd.jpg")
+    img=cv2.resize(img,(0,0),fx=0.5,fy=0.5)
+    frame=cv2.imencode('.jpg', img)[1].tobytes()
+    yield (b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+def gen(videoname):
+    """Video streaming generator function."""
+    cap = cv2.VideoCapture(videoname)
+    # Read until video is completed
+    while(cap.isOpened()):
+      # Capture frame-by-frame
+        ret, img = cap.read()
+        if ret == True:
+            img = cv2.resize(img, (0,0), fx=1, fy=1) 
+            frame = cv2.imencode('.jpg', img)[1].tobytes()
+            yield (b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+            time.sleep(0.07)
+        else: 
+            break
+#     while True:
+#         frame = camera.get_frame()
+#         yield (b'--frame\r\n'
+#                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+# class Camera(object):
+#     def __init__(self):
+#         self.frames = [open(f + '.jpg', 'rb').read() for f in ['1', '2', '3']]
+# 
+#     def get_frame(self):
+#         return self.frames[int(time()) % 3]
 def scriptproduce(datadepth,collectiondepth,scriptspath,inputdataroot,softwareconfig,parametersStr,inputList,outputList,bathchOfInPath,lenOfdirtotag=0,taglist=[],selecteddepth=0,selecteddirs=[]):#selecteddepth=0 means check collectiondepth only
     
     inputstr=(" "+" ".join(taglist)+" ") if int(lenOfdirtotag)!=0 else ""

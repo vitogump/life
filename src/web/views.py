@@ -7,15 +7,15 @@ from email.utils import unquote
 import os, time, Service
 import re
 
-from flask import request, jsonify, send_from_directory, abort, render_template
+from flask import request, jsonify, send_from_directory, abort, render_template, Response
 from flask.helpers import url_for
-from werkzeug.datastructures import MultiDict
-from werkzeug.routing import BaseConverter
-from werkzeug.utils import redirect
-
 from src.web.forms import StudentForm
 from web import web
 from web.forms import ParaForm, UsersForm, AddClassForm, FileUploadForm
+from werkzeug.datastructures import MultiDict
+from werkzeug.routing import BaseConverter
+from werkzeug.utils import redirect
+from email.policy import default
 
 
 class RegexConverter(BaseConverter):
@@ -39,8 +39,66 @@ def testmyform():
             return form.datadepth.data+"come on"
 
     return render_template('configsotware.html',form=form)
-    
 
+
+@web.route('/upload',methods=['GET','POST'])
+def upload_file():
+    if request.method=='POST':
+        file=request.files['file']
+        if file:
+            filename=file.filename.rsplit('.',1)[0]
+            filetype=file.filename.rsplit('.',1)[1]
+            filename=filename.replace(' ','')
+            filename=filename.replace('.','-')
+            filename=filename+'.'+filetype
+            #解决命名冲突
+#             records=Service.getrecords()
+#             for record in records:
+#                 if filename==record['filename']:
+#                     flash('')
+#                     return render_template("upload.html")
+            file.save(os.path.join(web.config['UPLOAD_FOLDER'],filename))
+#             date=time.strftime(,time.localtime())
+#             record={"filename":filename,"date":date}
+#             cursor.execute()
+#             data_base.commit()
+            return redirect(url_for('identifywork',filename=filename))
+    return render_template('hlsbwelcome.html')
+            
+@web.route('/video_feed',defaults={'filename':'monkey.avi'})
+@web.route('/video_feed/<filename>')
+def video_feed(filename):
+    path=web.config['UPLOAD_FOLDER']+"/"+filename
+    print("i find "+path)
+    return Response(Service.gen(path),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')            
+@web.route('/demoexhibitionmp4')
+def demo_exhibition():
+    return render_template('video.html')
+    return render_template('videomp4.html')
+@web.route('/identifwork/<filename>',methods=['GET'])
+def identifywork(filename):
+    
+    return render_template('hlsbwork.html',path=filename)
+#     return """
+#     <html>
+#   <head>
+#     <title>Video Streaming Demonstration</title>
+#   </head>
+#   <body>
+#     <h1>Video Streaming Demonstration</h1>
+#     <img src="{{ url_for('video_feed') }}">
+#   </body>
+# </html>
+#     """
+#     return ''' <!DOCTYPE html> 
+#     <html> <body> 
+#     <video width="700" height="500" controls="controls"> 
+#     <source src="static/video/my_movie.mp4" type="video/mp4" /> 
+#     </video> 
+#     </body> 
+#     </html> 
+#     '''
 # @web.route('/login',methods=['GET','POST'])
 # def login():
 #     return render_template('hello.html')

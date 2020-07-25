@@ -36,7 +36,7 @@ KB743256_1=cfparser.get("mysqldatabase","KB743256_1")
 outgroupVCFBAMconfig_beijingref=cfparser.get("mysqldatabase","outgroupVCFBAMconfig_beijingref")
 pathtoPython=cfparser.get("mysqldatabase", "pathtoPython")
 beijingreffa=cfparser.get("mysqldatabase","beijingreffa")
-
+UPLOAD_FOLDER="static/video"
 def random_str(randomlength=8):
     a = list(string.ascii_letters)
     random.shuffle(a)

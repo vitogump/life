@@ -206,7 +206,7 @@ function setText(obj)
 <input type="text" class="taginput2n"  value="+该字段替换为数据上级目录名+" disabled/>
 <input type="text" class="taginput3n" id="taginput4" value="'"/>
 {#% {{ wtf.form_field(form.iomode, id="iomode") }} %#}
-{{wtf.form_field(form.tagtoFolderlevel,id="tagtxtName" )}}<p>paste the No. of folder name from the bottom</p><br /><br />
+{{wtf.form_field(form.tagtoFolderlevel,id="tagtxtName" )}}<p>paste which No. of folder from the bottom</p><br /><br />
 {{form.mem.label}}<!--<input type="text">--> {{form.mem}} &nbsp&nbsp<b>empty to use shell in terminal</b>
 <p style="font-family:times;color:red"><b>控制软件及参数部分结束</b></p>
 <br/>
@@ -238,7 +238,7 @@ function setText(obj)
     {{wtf.form_field(form.NumOfThreads)}}<br />
 	{{ wtf.form_field(form.submit, button_map={'id':'submit_button'}) }}
 	<input type="submit" value="提交运行">
-
+<p>to cooperation, contact wechat: feelgood_lr</p>
 </form>
 {% if form.errors %}
     <ul class="errors">
