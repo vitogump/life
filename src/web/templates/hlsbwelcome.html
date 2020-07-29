@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+    <html> <body>
+
+<center>
+<div class="warning">
+	{% for message in get_flashed_messages() %}
+		<strong>Warning!</strong> {{ message }}
+	{% endfor %}
+</div>
+    <h1>How to use our system</h1>
+    <video width="700" height="500" controls="controls">
+    <source src="static/video/testV.mp4" type="video/mp4" />
+    </video>
+    <video width="700" height="500" controls="controls">
+    <source src="static/video/disney_movie2.mp4" type="video/mp4" />
+   </video>
+<br><br><br>
+<h1>上传要识别的视频文件</h1>
+<br><br>
+<form action="{{ url_for('login') }}" method=post enctype=multipart/form-data>
+  <p><input type=file name=file>
+     <input type=submit value=上传>
+</form>
+
+<h4>须知：</h4>
+<table border="0">
+<tr>
+<td align="left" valign="middle" border="0">1、上传之后跳转至识别工作界面</td>
+</tr>
+<tr>
+<td align="left" valign="middle" border="0">2、当前正在开发阶段，不支持同文件名文件重复上传</td>
+</tr>
+<tr>
+<td align="left" valign="middle" border="0">3、作为示例，加入已经上传mymonkey.avi文件，输入url将跳转至工作页面</td>
+</tr>
+</table>
+<center>
+
+<fieldset>
+<table>
+<tr><td align="center">{{form.usrname.label}}</td><td>{{form.usrname}}<br></td></tr>
+<tr><td align="center">{{form.usrpwd.label}}</td><td>{{form.usrpwd}}<br></td></tr>
+</table>
+{{ form.csrf_token }}
+{{form.submit}}
+</fieldset>
+</form>
+    </body>
+    </html>

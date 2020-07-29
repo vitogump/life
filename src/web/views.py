@@ -4,14 +4,14 @@ Created on 2017年10月19日
 @author: liurui
 '''
 from email.utils import unquote
-import os, time, Service
-import re
+import os, time, Service,re
 
+from functools import wraps  # 装饰器(用于访问控制)
 from flask import request, jsonify, send_from_directory, abort, render_template, Response
 from flask.helpers import url_for
 from src.web.forms import StudentForm
 from web import web
-from web.forms import ParaForm, UsersForm, AddClassForm, FileUploadForm
+from web.forms import *
 from werkzeug.datastructures import MultiDict
 from werkzeug.routing import BaseConverter
 from werkzeug.utils import redirect
@@ -23,6 +23,16 @@ class RegexConverter(BaseConverter):
         self.map = map
         self.regex = args[0]
 web.url_map.converters['regex'] = RegexConverter
+
+# 前台登录装饰器(只能登录后才能访问会员中心)
+# def user_login_req(f):
+#     @wraps(f)
+#     def decorated_function(*args, **kwargs):
+#         if 'user' not in session:  # if session['user'] is None:
+#             return redirect(url_for('login', next=request.url))
+#         return f(*args, **kwargs)
+# 
+#     return decorated_function
 
 @web.route('/mytest',methods=['GET','POST'])        
 def testmyform():
@@ -41,7 +51,7 @@ def testmyform():
     return render_template('configsotware.html',form=form)
 
 
-@web.route('/upload',methods=['GET','POST'])
+@web.route('/',methods=['GET','POST'])
 def upload_file():
     if request.method=='POST':
         file=request.files['file']
@@ -99,17 +109,21 @@ def identifywork(filename):
 #     </body> 
 #     </html> 
 #     '''
-# @web.route('/login',methods=['GET','POST'])
-# def login():
-#     return render_template('hello.html')
-# 
-# @web.route('/hello',methods=['POST'])
-# def hello():
-#     ccc=request.form['textfield']
-#     print(ccc,"there\n",os.getcwd())
-#     return request.form['textfield']+"come on"
 
-@web.route('/',methods=['GET','POST'])
+
+@web.route('/hom',methods=['GET','POST'])
+def guide():
+    return redirect(url_for('tutorial'))
+    return render_template("hlsbwelcome.html")
+
+@web.route('/login',methods=['GET','POST'])
+def login():
+    form=LoginForm()
+    if form.validate_on_submit():
+        data=form.data
+    return render_template("login.html",form=form)
+
+@web.route('/analysisdata',methods=['GET','POST'])
 def configsoftware():
     form=ParaForm()
     if form.validate_on_submit():

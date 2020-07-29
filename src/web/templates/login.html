@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0,user-scalable=no">
+
+<head>
+    <meta charset="UTF-8">
+    <title>login</title>
+</head>
+
+<center><body>
+<h2>动物个体身份识别服务登录界面!</h2>
+<form method="post" action="{{ url_for('login') }}">
+<fieldset>
+<table>
+<tr><td align="center">{{form.usrname.label}}</td><td>{{form.usrname}}<br></td></tr>
+<tr><td align="center">{{form.usrpwd.label}}</td><td>{{form.usrpwd}}<br></td></tr>
+</table>
+{{ form.csrf_token }}
+{{form.submit}}
+</fieldset>
+</form>
+<small>注册账户<a href='/register'>点这里</a></small><br>
+
+</body></center>

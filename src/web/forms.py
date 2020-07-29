@@ -7,7 +7,7 @@ Created on 2017年10月19日
 
 from flask_wtf import FlaskForm
 from flask_wtf.form import Form
-from wtforms import FieldList, StringField, SubmitField, SelectField,HiddenField,TextAreaField
+from wtforms import FieldList, StringField, PasswordField, SubmitField, SelectField,HiddenField,TextAreaField
 from wtforms.fields.core import FormField
 from wtforms.validators import Required, DataRequired
 import itertools
@@ -43,6 +43,19 @@ class UsersForm(Form):
 _max_nb_entries = 9000
 _max_len_per_entry = 360  
 _delimiter = "#;_"
+class LoginForm(FlaskForm):
+    usrname=StringField(
+        label="账号",
+        validators=[DataRequired("请输入账号！")],
+        default="guest"
+        )
+    usrpwd=PasswordField(
+        label="密码",
+        validators=[DataRequired("请输入密码")],
+        default="guest"
+        )
+    submit=SubmitField('登录')
+    
 class FieldListFromString(FieldList):
     """
     The idea here is to have a FieldList but to store the data in a string format instead of a list
