@@ -77,7 +77,7 @@ def gen(videoname):
             img = cv2.resize(img, (0,0), fx=1, fy=1) 
             frame = cv2.imencode('.jpg', img)[1].tobytes()
             yield (b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-            time.sleep(0.07)
+#             time.sleep(0.07)
         else: 
             break
 #     while True:
