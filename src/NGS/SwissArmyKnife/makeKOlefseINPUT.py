@@ -7,6 +7,9 @@ from optparse import OptionParser
 import re
 from scipy import stats
 import pandas as pd
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+
+
 parser = OptionParser()
 
 parser.add_option("-K", "--KEGGAnnotation", dest="KOAnnot", help="gotable title with :GeneID    KO    GeneName    Definition    GO domain    GO Term Name    GO Term Definition,order and upper/lower case is arbitrarily")
@@ -112,6 +115,7 @@ if __name__ == '__main__':
         for ko in kocount.keys():
             statistic,pvalue=stats.kruskal(kocount[ko][:5],kocount[ko][5:])
             print(ko,*kocount[ko],pvalue,sep="\t",file=koout)
+            print("print sum for each ko and kruskal test into file; done")
             
     #colect gene that the KO passed Kruskal test 
 #     for KO in KOcount.keys():
@@ -126,4 +130,17 @@ if __name__ == '__main__':
     outputfile.close();koout.close()
     print(abundatafracp)
     #read to pandas dataframe and select gene that passed Kruskal test <0.05
-    
+    print("############perform lda analysis#####################")
+    X=pd.read_table('KOlefsefracPvalue.rmtitle.KO.txt',header=None)
+    print('select significant rec & trans to a new df')
+    Xfeaturetile=X.loc[X[11]<=0.05].T.loc[1:10]
+    Xfeaturetile.columns=X.T.loc[0].tolist()
+    #new group column
+    y=pd.DataFrame({'group':['G','G','G','G','G','S','S','S','S','S']})
+    lda = LinearDiscriminantAnalysis()
+    X_lda = lda.fit_transform(Xfeaturetile, y)
+    print(X_lda)
+    print('X_lda[:,1]')
+    print(X_lda[:,0])
+    print("X_lda[:,0]")
+    print(X_lda[:,1])
