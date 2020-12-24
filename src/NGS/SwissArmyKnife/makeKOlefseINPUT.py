@@ -8,6 +8,7 @@ import re
 from scipy import stats
 import pandas as pd
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+import rpy2.robjects as robjects
 
 
 parser = OptionParser()
@@ -83,14 +84,19 @@ if __name__ == '__main__':
         abundatafrac[id]=abundata[id]/abundata[id].sum()
     
     #print out:geneid|KOid    G1    G2    G3    G4    G5    S1    S2    S3    S4    S5
-    print("KOid|geneid","\t".join(titlelist[sample1idx:]),"pvalue",sep="\t",file=outputfile)
+    print("KOid|geneid","\t".join(titlelist[sample1idx:]),"pvalue",'wpvalue',sep="\t",file=outputfile)
     i=0
+    r = robjects.r
     #Sum in KO && place KO|geneID to print
     for idx,gaburow in abundatafrac.iterrows():
         gabul=gaburow.tolist()
         #Kruskal test for each gene
         try:
-            statistc,pvalue=stats.kruskal(gabul[1:6],gabul[6:])
+            
+            statistc,pvalue=stats.kruskal(gabul[1:6],gabul[6:])#instead this 
+            ws,wpvalue=stats.ranksums(gabul[1:6],gabul[6:])#two line by
+            #ws,wpvalue=stats.wilcoxon(gabul[1:6],gabul[6:])
+#             pvalue=wpvalue=1# by this line would be a faster edition
         except:
             pvalue=1
         if gabul[0] in geneKeyKOvalue:# abundence recod gene has a KO 
@@ -98,9 +104,9 @@ if __name__ == '__main__':
             KOKeyGeneidxvalue[KO].append(idx)
             for samp_idx in range(len(gabul[1:])):#every sample for one gene rec
                 KOcount[KO][samp_idx]+=gabul[1+samp_idx]
-            print(KO+"|"+gabul[0],*gabul[1:],pvalue,sep="\t",file=outputfile)
+            print(KO+"|"+gabul[0],*gabul[1:],pvalue,wpvalue,sep="\t",file=outputfile)
 #             print(pvalue<=0.05,len(abundatafracp))
-            if pvalue<=0.05:
+            if pvalue<=0.05:#FOR LDA
                 abundatafracp.loc[len(abundatafracp)]=[KO+"|"+gabul[0],*gabul[1:],pvalue]
 #                 print([KO+"|"+gabul[0],*gabul[1:],pvalue])
 #                 abundatafracp.append(pd.DataFrame([KO+"|"+gabul[0],*gabul[1:],pvalue]),ignore_index=True)
@@ -111,10 +117,14 @@ if __name__ == '__main__':
     else:
         for KO in KOcount.keys():
             statistic,pvalue=stats.kruskal(KOcount[KO][:5],KOcount[KO][5:])
-            print(KO,*KOcount[KO],pvalue,sep="\t",file=outputfile)
+            ws,wpvalue=stats.ranksums(KOcount[KO][:5],KOcount[KO][5:])
+            #ws,wpvalue=stats.wilcoxon(KOcount[KO][:5],KOcount[KO][5:])
+            print(KO,*KOcount[KO],pvalue,wpvalue,sep="\t",file=outputfile)
         for ko in kocount.keys():
             statistic,pvalue=stats.kruskal(kocount[ko][:5],kocount[ko][5:])
-            print(ko,*kocount[ko],pvalue,sep="\t",file=koout)
+            ws,wpvalue=stats.ranksums(KOcount[KO][:5],KOcount[KO][5:])
+            #ws,wpvalue=stats.wilcoxon(kocount[ko][:5],kocount[ko][5:])
+            print(ko,*kocount[ko],pvalue,wpvalue,sep="\t",file=koout)
             print("print sum for each ko and kruskal test into file; done")
             
     #colect gene that the KO passed Kruskal test 
