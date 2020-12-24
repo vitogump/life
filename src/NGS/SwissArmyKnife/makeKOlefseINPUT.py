@@ -94,7 +94,7 @@ if __name__ == '__main__':
         #Kruskal test for each gene
         try:
             strx=",".join([str(x) for x in gabul[1:6]]);stry=",".join([str(x) for x in gabul[6:]])
-            summaryListVector=r("wilcox.test("+strx+","+gabul[6:]+", exact=NULL,correct=FALSE,alternative='two.sided')")
+            summaryListVector=r("wilcox.test(c("+strx+"),c("+stry+"), exact=NULL,correct=FALSE,alternative='two.sided')")
             summaryd=dict(zip(summaryListVector.names,list(summaryListVector)))
             wpvalue=str(float(rpyn.ri2py(summaryd['p.value'])))
              
@@ -103,7 +103,7 @@ if __name__ == '__main__':
 #             ws,wpvalue=stats.wilcoxon(gabul[1:6],gabul[6:])
 #             pvalue=wpvalue=1# by this line would be a faster edition
         except:
-            pvalue=1
+            wpvalue=pvalue=1
         if gabul[0] in geneKeyKOvalue:# abundence recod gene has a KO 
             KO=geneKeyKOvalue[gabul[0]]
             KOKeyGeneidxvalue[KO].append(idx)
