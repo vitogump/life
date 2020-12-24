@@ -9,6 +9,7 @@ from scipy import stats
 import pandas as pd
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 import rpy2.robjects as robjects
+import rpy2.robjects.numpy2ri as rpyn
 
 
 parser = OptionParser()
@@ -92,10 +93,14 @@ if __name__ == '__main__':
         gabul=gaburow.tolist()
         #Kruskal test for each gene
         try:
-            
+            strx=",".join([str(x) for x in gabul[1:6]]);stry=",".join([str(x) for x in gabul[6:]])
+            summaryListVector=r("wilcox.test("+strx+","+gabul[6:]+", exact=NULL,correct=FALSE,alternative='two.sided')")
+            summaryd=dict(zip(summaryListVector.names,list(summaryListVector)))
+            wpvalue=str(float(rpyn.ri2py(summaryd['p.value'])))
+             
             statistc,pvalue=stats.kruskal(gabul[1:6],gabul[6:])#instead this 
-            ws,wpvalue=stats.ranksums(gabul[1:6],gabul[6:])#two line by
-            #ws,wpvalue=stats.wilcoxon(gabul[1:6],gabul[6:])
+#             ws,wpvalue=stats.ranksums(gabul[1:6],gabul[6:])#two line by
+#             ws,wpvalue=stats.wilcoxon(gabul[1:6],gabul[6:])
 #             pvalue=wpvalue=1# by this line would be a faster edition
         except:
             pvalue=1
@@ -117,12 +122,20 @@ if __name__ == '__main__':
     else:
         for KO in KOcount.keys():
             statistic,pvalue=stats.kruskal(KOcount[KO][:5],KOcount[KO][5:])
-            ws,wpvalue=stats.ranksums(KOcount[KO][:5],KOcount[KO][5:])
+            strx=",".join([str(x) for x in KOcount[KO][:5]]);stry=",".join([str(x) for x in KOcount[KO][5:]])
+            summaryListVector=r("wilcox.test(c("+strx+"),c("+stry+"), exact=NULL,correct=FALSE,alternative='two.sided')")
+            summaryd=dict(zip(summaryListVector.names,list(summaryListVector)))
+            wpvalue=str(float(rpyn.ri2py(summaryd['p.value'])))
+#             ws,wpvalue=stats.ranksums(KOcount[KO][:5],KOcount[KO][5:])
             #ws,wpvalue=stats.wilcoxon(KOcount[KO][:5],KOcount[KO][5:])
             print(KO,*KOcount[KO],pvalue,wpvalue,sep="\t",file=outputfile)
         for ko in kocount.keys():
             statistic,pvalue=stats.kruskal(kocount[ko][:5],kocount[ko][5:])
-            ws,wpvalue=stats.ranksums(KOcount[KO][:5],KOcount[KO][5:])
+            strx=",".join([str(x) for x in kocount[ko][:5]]);stry=",".join([str(x) for x in kocount[ko][5:]])
+            summaryListVector=r("wilcox.test(c("+strx+"),c("+stry+"), exact=NULL,correct=FALSE,alternative='two.sided')")
+            summaryd=dict(zip(summaryListVector.names,list(summaryListVector)))
+            wpvalue=str(float(rpyn.ri2py(summaryd['p.value'])))
+#             ws,wpvalue=stats.ranksums(kocount[ko][:5],kocount[ko][5:])
             #ws,wpvalue=stats.wilcoxon(kocount[ko][:5],kocount[ko][5:])
             print(ko,*kocount[ko],pvalue,wpvalue,sep="\t",file=koout)
             print("print sum for each ko and kruskal test into file; done")
