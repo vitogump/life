@@ -1,0 +1,72 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+{% import "bootstrap/wtf.html" as wtf %}
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>重测序</title>
+
+<style type="text/css">
+
+.STYLE1 {
+	font-family: "华文行楷";
+	font-size: 36px;
+}
+.STYLE2 {
+
+	font-size: 18px;
+}
+input[type="text"][class="taginput2n"]{
+    line-height: 1.5em;
+    color:green;
+    text-align:left;
+    width:183px;
+    border-left:0px;
+    border-right:0px;
+    margin:0 0 0 -7px;
+    background:white;
+}
+input[type="text"][class="taginput1n"]{
+    line-height: 1.5em;
+    border-right:0px;
+    width:72px;
+    outline:none;
+}
+input[type="text"][class="taginput3n"]{
+    line-height: 1.5em;
+    border-left: 0px;
+    width:72px;
+    margin:0 0 0 -7px;
+    outline:none;
+}
+</style>
+<script src="../static/jquery-2.1.4.js"></script>
+<script src="../static/entryelem.js"></script>
+</head>
+
+<body>
+<form action="" method="post">
+{{ form.csrf_token }}
+<div class="form-group "><label class="control-label" for="software1">处理方式</label>
+
+          <select class="form-control" id="software1" name="software1" onchange="soft_change(this)">
+			   <option value="R">R</option>
+			   <option value="bowtie2">bowtie2</option>
+			   <option value="bismark">bismark</option>
+			   <option value="shell">linuxInternalCommand</option>
+			   <option value="python ~/life/src/usci/depthDistance.py">python ~/life/src/usci/depthDistance.py</option>
+			   <option value="software/tools">pathtocommand</option>
+			   <option value="rm">rm</option>
+		   </select>
+  </div>
+</form>
+{% if form.errors %}
+    <ul class="errors">
+        {% for field_name, field_errors in form.errors|dictsort if field_errors %}
+            {% for error in field_errors %}
+                <li>{{ form[field_name].label }}: {{ error }}</li>
+            {% endfor %}
+        {% endfor %}
+    </ul>
+{% endif %}
+</body>
+</html>
