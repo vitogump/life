@@ -5,6 +5,9 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title>重测序</title>
 
+<link href="../static/lib/codemirror/lib/codemirror.css" rel="stylesheet" type="text/css">
+<link href="../static/lib/codemirror/theme/monokai.css" rel="stylesheet" type="text/css">
+<link href="../static/lib/codemirror/addon/display/fullscreen.css" rel="stylesheet" type="text/css">
 <style type="text/css">
 
 .STYLE1 {
@@ -39,100 +42,7 @@ input[type="text"][class="taginput3n"]{
     outline:none;
 }
 </style>
-<script src="../static/jquery-2.1.4.js"></script>
-<script>
 
-
-	/*软件选择*/
-	function soft_change()
-	{
-		var sT=$("#software1");
-		for(var i=0;i<sT.length;i++){
-					if(sT.val()=="othercommand"){
-						  var mytext = $("<input id='MyLinuxCommand' name='MyLinuxCommand' type='text' size='70'/>");
-						  mytext.attr("value","/USCIRL/project/RD/CTBCTG/liurui");
-						  $('#N').append(mytext);
-
-					}else{
-					   if($("#MyLinuxCommand")){
-						 $("#N").empty();
-					   }
-					}
-				}
-		}
-function change(v){
-	if(v == 1){
-		document.getElementById("test").innerHTML = " <table><tr><td>-1INPUT：<input type='text' name='zx' /></td></tr>	</table><table><tr><td>-2INPUT：<input type='text' name='zx' /></td></tr></table>"
-	}
-	if(v == 2){
-		document.getElementById("test").innerHTML = " <table><tr><td>INPUT：<input type='text' name='zx' /></td></tr></table>"
-	}
-	if(v == 3){
-		document.getElementById("test").innerHTML = "INPUT：<input type='text' name='zx'/>";
-	}else if(v == 4){
-		document.getElementById("test").innerHTML = "-l：<input type='text' name='zx'/>";
-		}
-}
-
-$(function() {
-	$('form').submit(function() { $('#foldertag1').val($('#taginput1').val());$('#foldertag3').val($('#taginput3').val())});
-	$('form').submit(function() { $('#foldertag2').val($("input[id='taginput2']").val());$('#foldertag4').val($("input[id='taginput4']").val())});
-
-	$('form').submit(function() { $('#pinput1').val($('#inputoptsufix1').val());$('#pinput3').val($('#inputoptsufix3').val())});
-	$('form').submit(function() { $('#pinput2').val($("input[id='inputoptsufix2']").val());$('#pinput4').val($("input[id='inputoptsufix4']").val())});
-    $("div[data-toggle=fieldset]").each(function() {
-        var $this = $(this);
-
-        //Add new entry
-        $this.find("button[data-toggle=fieldset-add-row]").click(function() {
-            var target = $($(this).data("target"));
-            //console.log(target);
-            var oldrow = target.find("[data-toggle=fieldset-entry]:last");
-            var row = oldrow.clone(true, true);
-            var elem_id = row.find(":input")[0].id;
-            var elem_prefix = elem_id.replace(/(.*)-(\d{1,4})/m, '$1')// max 4 digits for ids in list
-            var elem_num = parseInt(elem_id.replace(/(.*)-(\d{1,4})/m, '$2')) + 1;
-            //console.log(elem_prefix);
-            //console.log(elem_num);
-            row.children(':input').each(function() {
-                var id = $(this).attr('id').replace(elem_prefix+'-' + (elem_num - 1), elem_prefix+'-' + (elem_num));
-                $(this).attr('name', id).attr('id', id).val('').removeAttr("checked");
-            });
-            row.children('label').each(function() {
-                var id = $(this).attr('for').replace(elem_prefix+'-' + (elem_num - 1), elem_prefix+'-' + (elem_num));
-                $(this).attr('for', id);
-            });
-            row.show();
-            oldrow.after(row);
-        }); //End add new entry
-        //Remove row
-        $this.find("button[data-toggle=fieldset-remove-row]").click(function() {
-            if($this.find("[data-toggle=fieldset-entry]").length > 1) {
-                var thisRow = $(this).closest("[data-toggle=fieldset-entry]");
-                thisRow.remove();
-            }
-        }); //End remove row
-    });
-});
-
-
-function setText(obj)
-{
-    if(obj.checked==true)
-    {
-        document.getElementById("txtName").disabled=false;
-		document.getElementById("txtName1").disabled=false;
-    }
-    else
-    {
-        document.getElementById("txtName").disabled=true;
-        document.getElementById("txtName").value="0";
-
-		document.getElementById("txtName1").disabled=true;
-        document.getElementById("txtName1").value="";
-    }
-}
-</script>
 
 </head>
 
@@ -197,7 +107,7 @@ function setText(obj)
   </div>
 <div id="N"></div>
 
-	{{form.commandParameters.label}}</br>{{form.commandParameters(rows='8',cols='65')}}
+	{{form.commandParameters.label}}</br>{{form.commandParameters(rows='33',cols='210')}}
 <br/>
 <input type="text" class="taginput1n" id="taginput1" value="--rg 'ID:"/>
 <input type="text" class="taginput2n"  value="+该字段替换为数据上级目录名+" disabled/>
@@ -226,7 +136,7 @@ function setText(obj)
 	</ul>
 </div>
 <p style="font-family:times;color:red"><b>控制输出部分结束，下面提示非法输入或覆盖风险，最后控制任务自动投放量</b></p>
-{{form.messagecomment.label}}</br>{{form.messagecomment(rows='3',cols='65')}}
+{{form.commandsOF1input_process_2output.label}}</br>{{form.commandsOF1input_process_2output(rows='3',cols='65')}}
 <!--<input type="submit" value="提交" ><br /><br />-->
 {{ wtf.form_field(form.tag1part1, id="foldertag1") }}{{ wtf.form_field(form.tag1part2, id="foldertag2") }}
 {{ wtf.form_field(form.tag2part1, id="foldertag3") }}{{ wtf.form_field(form.tag2part2, id="foldertag4") }}
@@ -240,6 +150,135 @@ function setText(obj)
 	<input type="submit" value="提交运行">
 <p>to cooperation, contact wechat: feelgood_lr</p>
 </form>
+
+<script src="../static/jquery-2.1.4.js"></script>
+<script type="text/javascript" src="../static/lib/codemirror/lib/codemirror.js"></script>
+<!-- CodeMirror支持不同语言，根据需要引入JS文件 -->
+<script type="text/javascript" src="../static/lib/codemirror/mode/r/r.js"></script>
+<script type="text/javascript" src="../static/lib/codemirror/mode/clike/clike.js"></script>
+<!-- 下面分别为显示行数、括号匹配和全屏插件 -->
+<script type="text/javascript" src="../static/lib/codemirror/addon/selection/active-line.js"></script>
+<script type="text/javascript" src="../static/lib/codemirror/addon/edit/matchbrackets.js"></script>
+<script type="text/javascript" src="../static/lib/codemirror/addon/display/fullscreen.js"></script>
+<script>
+	/*通过JavaScript配置CodeMirror的基本信息*/
+	console.log(document.getElementById("code"))
+    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+        lineNumbers: true,     // 显示行数
+        indentUnit: 4,         // 缩进单位为4
+        styleActiveLine: true, // 当前行背景高亮
+        matchBrackets: true,   // 括号匹配
+        mode: 'text/x-rsrc',     // HMTL混合模式
+        lineWrapping: true,    // 自动换行
+        theme: 'monokai',      // 使用monokai模版
+    });
+    editor.setOption("extraKeys", {
+        // Tab键换成4个空格
+        Tab: function(cm) {
+            var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
+            cm.replaceSelection(spaces);
+        },
+        // F11键切换全屏
+        "F11": function(cm) {
+            cm.setOption("fullScreen", !cm.getOption("fullScreen"));
+        },
+        // Esc键退出全屏
+        "Esc": function(cm) {
+            if (cm.getOption("fullScreen")) cm.setOption("fullScreen", false);
+        }
+    });
+
+	/*软件选择*/
+	function soft_change()
+	{
+		var sT=$("#software1");
+		for(var i=0;i<sT.length;i++){
+					if(sT.val()=="othercommand"){
+						  var mytext = $("<input id='MyLinuxCommand' name='MyLinuxCommand' type='text' size='70'/>");
+						  mytext.attr("value","/USCIRL/project/RD/CTBCTG/liurui");
+						  $('#N').append(mytext);
+
+					}else{
+					   if($("#MyLinuxCommand")){
+						 $("#N").empty();
+					   }
+					}
+				}
+		}
+function change(v){
+	if(v == 1){
+		document.getElementById("test").innerHTML = " <table><tr><td>-1INPUT：<input type='text' name='zx' /></td></tr>	</table><table><tr><td>-2INPUT：<input type='text' name='zx' /></td></tr></table>"
+	}
+	if(v == 2){
+		document.getElementById("test").innerHTML = " <table><tr><td>INPUT：<input type='text' name='zx' /></td></tr></table>"
+	}
+	if(v == 3){
+		document.getElementById("test").innerHTML = "INPUT：<input type='text' name='zx'/>";
+	}else if(v == 4){
+		document.getElementById("test").innerHTML = "-l：<input type='text' name='zx'/>";
+		}
+}
+
+$(function() {
+	$('form').on('submit',function(e){editor.save();var data = editor.getValue();});
+	$('form').submit(function() { $('#foldertag1').val($('#taginput1').val());$('#foldertag3').val($('#taginput3').val())});
+	$('form').submit(function() { $('#foldertag2').val($("input[id='taginput2']").val());$('#foldertag4').val($("input[id='taginput4']").val())});
+
+	$('form').submit(function() { $('#pinput1').val($('#inputoptsufix1').val());$('#pinput3').val($('#inputoptsufix3').val())});
+	$('form').submit(function() { $('#pinput2').val($("input[id='inputoptsufix2']").val());$('#pinput4').val($("input[id='inputoptsufix4']").val())});
+    $("div[data-toggle=fieldset]").each(function() {
+        var $this = $(this);
+
+        //Add new entry
+        $this.find("button[data-toggle=fieldset-add-row]").click(function() {
+            var target = $($(this).data("target"));
+            //console.log(target);
+            var oldrow = target.find("[data-toggle=fieldset-entry]:last");
+            var row = oldrow.clone(true, true);
+            var elem_id = row.find(":input")[0].id;
+            var elem_prefix = elem_id.replace(/(.*)-(\d{1,4})/m, '$1')// max 4 digits for ids in list
+            var elem_num = parseInt(elem_id.replace(/(.*)-(\d{1,4})/m, '$2')) + 1;
+            //console.log(elem_prefix);
+            //console.log(elem_num);
+            row.children(':input').each(function() {
+                var id = $(this).attr('id').replace(elem_prefix+'-' + (elem_num - 1), elem_prefix+'-' + (elem_num));
+                $(this).attr('name', id).attr('id', id).val('').removeAttr("checked");
+            });
+            row.children('label').each(function() {
+                var id = $(this).attr('for').replace(elem_prefix+'-' + (elem_num - 1), elem_prefix+'-' + (elem_num));
+                $(this).attr('for', id);
+            });
+            row.show();
+            oldrow.after(row);
+        }); //End add new entry
+        //Remove row
+        $this.find("button[data-toggle=fieldset-remove-row]").click(function() {
+            if($this.find("[data-toggle=fieldset-entry]").length > 1) {
+                var thisRow = $(this).closest("[data-toggle=fieldset-entry]");
+                thisRow.remove();
+            }
+        }); //End remove row
+    });
+});
+
+
+function setText(obj)
+{
+    if(obj.checked==true)
+    {
+        document.getElementById("txtName").disabled=false;
+		document.getElementById("txtName1").disabled=false;
+    }
+    else
+    {
+        document.getElementById("txtName").disabled=true;
+        document.getElementById("txtName").value="0";
+
+		document.getElementById("txtName1").disabled=true;
+        document.getElementById("txtName1").value="";
+    }
+}
+</script>
 {% if form.errors %}
     <ul class="errors">
         {% for field_name, field_errors in form.errors|dictsort if field_errors %}

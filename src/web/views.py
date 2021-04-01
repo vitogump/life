@@ -34,21 +34,7 @@ web.url_map.converters['regex'] = RegexConverter
 # 
 #     return decorated_function
 
-@web.route('/mytest',methods=['GET','POST'])        
-def testmyform():
-    form=ParaForm()
-    print("error",form.errors)
-    if request.method=='POST'  :
-        print("post",form.projectpath.data)
-        if form.is_submitted():
-            print("here")
-            pass
-#             return form.projectpath.data+"submitted"
-        if form.validate_on_submit():
-            print(request.form['projectpath'],"there\n",os.getcwd())
-            return form.datadepth.data+"come on"
 
-    return render_template('configsotware.html',form=form)
 
 
 @web.route('/',methods=['GET','POST'])
@@ -122,7 +108,21 @@ def login():
     if form.validate_on_submit():
         data=form.data
     return render_template("login.html",form=form)
+@web.route('/mytest',methods=['GET','POST'])        
+def testmyform():
+    form=ParaForm()
+    print("error",form.errors)
+    if request.method=='POST'  :
+        print("post",form)
+        if form.is_submitted():
+            print("here")
+            pass
+#             return form.projectpath.data+"submitted"
+        if form.validate_on_submit():
+            #print(request.form['projectpath'],"there\n",os.getcwd())
+            return "come on"
 
+    return render_template('entryelem.html',form=form)
 @web.route('/analysisdata',methods=['GET','POST'])
 def configsoftware():
     form=ParaForm()
