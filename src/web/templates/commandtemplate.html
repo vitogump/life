@@ -5,9 +5,9 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title>重测序</title>
 
-<link href="../static/lib/codemirror/lib/codemirror.css" rel="stylesheet" type="text/css">
-<link href="../static/lib/codemirror/theme/monokai.css" rel="stylesheet" type="text/css">
-<link href="../static/lib/codemirror/addon/display/fullscreen.css" rel="stylesheet" type="text/css">
+<link href="./plugin/codemirror/lib/codemirror.css" rel="stylesheet" type="text/css">
+<link href="./plugin/codemirror/theme/monokai.css" rel="stylesheet" type="text/css">
+<link href="plugin/codemirror/addon/display/fullscreen.css" rel="stylesheet" type="text/css">
 <style type="text/css">
 
 .STYLE1 {
@@ -88,7 +88,7 @@ input[type="text"][class="taginput3n"]{
 		{% endfor %}
 	</ul>
 </div>
-{{form.batchofinputpath.label}}</br>{{form.batchofinputpath(rows='8',cols='240')}}
+{{form.batchofinputpath.label}}</br>{{form.batchofinputpath(rows='8',cols='210')}}
 <P style="font-family:times;color:red"><b>控制输入部分结束</b></p>
 {#%     {{ wtf.form_field(form.software, id="software" ) }} %#}
 <div class="form-group "><label class="control-label" for="software1">选择软件/工具</label>
@@ -107,7 +107,7 @@ input[type="text"][class="taginput3n"]{
   </div>
 <div id="N"></div>
 
-	{{form.commandParameters.label}}</br>{{form.commandParameters(rows='33',cols='210')}}
+	{{form.commandsOF1input_process_2output.label}}</br>{{form.commandsOF1input_process_2output(rows='33',cols='210')}}
 <br/>
 <input type="text" class="taginput1n" id="taginput1" value="--rg 'ID:"/>
 <input type="text" class="taginput2n"  value="+该字段替换为数据上级目录名+" disabled/>
@@ -136,13 +136,15 @@ input[type="text"][class="taginput3n"]{
 	</ul>
 </div>
 <p style="font-family:times;color:red"><b>控制输出部分结束，下面提示非法输入或覆盖风险，最后控制任务自动投放量</b></p>
-{{form.commandsOF1input_process_2output.label}}</br>{{form.commandsOF1input_process_2output(rows='3',cols='65')}}
+{{form.messagecomment.label}}</br>{{form.messagecomment(rows='3',cols='65')}}
 <!--<input type="submit" value="提交" ><br /><br />-->
-{{ wtf.form_field(form.tag1part1, id="foldertag1") }}{{ wtf.form_field(form.tag1part2, id="foldertag2") }}
-{{ wtf.form_field(form.tag2part1, id="foldertag3") }}{{ wtf.form_field(form.tag2part2, id="foldertag4") }}
+{{ form.hidden_tag() }}
+<!--BELOW WERE INSTEAD BY {{ form.hidden_tag() }}
+{{ wtf.form_field(form.tag1part1, id="foldertag1",type="hidden") }}{{ wtf.form_field(form.tag1part2, id="foldertag2",type="hidden") }}
+{{ wtf.form_field(form.tag2part1, id="foldertag3",type="hidden") }}{{ wtf.form_field(form.tag2part2, id="foldertag4",type="hidden") }}
 
 {{ wtf.form_field(form.input1part1, id="pinput1") }}{{ wtf.form_field(form.input1part2, id="pinput2") }}
-{{ wtf.form_field(form.input2part1, id="pinput3") }}{{ wtf.form_field(form.input2part2, id="pinput4") }}
+{{ wtf.form_field(form.input2part1, id="pinput3") }}{{ wtf.form_field(form.input2part2, id="pinput4") }}-->
 显示结果：<br />
     <textarea rows="8" cols="40" disabled=true></textarea><br /><br />
     {{wtf.form_field(form.NumOfThreads)}}<br />
@@ -151,19 +153,19 @@ input[type="text"][class="taginput3n"]{
 <p>to cooperation, contact wechat: feelgood_lr</p>
 </form>
 
-<script src="../static/jquery-2.1.4.js"></script>
-<script type="text/javascript" src="../static/lib/codemirror/lib/codemirror.js"></script>
+<script src="./plugin/jquery-2.1.4.js"></script>
+<script type="text/javascript" src="./plugin/codemirror/lib/codemirror.js"></script>
 <!-- CodeMirror支持不同语言，根据需要引入JS文件 -->
-<script type="text/javascript" src="../static/lib/codemirror/mode/r/r.js"></script>
-<script type="text/javascript" src="../static/lib/codemirror/mode/clike/clike.js"></script>
+<script type="text/javascript" src="./plugin/codemirror/mode/r/r.js"></script>
+<script type="text/javascript" src="./plugin/codemirror/mode/clike/clike.js"></script>
 <!-- 下面分别为显示行数、括号匹配和全屏插件 -->
-<script type="text/javascript" src="../static/lib/codemirror/addon/selection/active-line.js"></script>
-<script type="text/javascript" src="../static/lib/codemirror/addon/edit/matchbrackets.js"></script>
-<script type="text/javascript" src="../static/lib/codemirror/addon/display/fullscreen.js"></script>
+<script type="text/javascript" src="./plugin/codemirror/addon/selection/active-line.js"></script>
+<script type="text/javascript" src="./plugin/codemirror/addon/edit/matchbrackets.js"></script>
+<script type="text/javascript" src="./plugin/codemirror/addon/display/fullscreen.js"></script>
 <script>
 	/*通过JavaScript配置CodeMirror的基本信息*/
-	console.log(document.getElementById("code"))
-    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+	console.log(document.getElementById("processElem"))
+    var editor = CodeMirror.fromTextArea(document.getElementById("processElem"), {
         lineNumbers: true,     // 显示行数
         indentUnit: 4,         // 缩进单位为4
         styleActiveLine: true, // 当前行背景高亮

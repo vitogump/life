@@ -113,7 +113,9 @@ def testmyform():
     form=ParaForm()
     print("error",form.errors)
     if request.method=='POST'  :
-        print("post",form)
+        print("post",form.data)
+        return "what"
+
         if form.is_submitted():
             print("here")
             pass

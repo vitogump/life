@@ -136,11 +136,11 @@ class ParaForm(FlaskForm):
 #     software=SelectField('选择软件/工具',choices=[("bowtie2","bowtie2"),("bismark","bismark"),("mv","mv"),("cp","cp"),("/Bioinfo/software/install/GTZ-2.0.0/gtz","gtz"),("python ~/software/kosaidtu-norgal-d61342edcdfd/norgal.py","python ~/software/kosaidtu-norgal-d61342edcdfd/norgal.py"),("python ~/life/src/usci/depthDistance.py","python ~/life/src/usci/depthDistance.py"),("selected","othercommand"),("rm","rm")])
 #     linuxcommand=StringField("linux命令：",default="/USCIRL/project/RD/CTBCTG/liurui")
 
-    commandsOF1input_process_2output = TextAreaField('请输入命令参数（$$$$将被换为输入,&&&&替换为输出）：',id="code",default=" -p 8 -x /USCIMD/usr/liurui/databases/human/hg19_UCSC_pure --rg-id ID --rg-id PL --rg-id PU --rg-id LB --rg-id SM --rg 'PL:illumina' --rg 'PU:indvd' --rg 'LB:ninglab'  $$$$|samtools view -@ 8 -bS - ")
+    commandsOF1input_process_2output = TextAreaField('请输入命令参数（$$$$将被换为输入,&&&&替换为输出）：',id="processElem",default=" -p 8 -x /USCIMD/usr/liurui/databases/human/hg19_UCSC_pure --rg-id ID --rg-id PL --rg-id PU --rg-id LB --rg-id SM --rg 'PL:illumina' --rg 'PU:indvd' --rg 'LB:ninglab'  $$$$|samtools view -@ 8 -bS - ")
     messagecomment=TextAreaField('message/comment:',default="prepeocess of cancer early scaning; add tag ")
     ######### this solution is just a temp way , should use FieldList in the further, like filteredforders does#######
     tag1part1=HiddenField(label=None,id='foldertag1')#waiting for changing to be addable
-    tag1part2=HiddenField(label=None,id='foldertag2')
+    tag1part2=HiddenField(id='foldertag2')
     tag2part1=HiddenField(label=None,id='foldertag3')
     tag2part2=HiddenField(label=None,id='foldertag4')
     input1part1=HiddenField(label="输入：",id='pinput1')#waiting for change to be addable

@@ -4,10 +4,23 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title>重测序</title>
-<link href="../static/lib/codemirror/lib/codemirror.css" rel="stylesheet" type="text/css">
-<link href="../static/lib/codemirror/theme/monokai.css" rel="stylesheet" type="text/css">
-<link href="../static/lib/codemirror/addon/display/fullscreen.css" rel="stylesheet" type="text/css">
+<link href="./plugin/codemirror/lib/codemirror.css" rel="stylesheet" type="text/css">
+<link href="./plugin/codemirror/theme/eclipse.css" rel="stylesheet" type="text/css">
+<link href="./plugin/codemirror/addon/display/fullscreen.css" rel="stylesheet" type="text/css">
 <style type="text/css">
+/*.CodeMirror {
+	border: 1px solid black;
+	font-size: 20px;
+	font-family: Aruak, monospace;
+	height: 200px;
+}
+.CodeMirror-selected {
+	background-color: blue !important
+}*/
+
+.CodeMirror-selectedtext {
+	color: white
+}
 
 .STYLE1 {
 	font-family: "华文行楷";
@@ -45,7 +58,7 @@ input[type="text"][class="taginput3n"]{
 </head>
 
 <body>
-<form action="/" method="post">
+<form action="/mytest" method="post">
 {{ form.csrf_token }}
 <!--<div class="form-group "><label class="control-label" for="software1">处理方式</label>
 
@@ -60,45 +73,71 @@ input[type="text"][class="taginput3n"]{
 		   </select>
   </div>-->
   {{form.commandsOF1input_process_2output.label}}</br>{{form.commandsOF1input_process_2output(rows='33',cols='210')}}
-  <br /><textarea id="code2" rows="27" cols="33"><?= $code2 ?></textarea>
+  <!--<br /><textarea id="code2" rows="27" cols="33"> </textarea>-->
   
   <input type="submit" value="提交运行">
 </form>
-<script src="../static/jquery-2.1.4.js"></script>
-<script src="../static/entryelem.js"></script>
-<script type="text/javascript" src="../static/lib/codemirror/lib/codemirror.js"></script>
+<button id="test" onclick="javascript:t_query();"
+		style="display: none;">click</button>
+
+<script src="./plugin/jquery-2.1.4.js"></script>
+<script type="text/javascript" src="./static/entryelem.js"></script>
+<script type="text/javascript" src="./plugin/codemirror/lib/codemirror.js"></script>
 <!-- CodeMirror支持不同语言，根据需要引入JS文件 -->
-<script type="text/javascript" src="../static/lib/codemirror/mode/r/r.js"></script>
-<script type="text/javascript" src="../static/lib/codemirror/mode/clike/clike.js"></script>
+<script type="text/javascript" src="./plugin/codemirror/mode/r/r.js"></script>
+<script type="text/javascript" src="./plugin/codemirror/mode/clike/clike.js"></script>
 <!-- 下面分别为显示行数、括号匹配和全屏插件 -->
-<script type="text/javascript" src="../static/lib/codemirror/addon/selection/active-line.js"></script>
-<script type="text/javascript" src="../static/lib/codemirror/addon/edit/matchbrackets.js"></script>
-<script type="text/javascript" src="../static/lib/codemirror/addon/display/fullscreen.js"></script>
+<script type="text/javascript" src="./plugin/codemirror/addon/selection/active-line.js"></script>
+<script type="text/javascript" src="./plugin/codemirror/addon/edit/matchbrackets.js"></script>
+<script type="text/javascript" src="./plugin/codemirror/addon/display/fullscreen.js"></script>
+
+<script
+	src="./plugin/codemirror/addon/selection/selection-pointer.js"
+	type="text/javascript"></script>
+<script
+	src="./plugin/codemirror/addon/selection/mark-selection.js"
+	type="text/javascript"></script>
+
 <script>
 	/*通过JavaScript配置CodeMirror的基本信息*/
-	console.log(document.getElementById("code2"));
-	console.log(document.getElementById("code"));
+	//console.log(document.getElementById("code"));
+	console.log(document.getElementById("processElem"));
 	
-	var editor1 = CodeMirror.fromTextArea(document.getElementById("code2"), {
+	
+	var editor1 = CodeMirror.fromTextArea(document.getElementById("processElem"), {
         lineNumbers: true,     // 显示行数
         indentUnit: 4,         // 缩进单位为4
         styleActiveLine: true, // 当前行背景高亮
         matchBrackets: true,   // 括号匹配
-        mode: 'text/x-java',     // 语言模式
-        lineWrapping: true,    // 自动换行
-        theme: 'seti',      // 使用monokai模版
+        mode: 'text/x-rsrc',     // 语言模式
+        //lineWrapping: true,    // 自动换行
+        theme: 'eclipse',      // 使用monokai模版，需引入相应资源
+		
+		lineWiseCopyCut : true,
+		readOnly : false,
+		showCursorWhenSelecting : true,
+		
+		styleSelectedText : true
+
     });
-    var editor2 = CodeMirror.fromTextArea(document.getElementById("code"), {
+		function t_query() {
+		console.log(editor.getValue());
+		alert(editor.getValue());
+	};
+/*    var editor2 = CodeMirror.fromTextArea(document.getElementById("code"), {
         lineNumbers: true,     // 显示行数
         indentUnit: 4,         // 缩进单位为4
         styleActiveLine: true, // 当前行背景高亮
         matchBrackets: true,   // 括号匹配
         mode: 'text/x-rsrc',     // 语言模式
         lineWrapping: true,    // 自动换行
-        theme: 'monokai',      // 使用monokai模版
+        theme: 'darcula',      // 使用darcula模版
     });
+	*/
+	editor1.setSize(720, 500);
     editor1.setOption("extraKeys", {
         // Tab键换成4个空格
+		"Alt": "autocomplete",
         Tab: function(cm) {
             var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
             cm.replaceSelection(spaces);
