@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 import copy
-import re,os
+import re
 import numpy,math
 from multiprocessing.dummy import Pool
 import pickle
