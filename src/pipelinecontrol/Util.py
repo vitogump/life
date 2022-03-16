@@ -214,11 +214,18 @@ class OperatorWithData_webservice(OperatorWithData):
                             if re.search(r".*?" + self.inputList[i][1]+"$", datafilename) != None:
                                 targetdata_count+=1
                                 scriptinputdata+=(rootStr + "/"+datafilename+";")
-                                option_suffix_obj = re.search(r"("+self.inputList[i][0]+")\s*\${(\s*" + self.inputList[i][1] + "\s*)}", newcmdline)  # for example "INPUT=${.bam} -i ${.sam}"  may be this patter should be change as the 4th,6th line behind dose 
+                                option_suffix_obj = re.search(r"("+self.inputList[i][0].replace("(","\(").replace(")","\)").replace("+","\+").replace("[","\[").replace("]","\]").replace("^","\^").replace("*","\*")+")\s*\${(\s*" + self.inputList[i][1] + "\s*)}", newcmdline)  # for example "INPUT=${.bam} -i ${.sam}"  may be this patter should be change as the 4th,6th line behind dose 
                                 print("option_suffix_obj",option_suffix_obj.group(0),"make new cmdline:",newcmdline)
-                                newcmdline=re.sub(r"("+self.inputList[i][0]+")\s+\${\s*" + self.inputList[i][1] + "\s*}", " "+self.inputList[i][0]  + rootStr + "/" + datafilename.strip() + " " + option_suffix_obj.group(0), newcmdline)                
+                                newcmdline=re.sub(r"("+self.inputList[i][0].replace("(","\(").replace(")","\)").replace("+","\+").replace("[","\[").replace("]","\]").replace("^","\^").replace("*","\*")+")\s+\${\s*" + self.inputList[i][1] + "\s*}", " "+self.inputList[i][0]  + rootStr + "/" + datafilename.strip() + " " + option_suffix_obj.group(0), newcmdline)     
+                            elif re.search(r"\[updir\]\d+[\w\W]*",self.inputList[i][1],re.I|re.M)!=None:#re.search(r".*?" + targetdatasuffix[i]+"$", datafilename) != None:    
+                                   
+                                prefixname=re.sub(r"\[updir\]",updirname,self.inputList[i][1])
+                                print("collecte prefix, same prefix have only one input",updirname,prefixname,self.inputList[i][0]  + rootStr + "/" +prefixname not in  newcmdline,self.inputList[i][0]  + rootStr + "/" +prefixname)
+                                if self.inputList[i][0]  + rootStr + "/" +prefixname not in  newcmdline:
+                                    newcmdline=re.sub(r"("+self.inputList[i][0]+")\s+\${\s*" + self.inputList[i][1].replace("[","\[").replace("]","\]") + "\s*}", " "+self.inputList[i][0]  + rootStr + "/" + prefixname.strip() + " " + option_suffix_obj.group(0), newcmdline) #newcmdline=re.sub(r"[-\w\d]*[=\s]*\${\s*" + targetdatasuffix[i] + "\s*}", " "+self.inputList[i][0]  + rootStr + "/" + prefixname.strip()+" " , newcmdline) 
+                                    print("("+self.inputList[i][0]+")\s+\${\s*" + self.inputList[i][1].replace("[","\[").replace("]","\]") + "\s*}", " "+self.inputList[i][0]  + rootStr + "/" + prefixname.strip() + " " + option_suffix_obj.group(0),newcmdline)          
         print("before remove input output",newcmdline)
-        newcmdline = re.sub(r"(-{1,2}[\w\d]*\s+|[\w\d]+=\s*|\s+)\${.*?}", " ", newcmdline)
+        newcmdline = re.sub(r"(-{1,2}[\w\d]*\s+|[\w\d]+=\s*|" +self.inputList[i][0].replace("(","\(").replace(")","\)").replace("+","\+").replace("[","\[").replace("]","\]").replace("^","\^").replace("*","\*")+"\s+|\s+)\${.*?}", " ", newcmdline)
         print("after remove input output",newcmdline)
                     # sub was acted from the first to the rear most
         print("pathToOutputdata_createdir", pathToOutputdata_createdir)
@@ -322,7 +329,12 @@ class OperatorWithData_mode1(OperatorWithData):
                             print("option_suffix_obj",option_suffix_obj.group(0),"make new cmdline:",newcmdline)
                             optionstr = option_suffix_obj.group(1)
                             suffixstr = option_suffix_obj.group(2)
-                            newcmdline=re.sub(r"[-\w\d]*[=\s]*\${\s*" + targetdatasuffix[i] + "\s*}", optionstr  + rootStr + "/" + datafilename.strip() + " " + option_suffix_obj.group(0), newcmdline)                
+                            newcmdline=re.sub(r"[-\w\d]*[=\s]*\${\s*" + targetdatasuffix[i] + "\s*}", optionstr  + rootStr + "/" + datafilename.strip() + " " + option_suffix_obj.group(0), newcmdline)    
+                        elif re.search(r"\[updir\]\d+[\w\W]*",targetdatasuffix[i],re.I|re.M)!=None:#re.search(r".*?" + targetdatasuffix[i]+"$", datafilename) != None:    
+                            print("collecte prefix, same prefix have only one input")   
+                            prefixname=re.sub(r"\[updir\]",updirname,targetdatasuffix[i]) 
+                            if optionstr  + rootStr + "/" +prefixname not in  newcmdline:
+                                newcmdline=re.sub(r"[-\w\d]*[=\s]*\${\s*" + targetdatasuffix[i] + "\s*}", optionstr  + rootStr + "/" + prefixname.strip() , newcmdline)  
 
         newcmdline = re.sub(r"[-\w\d]*[=\s]*\${.*?}", " ", newcmdline)
         print(newcmdline)

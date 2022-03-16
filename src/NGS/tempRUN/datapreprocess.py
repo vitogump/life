@@ -36,7 +36,7 @@ if __name__ == '__main__':
         else:
             for s in options.suffix:
                 if re.search(r"."+s+"\d*$",fi)!=None:
-                    l_pre=len(fi)-len(s) if prefixlen==None else prefixlen
+                    l_pre=len(fi)-len(s)-1 if prefixlen==None else prefixlen
                     data_d=os.path.join(outputdir,fi[:l_pre]).strip("_").strip("-")
                     if not os.path.exists(data_d):
                         os.makedirs(data_d)

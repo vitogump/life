@@ -3,7 +3,7 @@ Created on 2014-11-17
 
 @author: liurui
 '''
-import time,datetime,sys,cv2
+import time,datetime,sys#,cv2
 import re,string,os,random,markdown2
 import src.web.dba as mydba
 from src.pipelinecontrol.Util import OperatorWithData_webservice, upTodownTravelDir,longestCommonPrefix
