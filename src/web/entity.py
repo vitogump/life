@@ -44,9 +44,10 @@ db_config = {
     'charset':'utf8'
 }
 
-engine = create_engine('mysql+mysqlconnector://%s:%s@%s:3306/%s?charset=%s'%(db_config['user'],
+engine = create_engine('mysql+mysqlconnector://%s:%s@%s:%s/%s?charset=%s'%(db_config['user'],
                                                          db_config['passwd'],
                                                          db_config['host'],
+                                                         config.port,
                                                          db_config['db'],
                                                          db_config['charset']), echo=True)
 

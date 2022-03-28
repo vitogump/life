@@ -550,7 +550,7 @@ def transform_roman_num2_alabo(one_str,changesignal=True):
             return str(res)
     else:
         return one_str
-def generateFasterRefIndex(refFastaFileName, indexFileName,mapname=None,startchar=">",chrsignal=None,romanSignal=False):
+def generateFasterRefIndex(refFastaFileName, indexFileName,startchar=">",chrsignal=None,romanSignal=False):#,mapname=None
     refFastaFile = open(refFastaFileName, 'r')
     refChromIndex = {}
     refline = refFastaFile.readline()
@@ -558,17 +558,21 @@ def generateFasterRefIndex(refFastaFileName, indexFileName,mapname=None,startcha
         if re.search(r'^['+startchar+']', refline) != None:
             basecount=1
             m=1
-            if mapname == "transcript:":
-                currentChromNo = re.search(r'transcript:(.*?)\s+', refline).group(1).strip()
+            """
+            chrsignal 可以代替原来 mapname == "transcript:"的功能，即 令  chrsignal= "transcript:" 
+            """
+#             if mapname == "transcript:":
+#                 currentChromNo = re.search(r'transcript:(.*?)\s+', refline).group(1).strip()
+#             else:
+            if not chrsignal or chrsignal not in refline:
+                a = re.search(r'^'+startchar+'([^'+startchar+'|]+)', (re.split(r'\s+', refline))[0]).group(1)
             else:
-                if not chrsignal or chrsignal not in refline:
-                    a = re.search(r'^'+startchar+'([^'+startchar+'|]+)', (re.split(r'\s+', refline))[0]).group(1)
-                else:
-                    linelist=re.split(r'\s+', refline)
-                    a=re.sub('[’!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~]+',"", linelist[linelist.index(chrsignal)+1])#for example chromosome 1,
-                a=transform_roman_num2_alabo(a,romanSignal)
-                currentChromNo=a.replace("chr","").replace("CHR", "")
-                print(currentChromNo,type(currentChromNo))
+                linelist=re.split(r'\s+', refline)
+                a=refline[refline.index(chrsignal)+len(chrsignal):].split()[0].strip('[’!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~]+').strip()
+                #a=re.sub('[’!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~]+',"", refline[refline.index(chrsignal)+len(chrsignal):].split()[0])#for example chromosome 1,
+            a=transform_roman_num2_alabo(a,romanSignal)
+            currentChromNo=a.replace("chr","").replace("CHR", "")
+            print(currentChromNo,type(currentChromNo))
             refChromIndex[currentChromNo] = [(basecount,int(refFastaFile.tell()))]# (no of base befor,cur file pos)
         else:
             basecount+=len(refline.strip())
@@ -638,6 +642,7 @@ def getRefSeqBypos_faster(refFastahandle, fasterrefindex, currentChromNO, startp
     refindex must indexed by generateFasterRefIndex func
     return {'1': [0, 'A']}
     '''    
+    betaTestNocheck_currentChromNOlen=True#i.e. read all until the next >
     refSeqMap = {}
     if startpos <= 0:
         startpos = 1
@@ -681,7 +686,13 @@ def getRefSeqBypos_faster(refFastahandle, fasterrefindex, currentChromNO, startp
             print("getRefSeqBypos_faster ERROR error")
             
         # now filehander is right stay at the startpos
+        """
+        try
+        """
         myseqline = filehandle.read(endpos - startpos + 1)
+        """
+        except :read to big space
+        """
         myseqn = myseqline.count('\n')
 #        if len(myseqline)>200:
 #            print(myseqn)
@@ -694,9 +705,12 @@ def getRefSeqBypos_faster(refFastahandle, fasterrefindex, currentChromNO, startp
             
 #            print(currentChromNO,myseqline, myseqn)
         if myseqline.count('>') >= 1:
+            
             print(currentChromNO, myseqline.index('>'),myseqline[myseqline.index('>')-10:myseqline.index('>')+10], myseqn)
             print("may be need chrlength")
-            exit(-1)
+            myseqline=myseqline[:myseqline.index('>')]
+            if not betaTestNocheck_currentChromNOlen:
+                exit(-1)
         refSeqMap[currentChromNO].extend(list(myseqline))
     else:
         filehandle.seek(seektuple[0])  # seekmap is not empty

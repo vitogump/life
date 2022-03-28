@@ -22,6 +22,7 @@ if options.mapfile:
     for line in mapfile:
         linelist=re.split(r"\s+",line.strip())
         scaffoldmap[linelist[0].strip().lower()]=linelist[1].strip()
+    mapfile.close()
     oldanchorfilehandler=open(options.anchorfile,'r')
     newanchorfilehandler=open(options.anchorfile+"changed",'w')
     for line in oldanchorfilehandler:

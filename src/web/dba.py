@@ -46,20 +46,23 @@ beijingreffa=cfparser.get("mysqldatabase","beijingreffa")
 
 db_config = {
     'host': ip,
+    "port": cfparser.get("mysqldatabase","port"),
     'user': username,
     'passwd': password,
     'db':webdbname,
     'charset':'utf8'
 }
 
-engineweb = create_engine('mysql+mysqlconnector://%s:%s@%s:3306/%s?charset=%s'%(db_config['user'],
+engineweb = create_engine('mysql+mysqlconnector://%s:%s@%s:%s/%s?charset=%s'%(db_config['user'],
                                                          db_config['passwd'],
                                                          db_config['host'],
+                                                         db_config['port'],
                                                          db_config['db'],
                                                          db_config['charset']), echo=False,pool_recycle=3600)
-enginevar = create_engine('mysql+mysqlconnector://%s:%s@%s:3306/%s?charset=%s'%(db_config['user'],
+enginevar = create_engine('mysql+mysqlconnector://%s:%s@%s:%s/%s?charset=%s'%(db_config['user'],
                                                          db_config['passwd'],
                                                          db_config['host'],
+                                                         db_config['port'],
                                                          vcfdbname,
                                                          db_config['charset']), echo=False,pool_recycle=3600)
 ISOTIMEFORMAT = '%Y-%m-%d %X'

@@ -200,13 +200,15 @@ class OperatorWithData_webservice(OperatorWithData):
                         continue
                     updirname=re.search(r".*/([^/]+)$", curpath).group(1)+"".join(interceptdirs)
                 if len(re.split(r"/",rootStr))==len(re.split(r"/",self.inputdatapath))+datadepth:# reach the depth that datafiles in it
-                    print("reach the depth that datafiles in it",rootStr+"/",files,self.inputList)
+                    print("reach the datafiles depth,rootStr:",rootStr+"/",files,self.inputList)
                     print(self.inputList[i])
-                    if self.inputList[i][1]=="/":
+                    if self.inputList[i][1].endswith("/"):
 #                         for dirname in dirs:
                         option_suffix_obj = re.search(r"("+self.inputList[i][0]+")\s*\${(\s*" + self.inputList[i][1] + "\s*)}", newcmdline)
-                        newcmdline=re.sub(r"("+self.inputList[i][0]+"|\s+)\${\s*" + self.inputList[i][1] + "\s*}", " "+self.inputList[i][0]  + rootStr  + " " + option_suffix_obj.group(0), newcmdline)
-                        print("/ is input",newcmdline)
+                        for dir in dirs:
+                            if self.inputList[i][1][:-1]=="" or re.search(r"" + self.inputList[i][1][:-1], dir) != None:# re.search can be instead with other way
+                                newcmdline=re.sub(r"("+self.inputList[i][0]+"|\s+)\${\s*" + self.inputList[i][1] + "\s*}", " "+self.inputList[i][0]  + rootStr + " " + option_suffix_obj.group(0), newcmdline) if self.inputList[i][1][:-1]=="" else re.sub(r"("+self.inputList[i][0]+"|\s+)\${\s*" + self.inputList[i][1] + "\s*}", " "+self.inputList[i][0]  + rootStr+os.sep +self.inputList[i][1][:-1] + " " + option_suffix_obj.group(0), newcmdline) 
+                                print("/ is input",newcmdline,option_suffix_obj)
                             
                     else:
                         for datafilename in files:
@@ -217,7 +219,7 @@ class OperatorWithData_webservice(OperatorWithData):
                                 option_suffix_obj = re.search(r"("+self.inputList[i][0].replace("(","\(").replace(")","\)").replace("+","\+").replace("[","\[").replace("]","\]").replace("^","\^").replace("*","\*")+")\s*\${(\s*" + self.inputList[i][1] + "\s*)}", newcmdline)  # for example "INPUT=${.bam} -i ${.sam}"  may be this patter should be change as the 4th,6th line behind dose 
                                 print("option_suffix_obj",option_suffix_obj.group(0),"make new cmdline:",newcmdline)
                                 newcmdline=re.sub(r"("+self.inputList[i][0].replace("(","\(").replace(")","\)").replace("+","\+").replace("[","\[").replace("]","\]").replace("^","\^").replace("*","\*")+")\s+\${\s*" + self.inputList[i][1] + "\s*}", " "+self.inputList[i][0]  + rootStr + "/" + datafilename.strip() + " " + option_suffix_obj.group(0), newcmdline)     
-                            elif re.search(r"\[updir\]\d+[\w\W]*",self.inputList[i][1],re.I|re.M)!=None:#re.search(r".*?" + targetdatasuffix[i]+"$", datafilename) != None:    
+                            elif re.search(r"\[updir\]\d+[\w\W]*|\[updir\]",self.inputList[i][1],re.I|re.M)!=None:#re.search(r".*?" + targetdatasuffix[i]+"$", datafilename) != None:    
                                    
                                 prefixname=re.sub(r"\[updir\]",updirname,self.inputList[i][1])
                                 print("collecte prefix, same prefix have only one input",updirname,prefixname,self.inputList[i][0]  + rootStr + "/" +prefixname not in  newcmdline,self.inputList[i][0]  + rootStr + "/" +prefixname)
