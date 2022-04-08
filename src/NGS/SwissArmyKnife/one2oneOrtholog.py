@@ -72,7 +72,12 @@ if __name__ == '__main__':
             of_tmp=open(genefamilyfaname,"w")
             for nameOf_s_p in linelist[1:]:
                 # genename and speciesname  for each specie
-                s_p=re.search(r"(^[\d\w]+)\|(.*)$",nameOf_s_p)
+                s_p=re.search(r"(^[\d\w]+)\|(.*)$",nameOf_s_p)                
+                #skip dup species that is not one-to-one ortholog
+                if line.count(s_p.group(1)+"|")>=2:
+                    print("skip specie",s_p.group(1)+"|")
+                    continue
+
                 if s_p.group(1) not in fileHmap:
                     print("skip seq:",s_p.group(1),s_p.group(2))
                     continue
