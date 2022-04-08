@@ -8,6 +8,7 @@ Each function accepts either a file name or an open file handle, so data can be 
 If the file name is passed as a string, the file is automatically closed when the function finishes; 
 """
 
+import copy
 from io import StringIO
 from optparse import OptionParser
 import os, re
@@ -115,7 +116,7 @@ if __name__ == '__main__':
         cml.set_options(RateAncestor=1)
         cml.set_options(aaRatefile=os.path.join(options.pamlpath,"dat/wag.dat"))
         
-        print("")        
+        finalfile=open(options.groupfile+"".join(options.targetSpeciesname)+".final",'w')        
         for fn in os.listdir(step2outpath):
             pathTofn=os.path.join(step2outpath,fn.strip())
             if os.path.isfile(pathTofn) and pathTofn.endswith("_align.fa.phy"):
@@ -162,41 +163,54 @@ if __name__ == '__main__':
                         if len(treeWithNodeLables.get_terminals()+treeWithNodeLables.get_nonterminals())!=len(seq_rec):
                             print("Error somewhere,inconstant amount of tree not and seqs")
                         print("loading ancestrall stat/info finished")
-                        #collect c==d
-                        cd_sites_idx=[]
+                        parallel_sites=[];convergent_sites=[]
+                        #1. collect c==d
+                        CD_sites_idx=[]
                         for i in range(int(nodes_bases[1])):
-                            pos_i_targetsA=[seqrecord_obj[i] for seqrecord_obj in seq_rec if seqrecord_obj.id in options.targetSpeciesname]
-                            if pos_i_targetsA.count(pos_i_targetsA[0])==len(options.targetSpeciesname):
-                                cd_sites_idx.append(i)
-                        #search changes along each target to root,A!=C,B!=D
-                        for i in cd_sites_idx:
+                            pos_i_targetsAA=[seqrecord_obj[i] for seqrecord_obj in seq_rec if seqrecord_obj.id in options.targetSpeciesname]
+                            if pos_i_targetsAA.count(pos_i_targetsAA[0])==len(options.targetSpeciesname):
+                                CD_sites_idx.append(i)
+                        #2. search changes along each target to root,A!=C,B!=D
+                        
+                        for i in CD_sites_idx:
+                            Targets_ANCPATH_info={}
                             for t_clade in tlist:
-                                print()
-                            else:
-                                print("no stasifid,skip site:",i)
-                                continue
-                            print(treeWithNodeLables.trace(t_mrca,tlist[0]))
-                            
+                                foroneTargetTmrca=treeWithNodeLables.trace(t_mrca,t_clade)
+                                foroneTargetTmrca_ids=["node #"+ab.confidence for ab in foroneTargetTmrca[:-1]]+[re.search(r"\d+_(\w+)",foroneTargetTmrca[-1].name).group(1)]
+
+                                pos_i_pathMrcaToTargetACorBD=[seqrecord_obj[i] for seqrecord_obj in seq_rec if seqrecord_obj.id in foroneTargetTmrca_ids]
+                                if pos_i_pathMrcaToTargetACorBD.count(pos_i_pathMrcaToTargetACorBD[-1])<len(pos_i_pathMrcaToTargetACorBD):#A is not equal to C
+                                    print("A != B || C!=D")
+                                    Targets_ANCPATH_info[t_clade.id]=[tuple(foroneTargetTmrca_ids),copy.deepcopy(pos_i_pathMrcaToTargetACorBD)]
 
 
-#                             for seqrecord_obj in seq_rec.id:
-#                                 if seqrecord_obj['id'=
-#                         for seq_rec in aln_anc_seqgenerator:
-#                             
-#                                 
-#                             for 
-#                                 print(seqrecord_obj)
-#                                 print(type(seqrecord_obj),seqrecord_obj.id)
-#                                 print(seqrecord_obj.seq)
-#                         print(type(aln_anc_seqgenerator))
-
+                            if len(Targets_ANCPATH_info.keys())==len(tlist):
+                                print("find A != B || C!=D for every target; now judge A!=B, next")
+                                """
+                                path example
+                                [Clade(confidence=16), Clade(confidence=22), Clade(confidence=24), Clade(confidence=25), Clade(confidence=26), Clade(name='12_GSM')]
+                                """
+                                #3. search for A!=B
+                                for AA in Targets_ANCPATH_info[tlist[0].id][1:Targets_ANCPATH_info[tlist[0].id].index(Targets_ANCPATH_info[tlist[0].id][-1])]:#not include the target AA, find the index of first target AA along path 
+                                    for D_targes in tlist[1:]:
+                                        for AA2 in Targets_ANCPATH_info[D_targes.id][1:Targets_ANCPATH_info[D_targes.id].index(Targets_ANCPATH_info[D_targes.id][-1])]:# for one path, path to D  for example
+                                            if AA2!=AA:
+                                                print(" find convergent ")
+                                                convergent_sites.append(i)
+                                                break
+                                        else:
+                                            print("find parallel")
+                                            parallel_sites.append(i)
 
                         
                         print("ssss")
                     rstLine_idx+=1        
-                #
-                t_mrca = treeWithNodeLables.common_ancestor(*tlist).confidence
+                print("end while",parallel_sites,convergent_sites)
+                if convergent_sites!=[] and parallel_sites!=[]:
+                    print(pathTofn,":\nconvergent sites",convergent_sites,parallel_sites,file=finalfile)
+                #t_mrca = treeWithNodeLables.common_ancestor(*tlist).confidence
+                
                   
-
+        finalfile.close()
     print("done")
     groupfile.close()
