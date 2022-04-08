@@ -14,6 +14,7 @@ from optparse import OptionParser
 import os, re
 from os.path import isfile
 import pickle
+import sys
 
 from Bio import AlignIO
 
@@ -127,6 +128,13 @@ if __name__ == '__main__':
             if os.path.isfile(pathTofn) and pathTofn.endswith("_align.fa.phy"):
                 cml.alignment=pathTofn
                 cml.write_ctl_file()
+                ########### test temp
+                with open(pathTofn,'r') as pffffff:
+                    lllllll=len(pffffff.readlines())
+                    if lllllll!=15:
+                        continue
+                print(lllllll)
+                #############test temp end
                 stat = os.system(os.path.join(options.pamlpath,"codeml"))
                 #copy rst and mcl and rename
                 stat += os.system("cp rst "+os.path.join(step2outpath,fn.strip().replace("_align.fa.phy",".rst")))
@@ -138,10 +146,11 @@ if __name__ == '__main__':
                 mlc=open(os.path.join(step2outpath,fn.strip().replace("_align.fa.phy",".mlc")),'r')
                 rstContent=rst.readlines();rstLine_idx=0
                 while rstLine_idx < len(rstContent):
-                    
+                    print("rstLine_idx",rstLine_idx)
                     if "tree with node labels for Rod Page's TreeView" in rstContent[rstLine_idx]:
                         while True:# for skip the empty line but It is not actually useful
                             rstLine_idx+=1
+                            print("tree with node labels for Rod Page's TreeView\n",rstContent[rstLine_idx])
                             try:
                                 sf = StringIO(rstContent[rstLine_idx])
                                 treeWithNodeLables=Phylo.read(sf, "newick")#rstContent[rstLine_idx]
@@ -175,20 +184,22 @@ if __name__ == '__main__':
                             pos_i_targetsAA=[seqrecord_obj[i] for seqrecord_obj in seq_rec if seqrecord_obj.id in options.targetSpeciesname]
                             if pos_i_targetsAA.count(pos_i_targetsAA[0])==len(options.targetSpeciesname):
                                 CD_sites_idx.append(i)
+
                         #2. search changes along each target to root,A!=C,B!=D
-                        
+                        print(seq_rec,CD_sites_idx)
                         for i in CD_sites_idx:
                             Targets_ANCPATH_info={}
                             for t_clade in tlist:
                                 foroneTargetTmrca=treeWithNodeLables.trace(t_mrca,t_clade)
-                                foroneTargetTmrca_ids=["node #"+ab.confidence for ab in foroneTargetTmrca[:-1]]+[re.search(r"\d+_(\w+)",foroneTargetTmrca[-1].name).group(1)]
+                                foroneTargetTmrca_ids=["node #"+str(ab.confidence) for ab in foroneTargetTmrca[:-1]]+[re.search(r"\d+_(\w+)",foroneTargetTmrca[-1].name).group(1)]
 
                                 pos_i_pathMrcaToTargetACorBD=[seqrecord_obj[i] for seqrecord_obj in seq_rec if seqrecord_obj.id in foroneTargetTmrca_ids]
+                                print("check A != B || C!=D along path:",pos_i_pathMrcaToTargetACorBD,pos_i_pathMrcaToTargetACorBD.count(pos_i_pathMrcaToTargetACorBD[-1]),pos_i_pathMrcaToTargetACorBD[-1],pos_i_pathMrcaToTargetACorBD)
                                 if pos_i_pathMrcaToTargetACorBD.count(pos_i_pathMrcaToTargetACorBD[-1])<len(pos_i_pathMrcaToTargetACorBD):#A is not equal to C
-                                    print("A != B || C!=D")
-                                    Targets_ANCPATH_info[t_clade.id]=[tuple(foroneTargetTmrca_ids),copy.deepcopy(pos_i_pathMrcaToTargetACorBD)]
+                                    print("get A != B || C!=D",t_clade)
+                                    Targets_ANCPATH_info[t_clade.name]=[tuple(foroneTargetTmrca_ids)]+[*pos_i_pathMrcaToTargetACorBD]
 
-
+                            print(foroneTargetTmrca_ids,"t_mrca",t_mrca.name,t_clade.name,type(t_clade.name),tlist,type(tlist[0]))
                             if len(Targets_ANCPATH_info.keys())==len(tlist):
                                 print("find A != B || C!=D for every target; now judge A!=B, next")
                                 """
@@ -196,9 +207,12 @@ if __name__ == '__main__':
                                 [Clade(confidence=16), Clade(confidence=22), Clade(confidence=24), Clade(confidence=25), Clade(confidence=26), Clade(name='12_GSM')]
                                 """
                                 #3. search for A!=B
-                                for AA in Targets_ANCPATH_info[tlist[0].id][1:Targets_ANCPATH_info[tlist[0].id].index(Targets_ANCPATH_info[tlist[0].id][-1])]:#not include the target AA, find the index of first target AA along path 
+                                print(Targets_ANCPATH_info)
+                                print(Targets_ANCPATH_info[tlist[0].name],Targets_ANCPATH_info[tlist[0].name][0],"is clades path",Targets_ANCPATH_info[tlist[0].name][1],"is common ancestral, may same as target AA:",Targets_ANCPATH_info[tlist[0].name][-1])
+                                for AA in Targets_ANCPATH_info[tlist[0].name][2:Targets_ANCPATH_info[tlist[0].name].index(Targets_ANCPATH_info[tlist[0].name][-1])]:#not include the target AA, find the index of AA along first target to mcra path 
+                                    print("get in AA",AA)
                                     for D_targes in tlist[1:]:
-                                        for AA2 in Targets_ANCPATH_info[D_targes.id][1:Targets_ANCPATH_info[D_targes.id].index(Targets_ANCPATH_info[D_targes.id][-1])]:# for one path, path to D  for example
+                                        for AA2 in Targets_ANCPATH_info[D_targes.name][2:Targets_ANCPATH_info[D_targes.name].index(Targets_ANCPATH_info[D_targes.name][-1])]:# for one path, path to D  for example
                                             if AA2!=AA:
                                                 print(" find convergent ")
                                                 convergent_sites.append(i)
@@ -206,13 +220,16 @@ if __name__ == '__main__':
                                         else:
                                             print("find parallel")
                                             parallel_sites.append(i)
+                            else:
+                                print("skip site not same in C D",i,Targets_ANCPATH_info.keys(),tlist)
 
                         
-                        print("ssss")
+                        print("treeWithNodeLables:",treeWithNodeLables)
                     rstLine_idx+=1        
                 print("end while",parallel_sites,convergent_sites)
-                if convergent_sites!=[] and parallel_sites!=[]:
+                if convergent_sites!=[] or parallel_sites!=[]:
                     print(pathTofn,":\nconvergent sites",convergent_sites,parallel_sites,file=finalfile)
+                    sys.stdout.flush()
                 #t_mrca = treeWithNodeLables.common_ancestor(*tlist).confidence
                 
                   
