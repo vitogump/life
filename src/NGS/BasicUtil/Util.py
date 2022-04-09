@@ -903,7 +903,6 @@ def get_lines(f):
     lines=[]
     #process header line
     lines.append(f.readline().rstrip('\r\n'))
-    
     line=f.readline()
     line=line[:10]+line[10:].rstrip('\r\n').replace(" ","").replace("\t","");line_len_first=1
     lines.append(line)

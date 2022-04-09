@@ -30,6 +30,7 @@ parser.add_option("-p", "--pamlpath",dest="pamlpath")
 parser.add_option("-t", "--targetSpeciesname", dest="targetSpeciesname",action="append",default=[], help="")
 (options, args) = parser.parse_args()
 if __name__ == '__main__':
+    print("Warning:make sure single programm is running, or you may get wrong result because different program may access the same files")
     groupfile=open(options.groupfile,"r")
     if options.steps.strip()=="1":
         
@@ -122,7 +123,7 @@ if __name__ == '__main__':
         cml.set_options(RateAncestor=1)
         cml.set_options(aaRatefile=os.path.join(options.pamlpath,"dat/wag.dat"))
         
-        finalfile=open(options.groupfile+"".join(options.targetSpeciesname)+".final",'w')        
+        finalfile=open(options.groupfile+"".join(options.targetSpeciesname)+"step3.final",'w')        
         for fn in os.listdir(step2outpath):
             pathTofn=os.path.join(step2outpath,fn.strip())
             if os.path.isfile(pathTofn) and pathTofn.endswith("_align.fa.phy"):
@@ -164,71 +165,109 @@ if __name__ == '__main__':
                         t_mrca = treeWithNodeLables.common_ancestor(*tlist)
                     if "List of extant and reconstructed sequences" in rstContent[rstLine_idx]:
                         sf=StringIO()
-                        sf.write(rstContent[rstLine_idx+2]);nodes_bases=re.split(r"\s+",rstContent[rstLine_idx+2].strip())# #nodes #bases
+                        sf.write(rstContent[rstLine_idx+2]);nodes_AAs=re.split(r"\s+",rstContent[rstLine_idx+2].strip())# #nodes #bases
                         rstLine_idx+=4;
                         while re.search(r"[\w\W]{1,30}\s+([\w]{10}\s*)*",rstContent[rstLine_idx])!=None:
                             sf.write(rstContent[rstLine_idx].strip()+"\n")
                             rstLine_idx+=1
                         sf.seek(0)
                         """ no gap in align seq already"""
+        
                         aln_anc_seqgenerator=AlignIO.parse(sf,'phylip')#<class 'generator'>
-                        species_names=[];aaalignseqs=[]
+                        #seq_rec=Util.decode_phyliplines(sf.readlines())#can be used instead, but need modify the 10 truncate problem first.
+                        
                         seq_rec=aln_anc_seqgenerator.__next__()
                         if len(treeWithNodeLables.get_terminals()+treeWithNodeLables.get_nonterminals())!=len(seq_rec):
                             print("Error somewhere,inconstant amount of tree not and seqs")
                         print("loading ancestrall stat/info finished")
-                        parallel_sites=[];convergent_sites=[]
-                        #1. collect c==d
-                        CD_sites_idx=[]
-                        for i in range(int(nodes_bases[1])):
-                            pos_i_targetsAA=[seqrecord_obj[i] for seqrecord_obj in seq_rec if seqrecord_obj.id in options.targetSpeciesname]
+                        parallel_sites={};convergent_sites={}
+                        
+#                         CD_sites_idx=[]
+                        for i in range(int(nodes_AAs[1])):#for every AA position
+                            #1. find  c==d sites i.e X3==X4
+                            pos_i_targetsAA=[seqrecord_obj.seq[i] for seqrecord_obj in seq_rec if seqrecord_obj.id in options.targetSpeciesname]# search each target species'AA for position i
                             if pos_i_targetsAA.count(pos_i_targetsAA[0])==len(options.targetSpeciesname):
-                                CD_sites_idx.append(i)
+                                print("test old version of what pass X3==X4",pos_i_targetsAA,"CD_sites_idx.append(i)",i)                            
+                            for AA in pos_i_targetsAA:
+                                if pos_i_targetsAA.count(AA)>=2:
+                                    print("find X3==X4",pos_i_targetsAA)
+                                    tlist_actual=[list(treeWithNodeLables.find_clades(name=r"\d*_"+seqrecord_obj.id))[0] for seqrecord_obj in seq_rec if ((seqrecord_obj.id in options.targetSpeciesname) and seqrecord_obj.seq[i]==AA)]
+                                    break# go step #2
+                                    #CD_sites_idx.append(i)
+                            else:
+                                continue
 
-                        #2. search changes along each target to root,A!=C,B!=D
-                        print(seq_rec,CD_sites_idx)
-                        for i in CD_sites_idx:
+                            #2. search changes along each target to root,A!=C,B!=D
+
                             Targets_ANCPATH_info={}
-                            for t_clade in tlist:
+                            t_mrca = treeWithNodeLables.common_ancestor(*tlist_actual)
+                            print(t_mrca,"may not same as ",treeWithNodeLables.common_ancestor(*tlist),"when less than input","species")
+                            for t_clade in tlist_actual:
                                 foroneTargetTmrca=treeWithNodeLables.trace(t_mrca,t_clade)
-                                foroneTargetTmrca_ids=["node #"+str(ab.confidence) for ab in foroneTargetTmrca[:-1]]+[re.search(r"\d+_(\w+)",foroneTargetTmrca[-1].name).group(1)]
-
-                                pos_i_pathMrcaToTargetACorBD=[seqrecord_obj[i] for seqrecord_obj in seq_rec if seqrecord_obj.id in foroneTargetTmrca_ids]
-                                print("check A != B || C!=D along path:",pos_i_pathMrcaToTargetACorBD,pos_i_pathMrcaToTargetACorBD.count(pos_i_pathMrcaToTargetACorBD[-1]),pos_i_pathMrcaToTargetACorBD[-1],pos_i_pathMrcaToTargetACorBD)
+                                foroneTargetTmrca_ids=["node #"+str(ab.confidence) for ab in foroneTargetTmrca[:-1]]+[re.search(r"\d+_(\w+)",foroneTargetTmrca[-1].name).group(1)]#name_id same as code in  align seq in rst of paml
+#检查 确认上一句 名字没有错误
+                                pos_i_pathMrcaToTargetACorBD=[seqrecord_obj.seq[i] for seqrecord_obj in seq_rec if seqrecord_obj.id in foroneTargetTmrca_ids]
+                                print("check A != C || B!=D along path:",pos_i_pathMrcaToTargetACorBD,pos_i_pathMrcaToTargetACorBD.count(pos_i_pathMrcaToTargetACorBD[-1]),pos_i_pathMrcaToTargetACorBD[-1],pos_i_pathMrcaToTargetACorBD)
                                 if pos_i_pathMrcaToTargetACorBD.count(pos_i_pathMrcaToTargetACorBD[-1])<len(pos_i_pathMrcaToTargetACorBD):#A is not equal to C
-                                    print("get A != B || C!=D",t_clade)
+                                    print("get A != C || B!=D,record",t_clade,pos_i_pathMrcaToTargetACorBD,foroneTargetTmrca_ids)
                                     Targets_ANCPATH_info[t_clade.name]=[tuple(foroneTargetTmrca_ids)]+[*pos_i_pathMrcaToTargetACorBD]
 
-                            print(foroneTargetTmrca_ids,"t_mrca",t_mrca.name,t_clade.name,type(t_clade.name),tlist,type(tlist[0]))
-                            if len(Targets_ANCPATH_info.keys())==len(tlist):
-                                print("find A != B || C!=D for every target; now judge A!=B, next")
+                            print(foroneTargetTmrca_ids,"t_mrca",t_mrca.name,t_clade.name,type(t_clade.name),tlist_actual,type(tlist_actual[0]))
+                            if len(Targets_ANCPATH_info.keys())==len(tlist_actual):
+                                print("find A != C && B!=D for every target,ie # of records == # of targets; now judge A!=B, next")
                                 """
                                 path example
                                 [Clade(confidence=16), Clade(confidence=22), Clade(confidence=24), Clade(confidence=25), Clade(confidence=26), Clade(name='12_GSM')]
                                 """
                                 #3. search for A!=B
                                 print(Targets_ANCPATH_info)
-                                print(Targets_ANCPATH_info[tlist[0].name],Targets_ANCPATH_info[tlist[0].name][0],"is clades path",Targets_ANCPATH_info[tlist[0].name][1],"is common ancestral, may same as target AA:",Targets_ANCPATH_info[tlist[0].name][-1])
-                                for AA in Targets_ANCPATH_info[tlist[0].name][2:Targets_ANCPATH_info[tlist[0].name].index(Targets_ANCPATH_info[tlist[0].name][-1])]:#not include the target AA, find the index of AA along first target to mcra path 
-                                    print("get in AA",AA)
-                                    for D_targes in tlist[1:]:
-                                        for AA2 in Targets_ANCPATH_info[D_targes.name][2:Targets_ANCPATH_info[D_targes.name].index(Targets_ANCPATH_info[D_targes.name][-1])]:# for one path, path to D  for example
-                                            if AA2!=AA:
-                                                print(" find convergent ")
-                                                convergent_sites.append(i)
+                                print("Clades path for first species is :",Targets_ANCPATH_info[tlist_actual[0].name],"common ancestral AA:",Targets_ANCPATH_info[tlist_actual[0].name][1]," may same as target AA:",Targets_ANCPATH_info[tlist_actual[0].name][-1])
+                                for X3T_idx in range(len(tlist_actual)):# each Terminal(Target) X3 
+                                    X1_idx=-1
+                                    for AA in reversed(Targets_ANCPATH_info[tlist_actual[X3T_idx].name][2:]):#not include the target and mrca AA, find the index of AA along PATH from X1  to mcra 
+                                        print(Targets_ANCPATH_info[tlist_actual[X3T_idx].name].index(Targets_ANCPATH_info[tlist_actual[X3T_idx].name][-1]))
+                                        if AA==Targets_ANCPATH_info[tlist_actual[X3T_idx].name][-1]:
+                                            print(Targets_ANCPATH_info[tlist_actual[X3T_idx].name][2:],AA,"=?",Targets_ANCPATH_info[tlist_actual[X3T_idx].name][-1],X1_idx,"WHAT'S HAPPEN")
+                                            X1_idx-=1;continue
+                                        print("find change in Clade to",tlist_actual[X3T_idx].name)
+                                        print(X1_idx,"find Clade  X1:"+Targets_ANCPATH_info[tlist_actual[X3T_idx].name][0][X1_idx]+" in path to X3",tlist_actual[X3T_idx].name,AA)
+                                        
+                                        for X4T_Clade in tlist_actual[X3T_idx+1:]:# each Terminal(Target) X4 
+                                            X2_idx=-1
+                                            for AA2 in reversed(Targets_ANCPATH_info[X4T_Clade.name][2:Targets_ANCPATH_info[X4T_Clade.name].index(Targets_ANCPATH_info[X4T_Clade.name][-1])]):# for one path, path to D  for example
+                                                if AA2 ==Targets_ANCPATH_info[X4T_Clade.name][-1]:continue
+                                                print("find Clade of X2 in path to X4",AA,"check X1=?X2")
+                                                if (i not in convergent_sites) and (i not in parallel_sites):convergent_sites[i]={};parallel_sites[i]={}
+                                                if AA2!=AA:#
+                                                    print(" find convergent ")
+                                                    convergent_sites[i].update({tlist_actual[X3T_idx].name:Targets_ANCPATH_info[tlist_actual[X3T_idx].name][-1],X4T_Clade.name:AA})#species1:X3_AA
+                                                else:# all internal clades are same as the  
+                                                    print("find parallel")
+                                                    parallel_sites[i].update({tlist_actual[X3T_idx].name:Targets_ANCPATH_info[tlist_actual[X3T_idx].name][-1],X4T_Clade.name:AA})
+                                                print(" find convergent/ parallel",convergent_sites,parallel_sites)
                                                 break
-                                        else:
-                                            print("find parallel")
-                                            parallel_sites.append(i)
+                                        break
+
+#                                 for AA in Targets_ANCPATH_info[tlist[0].name][2:Targets_ANCPATH_info[tlist[0].name].index(Targets_ANCPATH_info[tlist[0].name][-1])]:#not include the target AA, find the index of AA along first target to mcra path 
+#                                     print("get in AA",AA)
+#                                     for D_targes in tlist[1:]:# sites for every other target species that convergent/parallel with this target would be recorded
+#                                         for AA2 in Targets_ANCPATH_info[D_targes.name][2:Targets_ANCPATH_info[D_targes.name].index(Targets_ANCPATH_info[D_targes.name][-1])]:# for one path, path to D  for example
+#                                             if AA2!=AA:
+#                                                 print(" find convergent ")
+#                                                 convergent_sites.append(i)
+#                                                 break
+#                                         else:
+#                                             print("find parallel")
+#                                             parallel_sites.append(i)
                             else:
-                                print("skip site not same in C D",i,Targets_ANCPATH_info.keys(),tlist)
+                                print("skip site not changed in path C or D",i,Targets_ANCPATH_info.keys(),tlist)
 
                         
-                        print("treeWithNodeLables:",treeWithNodeLables)
+                        #print("treeWithNodeLables:",treeWithNodeLables)
                     rstLine_idx+=1        
                 print("end while",parallel_sites,convergent_sites)
-                if convergent_sites!=[] or parallel_sites!=[]:
-                    print(pathTofn,":\nconvergent sites",convergent_sites,parallel_sites,file=finalfile)
+                if convergent_sites!={} or parallel_sites!={}:
+                    print(pathTofn,"convergent sites:",convergent_sites,"parallel_sits:",parallel_sites,"\n",treeWithNodeLables,file=finalfile)
                     sys.stdout.flush()
                 #t_mrca = treeWithNodeLables.common_ancestor(*tlist).confidence
                 
