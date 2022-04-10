@@ -898,24 +898,26 @@ def nunique_lengths(seq_of_seq):
 def get_lines(f):
     """
     @param raw_lines: raw lines
+    这从网上抄的程序，就离谱，改了好多bug 
     @return: a list of nonempty lines
     """
     lines=[]
     #process header line
-    lines.append(f.readline().rstrip('\r\n'))
+    lines.append(f.readline().rstrip())#'\r\n'
     line=f.readline()
-    line=line[:10]+line[10:].rstrip('\r\n').replace(" ","").replace("\t","");line_len_first=1
-    lines.append(line)
+    #line[:10]+ #line[10:]
+    line_len_first=1#'\r\n'
+    #'\r\n'
     while line.split():
-        line=f.readline().rstrip('\r\n')
-        lines.append(line[:10]+line[10:].rstrip('\r\n').replace(" ","").replace("\t",""))
-        line_len_first+=1
+        lines.append(re.split(r"\s+",line)[0]+ re.search(r"\s+",line).group(0)+"".join(re.split(r"\s+",line.rstrip())[1:]).replace(" ","").replace("\t",""))#'\r\n'#line[:10]+line[10:].rstrip('\r\n').replace(" ","").replace("\t","")
+        line=f.readline().strip();line_len_first+=1
+        
     line_len=1    
     for line in f:
         if not line.split() and line_len_first==line_len:
             line_len=1
         else:
-            lines[line_len]+=line.rstrip('\r\n').replace(" ","").replace("\t","")
+            lines[line_len]+=line.rstrip().replace(" ","").replace("\t","")#'\r\n'
             line_len+=1            
 #     lines = [x.rstrip('\r\n') for x in raw_lines]
     return [x for x in lines if x]
@@ -947,6 +949,7 @@ def decode_phyliplines(raw_lines):
         raise PhylipError('all data lines should be the same length')
     # break lines into taxa and data
     compound_data_rows = [[x[:10].strip(), x[10:].strip()] for x in data_lines]
+#     compound_data_rows = [[re.split(r"\s+",x.strip())[0],re.split(r"\s+",x.strip())[1:]] for x in data_lines]
     headers, sequences = zip(*compound_data_rows)
     ncolumns_observed = len(sequences[0])
     if ncolumns_observed != ncolumns:

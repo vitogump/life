@@ -31,6 +31,7 @@ parser.add_option("-t", "--targetSpeciesname", dest="targetSpeciesname",action="
 (options, args) = parser.parse_args()
 if __name__ == '__main__':
     print("Warning:make sure single programm is running, or you may get wrong result because different program may access the same files")
+    fileHmap={"Lox":0,"GRCh38":0,"MMUL":0,"PapA":0,"GSM":0,"Cjac":0,"CanF":0, "Pika":0,"PIG":0, "turT":0 , "GRCm":0, "UMD":0, "Equ":0, "Oar":0}
     groupfile=open(options.groupfile,"r")
     if options.steps.strip()=="1":
         
@@ -50,7 +51,7 @@ if __name__ == '__main__':
             os.mkdir(options.groupfile.replace(".","_"))
         except:
             pass
-        fileHmap={"Lox":0,"GRCh38":0,"MMUL":0,"PapA":0,"GSM":0,"Cjac":0,"CanF":0, "Pika":0,"PIG":0, "turT":0 , "GRCm":0, "UMD":0, "Equ":0, "Oar":0}
+        
         for fn in os.listdir(options.compliantFasta):
             pathTofn=os.path.join(options.compliantFasta.strip(),fn.strip())
             print("build/read indexfile for:",fn)
@@ -108,11 +109,12 @@ if __name__ == '__main__':
         treefilefor14species="/home/lrui/specieslist14example_NAMED.nwk.txt"
         from Bio.Phylo.PAML import codeml
         from Bio import Phylo,SeqIO
+        from ete3 import  Tree
         cml=codeml.Codeml()
         "/home/lrui/paml4.9j/comdel.ctl"
         cml.read_ctl_file(os.path.join(options.pamlpath,"codeml.ctl"))
         
-        cml.tree=treefilefor14species#"/home/lrui/specieslist14example_NAMED.nwk.txt"
+        
         #cml.ctl_file="codeml.ctl"
         #cml.working_dir="/home/lrui/paml4.9j"
         cml.set_options(seqtype=2)# 2:AAs;
@@ -123,18 +125,27 @@ if __name__ == '__main__':
         cml.set_options(RateAncestor=1)
         cml.set_options(aaRatefile=os.path.join(options.pamlpath,"dat/wag.dat"))
         
-        finalfile=open(options.groupfile+"".join(options.targetSpeciesname)+"step3.final",'w')        
+        finalfile=open(options.groupfile+"".join(options.targetSpeciesname)+"step3.final",'w')
+        tfinalascii_file=open(options.groupfile+"".join(options.targetSpeciesname)+"step3.finaltreefig",'w')        
         for fn in os.listdir(step2outpath):
             pathTofn=os.path.join(step2outpath,fn.strip())
             if os.path.isfile(pathTofn) and pathTofn.endswith("_align.fa.phy"):
                 cml.alignment=pathTofn
-                cml.write_ctl_file()
+                
                 ########### test temp
                 with open(pathTofn,'r') as pffffff:
-                    lllllll=len(pffffff.readlines())
-                    if lllllll!=15:
-                        continue
-                print(lllllll)
+                    physeqmap=Util.decode_phyliplines(pffffff)
+                    print("# of species with one to one ortholog gene",len(physeqmap.keys()),len(fileHmap.keys()))
+                    if len(physeqmap.keys())!=len(fileHmap.keys()):
+                        print("extract subtree and write to subtree#of##.newick file")
+                        tfffffffff=Tree(treefilefor14species,format=1)
+                        tfffffffff.prune(list(physeqmap.keys()),preserve_branch_length=True)
+                        tfffffffff.write(format=1, outfile="subtree"+str(len(physeqmap.keys()))+"of"+str(len(fileHmap.keys()))+".newick")
+
+                        cml.tree="subtree"+str(len(physeqmap.keys()))+"of"+str(len(fileHmap.keys()))+".newick"
+                    else:
+                        cml.tree=treefilefor14species#"/home/lrui/specieslist14example_NAMED.nwk.txt"
+                cml.write_ctl_file()
                 #############test temp end
                 stat = os.system(os.path.join(options.pamlpath,"codeml"))
                 #copy rst and mcl and rename
@@ -150,7 +161,7 @@ if __name__ == '__main__':
                     print("rstLine_idx",rstLine_idx)
                     if "tree with node labels for Rod Page's TreeView" in rstContent[rstLine_idx]:
                         while True:# for skip the empty line but It is not actually useful
-                            rstLine_idx+=1
+                            rstLine_idx+=1;newickTreeString=rstContent[rstLine_idx].strip()
                             print("tree with node labels for Rod Page's TreeView\n",rstContent[rstLine_idx])
                             try:
                                 sf = StringIO(rstContent[rstLine_idx])
@@ -235,16 +246,21 @@ if __name__ == '__main__':
                                         for X4T_Clade in tlist_actual[X3T_idx+1:]:# each Terminal(Target) X4 
                                             X2_idx=-1
                                             for AA2 in reversed(Targets_ANCPATH_info[X4T_Clade.name][2:]):# for one path, path to D  for example
-                                                if AA2 ==Targets_ANCPATH_info[X4T_Clade.name][-1]:continue
-                                                print("find Clade of X2 in path to X4",AA,"check X1=?X2")
+                                                if AA2 ==Targets_ANCPATH_info[X4T_Clade.name][-1]:
+                                                    X2_idx-=1;continue
+                                                print("find Clade of X2 in path to X4",AA,"check X1!=X2")
+                                                if Targets_ANCPATH_info[X4T_Clade.name][0][X2_idx]==Targets_ANCPATH_info[tlist_actual[X3T_idx].name][0][X1_idx]:#may be 12 13 has the same internal path to 16 as the example in notebook9
+                                                    print("skip to check other species: 12 13 has the same internal path to 16 as the example in notebook9",Targets_ANCPATH_info[tlist_actual[X3T_idx].name][0],Targets_ANCPATH_info[X4T_Clade.name][0][X2_idx])
+                                                    continue
+                                                print("get X1!=X2 Clade")
                                                 if AA2!=AA:#
                                                     if i not in convergent_sites:convergent_sites[i]={}
                                                     print(" find convergent ")
-                                                    convergent_sites[i].update({tlist_actual[X3T_idx].name:Targets_ANCPATH_info[tlist_actual[X3T_idx].name][-1],X4T_Clade.name:AA})#species1:X3_AA
+                                                    convergent_sites[i].update({tlist_actual[X3T_idx].name:Targets_ANCPATH_info[tlist_actual[X3T_idx].name][-1],X4T_Clade.name:Targets_ANCPATH_info[X4T_Clade.name][-1],Targets_ANCPATH_info[tlist_actual[X3T_idx].name][0][X1_idx]:AA,Targets_ANCPATH_info[tlist_actual[X3T_idx].name][0]:Targets_ANCPATH_info[tlist_actual[X3T_idx].name][1:],Targets_ANCPATH_info[X4T_Clade.name][0]:Targets_ANCPATH_info[X4T_Clade.name][1:]})#species1:X3_AA
                                                 else:# all internal clades are same as the 
                                                     if i not in parallel_sites:parallel_sites[i]={} 
                                                     print("find parallel")
-                                                    parallel_sites[i].update({tlist_actual[X3T_idx].name:Targets_ANCPATH_info[tlist_actual[X3T_idx].name][-1],X4T_Clade.name:AA})
+                                                    parallel_sites[i].update({tlist_actual[X3T_idx].name:Targets_ANCPATH_info[tlist_actual[X3T_idx].name][-1],X4T_Clade.name:Targets_ANCPATH_info[X4T_Clade.name][-1],Targets_ANCPATH_info[tlist_actual[X3T_idx].name][0][X1_idx]:AA,Targets_ANCPATH_info[tlist_actual[X3T_idx].name][0]:Targets_ANCPATH_info[tlist_actual[X3T_idx].name][1:],Targets_ANCPATH_info[X4T_Clade.name][0]:Targets_ANCPATH_info[X4T_Clade.name][1:]})
                                                 print(" find convergent/ parallel",convergent_sites,parallel_sites)
                                                 break
                                         break
@@ -268,7 +284,8 @@ if __name__ == '__main__':
                     rstLine_idx+=1        
                 print("end while",parallel_sites,convergent_sites)
                 if convergent_sites!={} or parallel_sites!={}:
-                    print(pathTofn,"convergent sites:",convergent_sites,"parallel_sits:",parallel_sites,"\n",treeWithNodeLables,file=finalfile)
+                    print(pathTofn,"convergent sites:",convergent_sites,"parallel_sits:",parallel_sites,"\n",newickTreeString,treeWithNodeLables,file=finalfile)
+                    print(pathTofn,file=tfinalascii_file);Phylo.draw_ascii(treeWithNodeLables.root,tfinalascii_file)
                     sys.stdout.flush()
                 #t_mrca = treeWithNodeLables.common_ancestor(*tlist).confidence
                 
