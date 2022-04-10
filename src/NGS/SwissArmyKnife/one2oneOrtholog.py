@@ -187,7 +187,7 @@ if __name__ == '__main__':
                             #1. find  c==d sites i.e X3==X4
                             pos_i_targetsAA=[seqrecord_obj.seq[i] for seqrecord_obj in seq_rec if seqrecord_obj.id in options.targetSpeciesname]# search each target species'AA for position i
                             if pos_i_targetsAA.count(pos_i_targetsAA[0])==len(options.targetSpeciesname):
-                                print("test old version of what pass X3==X4",pos_i_targetsAA,"CD_sites_idx.append(i)",i)                            
+                                print("test old version of what pass X3==X4",pos_i_targetsAA,"CD_sites_idx.append(i)",i,fn)                            
                             for AA in pos_i_targetsAA:
                                 if pos_i_targetsAA.count(AA)>=2:
                                     print("find X3==X4",pos_i_targetsAA)
@@ -227,21 +227,22 @@ if __name__ == '__main__':
                                     for AA in reversed(Targets_ANCPATH_info[tlist_actual[X3T_idx].name][2:]):#not include the target and mrca AA, find the index of AA along PATH from X1  to mcra 
                                         print(Targets_ANCPATH_info[tlist_actual[X3T_idx].name].index(Targets_ANCPATH_info[tlist_actual[X3T_idx].name][-1]))
                                         if AA==Targets_ANCPATH_info[tlist_actual[X3T_idx].name][-1]:
-                                            print(Targets_ANCPATH_info[tlist_actual[X3T_idx].name][2:],AA,"=?",Targets_ANCPATH_info[tlist_actual[X3T_idx].name][-1],X1_idx,"WHAT'S HAPPEN")
+                                            print(Targets_ANCPATH_info[tlist_actual[X3T_idx].name][2:],AA,"=?",Targets_ANCPATH_info[tlist_actual[X3T_idx].name][-1],X1_idx,"not this internal clade")
                                             X1_idx-=1;continue
                                         print("find change in Clade to",tlist_actual[X3T_idx].name)
                                         print(X1_idx,"find Clade  X1:"+Targets_ANCPATH_info[tlist_actual[X3T_idx].name][0][X1_idx]+" in path to X3",tlist_actual[X3T_idx].name,AA)
                                         
                                         for X4T_Clade in tlist_actual[X3T_idx+1:]:# each Terminal(Target) X4 
                                             X2_idx=-1
-                                            for AA2 in reversed(Targets_ANCPATH_info[X4T_Clade.name][2:Targets_ANCPATH_info[X4T_Clade.name].index(Targets_ANCPATH_info[X4T_Clade.name][-1])]):# for one path, path to D  for example
+                                            for AA2 in reversed(Targets_ANCPATH_info[X4T_Clade.name][2:]):# for one path, path to D  for example
                                                 if AA2 ==Targets_ANCPATH_info[X4T_Clade.name][-1]:continue
                                                 print("find Clade of X2 in path to X4",AA,"check X1=?X2")
-                                                if (i not in convergent_sites) and (i not in parallel_sites):convergent_sites[i]={};parallel_sites[i]={}
                                                 if AA2!=AA:#
+                                                    if i not in convergent_sites:convergent_sites[i]={}
                                                     print(" find convergent ")
                                                     convergent_sites[i].update({tlist_actual[X3T_idx].name:Targets_ANCPATH_info[tlist_actual[X3T_idx].name][-1],X4T_Clade.name:AA})#species1:X3_AA
-                                                else:# all internal clades are same as the  
+                                                else:# all internal clades are same as the 
+                                                    if i not in parallel_sites:parallel_sites[i]={} 
                                                     print("find parallel")
                                                     parallel_sites[i].update({tlist_actual[X3T_idx].name:Targets_ANCPATH_info[tlist_actual[X3T_idx].name][-1],X4T_Clade.name:AA})
                                                 print(" find convergent/ parallel",convergent_sites,parallel_sites)
