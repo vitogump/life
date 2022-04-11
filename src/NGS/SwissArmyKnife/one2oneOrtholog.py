@@ -196,34 +196,39 @@ if __name__ == '__main__':
 #                         CD_sites_idx=[]
                         for i in range(int(nodes_AAs[1])):#for every AA position
                             #1. find  c==d sites i.e X3==X4
+                            coverent_AA=""
                             pos_i_targetsAA=[seqrecord_obj.seq[i] for seqrecord_obj in seq_rec if seqrecord_obj.id in options.targetSpeciesname]# search each target species'AA for position i
                             if pos_i_targetsAA.count(pos_i_targetsAA[0])==len(options.targetSpeciesname):
                                 print("test old version of what pass X3==X4",pos_i_targetsAA,"CD_sites_idx.append(i)",i,fn)                            
                             for AA in pos_i_targetsAA:
                                 if pos_i_targetsAA.count(AA)>=2:
-                                    print("find X3==X4",pos_i_targetsAA)
+                                    print("find X3==X4",pos_i_targetsAA,AA)
                                     tlist_actual=[list(treeWithNodeLables.find_clades(name=r"\d*_"+seqrecord_obj.id))[0] for seqrecord_obj in seq_rec if ((seqrecord_obj.id in options.targetSpeciesname) and seqrecord_obj.seq[i]==AA)]
+                                    print([(seqrecord_obj,seqrecord_obj.seq[i]) for seqrecord_obj in seq_rec if ((seqrecord_obj.id in options.targetSpeciesname) and seqrecord_obj.seq[i]==AA)])
                                     break# go step #2
                                     #CD_sites_idx.append(i)
                             else:
                                 continue
-
+                            print(tlist_actual)
                             #2. search changes along each target to root,A!=C,B!=D
 
                             Targets_ANCPATH_info={}
                             t_mrca = treeWithNodeLables.common_ancestor(*tlist_actual)
-                            print(t_mrca,"may not same as ",treeWithNodeLables.common_ancestor(*tlist),"when less than input","species")
+                            print(t_mrca,"may not same as ",treeWithNodeLables.common_ancestor(*tlist_actual),"when less than input","species")
                             for t_clade in tlist_actual:
                                 foroneTargetTmrca=treeWithNodeLables.trace(t_mrca,t_clade)
                                 foroneTargetTmrca_ids=["node #"+str(ab.confidence) for ab in foroneTargetTmrca[:-1]]+[re.search(r"\d+_(\w+)",foroneTargetTmrca[-1].name).group(1)]#name_id same as code in  align seq in rst of paml
 #检查 确认上一句 名字没有错误
-                                pos_i_pathMrcaToTargetACorBD=[seqrecord_obj.seq[i] for seqrecord_obj in seq_rec if seqrecord_obj.id in foroneTargetTmrca_ids]
+                                pos_i_pathMrcaToTargetACorBD=[]
+                                for seq_id in foroneTargetTmrca_ids:
+                                    pos_i_pathMrcaToTargetACorBD.append([seqrecord_obj.seq[i] for seqrecord_obj in seq_rec if seqrecord_obj.id==seq_id][0])
+                                #pos_i_pathMrcaToTargetACorBD=[seqrecord_obj.seq[i] for seqrecord_obj in seq_rec if seqrecord_obj.id in foroneTargetTmrca_ids]
                                 print("check A != C || B!=D along path:",pos_i_pathMrcaToTargetACorBD,pos_i_pathMrcaToTargetACorBD.count(pos_i_pathMrcaToTargetACorBD[-1]),pos_i_pathMrcaToTargetACorBD[-1],pos_i_pathMrcaToTargetACorBD)
                                 if pos_i_pathMrcaToTargetACorBD.count(pos_i_pathMrcaToTargetACorBD[-1])<len(pos_i_pathMrcaToTargetACorBD):#A is not equal to C
                                     print("get A != C || B!=D,record",t_clade,pos_i_pathMrcaToTargetACorBD,foroneTargetTmrca_ids)
                                     Targets_ANCPATH_info[t_clade.name]=[tuple(foroneTargetTmrca_ids)]+[*pos_i_pathMrcaToTargetACorBD]
 
-                            print(foroneTargetTmrca_ids,"t_mrca",t_mrca.name,t_clade.name,type(t_clade.name),tlist_actual,type(tlist_actual[0]))
+                            print(foroneTargetTmrca_ids,"t_mrca",t_mrca,t_clade.name,type(t_clade.name),tlist_actual,type(tlist_actual[0]))
                             if len(Targets_ANCPATH_info.keys())==len(tlist_actual):
                                 print("find A != C && B!=D for every target,ie # of records == # of targets; now judge A!=B, next")
                                 """
@@ -251,7 +256,7 @@ if __name__ == '__main__':
                                                 print("find Clade of X2 in path to X4",AA,"check X1!=X2")
                                                 if Targets_ANCPATH_info[X4T_Clade.name][0][X2_idx]==Targets_ANCPATH_info[tlist_actual[X3T_idx].name][0][X1_idx]:#may be 12 13 has the same internal path to 16 as the example in notebook9
                                                     print("skip to check other species: 12 13 has the same internal path to 16 as the example in notebook9",Targets_ANCPATH_info[tlist_actual[X3T_idx].name][0],Targets_ANCPATH_info[X4T_Clade.name][0][X2_idx])
-                                                    continue
+                                                    break
                                                 print("get X1!=X2 Clade")
                                                 if AA2!=AA:#
                                                     if i not in convergent_sites:convergent_sites[i]={}
