@@ -35,10 +35,10 @@ if __name__ == '__main__':
     groupfile=open(options.groupfile,"r")
     if options.steps.strip()=="1":
         
-        of=open(options.groupfile+".out","w")
+        of=open(options.groupfile+".step1out","w")
         for line in groupfile:
             #linelist=re.split(r"\s+",line.strip())
-            if (line.count("Lox|")<2 or line.count("GRCh38|")<2 or line.count("MMUL|")<2 or line.count("PapA|")<=1 or  line.count("Cjac|")<=1 or line.count("CanF|")<=1 or line.count("Pika|")<=1 or line.count("PIG|")<=1 or line.count("turT|")<=1 or line.count("GRCm|")<=1 or line.count("Equ|")<=1) and ((line.count("UMD|")==line.count("GSM|")==line.count("Oar|")==1 ) ):#or line.count("UMD|")==line.count("GSM|")==1 or line.count("GSM|")==line.count("Oar|")==1 or line.count("Oar|")==line.count("UMD|")==1 #or line.count("UMD|")==1 or line.count("Oar|")==1 or  line.count("GSM|")==1
+            if (line.count("Lox|")<2 or line.count("GRCh38|")<2 or line.count("MMUL|")<2 or line.count("PapA|")<=1 or  line.count("Cjac|")<=1 or line.count("CanF|")<=1 or line.count("Pika|")<=1 or line.count("PIG|")<=1 or line.count("turT|")<=1 or line.count("GRCm|")<=1 or line.count("Equ|")<=1) and ((line.count("UMD|")==line.count("GSM|")==line.count("Oar|")==1 ) or line.count("UMD|")==line.count("GSM|")==1 or line.count("Oar|")==line.count("GSM|")==1 ):#or line.count("UMD|")==line.count("GSM|")==1 or line.count("GSM|")==line.count("Oar|")==1 or line.count("Oar|")==line.count("UMD|")==1 #or line.count("UMD|")==1 or line.count("Oar|")==1 or  line.count("GSM|")==1
                 if line.count("Lox|")+ line.count("GRCh38|") + line.count("MMUL|") + line.count("PapA|") +  line.count("Cjac|") + line.count("CanF|") + line.count("Pika|") + line.count("PIG|")+ line.count("turT|")+ line.count("GRCm|")+ line.count("Equ|")>0:
                     print(line,end="",file=of)
             else:
@@ -167,11 +167,12 @@ if __name__ == '__main__':
                                 sf = StringIO(rstContent[rstLine_idx])
                                 treeWithNodeLables=Phylo.read(sf, "newick")#rstContent[rstLine_idx]
                                 tlist=[];sf.close()
-                                for targetSpeciesName in options.targetSpeciesname:
-                                    tlist.append(list(treeWithNodeLables.find_clades(name=r"\d*_"+targetSpeciesName))[0])
-                                break
                             except:
                                 print("search Tree Failed? ",rstContent[rstLine_idx],"continue searching the tree")
+                                
+                            for targetSpeciesName in options.targetSpeciesname:
+                                tlist.append(list(treeWithNodeLables.find_clades(name=r"\d*_"+targetSpeciesName))[0])
+                            break                            
                                 
                         t_mrca = treeWithNodeLables.common_ancestor(*tlist)
                     if "List of extant and reconstructed sequences" in rstContent[rstLine_idx]:
@@ -213,8 +214,9 @@ if __name__ == '__main__':
                             #2. search changes along each target to root,A!=C,B!=D
 
                             Targets_ANCPATH_info={}
-                            t_mrca = treeWithNodeLables.common_ancestor(*tlist_actual)
                             print(t_mrca,"may not same as ",treeWithNodeLables.common_ancestor(*tlist_actual),"when less than input","species")
+                            t_mrca = treeWithNodeLables.common_ancestor(*tlist_actual)
+                            
                             for t_clade in tlist_actual:
                                 foroneTargetTmrca=treeWithNodeLables.trace(t_mrca,t_clade)
                                 foroneTargetTmrca_ids=["node #"+str(ab.confidence) for ab in foroneTargetTmrca[:-1]]+[re.search(r"\d+_(\w+)",foroneTargetTmrca[-1].name).group(1)]#name_id same as code in  align seq in rst of paml
@@ -255,16 +257,16 @@ if __name__ == '__main__':
                                                     X2_idx-=1;continue
                                                 print("find Clade of X2 in path to X4",AA,"check X1!=X2")
                                                 if Targets_ANCPATH_info[X4T_Clade.name][0][X2_idx]==Targets_ANCPATH_info[tlist_actual[X3T_idx].name][0][X1_idx]:#may be 12 13 has the same internal path to 16 as the example in notebook9
-                                                    print("skip to check other species: 12 13 has the same internal path to 16 as the example in notebook9",Targets_ANCPATH_info[tlist_actual[X3T_idx].name][0],Targets_ANCPATH_info[X4T_Clade.name][0][X2_idx])
+                                                    print("skip to check other species: 12 13 has the same internal path to 16 as the example in notebook9",Targets_ANCPATH_info[tlist_actual[X3T_idx].name][0][X1_idx],Targets_ANCPATH_info[X4T_Clade.name][0][X2_idx])
                                                     break
                                                 print("get X1!=X2 Clade")
                                                 if AA2!=AA:#
                                                     if i not in convergent_sites:convergent_sites[i]={}
-                                                    print(" find convergent ")
+                                                    print(" find convergent ",i,tlist_actual,Targets_ANCPATH_info.keys())
                                                     convergent_sites[i].update({tlist_actual[X3T_idx].name:Targets_ANCPATH_info[tlist_actual[X3T_idx].name][-1],X4T_Clade.name:Targets_ANCPATH_info[X4T_Clade.name][-1],Targets_ANCPATH_info[tlist_actual[X3T_idx].name][0][X1_idx]:AA,Targets_ANCPATH_info[tlist_actual[X3T_idx].name][0]:Targets_ANCPATH_info[tlist_actual[X3T_idx].name][1:],Targets_ANCPATH_info[X4T_Clade.name][0]:Targets_ANCPATH_info[X4T_Clade.name][1:]})#species1:X3_AA
                                                 else:# all internal clades are same as the 
                                                     if i not in parallel_sites:parallel_sites[i]={} 
-                                                    print("find parallel")
+                                                    print("find parallel",i,tlist_actual,Targets_ANCPATH_info.keys())
                                                     parallel_sites[i].update({tlist_actual[X3T_idx].name:Targets_ANCPATH_info[tlist_actual[X3T_idx].name][-1],X4T_Clade.name:Targets_ANCPATH_info[X4T_Clade.name][-1],Targets_ANCPATH_info[tlist_actual[X3T_idx].name][0][X1_idx]:AA,Targets_ANCPATH_info[tlist_actual[X3T_idx].name][0]:Targets_ANCPATH_info[tlist_actual[X3T_idx].name][1:],Targets_ANCPATH_info[X4T_Clade.name][0]:Targets_ANCPATH_info[X4T_Clade.name][1:]})
                                                 print(" find convergent/ parallel",convergent_sites,parallel_sites)
                                                 break
@@ -289,7 +291,8 @@ if __name__ == '__main__':
                     rstLine_idx+=1        
                 print("end while",parallel_sites,convergent_sites)
                 if convergent_sites!={} or parallel_sites!={}:
-                    print(pathTofn,"convergent sites:",convergent_sites,"parallel_sits:",parallel_sites,"\n",newickTreeString,treeWithNodeLables,file=finalfile)
+                    print(pathTofn,newickTreeString,treeWithNodeLables,file=finalfile)
+                    print("convergent sites:",file=finalfile);Util.mapFormatPrint(convergent_sites, finalfile);print("parallel_sits:",file=finalfile);Util.mapFormatPrint(parallel_sites,finalfile)
                     print(pathTofn,file=tfinalascii_file);Phylo.draw_ascii(treeWithNodeLables.root,tfinalascii_file)
                     sys.stdout.flush()
                 #t_mrca = treeWithNodeLables.common_ancestor(*tlist).confidence

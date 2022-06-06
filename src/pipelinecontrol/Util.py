@@ -478,6 +478,7 @@ def runashell(a):
         session.commit()
     return
 def callsh_updateDB(scriptDir,NumOfThread,logicalpurpose,memofQsub):
+    #run in terminate way :python JobTracker.py,
     import src.web.dba as dba
     pool=Pool(NumOfThread)
     scriptfiles = os.listdir(path=scriptDir)

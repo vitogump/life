@@ -43,18 +43,18 @@ cline = configure.readline()
 outfileNamePre=re.search(r'outfilepre=(.*)', cline).group(1).strip()
 cline = configure.readline()
 PhyMLpath = re.search(r'PhyMLpath=(.*)', cline).group(1).strip()
+cline = configure.readline()
+clustalw = re.search(r'clustalw=(.*)', cline).group(1).strip()
 # treefile_oringal = open(tempPath+"/", 'r')
 # treefileName=(tempPath+"/treefileforonehomogene")
 # temp_outtreefileName = treefileName + "_markbranch"
 
 
-pamlcodeml = pamlPath + "/codeml"
-pamlcodemlctl = pamlPath + "/codeml.ctl"
-pamlcodemlctlfile = open(pamlcodemlctl, 'r')
+
 MuscleInputFileName = tempPath + "/muscleinseq.fa"
 MuscleOutputFileName = tempPath + "/muscleoutseqaln.aln"
 pamlInputCDSFileName = tempPath + "/pamlinputfile.phy"
-fastalnforcdstree=tempPath+"/pamlinputfile"
+fastalnforcdstree=tempPath+"/muscleoutseqaln"
 if __name__ == '__main__':
 
 # load aa_cds_pair file and cdsfafile aafafile into memory
@@ -79,9 +79,10 @@ if __name__ == '__main__':
             except IOError:
                 print("generateIndexByChrom",speciesname)
                 Util.generateIndexByChrom(aafafileName, aafafileName + ".myindex", "transcript:")
-                Util.generateIndexByChrom(cdsfafileName, cdsfafileName + ".myindex")
+                Util.generateIndexByChrom(cdsfafileName, cdsfafileName + ".myindex","transcript:")
                 aa_cds_filemap[speciesname].append(pickle.load(open(aafafileName + ".myindex", 'rb')))
                 aa_cds_filemap[speciesname].append(pickle.load(open(cdsfafileName + ".myindex", 'rb')))
+
             stat = os.system("rm " + aafafileName + ".myindex " + cdsfafileName + ".myindex")
             if stat != 0:
                 print("rm " + aafafileName + ".myindex " + cdsfafileName + ".myindex" + " os.system return not 0")
@@ -162,6 +163,7 @@ if __name__ == '__main__':
             muscleout_seqmap[seq_rec.id]=seq_rec.seq
 #         muscleoutfile.close()
         maxlenlist=[]
+        print(homotrscpttitle)
         for species_and_trscpt_idx in range(len(homotrscpttitle)):
             curspecies = homotrscpttitle[species_and_trscpt_idx]
             curtrscpt = homotrscptlist[species_and_trscpt_idx]
@@ -182,7 +184,7 @@ if __name__ == '__main__':
             maxlenlist.append(len(curspecies))
             pamlinputcdsseq.append(cdsseqfillback)
         maxlen=max(maxlenlist)
-        print(maxlen)
+        print(maxlen,"\n",pamlinputcdsseq)
         print(Util.encode_phyliplines(pamlinputcdsheader, pamlinputcdsseq,maxlen+2), file=pamlinputcdsfile)
 #         ffff=open(fastalnforcdstree,'w')
 #         for i in range(len(pamlinputcdsheader)):
@@ -195,51 +197,65 @@ if __name__ == '__main__':
         a=os.system(PhyMLpath+" -i "+pamlInputCDSFileName+" -m GTR -b 100 -t e -a e")
         if a!=0:
             print("error",PhyMLpath+" -i "+pamlInputCDSFileName+" -m GTR -b 100 -t e -a e")
-            exit(-1)
-#         os.system(PhyMLpath+" -infile="+pamlInputCDSFileName+" -type=DNA -output=FASTA -align")
-        print(PhyMLpath+" -i "+pamlInputCDSFileName+" -m GTR -b 100 -t e -a e")
-        treefile_oringal=open(pamlInputCDSFileName+"_phyml_tree.txt",'r')
-        fixtreetext=treefile_oringal.readline()
-        treefile_oringal.close()
-        print(re.subn(r"\)[\d\.]+:","):",fixtreetext.strip())[0],end="",file=open(pamlInputCDSFileName+"_phyml_tree.txt",'w'))
-        treefile_oringal=open(pamlInputCDSFileName+"_phyml_tree.txt",'r')
-        temp_outtreefileName = pamlInputCDSFileName+"_phyml_tree.txt" + "_markbranch"
+            os.system(clustalw+" -infile="+pamlInputCDSFileName+" -type=DNA -output=FASTA -align")
+            print(clustalw+" -infile="+pamlInputCDSFileName+" -type=DNA -output=FASTA -align")
+            treefile_oringal=open(fastalnforcdstree+".dnd",'r')
+            temp_outtreefileName = fastalnforcdstree+".dnd" + "_markbranch"
+            #exit(-1)
+        else:
+            treefile_oringal=open(pamlInputCDSFileName+"_phyml_tree.txt",'r')
+            fixtreetext=treefile_oringal.readline();treefile_oringal.close()
+            print(re.subn(r"\)[\d\.]+:","):",fixtreetext.strip())[0],end="",file=open(pamlInputCDSFileName+"_phyml_tree.txt",'w'))
+            treefile_oringal=open(pamlInputCDSFileName+"_phyml_tree.txt",'r')
+            temp_outtreefileName = pamlInputCDSFileName+"_phyml_tree.txt" + "_markbranch"
+# #         os.system(PhyMLpath+" -infile="+pamlInputCDSFileName+" -type=DNA -output=FASTA -align")
+#         print(PhyMLpath+" -i "+pamlInputCDSFileName+" -m GTR -b 100 -t e -a e")
+
         if skipthishomotrscptline:
             skipthishomotrscptline = False
             continue
         # finishing fill back the cds seq file,next run codeml and extract ka ks value from mlc file
-        
+        pamlcodeml = os.path.join(pamlPath,"codeml")
+#         pamlcodemlctl = pamlPath + "/codeml.ctl"
+#         pamlcodemlctlfile = open(pamlcodemlctl, 'r')
         ##### configure codeml.ctl file to process C
+        from Bio.Phylo.PAML import codeml
+        cml=codeml.Codeml()
         if options.processC:
-            pamlcodemlctlfilelines = pamlcodemlctlfile.readlines()
-            pamlcodemlctlfile.close()
-            os.system("rm " + pamlcodemlctl)
-            pamlcodemlctlfile = open(pamlcodemlctl, 'w')
-            for line in pamlcodemlctlfilelines:
-                print(line)
-                if re.search(r'^\s+seqfile\s*=', line) != None:  # seqfile
-                    print("      seqfile = " + pamlInputCDSFileName, file=pamlcodemlctlfile)
-                elif re.search(r'^\s+outfile\s*=', line) != None:
-                    print("      outfile = " + tempPath + "/mlc", file=pamlcodemlctlfile)
-                elif re.search(r'^\s+seqtype\s*=', line) != None:
-                    print("      seqtype = 1", file=pamlcodemlctlfile)
-                elif re.search(r'^\s+model\s*=', line) != None:
-                    print("        model = 0", file=pamlcodemlctlfile)
-                elif re.search(r'^\s+runmode\s*=', line) != None:
-                    print("      runmode = -2", file=pamlcodemlctlfile)
-                elif re.search(r'^\s+treefile\s*=', line) != None:
-                    print("     treefile = stewart.trees      * tree structure file name",file=pamlcodemlctlfile)
-                elif re.search(r'^\s+NSsites\s*=', line) != None:
-                    print("      NSsites = 0  * 0:one w;1:neutral;2:selection; 3:discrete;4:freqs;",file=pamlcodemlctlfile)
-                elif re.search(r'^\s+fix_omega\s*=', line) != None:
-                    print("    fix_omega = 0  * 1: omega or omega_1 fixed, 0: estimate",file=pamlcodemlctlfile)
-                elif re.search(r'^\s+omega\s*=',line)!=None:
-                    print("        omega = .4 * initial or fixed omega, for codons or codon-based AAs",file=pamlcodemlctlfile)
-                else:
-                    print(line, file=pamlcodemlctlfile, end="")
-            pamlcodemlctlfile.close()        
-             
-            print(pamlcodeml, pamlcodemlctl)
+            cml.read_ctl_file(os.path.join(options.pamlpath,"codeml.ctl.template.ctl"))
+            cml.alignment=pamlInputCDSFileName
+            cml.out_file=tempPath + "/mlc"
+            cml.set_options(seqtype=1);cml.set_options(model=0);cml.set_options(runmode=-2)
+#             pamlcodemlctlfilelines = pamlcodemlctlfile.readlines()
+#             pamlcodemlctlfile.close()
+#             os.system("rm " + pamlcodemlctl)
+#             pamlcodemlctlfile = open(pamlcodemlctl, 'w')
+            cml.set_options(NSsites=0);cml.set_options(fix_omega=0);cml.set_options(omega = .4)
+#             for line in pamlcodemlctlfilelines:
+#                 print(line)
+#                 if re.search(r'^\s+seqfile\s*=', line) != None:  # seqfile
+#                     print("      seqfile = " + pamlInputCDSFileName, file=pamlcodemlctlfile)
+#                 elif re.search(r'^\s+outfile\s*=', line) != None:
+#                     print("      outfile = " + tempPath + "/mlc", file=pamlcodemlctlfile)
+#                 elif re.search(r'^\s+seqtype\s*=', line) != None:
+#                     print("      seqtype = 1", file=pamlcodemlctlfile)
+#                 elif re.search(r'^\s+model\s*=', line) != None:
+#                     print("        model = 0", file=pamlcodemlctlfile)
+#                 elif re.search(r'^\s+runmode\s*=', line) != None:
+#                     print("      runmode = -2", file=pamlcodemlctlfile)
+#                 elif re.search(r'^\s+treefile\s*=', line) != None:
+#                     print("     treefile = stewart.trees      * tree structure file name",file=pamlcodemlctlfile)
+#                 elif re.search(r'^\s+NSsites\s*=', line) != None:
+#                     print("      NSsites = 0  * 0:one w;1:neutral;2:selection; 3:discrete;4:freqs;",file=pamlcodemlctlfile)
+#                 elif re.search(r'^\s+fix_omega\s*=', line) != None:
+#                     print("    fix_omega = 0  * 1: omega or omega_1 fixed, 0: estimate",file=pamlcodemlctlfile)
+#                 elif re.search(r'^\s+omega\s*=',line)!=None:
+#                     print("        omega = .4 * initial or fixed omega, for codons or codon-based AAs",file=pamlcodemlctlfile)
+#                 else:
+#                     print(line, file=pamlcodemlctlfile, end="")
+#             pamlcodemlctlfile.close()        
+#              
+#             print(pamlcodeml, pamlcodemlctl)
             stat = os.system(pamlcodeml)
             if stat != 0:
                 print("call paml maybe call this Error", pamlInputCDSFileName, "The seq file appears to be in fasta format, but not aligned?")
@@ -272,11 +288,11 @@ if __name__ == '__main__':
 
             ##### configure codeml.ctl file to process B
             
-            pamlcodemlctlfile = open(pamlcodemlctl, 'r')
-            pamlcodemlctlfilelines = pamlcodemlctlfile.readlines()
-            pamlcodemlctlfile.close()
-            os.system("rm " + pamlcodemlctl)
-            pamlcodemlctlfile = open(pamlcodemlctl, 'w')
+#             pamlcodemlctlfile = open(pamlcodemlctl, 'r')
+#             pamlcodemlctlfilelines = pamlcodemlctlfile.readlines()
+#             pamlcodemlctlfile.close()
+#             os.system("rm " + pamlcodemlctl)
+#             pamlcodemlctlfile = open(pamlcodemlctl, 'w')
             # model=2 nssite=0 runmode=0
             for line in pamlcodemlctlfilelines:
                 if re.search(r'^\s+seqfile\s*=', line) != None:  # seqfile

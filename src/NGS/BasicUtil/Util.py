@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 import copy
-import re
+import re,sys
 import numpy,math
 from multiprocessing.dummy import Pool
 import pickle
@@ -975,12 +975,10 @@ def encode_phyliplines(headers, sequences,maxlen=10):
     return '\n'.join(out_lines)
 #phylip format 
 
-#######################
-
-####################
-
-
-
+def mapFormatPrint(mapdata,filehander=sys.stdout):
+    for m,k in mapdata:
+        print(*m,":",*k,sep=":",file=filehander)
+    
         
 
 class GATK_depthfile():

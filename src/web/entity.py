@@ -90,6 +90,7 @@ class Jobs_recoder(Base):
         if foldername[-1]=="/":
             foldername=foldername[0:-1]
         scriptfile=open(foldername+"/"+scriptname,'r')
+        projectpath=scriptfile.readline()
         line=scriptfile.readline()
         if re.search(r"^scriptinputdata=(.*)",line)!=None:
             self.inputdata=re.search(r"^scriptinputdata=(.*)",line).group(1)

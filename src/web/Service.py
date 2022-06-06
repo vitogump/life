@@ -3,15 +3,15 @@ Created on 2014-11-17
 
 @author: liurui
 '''
-import time,datetime,sys#,cv2
+import time,datetime,sys,cv2
 import re,string,os,random,markdown2
-import src.web.dba as mydba
+
 from src.pipelinecontrol.Util import OperatorWithData_webservice, upTodownTravelDir,longestCommonPrefix
 from sqlalchemy.orm import session
 from tabulate import tabulate
 import src.web.dba as aaa
 from src.web import entity
-from src.web.dba import addJobs2jobstate
+
 
 SLEEP_FOR_NEXT_TRY=5
 scriptdir=entity.scriptdir 

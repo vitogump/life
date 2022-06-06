@@ -125,6 +125,10 @@ def testmyform():
             return "come on"
 
     return render_template('entryelem.html',form=form)
+@web.route("/analysisdata2",methods=['GET','POST'])
+def processData():
+    return render_template('index.html')
+
 @web.route('/analysisdata',methods=['GET','POST'])
 def configsoftware():
     form=ParaForm()
