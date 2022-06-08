@@ -16,6 +16,7 @@ parser.add_option("-m", "--homologousgene", dest="homologousgene",
 parser.add_option("-p", "--proteincdspair", dest="proteincdspairfile", help="proteincdspairfile")
 parser.add_option("-c", "--configure", dest="configure")
 parser.add_option("-l", "--minlen", dest="minlen")
+parser.add_option("-t", "--tempdir", dest="tempdir",default=os.getcwd())
 parser.add_option("-A","--Branchsitemodel",dest="processA",action="store_true",default=False)
 parser.add_option("-B","--Branchmodel",dest="processB",action="store_true",default=False)
 parser.add_option("-C","--processC",dest="processC",action="store_true",default=False)
@@ -33,8 +34,7 @@ homogenefile = open(options.homologousgene, 'r')
 aa_cds_pair_file = open(options.proteincdspairfile, 'r')
 configure = open(options.configure, 'r')
 
-cline = configure.readline()
-tempPath = re.search(r'tempdir=(.*)', cline).group(1).strip()
+
 cline = configure.readline()
 musclePath = re.search(r'musclepath=(.*)', cline).group(1).strip()
 cline = configure.readline()
@@ -43,17 +43,18 @@ cline = configure.readline()
 outfileNamePre=re.search(r'outfilepre=(.*)', cline).group(1).strip()
 cline = configure.readline()
 PhyMLpath = re.search(r'PhyMLpath=(.*)', cline).group(1).strip()
-
+cline = configure.readline()
+print(cline)
 # treefile_oringal = open(tempPath+"/", 'r')
 # treefileName=(tempPath+"/treefileforonehomogene")
 # temp_outtreefileName = treefileName + "_markbranch"
 
-
+tempPath = options.tempdir #re.search(r'tempdir=(.*)', cline).group(1).strip()
 
 MuscleInputFileName = tempPath + "/muscleinseq.fa"
 MuscleOutputFileName = tempPath + "/muscleoutseqaln.aln"
 pamlInputCDSFileName = tempPath + "/pamlinputfile.phy"
-fastalnforcdstree=tempPath+"/muscleoutseqaln"
+fastalnforcdstree=tempPath+"/pamlinputfile"
 if __name__ == '__main__':
 
 # load aa_cds_pair file and cdsfafile aafafile into memory
@@ -185,20 +186,20 @@ if __name__ == '__main__':
         maxlen=max(maxlenlist)
         print(maxlen,"\n",pamlinputcdsseq)
         print(Util.encode_phyliplines(pamlinputcdsheader, pamlinputcdsseq,maxlen+2), file=pamlinputcdsfile)
-#         ffff=open(fastalnforcdstree,'w')
-#         for i in range(len(pamlinputcdsheader)):
-#             print(">"+pamlinputcdsheader[i],file=ffff)
-#             print(pamlinputcdsseq[i],file=ffff)
-#         ffff.close()
+        ffff=open(fastalnforcdstree,'w')
+        for i in range(len(pamlinputcdsheader)):
+            print(">"+pamlinputcdsheader[i],file=ffff)
+            print(pamlinputcdsseq[i],file=ffff)
+        ffff.close()
 #             
         pamlinputcdsfile.close()
         #make tree
-        a=os.system(PhyMLpath+" -i "+pamlInputCDSFileName+" -m GTR -b 100 -t e -a e")
+        a=os.system(PhyMLpath+" -i "+fastalnforcdstree+" -m GTR -b 100 -t e -a e")
         if a!=0:#below code block for clustalw func which is in case of the PhyML not work correct, may not used
-            print("error",PhyMLpath+" -i "+pamlInputCDSFileName+" -m GTR -b 100 -t e -a e","\nplease make sure the 'clustalw=path' is indicated in the end of the configure file",)
-            cline = configure.readline()
+            print(cline,"error",PhyMLpath+" -i "+pamlInputCDSFileName+" -m GTR -b 100 -t e -a e","\nplease make sure the 'clustalw=path' is indicated in the end of the configure file",)
+            
             clustalw = re.search(r'clustalw=(.*)', cline).group(1).strip()
-            os.system(clustalw+" -infile="+pamlInputCDSFileName+" -type=DNA -output=FASTA -align")
+            os.system(clustalw+" -infile="+fastalnforcdstree+" -type=DNA -output=FASTA -align")
             print(clustalw+" -infile="+pamlInputCDSFileName+" -type=DNA -output=FASTA -align")
             treefile_oringal=open(fastalnforcdstree+".dnd",'r')
             temp_outtreefileName = fastalnforcdstree+".dnd" + "_markbranch"
