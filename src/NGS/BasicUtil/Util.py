@@ -960,7 +960,7 @@ def decode_phyliplines(raw_lines):
     for i in range(ntaxa_observed):
         maptoreturn[headers[i]]=sequences[i]
     return maptoreturn
-def encode_phyliplines(headers, sequences,maxlen=10):
+def encode_phyliplines(headers, sequences,maxlen=10,uppercase=True):
     """
     This creates the contents of a non-interleaved phylip sequence file.
     @param headers: some header strings
@@ -971,7 +971,10 @@ def encode_phyliplines(headers, sequences,maxlen=10):
     out_lines = ['%d %d' % (nrows, ncols)]
     for h, seq in zip(headers, sequences):
         out_h = h[:maxlen].ljust(maxlen)
-        out_lines.append(out_h + seq)
+        if uppercase:
+            out_lines.append(out_h + seq.upper())
+        else:
+            out_lines.append(out_h + seq)
     return '\n'.join(out_lines)
 #phylip format 
 

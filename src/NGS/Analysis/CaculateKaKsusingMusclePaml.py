@@ -17,6 +17,7 @@ parser.add_option("-p", "--proteincdspair", dest="proteincdspairfile", help="pro
 parser.add_option("-c", "--configure", dest="configure")
 parser.add_option("-l", "--minlen", dest="minlen")
 parser.add_option("-t", "--tempdir", dest="tempdir",default=os.getcwd())
+parser.add_option("-f", "--fixparameter", dest="fixparameters",action="store_true",default=False,help="use parameter in ctl file, only change the aligenment file and out file for each group")
 parser.add_option("-A","--Branchsitemodel",dest="processA",action="store_true",default=False)
 parser.add_option("-B","--Branchmodel",dest="processB",action="store_true",default=False)
 parser.add_option("-C","--processC",dest="processC",action="store_true",default=False)
@@ -228,10 +229,7 @@ if __name__ == '__main__':
             cml.alignment=pamlInputCDSFileName
             cml.out_file=tempPath + "/mlc"
             cml.set_options(seqtype=1);cml.set_options(model=0);cml.set_options(runmode=-2)
-#             pamlcodemlctlfilelines = pamlcodemlctlfile.readlines()
-#             pamlcodemlctlfile.close()
-#             os.system("rm " + pamlcodemlctl)
-#             pamlcodemlctlfile = open(pamlcodemlctl, 'w')
+
             cml.set_options(NSsites=0);cml.set_options(fix_omega=0);cml.set_options(omega = .4)
             cml.write_ctl_file()
             stat = os.system(pamlcodeml)
@@ -271,12 +269,7 @@ if __name__ == '__main__':
             cml.set_options(NSsites=[0]);cml.set_options(fix_omega=0);cml.set_options(omega=1.5)
             cml.write_ctl_file()
             ##### configure codeml.ctl file to process B
-            
-#             pamlcodemlctlfile = open(pamlcodemlctl, 'r')
-#             pamlcodemlctlfilelines = pamlcodemlctlfile.readlines()
-#             pamlcodemlctlfile.close()
-#             os.system("rm " + pamlcodemlctl)
-#             pamlcodemlctlfile = open(pamlcodemlctl, 'w')
+
             # model=2 nssite=0 runmode=0
 
             for tree_terminal in tree_terminal_list:
