@@ -5,7 +5,7 @@ Created on 2018年6月13日
 '''
 
 import re,sys,os,copy,pickle
-from NGS.BasicUtil import Util, VCFutil,Caculators
+from NGS.BasicUtil import Util, VCFutil,Calculators
 
 if len(sys.argv)<6:
     print("python fillgap.py [ref.fa] [vcf] [gap.bed] [scored.snp]  [formatedOutnamepre] [winsize]")
@@ -45,7 +45,7 @@ if __name__ == '__main__':
         vcfobj=VCFutil.VCF_Data(sys.argv[5]+"temp"+str(i)+".recode.vcf")
         vcflist=vcfobj.getVcfListByChrom(gaplist[0],MQfilter=0)
         
-        findtagcaculator=Caculators.CaculatorToFindTAGs(mod="randomvcf",Interferingf=interferf)
+        findtagcaculator=Calculators.CaculatorToFindTAGs(mod="randomvcf",Interferingf=interferf)
         findtagcaculator.curchrom=gaplist[0]
         win.slidWindowOverlap(vcflist,int(gaplist[2]),winsize,winsize,findtagcaculator,int(gaplist[1]))
         filledsites=copy.deepcopy(win.winValueL)

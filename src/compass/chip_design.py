@@ -273,7 +273,7 @@ if __name__ == '__main__':
             win = Util.Window()
             ofo=open(sys.argv[1]+sys.argv[2],'w')
             print(*title,"priority",sep="\t",file=ofo)
-            addprortycaculator = Caculators.Caculator_addpriority(of=ofo,tilingorderidx=tidx,best_recommendation=title.index("best_recommendation"),rmdupmap=dupseqmap,mustin=musctincludes)
+            addprortycaculator = Calculators.Caculator_addpriority(of=ofo,tilingorderidx=tidx,best_recommendation=title.index("best_recommendation"),rmdupmap=dupseqmap,mustin=musctincludes)
             addprortycaculator.addVIPidx=title.index("importance")
             recs=[];count=0;tcount=0
             for line in f:
@@ -326,7 +326,7 @@ if __name__ == '__main__':
                 elif curchr is None:
                     curchr=recl[3];title=recl#"Chromosome"
                     tidx=title.index("Source_Version");print("curchr:",curchr,"tilingorder idx:",tidx);best_recommendation=title.index("Final_Score")
-                    addprortycaculator = Caculators.Caculator_selectsitesForillumina(of=ofo,tilingorderidx=tidx,best_recommendation=best_recommendation,T=float(sys.argv[4]),VIPidx=title.index("Source"))
+                    addprortycaculator = Calculators.Caculator_selectsitesForillumina(of=ofo,tilingorderidx=tidx,best_recommendation=best_recommendation,T=float(sys.argv[4]),VIPidx=title.index("Source"))
                     addprortycaculator.spf=open(sys.argv[1]+sys.argv[2]+".originscored",'w')
                     continue
                 if curchr==recl[3]:

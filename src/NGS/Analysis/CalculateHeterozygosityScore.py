@@ -72,7 +72,7 @@ if __name__ == '__main__':
     outfile = open(outname + ".het"+str(windowWidth)+"_"+str(slideSize), 'w')
     if options.df!=None:
         dfsnpfile=open(outname+".dfsnp","w")
-        hp_caculator=Caculators.Caculate_df([],[],dfsnpfile)
+        hp_caculator=Calculators.Caculate_df([],[],dfsnpfile)
         title=poplist[0].VcfIndexMap["title"]
         total_individ = len(title) - 9
         f=open(options.df[0],"r")
@@ -90,7 +90,7 @@ if __name__ == '__main__':
         hp_caculator.pop2_indvds=len(hp_caculator.pop2idxlist)
         print(hp_caculator.pop1idxlist,hp_caculator.pop2idxlist)
     else:
-        hp_caculator = Caculators.Caculate_Hp(SeqMethodlist=methodlist,minsnps=10,depth=int(options.mindepth))
+        hp_caculator = Calculators.Caculate_Hp(SeqMethodlist=methodlist,minsnps=10,depth=int(options.mindepth))
     print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnp\twinvalue\tzvalue",file=outfile)
     print("select","select count(*) from "+chromtable + " where chrlength>="+minlength)
     totalChroms = dbtools.operateDB("select","select count(*) from "+chromtable + " where chrlength>="+minlength)[0][0]

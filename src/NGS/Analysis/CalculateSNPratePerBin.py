@@ -5,7 +5,7 @@ import NGS.BasicUtil.Util
 import re,copy
 import numpy
 import pickle
-import src.NGS.BasicUtil.DBManager as dbm
+import NGS.BasicUtil.DBManager as dbm
 '''
 Created on 2013-7-2
 
@@ -61,9 +61,9 @@ if __name__ == '__main__':
     for vcf in vcffileslist[:]:
         vcfname=re.search(r"[^/]*$",vcf).group(0)
         if re.search(r"indvd[^/]+",vcf)!=None:
-            snpcounter = Caculators.Caculate_SNPsPerBIN(windowWidth,considerINDEL=howtoIndel,MethodToSeq="indvd")
+            snpcounter = Calculators.Caculate_SNPsPerBIN(windowWidth,considerINDEL=howtoIndel,MethodToSeq="indvd")
         elif re.search(r"pool[^/]+",vcf)!=None:
-            snpcounter = Caculators.Caculate_SNPsPerBIN(windowWidth,considerINDEL=howtoIndel,MethodToSeq="pool")
+            snpcounter = Calculators.Caculate_SNPsPerBIN(windowWidth,considerINDEL=howtoIndel,MethodToSeq="pool")
         outfile = open(outputpath+vcfname + ".snpperbin"+str(windowWidth)+"_"+str(slideSize), 'w')
         print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnps\twinvalue\tzvalue",file=outfile)
         win = Util.Window()

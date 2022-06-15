@@ -31,7 +31,7 @@ except_files = {
 #so
 toso_list=["./NGS/BasicUtil","./NGS/RUtil"]
 #pyc(py)
-topyc_list=["./pipelinecontrol","./compass","./NGS/Slave"]
+topyc_list=["./pipelinecontrol","./compass","./NGS/Slave","./NGS/SwissArmyKnife"]
 
 def filter_file(file_name):
     if file_name.__contains__(currdir):
@@ -83,7 +83,7 @@ def getpy(basepath=os.path.abspath('.'), parentpath='', name='',
             print(ffile)
             pass
 #so_list=list(getpy(basepath=currdir, parentpath="/home/lrui/life/src/NGS/BasicUtil/"))
-key_funs = ["./web/Service.py","./web/forms.py", "./web/dba.py", "./web/DBA.py","./web/views.py"]#["./pipelinecontrol/Util.py", "./NGS/Analysis/Detectsignalacrossgenome_master.py", "./NGS/BasicUtil/VCFutil.py","./NGS/BasicUtil/Util.py",
+key_funs = ["./web/Service.py","./web/forms.py", "./web/dba.py", "./web/DBA.py","./web/views.py","./NGS/Service/Ancestralallele.py"]#["./pipelinecontrol/Util.py", "./NGS/Analysis/Detectsignalacrossgenome_master.py", "./NGS/BasicUtil/VCFutil.py","./NGS/BasicUtil/Util.py",
             #"./NGS/BasicUtil/DBManager.py", "./NGS/BasicUtil/geneUtil.py", "./NGS/BasicUtil/Caculators.py",
             #"./web/views.py", "./web/Service.py","./web/Entity.py"]
 for parentpath in toso_list:
@@ -131,7 +131,7 @@ for fi in files:
         shutil.copy(fi,os.path.join(os.path.abspath('.'), build_dir, os.path.relpath(fi, "/home/lrui")))
 
 print(files)
-pyc_file_list=[]
+pyc_file_list=["./NGS/Service/fillancestraltemp_usingBAM.py","./NGS/Service/fillancestraltemp_usingdepth.py","./NGS/Service/makingjointabletemp.py"]
 for parentpath in topyc_list:
     pyc_file_list+=list(getpy(parentpath=parentpath))
 print("python -m compileall -b ",pyc_file_list)

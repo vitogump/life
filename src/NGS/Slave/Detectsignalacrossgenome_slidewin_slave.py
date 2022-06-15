@@ -58,7 +58,7 @@ if __name__ == '__main__':
         flankseqfafilename = aaaaaaa + str(os.getpid()) + "snpflankseq.fa"
         dbvariantstools = dbm.DBTools(config.ip, config.username, config.password, config.vcfdbname)
         dynamicIU_toptable_obj = Ancestralallele.dynamicInsertUpdateAncestralContext(dbvariantstools, config.beijingreffa, options.topleveltablejudgeancestral)
-        obsexpcaculator = Caculators.Caculate_S_ObsExp_difference(mindeptojudgefix, options.targetpopvcfconfig, options.refpopvcffileconfig, dbvariantstools, options.topleveltablejudgeancestral, options.outfileprewithpath)
+        obsexpcaculator = Calculators.Caculate_S_ObsExp_difference(mindeptojudgefix, options.targetpopvcfconfig, options.refpopvcffileconfig, dbvariantstools, options.topleveltablejudgeancestral, options.outfileprewithpath)
         obsexpcaculator.dynamicIU_toptable_obj = dynamicIU_toptable_obj
         obsexpcaculator.flankseqfafile = open(flankseqfafilename, "w")
         plainname = re.search(r"[^/]*$", obsexpcaculator.outputname).group(0)
@@ -80,13 +80,13 @@ if __name__ == '__main__':
         obsexpcaculator.freq_xaxisKEY_yaxisVALUERelation = final_freq_xaxisKEY_yaxisVALUERelation
         freq_correlation_config.close()
     elif options.typeOfcalculate=="D":
-        obsexpcaculator=Caculators.Caculate_ABB_BAB_BBAA("no",options.targetpopvcfconfig,options.P2popvcfconfig,options.P3popvcfconfig,options.refpopvcffileconfig,options.outfileprewithpath,os.getpid(),30)    
+        obsexpcaculator=Calculators.Caculate_ABB_BAB_BBAA("no",options.targetpopvcfconfig,options.P2popvcfconfig,options.P3popvcfconfig,options.refpopvcffileconfig,options.outfileprewithpath,os.getpid(),30)    
         outputname=options.outfileprewithpath
         outfile=open(outputname+"."+options.typeOfcalculate + str(windowWidth) + "_" + str(slideSize) + str(os.getpid()) + chrlistfilewithoutpath,"w")
         print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnp\twinvalue\tzvalue", file=outfile)
     elif options.typeOfcalculate == "pairfst" or options.typeOfcalculate == "dxy":
 #         obsexpcaculator = Caculators.Caculate_pairFst(mindeptojudgefix, options.targetpopvcfconfig, options.refpopvcffileconfig)
-        obsexpcaculator = Caculators.Caculate_popDiv("no",options.targetpopvcfconfig, options.refpopvcffileconfig,options.outfileprewithpath)
+        obsexpcaculator = Calculators.Caculate_popDiv("no",options.targetpopvcfconfig, options.refpopvcffileconfig,options.outfileprewithpath)
         plainname = re.search(r"[^/]*$", obsexpcaculator.outputname).group(0)
         if len(plainname) >= 250:
             outputname = obsexpcaculator.outputname[:-(len(plainname) - 250)]
@@ -95,7 +95,7 @@ if __name__ == '__main__':
         print("chrNo\twinNo\tfirstsnppos\tlastsnppos\tnoofsnp\twinvalue\tzvalue", file=outfile)
     
     elif options.typeOfcalculate == "is":
-        obsexpcaculator = Caculators.Caculate_IS(mindeptojudgefix / 2, options.targetpopvcfconfig, options.refpopvcffileconfig)
+        obsexpcaculator = Calculators.Caculate_IS(mindeptojudgefix / 2, options.targetpopvcfconfig, options.refpopvcffileconfig)
         plainname = re.search(r"[^/]*$", options.outfileprewithpath).group(0)
         if len(plainname) >= 250:
             outputname = options.outfileprewithpath[:-(len(plainname) - 250)]
@@ -103,7 +103,7 @@ if __name__ == '__main__':
         outfile = open(outputname + "." + options.typeOfcalculate + str(windowWidth) + "_" + str(slideSize) + str(os.getpid()) + chrlistfilewithoutpath, 'w')
         print("chrNo\twinNo\tfirstsnppos\tlastsnppos", *obsexpcaculator.vcfname_combination, sep="\t", file=outfile)
     elif options.typeOfcalculate == "hp" or options.typeOfcalculate == "pi":
-        obsexpcaculator = Caculators.Caculate_Hp_master_slave(options.targetpopvcfconfig, options.outfileprewithpath, minsnps=0) if options.typeOfcalculate == "hp" else Caculators.Caculate_popPI(options.targetpopvcfconfig, options.outfileprewithpath, minsnps=0)
+        obsexpcaculator = Calculators.Caculate_Hp_master_slave(options.targetpopvcfconfig, options.outfileprewithpath, minsnps=0) if options.typeOfcalculate == "hp" else Calculators.Caculate_popPI(options.targetpopvcfconfig, options.outfileprewithpath, minsnps=0)
         plainname = re.search(r"[^/]*$", options.outfileprewithpath).group(0)
         if len(plainname) >= 250:
             outputname = options.outfileprewithpath[:-(len(plainname) - 250)]

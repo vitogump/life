@@ -138,7 +138,7 @@ class Fst():
                     MethodToSeqpop2="indvd"
                 elif re.search(r"pool[^/]+",fstpaire[1])!=None:
                     MethodToSeqpop2="pool"
-                fst_caculator = Caculators.Caculate_Fst(MethodToSeqpop1=MethodToSeqpop1, MethodToSeqpop2=MethodToSeqpop2)
+                fst_caculator = Calculators.Caculate_Fst(MethodToSeqpop1=MethodToSeqpop1, MethodToSeqpop2=MethodToSeqpop2)
 
                 if options.considerFixdifferentinFSTcaculate:
                     fst_caculator.considerfixdiffinfst=True
@@ -260,7 +260,7 @@ class Fst():
                     elif re.search(r"pool[^/]+",othrpop)!=None:
                         MethodToSeqpop2="pool"
                     FstMapByChrom={}
-                    fst_caculator = Caculators.Caculate_Fst(MethodToSeqpop1=MethodToSeqpop1, MethodToSeqpop2=MethodToSeqpop2)
+                    fst_caculator = Calculators.Caculate_Fst(MethodToSeqpop1=MethodToSeqpop1, MethodToSeqpop2=MethodToSeqpop2)
 
                     if options.considerFixdifferentinFSTcaculate:
                         fst_caculator.considerfixdiffinfst=True
@@ -395,7 +395,7 @@ class Fst():
                     newFstMapByChrom[currentchrID]=fillNA
         return copy.deepcopy(newFstMapByChrom)
                                  
-    def caculateFst(self, FstMapByChrom,vcfMap1_ref, vcfMap2, caculator,currentchrID,currentchrLen, winwidth, slideSize):
+    def caculateFst(self, FstMapByChrom,vcfMap1_ref, vcfMap2, calculator,currentchrID,currentchrLen, winwidth, slideSize):
         win = Util.Window()
         try:
             if self.i_o=="i":
@@ -407,7 +407,7 @@ class Fst():
             win.winValueL = []
             print("after alinmultPopSnpPos ,caculateFst value in "+currentchrID,len(doubleVcfMap[currentchrID]))
                 
-            win.slidWindowOverlap(doubleVcfMap[currentchrID], currentchrLen,winwidth, slideSize, caculator)
+            win.slidWindowOverlap(doubleVcfMap[currentchrID], currentchrLen,winwidth, slideSize, calculator)
             FstMapByChrom[currentchrID] = copy.deepcopy(win.winValueL)
         except TypeError:#vcfMap2(pop2) don't contation the current chromosome
             print("caculateFst TypeError")

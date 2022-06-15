@@ -23,7 +23,7 @@ import signal
 import sys, subprocess
 from time import ctime, time
 
-from NGS.BasicUtil import VCFutil, Util, Caculators
+from NGS.BasicUtil import VCFutil, Util, Calculators
 
 
 parser = OptionParser()
@@ -269,7 +269,7 @@ if __name__ == '__main__':
     selectedTAGsnps={}
     for c_chrom in sorted(chrmap.keys()):
         selectedTAGsnps[c_chrom]=[]
-        findtagcaculator=Caculators.CaculatorToFindTAGs(mod="randomvcf")
+        findtagcaculator=Calculators.CaculatorToFindTAGs(mod="randomvcf")
         vcflist=vcfobj.getVcfListByChrom(c_chrom,MQfilter=0)#randomselecter.vcfobj.
         win.slidWindowOverlap(vcflist,chrmap[c_chrom][1],winsize,winsize,findtagcaculator,chrmap[c_chrom][0])
         findtagcaculator.mod="selectTAG"

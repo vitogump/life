@@ -3,7 +3,7 @@ Created on 2014-4-24
 
 @author: liurui
 '''
-from NGS.BasicUtil import Util, VCFutil,Caculators
+from NGS.BasicUtil import Util, VCFutil,Calculators
 import NGS.BasicUtil.DBManager as dbm
 import os,re
 
