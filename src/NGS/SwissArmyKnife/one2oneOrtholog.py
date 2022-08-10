@@ -22,27 +22,53 @@ from NGS.BasicUtil import Util
 
 
 parser = OptionParser()
-parser.add_option("-i", "--groupfile", dest="groupfile", help="input group file")
+parser.add_option("-i", "--groupfile", dest="groupfile", help="input group file;usually from orthoMCL result")
 parser.add_option("-s", "--steps", dest="steps", help="1: selected assigend species 1-to-1 gene family into group file\n,2:extract seq.fa from previous out,3,4")
+
+parser.add_option("-b", "--backgroundSpeciesname",dest="bgSpeciesname",action="append",default=[], help="")
+parser.add_option("-t", "--targetSpeciesname", dest="targetSpeciesname",action="append",default=[], help="")
+
 parser.add_option("-c", "--compliantFasta",dest="compliantFasta")
 parser.add_option("-m", "--musclepath",dest="musclepath")
 parser.add_option("-p", "--pamlpath",dest="pamlpath")
-parser.add_option("-t", "--targetSpeciesname", dest="targetSpeciesname",action="append",default=[], help="")
+
 (options, args) = parser.parse_args()
 if __name__ == '__main__':
     print("Warning:make sure single programm is running, or you may get wrong result because different program may access the same files")
-    fileHmap={"Lox":0,"GRCh38":0,"MMUL":0,"PapA":0,"GSM":0,"Cjac":0,"CanF":0, "Pika":0,"PIG":0, "turT":0 , "GRCm":0, "UMD":0, "Equ":0, "Oar":0}
+    fileHmap={"Lox":0,"GRCh38":0,"MMUL":0,"PapA":0,"GSM":0,"Cjac":0,"CanF":0, "Pika":0,"PIG":0, "turT":0 , "GRCm":0, "UMD":0, "Equ":0, "Oar":0}# for only step2 and step3
     groupfile=open(options.groupfile,"r")
     if options.steps.strip()=="1":
         
         of=open(options.groupfile+".step1out","w")
         for line in groupfile:
-            #linelist=re.split(r"\s+",line.strip())
+            #check the line,
+#"""               =========================================                 """
+            for bsp in options.bgSpeciesname:
+                if line.count(bsp+"|")!=1:
+                    break
+            else:
+                # all bsp less than 1 ; 相当于  'and'
+                for tsp in options.targetSpeciesname:
+                    if line.count(tsp+"|")!=1: 
+                        break
+                else:#find
+                    print("order printing")
+                    linelist=re.split(r"\s+",line.strip())
+                    print(linelist[0],end=" ",file=of)
+                    for sp in options.targetSpeciesname+options.bgSpeciesname:
+                        for t in linelist[1:]:
+                            if sp in t:print(t,end=" ",file=of)
+                    print("",file=of)
+            print(line[:50],"is not one-2-one ortholog")
+            continue#above for kaks/ below for convergent
+#"""==================================annotated to use below only=========================================="""
+                # no bsp less than 2 
             if (line.count("Lox|")<2 or line.count("GRCh38|")<2 or line.count("MMUL|")<2 or line.count("PapA|")<=1 or  line.count("Cjac|")<=1 or line.count("CanF|")<=1 or line.count("Pika|")<=1 or line.count("PIG|")<=1 or line.count("turT|")<=1 or line.count("GRCm|")<=1 or line.count("Equ|")<=1) and ((line.count("UMD|")==line.count("GSM|")==line.count("Oar|")==1 ) or line.count("UMD|")==line.count("GSM|")==1 or line.count("Oar|")==line.count("GSM|")==1 ):#or line.count("UMD|")==line.count("GSM|")==1 or line.count("GSM|")==line.count("Oar|")==1 or line.count("Oar|")==line.count("UMD|")==1 #or line.count("UMD|")==1 or line.count("Oar|")==1 or  line.count("GSM|")==1
                 if line.count("Lox|")+ line.count("GRCh38|") + line.count("MMUL|") + line.count("PapA|") +  line.count("Cjac|") + line.count("CanF|") + line.count("Pika|") + line.count("PIG|")+ line.count("turT|")+ line.count("GRCm|")+ line.count("Equ|")>0:
+                    #it is one-2-one ortholog , print 
                     print(line,end="",file=of)
             else:
-                print(line[:50])
+                print(line[:50],"is not one-2-one ortholog")
         of.close()
     elif options.steps.strip()=="2":
         from Bio import Phylo,SeqIO

@@ -31,7 +31,7 @@ except_files = {
 #so
 toso_list=["./NGS/BasicUtil","./NGS/RUtil"]
 #pyc(py)
-topyc_list=["./pipelinecontrol","./compass","./NGS/Slave","./NGS/SwissArmyKnife"]
+topyc_list=["./pipelinecontrol","./compass","./NGS/Slave","./NGS/SwissArmyKnife","./NGS/Analysis"]
 
 def filter_file(file_name):
     if file_name.__contains__(currdir):

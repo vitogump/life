@@ -4,6 +4,10 @@ Created on 2014-4-3
 
 @author: liurui
 '''
+import sys,inspect,os,configparser,random,string
+import platform
+cfparser = configparser.ConfigParser()
+
 from NGS.BasicUtil import Util
 from optparse import OptionParser
 import pickle, sys, os, re, time
@@ -17,45 +21,67 @@ parser.add_option("-p", "--proteincdspair", dest="proteincdspairfile", help="pro
 parser.add_option("-c", "--configure", dest="configure")
 parser.add_option("-l", "--minlen", dest="minlen")
 parser.add_option("-t", "--tempdir", dest="tempdir",default=os.getcwd())
-parser.add_option("-f", "--fixparameter", dest="fixparameters",action="store_true",default=False,help="use parameter in ctl file, only change the aligenment file and out file for each group")
-parser.add_option("-A","--Branchsitemodel",dest="processA",action="store_true",default=False)
-parser.add_option("-B","--Branchmodel",dest="processB",action="store_true",default=False)
-parser.add_option("-C","--processC",dest="processC",action="store_true",default=False)
+# parser.add_option("-A","--Branchsitemodel",dest="processA",action="append",default=None)
+# parser.add_option("-B","--Branchmodel",dest="processB",action="append",default=None)
+# parser.add_option("-C","--processC",dest="processC",action="store_true",default=None)
 parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", default=True,
                   help="don't print status messages to stdout")
 (options, args) = parser.parse_args()
 minlen = int(options.minlen)
-print("processA",options.processA,options.processB)
-mytesttempfile=open("mytesttempfile_forprocessA.txt",'w')
+
+
 chitesttable = {0.01:{2:9.2103,3:11.3449},
                 0.05:{2:5.9915,3:7.8147}}
 
 homogenefile = open(options.homologousgene, 'r')
 aa_cds_pair_file = open(options.proteincdspairfile, 'r')
-configure = open(options.configure, 'r')
 
 
-cline = configure.readline()
-musclePath = re.search(r'musclepath=(.*)', cline).group(1).strip()
-cline = configure.readline()
-pamlPath = re.search(r'pamlpath=(.*)', cline).group(1).strip()
-cline = configure.readline()
-outfileNamePre=re.search(r'outfilepre=(.*)', cline).group(1).strip()
-cline = configure.readline()
-PhyMLpath = re.search(r'PhyMLpath=(.*)', cline).group(1).strip()
-cline = configure.readline()
-print(cline)
+cfparser = configparser.ConfigParser()
+cfparser.read(options.configure, encoding='utf-8')
+
+itemSoftwarecf=dict(cfparser.items("software"))
+itemParametercf=dict(cfparser.items("parameter"))
+print("allsections",cfparser.sections(),itemParametercf)
+musclePath=cfparser.get("software","musclepath")
+pamlPath=cfparser.get("software","pamlpath")
+PhyMLpath=cfparser.get("software",'PhyMLpath')
+
+if "fgspecies" in itemParametercf:
+    print(cfparser.get("parameter",'fgspecies'))
+    print(cfparser.get("parameter",'outgroup'))
+    print("fgspecies and outgroup must together")
+
+if 'pamltreefile' in itemParametercf:
+    fixpamltree=cfparser.get("parameter",'pamltreefile')
+else:
+    fixpamltree=False
+ctlfile=cfparser.get("parameter",'ctltemplatefile')
+outfileNamePre=cfparser.get("parameter",'outfilepre')
+processType=cfparser.get("parameter","processType")
+print("processType",processType,outfileNamePre,fixpamltree,processType)
+
+# cline = configure.readline()
+# musclePath = re.search(r'musclepath=(.*)', cline).group(1).strip()
+# cline = configure.readline()
+# pamlPath = re.search(r'pamlpath=(.*)', cline).group(1).strip()
+# cline = configure.readline()
+# outfileNamePre=re.search(r'outfilepre=(.*)', cline).group(1).strip()
+# cline = configure.readline()
+# PhyMLpath = re.search(r'PhyMLpath=(.*)', cline).group(1).strip()
+# cline = configure.readline()
+# print(cline)
 # treefile_oringal = open(tempPath+"/", 'r')
 # treefileName=(tempPath+"/treefileforonehomogene")
 # temp_outtreefileName = treefileName + "_markbranch"
 
 tempPath = options.tempdir #re.search(r'tempdir=(.*)', cline).group(1).strip()
 
-MuscleInputFileName = tempPath + "/muscleinseq.fa"
-MuscleOutputFileName = tempPath + "/muscleoutseqaln.aln"
-pamlInputCDSFileName = tempPath + "/pamlinputfile.phy"
-fastalnforcdstree=tempPath+"/pamlinputfile"
+MuscleInputFileName = os.path.join(tempPath, "muscleinseq.fa")
+MuscleOutputFileName = os.path.join(tempPath,"muscleoutseqaln.aln")
+pamlInputCDSFileName = os.path.join(tempPath , "pamlinputfile.phy")
+fastalnforcdstree=os.path.join(tempPath,"pamlinputfile")
 if __name__ == '__main__':
 
 # load aa_cds_pair file and cdsfafile aafafile into memory
@@ -98,10 +124,13 @@ if __name__ == '__main__':
     homotrscpttitle = re.split(r'~', homogenefile.readline())
     homotrscpttitle = [e.strip() for e in homotrscpttitle]
     finalkakslist.append(tuple(homotrscpttitle + ["dn/ds", "dn", "ds"]))
-    processB_result_collection = {}
-    
-    processA_result_collection = {}
     skipthishomotrscptline = False  
+    if processType=="B":
+        processB_result_collection = {}
+    elif processType=="A":
+        processA_result_collection = {}
+        
+        mytesttempfile=open("mytesttempfile_forprocessA.txt",'w')
     for homotrscptline in homogenefile:
         print("process:",homotrscptline)
         homotrscptlist = re.split(r'~', homotrscptline.strip())
@@ -109,7 +138,7 @@ if __name__ == '__main__':
         lenofhomeAA = []
         # make the aa fa file as the input of the muscle and run muscle        
         muscleinfile = open(MuscleInputFileName, 'w')
-        firstofhomotrscpts = re.search(r'transcript:(.*)', homotrscptlist[0]).group(1).strip()
+        firstofhomotrscpts = homotrscptlist[0]#re.search(r'transcript:(.*)', ).group(1).strip()
         processB_result_collection[firstofhomotrscpts] = []
         for trscpt in homotrscptlist:
             
@@ -153,7 +182,7 @@ if __name__ == '__main__':
         
         # fill back cds seq
 #         muscleoutfile = open(MuscleOutputFileName, 'r')
-        pamlinputcdsfile = open(pamlInputCDSFileName, 'w')
+        pamlinputcdsphy = open(pamlInputCDSFileName, 'w')
         pamlinputcdsheader = [];pamlinputcdsseq = []
         j = 0;curspecies = homotrscpttitle[j].strip()  # same order as specise
         
@@ -164,7 +193,6 @@ if __name__ == '__main__':
             muscleout_seqmap[seq_rec.id]=seq_rec.seq
 #         muscleoutfile.close()
         maxlenlist=[]
-        print(homotrscpttitle)
         for species_and_trscpt_idx in range(len(homotrscpttitle)):
             curspecies = homotrscpttitle[species_and_trscpt_idx]
             curtrscpt = homotrscptlist[species_and_trscpt_idx]
@@ -175,7 +203,7 @@ if __name__ == '__main__':
             # fill back cds seq
             cdsseqfillback = ""
             for aa in muscleout_seqmap[curspecies][:]:
-                if aa == "-":
+                if aa == "-" or locofaa * 3 + 1>=len(cdsSeqMap[cdscurrenttrscpt]):# * STOP CODEN
                     codon = "---"
                 else:
                     codon = "".join(cdsSeqMap[cdscurrenttrscpt][locofaa * 3 + 1:locofaa * 3 + 4])
@@ -184,36 +212,42 @@ if __name__ == '__main__':
             pamlinputcdsheader.append(curspecies)
             maxlenlist.append(len(curspecies))
             pamlinputcdsseq.append(cdsseqfillback)
+            sys.stdout.flush()
+            #print(curspecies,len(cdsseqfillback),cdsSeqMap[cdscurrenttrscpt],len(cdsSeqMap[cdscurrenttrscpt]),locofaa * 3 + 1,locofaa * 3 + 4)
         maxlen=max(maxlenlist)
-        print(maxlen,"\n",pamlinputcdsseq)
-        print(Util.encode_phyliplines(pamlinputcdsheader, pamlinputcdsseq,maxlen+2), file=pamlinputcdsfile)
+        print(Util.encode_phyliplines(pamlinputcdsheader, pamlinputcdsseq,maxlen+2), file=pamlinputcdsphy)
         ffff=open(fastalnforcdstree,'w')
         for i in range(len(pamlinputcdsheader)):
             print(">"+pamlinputcdsheader[i],file=ffff)
             print(pamlinputcdsseq[i],file=ffff)
         ffff.close()
 #             
-        pamlinputcdsfile.close()
-        #make tree
-        a=os.system(PhyMLpath+" -i "+fastalnforcdstree+" -m GTR -b 100 -t e -a e")
-        if a!=0:#below code block for clustalw func which is in case of the PhyML not work correct, may not used
-            print(cline,"error",PhyMLpath+" -i "+pamlInputCDSFileName+" -m GTR -b 100 -t e -a e","\nplease make sure the 'clustalw=path' is indicated in the end of the configure file",)
-            
-            clustalw = re.search(r'clustalw=(.*)', cline).group(1).strip()
-            os.system(clustalw+" -infile="+fastalnforcdstree+" -type=DNA -output=FASTA -align")
-            print(clustalw+" -infile="+pamlInputCDSFileName+" -type=DNA -output=FASTA -align")
-            treefile_oringal=open(fastalnforcdstree+".dnd",'r')
-            temp_outtreefileName = fastalnforcdstree+".dnd" + "_markbranch"
-            #exit(-1)
+        pamlinputcdsphy.close()
+        from Bio.Phylo.PAML import codeml
+        cml=codeml.Codeml()
+        if not fixpamltree:
+            print('make tree and then assign to ctl file')
+            a=os.system(PhyMLpath+" -i "+fastalnforcdstree+" -m GTR -b 100 -t e -a e")
+            if a!=0:#below code block for clustalw func which is in case of the PhyML not work correct, may not used
+                print("error",PhyMLpath+" -i "+pamlInputCDSFileName+" -m GTR -b 100 -t e -a e","\nplease make sure the 'clustalw=path' is indicated in the end of the configure file",)
+                clustalw=cfparser.get("software",'clustalw')
+                os.system(clustalw+" -infile="+fastalnforcdstree+" -type=DNA -output=FASTA -align")
+                print(clustalw+" -infile="+pamlInputCDSFileName+" -type=DNA -output=FASTA -align")
+                treefile_oringal=open(fastalnforcdstree+".dnd",'r')
+                temp_outtreefileName = fastalnforcdstree+".dnd" + "_markbranch"
+                #exit(-1)
+            else:
+                treefile_oringal=open(pamlInputCDSFileName+"_phyml_tree.txt",'r')
+                fixtreetext=treefile_oringal.readline();treefile_oringal.close()
+                print(re.subn(r"\)[\d\.]+:","):",fixtreetext.strip())[0],end="",file=open(pamlInputCDSFileName+"_phyml_tree.txt",'w'))
+                treefile_oringal=open(pamlInputCDSFileName+"_phyml_tree.txt",'r')
+                temp_outtreefileName = pamlInputCDSFileName+"_phyml_tree.txt" + "_markbranch"
+    # #         os.system(PhyMLpath+" -infile="+pamlInputCDSFileName+" -type=DNA -output=FASTA -align")
+    #         print(PhyMLpath+" -i "+pamlInputCDSFileName+" -m GTR -b 100 -t e -a e")
         else:
-            treefile_oringal=open(pamlInputCDSFileName+"_phyml_tree.txt",'r')
-            fixtreetext=treefile_oringal.readline();treefile_oringal.close()
-            print(re.subn(r"\)[\d\.]+:","):",fixtreetext.strip())[0],end="",file=open(pamlInputCDSFileName+"_phyml_tree.txt",'w'))
-            treefile_oringal=open(pamlInputCDSFileName+"_phyml_tree.txt",'r')
-            temp_outtreefileName = pamlInputCDSFileName+"_phyml_tree.txt" + "_markbranch"
-# #         os.system(PhyMLpath+" -infile="+pamlInputCDSFileName+" -type=DNA -output=FASTA -align")
-#         print(PhyMLpath+" -i "+pamlInputCDSFileName+" -m GTR -b 100 -t e -a e")
-
+            print("use config tree file")
+            temp_outtreefileName=fixpamltree
+            treefile_oringal=open(fixpamltree,'r')
         if skipthishomotrscptline:
             skipthishomotrscptline = False
             continue
@@ -222,12 +256,11 @@ if __name__ == '__main__':
 #         pamlcodemlctl = pamlPath + "/codeml.ctl"
 #         pamlcodemlctlfile = open(pamlcodemlctl, 'r')
         ##### configure codeml.ctl file to process C
-        from Bio.Phylo.PAML import codeml
-        cml=codeml.Codeml()
-        if options.processC:
-            cml.read_ctl_file(os.path.join(pamlPath,"codeml.ctl.template.ctl"))
+
+        if processType.upper()=="C":
+            cml.read_ctl_file(ctlfile)
             cml.alignment=pamlInputCDSFileName
-            cml.out_file=tempPath + "/mlc"
+            cml.out_file=os.path.join(tempPath,"mlc")
             cml.set_options(seqtype=1);cml.set_options(model=0);cml.set_options(runmode=-2)
 
             cml.set_options(NSsites=0);cml.set_options(fix_omega=0);cml.set_options(omega = .4)
@@ -254,16 +287,16 @@ if __name__ == '__main__':
             finalkakslist.append(tuple(homotrscptlist + [dnds, dn, ds]))
             mlcfile.close()
         
-        
+        fixtreetext=treefile_oringal.readline()
         treefile_oringal.seek(0)
         tree = Phylo.read(treefile_oringal, "newick")
         tree_terminal_list = tree.get_terminals()
         treefile_oringal.close()
         print(tree_terminal_list)      
-        if options.processB:
-            cml.read_ctl_file(os.path.join(pamlPath,"codeml.ctl.template.ctl"))
+        if processType.upper()=="B":
+            cml.read_ctl_file(ctlfile)
             cml.alignment=pamlInputCDSFileName
-            cml.out_file=tempPath + "/mlc"
+            cml.out_file=os.path.join(tempPath,"mlc")
             cml.tree=temp_outtreefileName
             cml.set_options(runmode=0);cml.set_options(model=2);cml.set_options(seqtype=1)
             cml.set_options(NSsites=[0]);cml.set_options(fix_omega=0);cml.set_options(omega=1.5)
@@ -271,54 +304,43 @@ if __name__ == '__main__':
             ##### configure codeml.ctl file to process B
 
             # model=2 nssite=0 runmode=0
-
-            for tree_terminal in tree_terminal_list:
-                
-                curspecies = tree_terminal.name
-                species_and_trscpt_idx = homotrscpttitle.index(curspecies)
-                curtrscpt = homotrscptlist[species_and_trscpt_idx]
-                sio_f = StringIO()
-                Phylo.write(tree, sio_f, "newick")
-                sio_f.seek(0)
-                temp_outtreefile = open(temp_outtreefileName, 'w')
-                print(re.sub(r"" + curspecies, curspecies + "#1", sio_f.readline()), file=temp_outtreefile)
-                temp_outtreefile.close();sio_f.close()
-    
+            
+            if fixpamltree and (("#1" not in fixtreetext) and ('$1' not in fixtreetext)):
+                print("use fixpamltree file:",fixpamltree)
+                print("use fgspecies,outgroup information, if not exist report error")
+            elif fixpamltree:
+                print("calculate kaks for the fg branch(s) according fixpamltree with assigned fg branch species marker #1 ")
                 stat = os.system(pamlcodeml)
                 if stat != 0:
                     print("call paml maybe call this Error", pamlInputCDSFileName, "The seq file appears to be in fasta format, but not aligned?")
                     exit(-1)
-                # extract data from mlc,fill data into processB_result_collection
-                mlcfile = open(tempPath + "/mlc", 'r')
-                mlclines = mlcfile.readlines()
-                mlcline_idx=0
-                while mlcline_idx < len(mlclines):
-    #                 leafname_idx_map={}
-                    if re.search(r"w \(dN/dS\) for branches:", mlclines[mlcline_idx]) != None:
-                        branch_value_obj = re.search(r"w \(dN/dS\) for branches:\s*([\.\d]+)\s+([\.\d]+)", mlclines[mlcline_idx])
-                        background_branch_value = branch_value_obj.group(1)
-                        foreground_branch_value = branch_value_obj.group(2)
-                        processB_result_collection[firstofhomotrscpts].append(foreground_branch_value)
-#                         print(firstofhomotrscpts,processB_result_collection[firstofhomotrscpts],file=open("test.txt",'a'))
-                        break
-                    mlcline_idx+=1
-    #                 if re.search(r"^tree length\s*=",mlclines[mlcline_idx])!=None:
-    #                     mlcline_idx+=2
-    #                     tree_codeleaf_text=re.sub(r"\s+","",mlclines[mlcline_idx])
-    #                     mlcline_idx+=1
-    #                     tree_orignalleafname_text=re.sub(r"\s+","",mlclines[mlcline_idx])
-    #                     tree_codeleaf=Phylo.read(StringIO(tree_codeleaf_text),"newick")
-    #                     tree_orignalleafname=Phylo.read(StringIO(tree_orignalleafname_text),"newick")
-    #                     tree_orignalleafname_terminals=tree_orignalleafname.get_terminals()
-    #                     tree_codeleaf_terminals=tree_codeleaf.get_terminals()
-    #                     for terminal_idx in range(len(tree_codeleaf_terminals)):
-    #                         leafname_idx_map[tree_orignalleafname_terminals[terminal_idx].name]=tree_codeleaf_terminals[terminal_idx].name
-    #                         
-                mlcfile.close()
-        if options.processA:
-            cml.read_ctl_file(os.path.join(pamlPath,"codeml.ctl.template.ctl"))
+                processB_result_collection=Util.extract_kaks_pamlmlc(tempPath + "/mlc",processB_result_collection,firstofhomotrscpts)
+
+            elif not fixpamltree:
+                print("fixpamltree does not exist, construct tree using sequence, and then calculate kaks for each species as forebranch and other species as background branchs")
+                for tree_terminal in tree_terminal_list:
+                    
+                    curspecies = tree_terminal.name
+                    species_and_trscpt_idx = homotrscpttitle.index(curspecies)
+                    curtrscpt = homotrscptlist[species_and_trscpt_idx]
+                    sio_f = StringIO()
+                    Phylo.write(tree, sio_f, "newick")
+                    sio_f.seek(0)
+                    temp_outtreefile = open(temp_outtreefileName, 'w')
+                    print(re.sub(r"" + curspecies, curspecies + "#1", sio_f.readline()), file=temp_outtreefile)
+                    temp_outtreefile.close();sio_f.close()
+        
+                    stat = os.system(pamlcodeml)
+                    if stat != 0:
+                        print("call paml maybe call this Error", pamlInputCDSFileName, "The seq file appears to be in fasta format, but not aligned?")
+                        exit(-1)
+                    # extract data from mlc,fill data into processB_result_collection
+                
+                    
+        if processType.upper()=="A":
+            cml.read_ctl_file(ctlfile)
             cml.alignment=pamlInputCDSFileName
-            cml.out_file=tempPath + "/mlc"
+            cml.out_file=os.path.join(tempPath,"mlc")
             cml.tree=temp_outtreefileName
             cml.set_options(runmode=0);cml.set_options(model=2);cml.set_options(seqtype=1)
             cml.set_options(NSsites=[2]);cml.set_options(fix_omega=1);cml.set_options(omega=1)
@@ -354,7 +376,7 @@ if __name__ == '__main__':
                     mlcline_idx+=1
     ######### configure codeml.ctl file to process A ,second time collect  #####################
             # model=2 nssite=0 runmode=0
-            cml.read_ctl_file(os.path.join(os.getcwd(),"codeml.ctl"))
+            cml.read_ctl_file(ctlfile)
             cml.set_options(runmode=0);cml.set_options(model=2);cml.set_options(seqtype=1)
             cml.set_options(NSsites=[2]);cml.set_options(fix_omega=0);cml.set_options(omega=1.5)
             cml.write_ctl_file()
@@ -419,35 +441,40 @@ if __name__ == '__main__':
                             print(firstofhomotrscpts,processA_result_collection[firstofhomotrscpts],file=open("test.txt",'a'))
                             break                        
                     mlcline_idx+=1
-    processB_outfile=open(outfileNamePre+"_branch",'w')
+        print("one home genes end:",homotrscptline)
+    if processType=="B":
+        processB_outfile=open(outfileNamePre+"_branch",'w')
+        print("tpIDorGeneID",end="\t",file=processB_outfile)
+        for firstofhomotrscpts in sorted(processB_result_collection.keys()):
+            print("\n",firstofhomotrscpts,end="\t",file=processB_outfile)
+            for idx in range(len(processB_result_collection[firstofhomotrscpts])):
+                print(processB_result_collection[firstofhomotrscpts][idx],end="\t",file=processB_outfile)
+        processB_outfile.close()
+    
     #process A output map
-    print("tpIDorGeneID",end="\t",file=processB_outfile)
-    outfileMap={};specieslist=[]
-    for tree_terminal in tree_terminal_list:
-        curspecies = tree_terminal.name
-        specieslist.append(curspecies)
-        outfileMap[curspecies]= open(outfileNamePre+"_"+curspecies+"_branchsite",'w')
-        print(curspecies+"kaks",end="\t",file=processB_outfile)
-    for firstofhomotrscpts in sorted(processA_result_collection.keys()):
-        for curspecies in processA_result_collection[firstofhomotrscpts].keys():
-            print(firstofhomotrscpts,end=":",file=outfileMap[curspecies])
-            for pos,animo,pro,sig in processA_result_collection[firstofhomotrscpts][curspecies]:
-                print(str(pos),animo,str(pro),sig,sep=" ",end=";",file=outfileMap[curspecies])
-            print(file=outfileMap[curspecies])
-    for firstofhomotrscpts in sorted(processB_result_collection.keys()):
-        print("\n",firstofhomotrscpts,end="\t",file=processB_outfile)
-        for idx in range(len(processB_result_collection[firstofhomotrscpts])):
-            print(processB_result_collection[firstofhomotrscpts][idx],end="\t",file=processB_outfile)
-    processB_outfile.close()
-    for s in outfileMap.keys():
-        outfileMap[s].close()
+    elif processType=="A":
+        outfileMap={};specieslist=[]
+        for tree_terminal in tree_terminal_list:
+            curspecies = tree_terminal.name
+            specieslist.append(curspecies)
+            outfileMap[curspecies]= open(outfileNamePre+"_"+curspecies+"_branchsite",'w')
+            print(curspecies+"kaks",end="\t",file=processB_outfile)
+        for firstofhomotrscpts in sorted(processA_result_collection.keys()):
+            for curspecies in processA_result_collection[firstofhomotrscpts].keys():
+                print(firstofhomotrscpts,end=":",file=outfileMap[curspecies])
+                for pos,animo,pro,sig in processA_result_collection[firstofhomotrscpts][curspecies]:
+                    print(str(pos),animo,str(pro),sig,sep=" ",end=";",file=outfileMap[curspecies])
+                print(file=outfileMap[curspecies])
+    
+        for s in outfileMap.keys():
+            outfileMap[s].close()
 #     for t in finalkakslist:
 #         print("\t".join(t), file=outfile)
 #     outfile.close()
 #     treefile_oringal.close()
-    configure.close()
 
-    mytesttempfile.close()
+
+        mytesttempfile.close()
     print("finish")
         
     

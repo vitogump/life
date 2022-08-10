@@ -18,6 +18,22 @@ username=config.username
 password=config.password
 webdbname=config.webdbname
 vcfdbname=config.vcfdbname
+def extract_kaks_pamlmlc(pathTomlc,processX_result_collection,firstofhomotrscpts=None,processType="B"):
+    mlcfile = open(pathTomlc, 'r')
+    mlclines = mlcfile.readlines()
+    mlcline_idx=0
+    while mlcline_idx < len(mlclines):
+        if (firstofhomotrscpts is not None) and "Note: Branch length is defined as number of nucleotide substitutions per codon (not per neucleotide site)." in mlclines[mlcline_idx]:
+            print(*mlclines[mlcline_idx:],sep="",file=open(firstofhomotrscpts.strip().replace("|transcript:",'_').replace("gene:","")+".mlcdnds",'w'))
+        if re.search(r"w \(dN/dS\) for branches:", mlclines[mlcline_idx]) != None:
+            branch_value_obj = re.search(r"w \(dN/dS\) for branches:\s*([\.\d]+)\s+([\.\d]+)", mlclines[mlcline_idx])
+            background_branch_value = branch_value_obj.group(1)
+            foreground_branch_value = branch_value_obj.group(2)
+            processX_result_collection[firstofhomotrscpts].append(foreground_branch_value)
+            break
+        mlcline_idx+=1
+    mlcfile.close()
+    return processX_result_collection
 def alinmultPopSnpPos(vcfMaplist,jointmode="i"):
     """input:
     two or more map fomart like this [chrNo:[(pos,REF,ALT,INFO,FORMAT,sample,...),(pos,REF,ALT,INFO,FORMAT,sample,...),,,,,],{chrNo:[]},,,,,,]
@@ -970,6 +986,7 @@ def encode_phyliplines(headers, sequences,maxlen=10,uppercase=True):
     ncols = len(sequences[0])
     out_lines = ['%d %d' % (nrows, ncols)]
     for h, seq in zip(headers, sequences):
+        
         out_h = h[:maxlen].ljust(maxlen)
         if uppercase:
             out_lines.append(out_h + seq.upper())
