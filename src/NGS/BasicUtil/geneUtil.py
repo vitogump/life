@@ -11,18 +11,18 @@ import src.NGS.BasicUtil.DBManager as dbm
 
 
 SLEEP_FOR_NEXT_TRY=3
-def GOenrichment(gotablefile,outpre,genelist=None,trscptlist=None,UniProtlist=None):
+def GOenrichment(gotablefile,outpre,genelist=None,trscptlist=None,UniProtlist=None,tpidColname="ensembl transcript id",geneidColname="ensembl gene id",genenameColname="associated gene name"):
     gotablefile=open(gotablefile,'r')
     title = gotablefile.readline()
     titlelist= [e.strip().lower() for e in re.split(r"\t",title)]
-    UniProtidx=titlelist.index("uniprot/trembl accession")
-    geneididx=titlelist.index("ensembl gene id")
-    tpididx=titlelist.index("ensembl transcript id")
+    UniProtidx=titlelist.index("uniprotkb/trembl id")
+    geneididx=titlelist.index(geneidColname.lower())
+    tpididx=titlelist.index(tpidColname.lower())
     gotermaccessionidx=titlelist.index("go term accession")
     gotermNameidx=titlelist.index("go term name")
     godomainidx=titlelist.index("go domain")
     goternDefinition=titlelist.index("go term definition")
-    genenameidx=titlelist.index("associated gene name")    
+    genenameidx=titlelist.index(genenameColname.lower())    
     
     if genelist!=None:
         sampledIDlist=genelist

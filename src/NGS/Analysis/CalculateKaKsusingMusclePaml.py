@@ -21,9 +21,7 @@ parser.add_option("-p", "--proteincdspair", dest="proteincdspairfile", help="pro
 parser.add_option("-c", "--configure", dest="configure")
 parser.add_option("-l", "--minlen", dest="minlen")
 parser.add_option("-t", "--tempdir", dest="tempdir",default=os.getcwd())
-# parser.add_option("-A","--Branchsitemodel",dest="processA",action="append",default=None)
-# parser.add_option("-B","--Branchmodel",dest="processB",action="append",default=None)
-# parser.add_option("-C","--processC",dest="processC",action="store_true",default=None)
+
 parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", default=True,
                   help="don't print status messages to stdout")
@@ -49,12 +47,15 @@ pamlPath=cfparser.get("software","pamlpath")
 PhyMLpath=cfparser.get("software",'PhyMLpath')
 
 if "fgspecies" in itemParametercf:
-    print(cfparser.get("parameter",'fgspecies'))
-    print(cfparser.get("parameter",'outgroup'))
     print("fgspecies and outgroup must together")
+    fgspecies,outgroup=cfparser.get("parameter",'fgspecies'),cfparser.get("parameter",'outgroup')
+    print(fgspecies,outgroup)
+else:
+    fgspecies,outgroup=None,None
 
 if 'pamltreefile' in itemParametercf:
     fixpamltree=cfparser.get("parameter",'pamltreefile')
+    treefile_once=open(fixpamltree,'r')    
 else:
     fixpamltree=False
 ctlfile=cfparser.get("parameter",'ctltemplatefile')
@@ -62,19 +63,7 @@ outfileNamePre=cfparser.get("parameter",'outfilepre')
 processType=cfparser.get("parameter","processType")
 print("processType",processType,outfileNamePre,fixpamltree,processType)
 
-# cline = configure.readline()
-# musclePath = re.search(r'musclepath=(.*)', cline).group(1).strip()
-# cline = configure.readline()
-# pamlPath = re.search(r'pamlpath=(.*)', cline).group(1).strip()
-# cline = configure.readline()
-# outfileNamePre=re.search(r'outfilepre=(.*)', cline).group(1).strip()
-# cline = configure.readline()
-# PhyMLpath = re.search(r'PhyMLpath=(.*)', cline).group(1).strip()
-# cline = configure.readline()
-# print(cline)
-# treefile_oringal = open(tempPath+"/", 'r')
-# treefileName=(tempPath+"/treefileforonehomogene")
-# temp_outtreefileName = treefileName + "_markbranch"
+
 
 tempPath = options.tempdir #re.search(r'tempdir=(.*)', cline).group(1).strip()
 
@@ -125,12 +114,32 @@ if __name__ == '__main__':
     homotrscpttitle = [e.strip() for e in homotrscpttitle]
     finalkakslist.append(tuple(homotrscpttitle + ["dn/ds", "dn", "ds"]))
     skipthishomotrscptline = False  
+    outfileMap={};specieslist=[]
     if processType=="B":
         processB_result_collection = {}
+        processB_outfile=open(outfileNamePre+"_branch",'w')
     elif processType=="A":
         processA_result_collection = {}
         
         mytesttempfile=open("mytesttempfile_forprocessA.txt",'w')
+    print("tpIDorGeneID",end="\t",file=processB_outfile)
+    fixtreetext=treefile_once.readline()
+    treefile_once.close()
+    if not fixpamltree or '#1' not in fixtreetext:
+        print("set forebranch for each species")
+        for sp in homotrscpttitle:
+            print(sp+"fbranchw\tbgw",end="\t",file=processB_outfile)
+            if processType=="A":
+                specieslist.append(sp)
+                outfileMap[sp]= open(outfileNamePre+"_"+sp+"_branchsite",'w')
+    elif '#1' in fixtreetext:
+        print("use seted froebranch for each homo gene group")
+        print("fbranchw\tbgw",end="\t",file=processB_outfile)
+            
+        
+    print("",file=processB_outfile)
+
+    
     for homotrscptline in homogenefile:
         print("process:",homotrscptline)
         homotrscptlist = re.split(r'~', homotrscptline.strip())
@@ -253,10 +262,12 @@ if __name__ == '__main__':
             continue
         # finishing fill back the cds seq file,next run codeml and extract ka ks value from mlc file
         pamlcodeml = os.path.join(pamlPath,"codeml")
-#         pamlcodemlctl = pamlPath + "/codeml.ctl"
-#         pamlcodemlctlfile = open(pamlcodemlctl, 'r')
-        ##### configure codeml.ctl file to process C
-
+        fixtreetext=treefile_oringal.readline()
+        treefile_oringal.seek(0)
+        tree = Phylo.read(treefile_oringal, "newick")
+        tree_terminal_list = tree.get_terminals()
+        treefile_oringal.close()
+        print(tree_terminal_list)
         if processType.upper()=="C":
             cml.read_ctl_file(ctlfile)
             cml.alignment=pamlInputCDSFileName
@@ -287,12 +298,8 @@ if __name__ == '__main__':
             finalkakslist.append(tuple(homotrscptlist + [dnds, dn, ds]))
             mlcfile.close()
         
-        fixtreetext=treefile_oringal.readline()
-        treefile_oringal.seek(0)
-        tree = Phylo.read(treefile_oringal, "newick")
-        tree_terminal_list = tree.get_terminals()
-        treefile_oringal.close()
-        print(tree_terminal_list)      
+
+              
         if processType.upper()=="B":
             cml.read_ctl_file(ctlfile)
             cml.alignment=pamlInputCDSFileName
@@ -308,15 +315,18 @@ if __name__ == '__main__':
             if fixpamltree and (("#1" not in fixtreetext) and ('$1' not in fixtreetext)):
                 print("use fixpamltree file:",fixpamltree)
                 print("use fgspecies,outgroup information, if not exist report error")
-            elif fixpamltree:
+            elif fixpamltree and fgspecies==outgroup==None:
                 print("calculate kaks for the fg branch(s) according fixpamltree with assigned fg branch species marker #1 ")
+                "get tree.terminal"
+                "get homo species set"
+                "现在还无法做 bg species 有空的或dup的，因为homogene file 已经限定每个物种一个基因"
                 stat = os.system(pamlcodeml)
                 if stat != 0:
                     print("call paml maybe call this Error", pamlInputCDSFileName, "The seq file appears to be in fasta format, but not aligned?")
                     exit(-1)
-                processB_result_collection=Util.extract_kaks_pamlmlc(tempPath + "/mlc",processB_result_collection,firstofhomotrscpts)
+                processB_result_collection,dscollct=Util.extract_kaks_pamlmlc(tempPath + "/mlc",processB_result_collection,firstofhomotrscpts)
 
-            elif not fixpamltree:
+            elif not fixpamltree and fgspecies==outgroup==None:
                 print("fixpamltree does not exist, construct tree using sequence, and then calculate kaks for each species as forebranch and other species as background branchs")
                 for tree_terminal in tree_terminal_list:
                     
@@ -334,6 +344,13 @@ if __name__ == '__main__':
                     if stat != 0:
                         print("call paml maybe call this Error", pamlInputCDSFileName, "The seq file appears to be in fasta format, but not aligned?")
                         exit(-1)
+                    processB_result_collection,dscollct=Util.extract_kaks_pamlmlc(tempPath + "/mlc",processB_result_collection,firstofhomotrscpts)
+            print(firstofhomotrscpts,end="\t",file=processB_outfile)
+            for idx in range(len(processB_result_collection[firstofhomotrscpts])):
+                print(*processB_result_collection[firstofhomotrscpts][idx],end="\t",file=processB_outfile)
+            print("",file=processB_outfile)
+            processB_outfile.flush()
+#             print(bgbranchw,file=processB_outfile)
                     # extract data from mlc,fill data into processB_result_collection
                 
                     
@@ -441,24 +458,20 @@ if __name__ == '__main__':
                             print(firstofhomotrscpts,processA_result_collection[firstofhomotrscpts],file=open("test.txt",'a'))
                             break                        
                     mlcline_idx+=1
+            print()
         print("one home genes end:",homotrscptline)
+        print("tpid","species1dnds","species2dnds","species1ds")
+        
+    
     if processType=="B":
-        processB_outfile=open(outfileNamePre+"_branch",'w')
-        print("tpIDorGeneID",end="\t",file=processB_outfile)
-        for firstofhomotrscpts in sorted(processB_result_collection.keys()):
-            print("\n",firstofhomotrscpts,end="\t",file=processB_outfile)
-            for idx in range(len(processB_result_collection[firstofhomotrscpts])):
-                print(processB_result_collection[firstofhomotrscpts][idx],end="\t",file=processB_outfile)
         processB_outfile.close()
+
+
+        
     
     #process A output map
     elif processType=="A":
-        outfileMap={};specieslist=[]
-        for tree_terminal in tree_terminal_list:
-            curspecies = tree_terminal.name
-            specieslist.append(curspecies)
-            outfileMap[curspecies]= open(outfileNamePre+"_"+curspecies+"_branchsite",'w')
-            print(curspecies+"kaks",end="\t",file=processB_outfile)
+
         for firstofhomotrscpts in sorted(processA_result_collection.keys()):
             for curspecies in processA_result_collection[firstofhomotrscpts].keys():
                 print(firstofhomotrscpts,end=":",file=outfileMap[curspecies])

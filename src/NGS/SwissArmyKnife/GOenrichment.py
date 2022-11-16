@@ -5,13 +5,10 @@ Created on 2015-4-10
 '''
 
 from optparse import OptionParser
-import os
-import re, sys, time
+
 from scipy.stats import hypergeom
 
-from scipy import stats
 
-from NGS.BasicUtil import *
 from src.NGS.BasicUtil import geneUtil
 
 

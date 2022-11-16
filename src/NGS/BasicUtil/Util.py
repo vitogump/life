@@ -22,6 +22,7 @@ def extract_kaks_pamlmlc(pathTomlc,processX_result_collection,firstofhomotrscpts
     mlcfile = open(pathTomlc, 'r')
     mlclines = mlcfile.readlines()
     mlcline_idx=0
+    ds_ForAllspecies_OfCurfg=[]
     while mlcline_idx < len(mlclines):
         if (firstofhomotrscpts is not None) and "Note: Branch length is defined as number of nucleotide substitutions per codon (not per neucleotide site)." in mlclines[mlcline_idx]:
             print(*mlclines[mlcline_idx:],sep="",file=open(firstofhomotrscpts.strip().replace("|transcript:",'_').replace("gene:","")+".mlcdnds",'w'))
@@ -29,11 +30,11 @@ def extract_kaks_pamlmlc(pathTomlc,processX_result_collection,firstofhomotrscpts
             branch_value_obj = re.search(r"w \(dN/dS\) for branches:\s*([\.\d]+)\s+([\.\d]+)", mlclines[mlcline_idx])
             background_branch_value = branch_value_obj.group(1)
             foreground_branch_value = branch_value_obj.group(2)
-            processX_result_collection[firstofhomotrscpts].append(foreground_branch_value)
+            processX_result_collection[firstofhomotrscpts].append((foreground_branch_value,background_branch_value))
             break
         mlcline_idx+=1
     mlcfile.close()
-    return processX_result_collection
+    return processX_result_collection,ds_ForAllspecies_OfCurfg
 def alinmultPopSnpPos(vcfMaplist,jointmode="i"):
     """input:
     two or more map fomart like this [chrNo:[(pos,REF,ALT,INFO,FORMAT,sample,...),(pos,REF,ALT,INFO,FORMAT,sample,...),,,,,],{chrNo:[]},,,,,,]
