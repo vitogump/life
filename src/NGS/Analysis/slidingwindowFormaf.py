@@ -5,6 +5,7 @@ Created on 2022年11月8日
 '''
 from optparse import OptionParser
 import os
+import re
 import subprocess
 
 from Bio import AlignIO
@@ -31,11 +32,14 @@ from Bio.AlignIO import MafIO
 parser = OptionParser()
 #parser.add_option("-b","--bamlist_eachpop",dest="bamlist_eachpop",action="append",help="vcftablename filerecord_allname_in_depthfiletitle_belongtothisvcfpop")
 parser.add_option("-a","--alignmentsMAF",dest="alignmentsMAF",help="R(r)/G(g)")
-parser.add_option("-r","--refspeciesname",dest="refspeciesname")
-parser.add_option("-C","--chromlistfilename",dest="chromlistfilename")
+parser.add_option("-r","--refspeciesname",dest="refspeciesname",help"tell program which refspeciesname in the maf used as ref to search interval")
+parser.add_option("-q","--optionforiqtree",dest="optionforiqtree",action="append",default="",help="e.g. -q '-o outgroupname' -q '-pre /path/to/outpre'")
+parser.add_option("-o","--outpath",dest="outpath",default="")
 (options, args) = parser.parse_args()
 logf=open("iqtree.log","wb")
 stepsize=winsize=100
+if (not os.path.isdir(options.outpath)) or (not options.outpath):
+    print(options.outpath,"is not a dir");exit(-1)
 if __name__ == '__main__':
     #find the first pos and count how many species 
     
@@ -51,10 +55,10 @@ if __name__ == '__main__':
             totalspecies+=1
         if totalspecies>0 and firstpos>=0:
             break
-    a=os.system("touch estimated_gene_trees.tree");print(a)
+    a=os.system("touch "+os.path.join(options.outpath,"estimated_gene_trees.tree"));print(a)
     curpos=firstpos
     #slide window
-    idx=MafIO.MafIndex("test.mafindex",options.alignmentsMAF,options.refspeciesname)
+    idx=MafIO.MafIndex(os.path.join(options.outpath,"test.mafindex"),options.alignmentsMAF,options.refspeciesname)
     print("slide win and filter");wincount=0
     while curpos < refchrSize-stepsize and a==0:
         alnseqINwin=idx.get_spliced([curpos],[curpos+winsize], 1)
@@ -75,16 +79,22 @@ if __name__ == '__main__':
             elif samecount> 0.7 * winsize:
                 print("filtered 3)  go curpos step forwards",curpos)# 
             else:
-                AlignIO.write(alnseqINwin, options.alignmentsMAF[:-4]+".tempwin.afa", "fasta")
-                proc = subprocess.Popen(["iqtree","-s",options.alignmentsMAF[:-4]+".tempwin.afa","-m","MFP","-redo"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                AlignIO.write(alnseqINwin, os.path.join(options.outpath,options.alignmentsMAF[:-4]+".tempwin.afa"), "fasta")
+                for optionforiqtree in options.optionforiqtree:
+                    args=re.split(r"\s+",options.optionforiqtree)
+                    iqtreeoutpre=args[-1] if "-pre" in optionforiqtree else os.path.join(options.outpath,options.alignmentsMAF[:-4]+".tempwin.afa")
+
+                proc = subprocess.Popen(["iqtree","-s",options.alignmentsMAF[:-4]+".tempwin.afa","-m","MFP","-redo"]+args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 stdout, stderr = proc.communicate()
                 logf.write(stdout)
                 logf.write(stderr)
-                a=os.system("cat "+options.alignmentsMAF[:-4]+".tempwin.afa.treefile estimated_gene_trees.tree > win"+str(wincount))
-                a+=os.system("mv win"+str(wincount)+" estimated_gene_trees.tree")  
+                a=os.system("cat "+iqtreeoutpre+".treefile "+ os.path.join(options.outpath,"estimated_gene_trees.tree")+" > win"+str(wincount))
+                a+=os.system("mv win"+str(wincount)+" "+os.path.join(options.outpath,"estimated_gene_trees.tree"))
                            
             
         wincount+=1
         curpos+=stepsize
     print(curpos,a)
     logf.cloes()
+    print("then act command before run: java -jar astral.5.6.1.jar -i /home/lrui/temp/tttttt/estimated_gene_trees.tree -o estimated_species_tree.tree")
+    print("sed 's/shaoxing[^:]*:/shaoxing:/g' /home/lrui/avian/duckevo/softmaskedTE/estimated_gene_trees.tree|sed 's/D2B[^:]*:/D2B:/g' |sed 's/anserBHG[^:]*:/anserBHG:/g' |sed 's/muscovy[^:]*:/muscovy:/g' |sed  's/mallard[^:]*:/mallard:/g' |sed 's/ZJU1BJ[^:]*:/ZJU1BJ:/g' > estimated_gene_trees.tree")
