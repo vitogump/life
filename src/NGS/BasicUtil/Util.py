@@ -4,9 +4,9 @@ import re,sys
 import numpy,math
 from multiprocessing.dummy import Pool
 import pickle
-import src.NGS.BasicUtil.DBManager as dbm
-import config
-from config import vcfdbname
+import NGS.BasicUtil.DBManager as dbm
+config= __import__("config",globals="life")
+# from config import vcfdbname
 
 '''
 Created on 2013-6-30

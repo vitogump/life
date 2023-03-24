@@ -5,8 +5,7 @@ Created on 2022年11月8日
 '''
 from optparse import OptionParser
 import os
-import re
-import subprocess
+import re,subprocess
 
 from Bio import AlignIO
 from Bio.AlignIO import MafIO
@@ -32,7 +31,7 @@ from Bio.AlignIO import MafIO
 parser = OptionParser()
 #parser.add_option("-b","--bamlist_eachpop",dest="bamlist_eachpop",action="append",help="vcftablename filerecord_allname_in_depthfiletitle_belongtothisvcfpop")
 parser.add_option("-a","--alignmentsMAF",dest="alignmentsMAF",help="R(r)/G(g)")
-parser.add_option("-r","--refspeciesname",dest="refspeciesname",help"tell program which refspeciesname in the maf used as ref to search interval")
+parser.add_option("-r","--refspeciesname",dest="refspeciesname",help="tell program which refspeciesname in the maf used as ref to search interval")
 parser.add_option("-q","--optionforiqtree",dest="optionforiqtree",action="append",default="",help="e.g. -q '-o outgroupname' -q '-pre /path/to/outpre'")
 parser.add_option("-o","--outpath",dest="outpath",default="")
 (options, args) = parser.parse_args()

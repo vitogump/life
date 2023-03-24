@@ -29,9 +29,9 @@ except_files = {
 }
 # 针对多文件情况设置，单文件就只写一个就行
 #so
-toso_list=["./NGS/BasicUtil","./NGS/RUtil"]
+toso_list=["./NGS/BasicUtil","./NGS/RUtil","./bioinfodevelop/analysisUtils"]
 #pyc(py)
-topyc_list=["./pipelinecontrol","./compass","./NGS/Slave","./NGS/SwissArmyKnife","./NGS/Analysis"]
+topyc_list=["./pipelinecontrol","./compass","./NGS/Slave","./NGS/SwissArmyKnife","./NGS/Analysis","./bioinfodevelop/analysisAppEntry"]
 
 def filter_file(file_name):
     if file_name.__contains__(currdir):

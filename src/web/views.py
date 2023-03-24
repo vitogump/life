@@ -131,6 +131,9 @@ def processData():
 
 @web.route('/analysisdata',methods=['GET','POST'])
 def configsoftware():
+    data=request.get_json(silent=True)
+    print(request.args.to_dict())
+    print(request.json,data,request.form)
     form=ParaForm()
     if form.validate_on_submit():
         print("configsoftware here",type(request.form),request.form)

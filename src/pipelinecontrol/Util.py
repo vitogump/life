@@ -145,8 +145,8 @@ class OperatorWithData_webservice(OperatorWithData):
         scriptoutputdata="scriptoutputdata="
         interceptdepth=curdepth
         newcmdline = self.cmdline
-        subtargets = re.findall(r"\${.*?}", newcmdline)
-        print("OperatorWithData_webservice process",subtargets)
+#         subtargets = re.findall(r"\${.*?}", newcmdline)
+#         print("OperatorWithData_webservice process",subtargets)
         targetdatasuffix=[e[1] for e in self.inputList]
         tagname=""
         for i in range(self.taglen):
@@ -199,6 +199,7 @@ class OperatorWithData_webservice(OperatorWithData):
                         print(rootStr,"is not in the intercept dir list, ignore this dir")
                         continue
                     updirname=re.search(r".*/([^/]+)$", curpath).group(1)+"".join(interceptdirs)
+                    print(updirname,"seems not correct")
                 if len(re.split(r"/",rootStr))==len(re.split(r"/",self.inputdatapath))+datadepth:# reach the depth that datafiles in it
                     print("reach the datafiles depth,rootStr:",rootStr+"/",files,self.inputList)
                     print(self.inputList[i])
@@ -220,7 +221,7 @@ class OperatorWithData_webservice(OperatorWithData):
                                 print("option_suffix_obj",option_suffix_obj.group(0),"make new cmdline:",newcmdline)
                                 newcmdline=re.sub(r"("+self.inputList[i][0].replace("(","\(").replace(")","\)").replace("+","\+").replace("[","\[").replace("]","\]").replace("^","\^").replace("*","\*")+")\s+\${\s*" + self.inputList[i][1] + "\s*}", " "+self.inputList[i][0]  + rootStr + "/" + datafilename.strip() + " " + option_suffix_obj.group(0), newcmdline)     
                             elif re.search(r"\[updir\]\d+[\w\W]*|\[updir\]",self.inputList[i][1],re.I|re.M)!=None:#re.search(r".*?" + targetdatasuffix[i]+"$", datafilename) != None:    
-                                   
+                                print("seems need option_suffix_obj=as above")   
                                 prefixname=re.sub(r"\[updir\]",updirname,self.inputList[i][1])
                                 print("collecte prefix, same prefix have only one input",updirname,prefixname,self.inputList[i][0]  + rootStr + "/" +prefixname not in  newcmdline,self.inputList[i][0]  + rootStr + "/" +prefixname)
                                 if self.inputList[i][0]  + rootStr + "/" +prefixname not in  newcmdline:
