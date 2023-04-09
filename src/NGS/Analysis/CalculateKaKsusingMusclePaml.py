@@ -7,7 +7,7 @@ Created on 2014-4-3
 import sys,inspect,os,configparser,random,string
 import platform
 cfparser = configparser.ConfigParser()
-
+from scipy.stats import chisquare,chi2
 from NGS.BasicUtil import Util
 from optparse import OptionParser
 import pickle, sys, os, re, time
@@ -29,8 +29,8 @@ parser.add_option("-q", "--quiet",
 minlen = int(options.minlen)
 
 
-chitesttable = {0.01:{2:9.2103,3:11.3449},
-                0.05:{2:5.9915,3:7.8147}}
+chitesttable = {0.01:{1:6.6349,2:9.2103,3:11.3449},
+                0.05:{1:3.8415,2:5.9915,3:7.8147}}
 
 homogenefile = open(options.homologousgene, 'r')
 aa_cds_pair_file = open(options.proteincdspairfile, 'r')
@@ -147,7 +147,7 @@ if __name__ == '__main__':
         lenofhomeAA = []
         # make the aa fa file as the input of the muscle and run muscle        
         muscleinfile = open(MuscleInputFileName, 'w')
-        firstofhomotrscpts = homotrscptlist[0]#re.search(r'transcript:(.*)', ).group(1).strip()
+        firstofhomotrscpts = homotrscptlist[0].strip().replace("|transcript:",'_').replace("gene:","")#re.search(r'transcript:(.*)', ).group(1).strip()
         processB_result_collection[firstofhomotrscpts] = []
         for trscpt in homotrscptlist:
             
@@ -268,10 +268,17 @@ if __name__ == '__main__':
         tree_terminal_list = tree.get_terminals()
         treefile_oringal.close()
         print(tree_terminal_list)
+        def marktreeMKer(curspecies):
+            species_and_trscpt_idx = homotrscpttitle.index(curspecies)
+            curtrscpt = homotrscptlist[species_and_trscpt_idx]
+            sio_f = StringIO();Phylo.write(tree, sio_f, "newick");sio_f.seek(0)
+            temp_outtreefile = open(temp_outtreefileName, 'w')
+            print(re.sub(r"" + curspecies, curspecies + "#1", sio_f.readline()), file=temp_outtreefile)
+            temp_outtreefile.close();sio_f.close()
         if processType.upper()=="C":
             cml.read_ctl_file(ctlfile)
             cml.alignment=pamlInputCDSFileName
-            cml.out_file=os.path.join(tempPath,"mlc")
+            cml.out_file=os.path.join(tempPath,"mlc"+firstofhomotrscpts+processType);mclfn="mlc"+firstofhomotrscpts+processType
             cml.set_options(seqtype=1);cml.set_options(model=0);cml.set_options(runmode=-2)
 
             cml.set_options(NSsites=0);cml.set_options(fix_omega=0);cml.set_options(omega = .4)
@@ -281,7 +288,7 @@ if __name__ == '__main__':
                 print("call paml maybe call this Error", pamlInputCDSFileName, "The seq file appears to be in fasta format, but not aligned?")
                 continue
     #             exit(-1)
-            mlcfile = open(tempPath + "/mlc", 'r')
+            mlcfile = open(os.path.join(tempPath,mclfn), 'r')
             mlclines = mlcfile.readlines()
             try:
                 valuesabj = re.search(r'dN/dS=(.*)dN =(.*)dS =(.*)', mlclines[-1])
@@ -303,7 +310,7 @@ if __name__ == '__main__':
         if processType.upper()=="B":
             cml.read_ctl_file(ctlfile)
             cml.alignment=pamlInputCDSFileName
-            cml.out_file=os.path.join(tempPath,"mlc")
+            cml.out_file=os.path.join(tempPath,"mlc"+firstofhomotrscpts+processType);mclfn="mlc"+firstofhomotrscpts+processType
             cml.tree=temp_outtreefileName
             cml.set_options(runmode=0);cml.set_options(model=2);cml.set_options(seqtype=1)
             cml.set_options(NSsites=[0]);cml.set_options(fix_omega=0);cml.set_options(omega=1.5)
@@ -311,44 +318,20 @@ if __name__ == '__main__':
             ##### configure codeml.ctl file to process B
 
             # model=2 nssite=0 runmode=0
+            extract_kaks_pamlmlcGenor=Util.runpamlAccordingTree(pamlcodeml,processType,[fixpamltree,fixtreetext,tree_terminal_list],[fgspecies,outgroup],Util.extract_kaks_pamlmlc,marktreeMKer)
+            lnlfullist=[];LRTlist=[]
+            for extract_kaks_pamlmlc in extract_kaks_pamlmlcGenor:# really execute code in runpamlAccordingTree(){...os.system('paml')...} and return a  function() named extract_kaks_pamlmlc
+                processB_result_collection,lnl=extract_kaks_pamlmlc(os.path.join(tempPath,mclfn),processB_result_collection,firstofhomotrscpts,pmodel=2,pnssite=0)
+            cml.set_options(model=0)
+            extract_kaks_pamlmlcGenor=Util.runpamlAccordingTree(pamlcodeml,processType,[fixpamltree,fixtreetext,tree_terminal_list],[fgspecies,outgroup],Util.extract_kaks_pamlmlc,marktreeMKer)
+            for extract_kaks_pamlmlc in extract_kaks_pamlmlcGenor:
+                temp,lnlnull=extract_kaks_pamlmlc(os.path.join(tempPath,mclfn),processB_result_collection,firstofhomotrscpts,pmodel=0,pnssite=0)
+            pvalue=chi2.sf(abs(2*(lnlnull-lnl)),1);statics=chisquare([lnl,lnlnull], [0.5,0.5], 1)[0]
             
-            if fixpamltree and (("#1" not in fixtreetext) and ('$1' not in fixtreetext)):
-                print("use fixpamltree file:",fixpamltree)
-                print("use fgspecies,outgroup information, if not exist report error")
-            elif fixpamltree and fgspecies==outgroup==None:
-                print("calculate kaks for the fg branch(s) according fixpamltree with assigned fg branch species marker #1 ")
-                "get tree.terminal"
-                "get homo species set"
-                "现在还无法做 bg species 有空的或dup的，因为homogene file 已经限定每个物种一个基因"
-                stat = os.system(pamlcodeml)
-                if stat != 0:
-                    print("call paml maybe call this Error", pamlInputCDSFileName, "The seq file appears to be in fasta format, but not aligned?")
-                    exit(-1)
-                processB_result_collection,dscollct=Util.extract_kaks_pamlmlc(tempPath + "/mlc",processB_result_collection,firstofhomotrscpts)
-
-            elif not fixpamltree and fgspecies==outgroup==None:
-                print("fixpamltree does not exist, construct tree using sequence, and then calculate kaks for each species as forebranch and other species as background branchs")
-                for tree_terminal in tree_terminal_list:
-                    
-                    curspecies = tree_terminal.name
-                    species_and_trscpt_idx = homotrscpttitle.index(curspecies)
-                    curtrscpt = homotrscptlist[species_and_trscpt_idx]
-                    sio_f = StringIO()
-                    Phylo.write(tree, sio_f, "newick")
-                    sio_f.seek(0)
-                    temp_outtreefile = open(temp_outtreefileName, 'w')
-                    print(re.sub(r"" + curspecies, curspecies + "#1", sio_f.readline()), file=temp_outtreefile)
-                    temp_outtreefile.close();sio_f.close()
-        
-                    stat = os.system(pamlcodeml)
-                    if stat != 0:
-                        print("call paml maybe call this Error", pamlInputCDSFileName, "The seq file appears to be in fasta format, but not aligned?")
-                        exit(-1)
-                    processB_result_collection,dscollct=Util.extract_kaks_pamlmlc(tempPath + "/mlc",processB_result_collection,firstofhomotrscpts)
             print(firstofhomotrscpts,end="\t",file=processB_outfile)
             for idx in range(len(processB_result_collection[firstofhomotrscpts])):
-                print(*processB_result_collection[firstofhomotrscpts][idx],end="\t",file=processB_outfile)
-            print("",file=processB_outfile)
+                print(*processB_result_collection[firstofhomotrscpts][idx],sep="\t",end="\t",file=processB_outfile)
+            print(pvalue,statics,(lnlnull - lnl) * 2>chitesttable[0.05][1],sep="\t",file=processB_outfile)
             processB_outfile.flush()
 #             print(bgbranchw,file=processB_outfile)
                     # extract data from mlc,fill data into processB_result_collection
@@ -357,16 +340,13 @@ if __name__ == '__main__':
         if processType.upper()=="A":
             cml.read_ctl_file(ctlfile)
             cml.alignment=pamlInputCDSFileName
-            cml.out_file=os.path.join(tempPath,"mlc")
+            cml.out_file=os.path.join(tempPath,"mlc"+firstofhomotrscpts+processType);mclfn="mlc"+firstofhomotrscpts+processType
             cml.tree=temp_outtreefileName
             cml.set_options(runmode=0);cml.set_options(model=2);cml.set_options(seqtype=1)
             cml.set_options(NSsites=[2]);cml.set_options(fix_omega=1);cml.set_options(omega=1)
             cml.write_ctl_file()
             #########configure codeml.ctl file to process A ,first time collect LnL #####################
-
             # model=2 nssite=0 runmode=0
-
-
             processA_result_collection_lnL = {}
             for tree_terminal in tree_terminal_list:
                 curspecies = tree_terminal.name
@@ -383,7 +363,7 @@ if __name__ == '__main__':
                     print("call paml maybe call this Error", pamlInputCDSFileName, "The seq file appears to be in fasta format, but not aligned?")
                     exit(-1)
                 # extract data from mlc,fill data into processB_result_collection
-                mlcfile = open(tempPath + "/mlc", 'r')
+                mlcfile = open(tempPath + "/"+mclfn, 'r')
                 mlclines = mlcfile.readlines()
                 mlcline_idx=0
                 while mlcline_idx < len(mlclines):
@@ -416,7 +396,7 @@ if __name__ == '__main__':
                     print("call paml maybe call this Error", pamlInputCDSFileName, "The seq file appears to be in fasta format, but not aligned?")
                     exit(-1)
                 # extract data from mlc,fill data into processB_result_collection
-                mlcfile = open(tempPath + "/mlc", 'r')
+                mlcfile = open(tempPath + "/"+mclfn, 'r')
                 mlclines = mlcfile.readlines()
                 mlcfile.close
                 mlcline_idx=0

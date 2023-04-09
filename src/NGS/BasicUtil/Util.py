@@ -1,10 +1,11 @@
 # -*- coding: UTF-8 -*-
 import copy
-import re,sys
+import re,sys,os
 import numpy,math
 from multiprocessing.dummy import Pool
 import pickle
 import NGS.BasicUtil.DBManager as dbm
+from NGS.Analysis.CalculateKaKsusingMusclePaml import mlclines
 config= __import__("config",globals="life")
 # from config import vcfdbname
 
@@ -18,23 +19,56 @@ username=config.username
 password=config.password
 webdbname=config.webdbname
 vcfdbname=config.vcfdbname
-def extract_kaks_pamlmlc(pathTomlc,processX_result_collection,firstofhomotrscpts=None,processType="B"):
-    mlcfile = open(pathTomlc, 'r')
-    mlclines = mlcfile.readlines()
+def runpamlAccordingTree(pamlcodeml,processType,treepara,fg_bgs,extractmlc,marktreeDynfunc=None):
+    fixpamltree,fixtreetext,tree_terminal_list=treepara
+    fgspecies,outgroup=fg_bgs
+    if fixpamltree and (("#1" not in fixtreetext) and ('$1' not in fixtreetext)):
+        print("use fixpamltree file:",fixpamltree)
+        print("use fgspecies,outgroup information, if not exist report error")
+        yield extractmlc
+    elif fixpamltree and fgspecies==outgroup==None:
+        print("calculate kaks for the fg branch(s) according fixpamltree with assigned fg branch species marker #1 ")
+        "get tree.terminal"
+        "get homo species set"
+        "现在还无法做 bg species 有空的或dup的，因为homogene file 已经限定每个物种一个基因"
+        stat = os.system(pamlcodeml)
+        if stat != 0:
+            print("Error:when call paml ",  "The seq file(pamlInputCDSFileName) appears to be in fasta format, but not aligned?")
+            exit(-1)
+        yield extractmlc
+    elif not fixpamltree and fgspecies==outgroup==None:
+        print("fixpamltree does not exist, construct tree using sequence, and then calculate kaks for each species as forebranch and other species as background branchs")
+        for tree_terminal in tree_terminal_list:
+            marktreeDynfunc(tree_terminal.name)
+            stat = os.system(pamlcodeml)
+            if stat != 0:
+                print("Error:when call paml ",  "The seq file(pamlInputCDSFileName) appears to be in fasta format, but not aligned?")
+                exit(-1)
+            yield extractmlc
+def extract_kaks_pamlmlc(pathTomlc,processX_result_collection,firstofhomotrscpts=None,pmodel=2,pfixomg=1,pnssite=2):
+    mlcfile = open(pathTomlc, 'r');mlcfn=re.search(r"[^/]*$",pathTomlc).group(0)
+    mlclines = mlcfile.readlines();print(mlclines,sep="",file=open(mlcfn+str(pmodel)+"mdl"+str(pfixomg)+str(pnssite)+".fomgnst",'w'))
     mlcline_idx=0
     ds_ForAllspecies_OfCurfg=[]
     while mlcline_idx < len(mlclines):
-        if (firstofhomotrscpts is not None) and "Note: Branch length is defined as number of nucleotide substitutions per codon (not per neucleotide site)." in mlclines[mlcline_idx]:
-            print(*mlclines[mlcline_idx:],sep="",file=open(firstofhomotrscpts.strip().replace("|transcript:",'_').replace("gene:","")+".mlcdnds",'w'))
-        if re.search(r"w \(dN/dS\) for branches:", mlclines[mlcline_idx]) != None:
+        if re.search(r"^lnL", mlclines[mlcline_idx]) != None:#(firstofhomotrscpts is not None) and "Note: Branch length is defined as number of nucleotide substitutions per codon (not per neucleotide site)." in mlclines[mlcline_idx]:
+            lnl = re.search(r":\s+([-\.\d]+)",mlclines[mlcline_idx]).group(1);print(lnl)
+        #for processType B
+        if pnssite==0 and pmodel==2  and re.search(r"w \(dN/dS\) for branches:", mlclines[mlcline_idx]) != None:
+            print('extract branch model full model')
             branch_value_obj = re.search(r"w \(dN/dS\) for branches:\s*([\.\d]+)\s+([\.\d]+)", mlclines[mlcline_idx])
             background_branch_value = branch_value_obj.group(1)
             foreground_branch_value = branch_value_obj.group(2)
             processX_result_collection[firstofhomotrscpts].append((foreground_branch_value,background_branch_value))
             break
+        elif  pnssite==0 and pmodel==0 :#and re.search(r"w \(dN/dS\) for branches:", mlclines[mlcline_idx]) != None
+            print('extract branch model null model')
+            break
+        if pnssite==2 and pfixomg==1 and pmodel==2 and re.search(r"Bayes Empirical Bayes \(BEB\)",mlclines[mlcline_idx])!=None:
+            print("branch-site model null model")
         mlcline_idx+=1
     mlcfile.close()
-    return processX_result_collection,ds_ForAllspecies_OfCurfg
+    return processX_result_collection,float(lnl)#ds_ForAllspecies_OfCurfg
 def alinmultPopSnpPos(vcfMaplist,jointmode="i"):
     """input:
     two or more map fomart like this [chrNo:[(pos,REF,ALT,INFO,FORMAT,sample,...),(pos,REF,ALT,INFO,FORMAT,sample,...),,,,,],{chrNo:[]},,,,,,]

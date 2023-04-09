@@ -124,11 +124,11 @@ for fi in files:
     elif fi.endswith(".c") or fi in key_funs:
         print("remove:",fi)
         os.remove(fi)
-    elif not fi.endswith(".html") and "./"+os.path.relpath(fi, "/home/lrui/life/src") not in key_funs:
-        distfile=os.path.join(os.path.abspath('.'), build_dir, os.path.relpath(fi, "/home/lrui"))
-        if not os.path.exists(os.path.dirname(distfile)):
-            os.makedirs(os.path.dirname(distfile))
-        shutil.copy(fi,os.path.join(os.path.abspath('.'), build_dir, os.path.relpath(fi, "/home/lrui")))
+#     elif not fi.endswith(".html") and "./"+os.path.relpath(fi, "/home/lrui/life/src") not in key_funs:
+#         distfile=os.path.join(os.path.abspath('.'), build_dir, os.path.relpath(fi, "/home/lrui"))
+#         if not os.path.exists(os.path.dirname(distfile)):
+#             os.makedirs(os.path.dirname(distfile))
+#         shutil.copy(fi,os.path.join(os.path.abspath('.'), build_dir, os.path.relpath(fi, "/home/lrui")))
 
 print(files)
 pyc_file_list=["./NGS/Service/fillancestraltemp_usingBAM.py","./NGS/Service/fillancestraltemp_usingdepth.py","./NGS/Service/makingjointabletemp.py"]
