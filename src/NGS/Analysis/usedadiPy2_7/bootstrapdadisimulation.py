@@ -30,7 +30,7 @@ parser.add_option("-T", "--tag",dest="tag", default="TAG",help="don't print stat
 (options, args) = parser.parse_args()
 ll_param_MAPlist={}
 ISOTIMEFORMAT='%Y-%m-%d %X'
-pythonpath_pre="/home/liurui/software/Python-2.7/python /home/liurui/life/src/NGS/Analysis/usedadiPy2_7/dadicode.py "
+pythonpath_pre="python2 /home/liurui/life/src/NGS/Analysis/usedadiPy2_7/dadicode.py "
 def call_system(commandline):
     a=os.system(commandline)
     return a
