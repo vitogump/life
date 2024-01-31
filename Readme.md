@@ -1,4 +1,4 @@
-本仓库曾经使用过现已经废弃，usci 为最新分支，后续会在近期可能发表的文章补充材料中，重新整理相关功能及计算结果到新的仓库。（所有功能均已重新架构融入http://www.atcgorder.top:8082/v1/user/login分析平台id:atcgorder,pw:admin专利正在申请中）
+本仓库曾经使用过现已经废弃，usci 为最新分支，后续会在近期可能发表的文章补充材料中，重新整理相关功能及计算结果到新的仓库。（所有功能均已重新架构融入http://www.atcgorder.com:8082/v1/user/login分析平台id:atcgorder,pw:admin专利正在申请中）
 本仓库的大量函数模块仍然可以使用：
 NGS\Analysis下
 usedadiPy2_7\GenerateSNPfilefromvcftable.py
